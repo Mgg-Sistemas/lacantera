@@ -1,5 +1,5 @@
 import { memo, useEffect, useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { PageHeader } from '@/components/PageHeader'
 import { AvisosFlotantes } from '@/components/AvisosFlotantes'
 import { Button } from '@/components/ui/Button'
@@ -48,6 +48,8 @@ import { NuevoServicioModal } from './NuevoServicioModal'
 import { SolicitudMercadoModal } from './SolicitudMercadoModal'
 import { CategoriasModal } from './CategoriasModal'
 import { ServicioDirectoView } from './ServicioDirectoView'
+import { ReporteComprasModal } from './ReporteComprasModal'
+import { CierreDiarioModal } from './CierreDiarioModal'
 
 /*
   PEDIDOS / COMPRAS (MGG `PedidosPage`) · FASES 1, 2 Y 3
@@ -65,9 +67,8 @@ import { ServicioDirectoView } from './ServicioDirectoView'
   recibido, la recepción parcial y si está lista para finalizar. Las demás
   pestañas están en su sitio con un aviso de la fase en que llegan.
 
-  El tope de 10 tarjetas por columna de la pestaña OC lleva en MGG al
-  Histórico; aquí, hasta que llegue el Histórico (fase 5), a la Lista filtrada
-  por ese estado.
+  El tope de 10 tarjetas por columna de la pestaña OC lleva, como en MGG, al
+  Histórico (fase 5b), con el estado de la columna ya marcado.
 
   QUIÉN VE QUÉ. Pedir lo puede cualquiera (06/11/2026). Quien no lleva Compras
   es el «soloSolicitud» de MGG: no ve pestañas ni filtros de OC, solo sus
@@ -79,10 +80,11 @@ import { ServicioDirectoView } from './ServicioDirectoView'
   Solicitud de Mercado» y «📒 Categorías» (unidades solicitantes, categorías y
   tipos de servicio). Compra Directa sigue siendo la de La Cantera.
 
-  LO QUE AÚN NO ESTÁ (y por qué):
-    - «⌕ Histórico», «📊 Reporte por renglón» y «📆 Cierre diario» llegan en
-      la fase 5b, con sus pantallas. No se dibujan botones que no llevan a
-      nada.
+  La fase 5b pone a la derecha de la barra, para quien lleva Compras, «⌕
+  Histórico» (`/app/pedidos/historico`), «📊 Reporte por renglón» y «📆
+  Cierre diario», como en MGG.
+
+  LO QUE NO ESTÁ (y por qué):
     - Sin la tarjeta «🛒 La cocina solicitó restablecer el mercado»: en La
       Cantera no hay alertas de mercado; la cocina lo pide desde Alimentación.
     - El administrador arranca en la última pestaña que usó (la primera vez,
@@ -136,6 +138,8 @@ type ModalKind =
   | { kind: 'create-servicio' }
   | { kind: 'mercado' }
   | { kind: 'categorias' }
+  | { kind: 'reporte' }
+  | { kind: 'cierre' }
   | { kind: 'edit'; orden: Orden }
   | { kind: 'approve'; orden: Orden }
   | { kind: 'cancel'; orden: Orden }
@@ -180,6 +184,7 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
 
   const aprobar = useAprobarOrden()
   const cancelar = useCancelarOrden()
+  const navigate = useNavigate()
 
   const ordenes = useMemo(() => pedidos.data ?? [], [pedidos.data])
 
@@ -296,31 +301,22 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
         actions={
           soloSolicitud ? (
             <Button onClick={() => setModal({ kind: 'create' })}>+ Nueva solicitud</Button>
-          ) : scope !== 'compra_directa' && scope !== 'oc_lote' && scope !== 'servicio_directo' ? (
+          ) : (
             <div className="flex flex-wrap gap-2">
-              {permisos.gestiona ? (
-                <Button variant="ghost" title="Gestionar las unidades solicitantes" onClick={() => setModal({ kind: 'categorias' })}>
-                  📒 Categorías
-                </Button>
+              <Link to="/app/pedidos/historico" title="Ver histórico filtrable de órdenes">
+                <Button variant="ghost">⌕ Histórico</Button>
+              </Link>
+              <Button variant="ghost" onClick={() => setModal({ kind: 'reporte' })}>
+                📊 Reporte por renglón
+              </Button>
+              <Button variant="ghost" onClick={() => setModal({ kind: 'cierre' })}>
+                📆 Cierre diario
+              </Button>
+              {scope !== 'compra_directa' && scope !== 'oc_lote' && scope !== 'servicio_directo' ? (
+                <AccionesDePestana scope={scope} gestiona={permisos.gestiona} onModal={setModal} />
               ) : null}
-              {scope === 'servicio' ? (
-                <Button onClick={() => setModal({ kind: 'create-servicio' })}>+ Nuevo servicio</Button>
-              ) : (
-                <>
-                  {scope === 'pedidos' ? (
-                    <Button
-                      variant="ghost"
-                      title="Solicitud de Mercado: víveres y art. de limpieza para la cocina (urgente)"
-                      onClick={() => setModal({ kind: 'mercado' })}
-                    >
-                      🛒 Solicitud de Mercado
-                    </Button>
-                  ) : null}
-                  <Button onClick={() => setModal({ kind: 'create' })}>+ Nueva orden</Button>
-                </>
-              )}
             </div>
-          ) : null
+          )
         }
       />
 
@@ -451,10 +447,7 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
               proveedor={nombreProveedor}
               noLeidos={noLeidos.data}
               onOpen={(id) => setModal({ kind: 'detail', ordenId: id })}
-              onVerMas={(estado) => {
-                setFilterEstado(estado)
-                switchView('lista')
-              }}
+              onVerMas={(estado) => void navigate(`/app/pedidos/historico?estado=${estado}`)}
             />
           ) : (
             <OrdenesTable
@@ -498,6 +491,9 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
       ) : null}
 
       {modal.kind === 'categorias' ? <CategoriasModal onClose={() => setModal({ kind: 'none' })} /> : null}
+
+      {modal.kind === 'reporte' ? <ReporteComprasModal onClose={() => setModal({ kind: 'none' })} /> : null}
+      {modal.kind === 'cierre' ? <CierreDiarioModal onClose={() => setModal({ kind: 'none' })} /> : null}
 
       {modal.kind === 'create' || (modal.kind === 'edit' && modal.orden.clase !== 'servicio') ? (
         <CrearOrdenModal
@@ -551,6 +547,43 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
 
       <AvisosFlotantes />
     </div>
+  )
+}
+
+/** «📒 Categorías», «+ Nuevo servicio» / «🛒 Solicitud de Mercado» y «+ Nueva orden» (MGG `PedidosPage.tsx:664-700`). */
+function AccionesDePestana({
+  scope,
+  gestiona,
+  onModal,
+}: {
+  scope: Scope
+  gestiona: boolean
+  onModal: (m: ModalKind) => void
+}) {
+  return (
+    <>
+      {gestiona ? (
+        <Button variant="ghost" title="Gestionar las unidades solicitantes" onClick={() => onModal({ kind: 'categorias' })}>
+          📒 Categorías
+        </Button>
+      ) : null}
+      {scope === 'servicio' ? (
+        <Button onClick={() => onModal({ kind: 'create-servicio' })}>+ Nuevo servicio</Button>
+      ) : (
+        <>
+          {scope === 'pedidos' ? (
+            <Button
+              variant="ghost"
+              title="Solicitud de Mercado: víveres y art. de limpieza para la cocina (urgente)"
+              onClick={() => onModal({ kind: 'mercado' })}
+            >
+              🛒 Solicitud de Mercado
+            </Button>
+          ) : null}
+          <Button onClick={() => onModal({ kind: 'create' })}>+ Nueva orden</Button>
+        </>
+      )}
+    </>
   )
 }
 
@@ -729,7 +762,7 @@ function KanbanBoard({
                   className="text-royal-700 dark:text-royal-300 px-2 py-1 text-left text-xs font-medium hover:underline"
                   onClick={() => onVerMas(col.key)}
                 >
-                  + {sobran} más · ver en la Lista →
+                  + {sobran} más · ver en el Histórico →
                 </button>
               ) : null}
             </div>

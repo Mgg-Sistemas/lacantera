@@ -179,10 +179,11 @@ export function useAnularComida() {
 /* ────────────────────────────────────── la solicitud de mercado ──────────
 
    Traída de MGG: la cocina arma la lista de compra —todos los víveres, con
-   las cantidades de la última vez— y la manda. Por debajo es un pedido de
-   compras de verdad (SOL-…, urgente) que la oficina cotiza, aprueba y
-   recibe; la cocina no necesita el permiso de Compras porque la puerta
-   `solicitar_mercado` pide el de Alimentación. */
+   las cantidades de la última vez— y la manda. Por debajo es la Solicitud de
+   Mercado de «Pedidos / Compras» (SP-…, urgente, fase 5b: antes creaba un
+   SOL- del flujo anterior) que Compras cotiza, aprueba, paga y el almacén
+   general recibe; la cocina no necesita el permiso de Compras porque la
+   puerta `solicitar_mercado` pide el de Alimentación. */
 
 export interface ListaDeMercado {
   numero: string
@@ -201,7 +202,10 @@ export function useUltimaListaDeMercado() {
 
 export interface MercadoSolicitado {
   id: number
+  /** El código de la Solicitud de Mercado (SP-…). */
   numero: string
+  codigo?: string
+  estado?: string
 }
 
 export function useSolicitarMercado() {
@@ -224,8 +228,8 @@ export function useSolicitarMercado() {
       }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['alimentacion'] })
-      // El pedido aparece en el tablero de Compras de quien lo tenga abierto.
-      void qc.invalidateQueries({ queryKey: ['compras'] })
+      // La solicitud aparece en «Pedidos / Compras» de quien lo tenga abierto.
+      void qc.invalidateQueries({ queryKey: ['pedidos'] })
       void qc.invalidateQueries({ queryKey: ['notificaciones'] })
     },
   })
