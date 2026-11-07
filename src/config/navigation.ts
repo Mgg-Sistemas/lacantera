@@ -741,7 +741,7 @@ export const navigation: NavSection[] = [
           { label: 'Clientes', to: '/app/ventas/clientes' },
           { label: 'Lista de precios', to: '/app/ventas/precios' },
           { label: 'Cotizaciones', to: '/app/ventas/cotizaciones' },
-          { label: 'Registros de pagos', to: '/app/ventas/registros-de-pagos' },
+          { label: 'Conciliación de Pagos', to: '/app/ventas/registros-de-pagos' },
         ],
       },
       {

@@ -3752,11 +3752,11 @@ Sobre la moneda: cada documento **congela su tasa** al crearse. Sin la tasa del 
 | «Los camiones de la nota los pone quien escribe en Facturación, o quien generó la nota desde la salida.» | No tiene permiso para poner camiones en esa nota | Que los ponga quien escribe en Facturación |
 | «La nota de salida NS-2026-0012 ya dejó su nota de entrega: NE-2026-0016.» | Esa salida ya tiene su nota | Use la que ya existe. Si está mal, anúlela y genere otra |
 
-### 10.12 Registros de pagos
+### 10.12 Conciliación de Pagos
 
 *Nuevo el 06/11/2026.*
 
-En **Ventas › Registros de pagos** están los pagos que llegaron al banco y, debajo de cada uno, las notas de entrega que ese pago cubre. Sirve para cotejar la planilla del banco contra las notas: un pago puede cubrir varias notas, y una nota puede quedar repartida en más de un pago.
+En **Ventas › Conciliación de Pagos** están los pagos que llegaron al banco y, debajo de cada uno, las notas de entrega que ese pago cubre. Sirve para cotejar la planilla del banco contra las notas: un pago puede cubrir varias notas, y una nota puede quedar repartida en más de un pago.
 
 **Ver** la lista es de cualquiera que entre a Ventas. **Registrar, importar, editar, anular y asociar** necesita el permiso extendido *Registrar pagos del banco y asociarlos a notas*, que se da persona por persona (el administrador lo tiene siempre).
 

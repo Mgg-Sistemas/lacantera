@@ -214,7 +214,7 @@ export async function armarReportePagos(d: DatosReportePagos): Promise<ArchivoAr
   const titulo =
     d.modo === 'CIERRE'
       ? `${d.variosMeses ? 'Cierre de meses' : 'Cierre de mes'} · ${d.mes ?? ''}`
-      : 'Registros de pagos'
+      : 'Conciliación de Pagos'
 
   let y = membrete(doc, logo, {
     empresa: d.empresa,
