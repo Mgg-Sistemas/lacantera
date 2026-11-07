@@ -353,6 +353,19 @@ const LibroVentas = pagina(() =>
 const NotasCredito = pagina(() =>
   import('@/pages/facturacion/NotasCredito').then((m) => ({ default: m.NotasCredito })),
 )
+/*
+  PEDIDOS / COMPRAS COMO EN MGG (fase 1, 07/11/2026). La página principal, la
+  revisión del almacén y su vista de teléfono.
+*/
+const PedidosPage = pagina(() =>
+  import('@/pages/pedidos/PedidosPage').then((m) => ({ default: m.PedidosPage })),
+)
+const SolicitudesAlmacenPage = pagina(() =>
+  import('@/pages/pedidos/SolicitudesAlmacenPage').then((m) => ({ default: m.SolicitudesAlmacenPage })),
+)
+const SolicitudesAlmacenMovil = pagina(() =>
+  import('@/pages/pedidos/SolicitudesAlmacenMovil').then((m) => ({ default: m.SolicitudesAlmacenMovil })),
+)
 // El manual pesa medio megabyte de texto. Partido, solo lo descarga quien lo abre.
 const Manual = pagina(() => import('@/pages/Manual').then((m) => ({ default: m.Manual })))
 
@@ -382,6 +395,8 @@ const paginas: Record<string, ReactNode> = {
   '/app/despachos/tickets': <Tickets />,
   '/app/despachos/guias': <Guias />,
   '/app/compras': <TableroCompras />,
+  '/app/pedidos': <PedidosPage />,
+  '/app/solicitudes-pedido': <SolicitudesAlmacenPage />,
   '/app/compras/proveedores': <Proveedores />,
   '/app/compras/proveedores/:id': <FichaProveedor />,
   // El centro de costos viejo de Compras se retiró el 14/09/2026. Quien tenga
@@ -741,6 +756,8 @@ export default function App() {
               {/* Compras en el teléfono (como las pantallas de teléfono de MGG). */}
               <Route path="compras/telefono" element={<ComprasTelefono />} />
               <Route path="compras/:id" element={<DetalleCompra />} />
+              {/* La revisión del almacén en el teléfono (MGG «solicitudes»). */}
+              <Route path="solicitudes-pedido/telefono" element={<SolicitudesAlmacenMovil />} />
               {/* `nuevo` antes que `:id` para leerlo de un vistazo, aunque el
                   enrutador ya prefiere lo estático sobre lo dinámico. */}
               <Route path="organigrama" element={<Organigrama />} />

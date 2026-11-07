@@ -27,6 +27,10 @@ const AFECTA: Record<string, string[][]> = {
   ordenes_compra: [['compras'], ['tesoreria']],
   orden_renglones: [['compras']],
   compras_bitacora: [['compras']],
+  // Pedidos / Compras como en MGG: la misma fila es la SP y su OC, y la tocan
+  // quien pide, el almacén y Compras, cada uno en su pantalla.
+  compras_ordenes: [['pedidos']],
+  compras_unidades_solicitantes: [['pedidos', 'unidades']],
   proveedores: [['proveedores']],
 
   // Maquinaria y taller. La orden de mantenimiento toca tres pantallas: la
