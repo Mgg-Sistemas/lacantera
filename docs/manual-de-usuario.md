@@ -2066,277 +2066,143 @@ Cada pesaje lleva su correlativo, **TCK-2026-0001**, y cada guía lleva dos núm
 
 ## 9. Compras
 
-Compras es el camino por el que la empresa consigue lo que no produce: un repuesto, combustible, un flete, un servicio. Todo ese camino cabe en una sola pantalla, y cada compra es una tarjeta que avanza de un panel al siguiente, desde que alguien la pide hasta que el material entra al almacén.
+Compras es el camino por el que la empresa consigue lo que no produce: un repuesto, víveres, un flete, un servicio. **Desde el 7 de noviembre de 2026 el módulo es una copia del de Pedidos / Compras de MGG**: una sola pantalla, **Pedidos / Compras**, con pestañas y columnas, donde cada solicitud es una tarjeta que avanza desde que alguien la pide hasta que el material entra al almacén general y Compras la finaliza.
 
 Hay una idea que conviene entender antes de tocar nada:
 
-**Una compra no avanza porque alguien la mueva. Avanza porque alguien hace la acción que toca.** Las tarjetas no se arrastran de un panel a otro. El panel en el que está una compra es la consecuencia de lo último que se hizo con ella. La propia pantalla lo dice en su descripción: **Cada tarjeta es una compra. Avanza de una etapa a la siguiente sin saltarse ninguna.**
+**Una orden no avanza porque alguien la arrastre. Avanza porque alguien hace la acción que toca.** Las tarjetas no se mueven a mano de una columna a otra: la columna en la que está una orden es la consecuencia de lo último que se hizo con ella, dentro de su ficha.
 
-La segunda idea es la que explica la mitad de las alarmas del módulo: **casi siempre se paga antes de recibir**. Entre el momento en que sale el dinero y el momento en que llega el camión hay dinero de la empresa en manos de un tercero. Por eso el tablero cuenta los días y avisa. Hay dos excepciones: la compra **contra entrega**, que se recibe primero y se paga lo que llegó, y la compra **a crédito**, que se recibe cuando llega y se paga al vencer.
+La segunda idea es la que explica el orden de los pasos: **casi siempre se paga antes de recibir**. Hay dos excepciones: la compra **contra entrega**, que se recibe primero y se paga lo que llegó, y la compra **a crédito**, que se recibe cuando llega y se paga con abonos.
 
-**Desde el 06/11/2026 el módulo trabaja con el flujo nuevo de compras.** Todo lo anterior a esa fecha está en **Histórico de compras** (botón arriba del tablero), cerrado como finalizado y sin mover inventario. Lo que cambió:
+Tres decisiones de la empresa que marcan todo el capítulo:
 
-- El pedido pasa primero por el **almacén general (ALM-GEN)**, que entrega lo que tiene. A Compras llega solo lo que falta.
-- Compras dice el **método y los datos de pago al proponer** la cotización, no después de aprobar.
-- Las órdenes las aprueba **solo Norbelis Sequea**, que al aprobar contesta **¿Se pagará?**. **Tesorería no interviene**: el pago se marca dentro de Compras.
-- Lo comprado se **recibe en el almacén general**, y al final Compras **marca la compra finalizada**.
+- **No hay Tesorería en el camino.** El método de pago, las retenciones y el pago se registran dentro de Compras. Marcar una orden pagada no mueve ninguna cuenta bancaria.
+- **Todo se recibe en el almacén general (ALM-GEN).** Si hace falta en otro sitio, se traslada desde allí por Salidas (26.3).
+- **Los montos van en dólares.** El pago puede hacerse en bolívares o en USDT; el sistema anota el monto y la tasa, y lo convierte.
+
+**El flujo de compras anterior se retiró.** Sus pedidos (números **SOL-**) y sus órdenes no se borraron: se consultan, solo para leer, en **Histórico › Compras anteriores** (9.15). Las direcciones viejas —el tablero, **Nuevo pedido**, la pantalla de teléfono de compras— llevan solas a **Pedidos / Compras** o al Histórico. **La Compra Directa (9.5) y la Conciliación de Pagos (10) siguen como estaban.**
 
 ### 9.1 Quién entra y quién puede hacer qué
 
 Hay dos puertas distintas, y conviene no confundirlas.
 
-La primera es **entrar al módulo**. Depende del permiso sobre Compras que la administración le haya dado a su usuario. Sin ese permiso no se ve nada: ni el menú, ni las tarjetas, ni las fichas.
+**Pedir lo puede cualquiera.** La entrada **Solicitud de pedido**, arriba en el menú, debajo de **Panel**, abre **Pedidos / Compras** para todos. Quien no lleva Compras ve solo **Solicitudes de Pedido**: sus propias solicitudes, en qué fase van (revisión del almacén, pendiente, aprobada, recibida, finalizada) y el botón **+ Nueva solicitud**. No ve pestañas, ni filtros de órdenes, ni montos. Si abre por un enlace una orden que ya pasó a Compras, el sistema le dice «Esa orden ya está en Compras: no la puedes abrir.»
 
-La segunda es **poder hacer cada paso**, y no la decide una sola cosa:
+**El resto del camino es de quien lleva Compras**, y cada paso pide lo suyo:
 
 | Qué se hace | Qué hace falta |
 | --- | --- |
-| Crear un pedido | Entrar al módulo |
-| Revisar el pedido en el almacén general | El rol **Almacén** |
-| Confirmar el pedido, cargar cotizaciones, proponer una con su método de pago, registrar la factura de una orden, marcar la compra finalizada | El rol **Compras**, o ser administración |
-| **Aprobar la orden y decidir si se paga** | **Solo Norbelis Sequea.** No va por rol: es una persona. Cualquier otro usuario, aunque sea administración o gerencia general, recibe «Las órdenes de compra solo las aprueba NORBELIS SEQUEA.» |
-| Devolver la compra a cotización | Una casilla propia de la matriz de permisos (13.1) |
-| Editar una orden aprobada, o corregir el precio de un renglón | Sendas casillas propias |
-| Resolver el dinero de un proveedor que desistió | El rol **Gerencia general** o el rol **Compras** |
-| Recibir el material | El rol **Almacén** |
+| Crear una solicitud de pedido, un servicio o una Solicitud de Mercado | Cualquier usuario la solicitud; el servicio y el Mercado, ver Compras (lectura) |
+| Revisar la solicitud en el almacén general | Inventario en escritura, o el rol de almacén |
+| Aprobar la Orden de Pedido (OP), cotizar, elegir la oferta, editar la OC, indicar el método de pago, finalizar, el servicio directo | **Compras en control total**, o ser administración |
+| **Aprobar la OC** (una por una o por lote) y **registrar el pago** | **Compras en control total**, administración, o estar en **Usuarios autorizados para aprobar** con **Aprobar órdenes de compra** (13.1) |
+| Recibir la mercancía | Inventario en escritura, o el rol de almacén |
+| Ver el Histórico, el reporte por renglón y el cierre diario | Ver Compras (lectura) |
 
-**Quien decide el pago es quien aprueba**, dentro de Compras. Tesorería no se vincula: marcar una orden pagada no mueve ninguna cuenta.
-
-Si abre una compra y no ve ningún botón, el paso en el que está esa compra le toca a otro, y la pantalla dice a quién se está esperando.
-
-**Que un botón no se dibuje es solo cortesía.** El permiso se comprueba de verdad en el momento de ejecutar la acción, no al pintar la pantalla. Quien llegue por otro camino recibe un mensaje que empieza por «Esta acción la realiza: Compras. Su usuario no tiene ese rol», y si lo que falta es una casilla, «Su usuario no tiene permiso para…» seguido de la acción.
+Si abre una orden y no ve ningún botón, el paso en el que está le toca a otro. **Que un botón no se dibuje es solo cortesía**: el permiso se comprueba de verdad en la base al ejecutar la acción, y quien llegue por otro camino recibe el mensaje del permiso que le falta.
 
 ### 9.2 El circuito de una compra
 
 Esta es la sección que hay que leer si solo se va a leer una. Todo lo demás del capítulo son detalles de estas casillas.
 
-| # | Panel del tablero | Quién lo mueve | Qué hace falta para pasar al siguiente |
+| # | Columna | Quién la mueve | Qué hace falta para pasar a la siguiente |
 | --- | --- | --- | --- |
-| 0 | **Borrador** *(opcional, en el panel Pedido)* | Quien lo cargó | Pulsar **Enviar el pedido** |
-| 1 | **Revisión de almacén** | Almacén | Pulsar **Revisar en el almacén** y decir qué entrega el almacén general |
-| 2 | **Pedido** | Compras | Pulsar **Confirmar el pedido** |
-| 3 | **Confirmada** | Compras | Cargar al menos una cotización y pulsar **Proponer para aprobar**, con el método y los datos de pago |
-| 4 | **Órdenes pendientes por aprobar** | Norbelis Sequea | Pulsar **Aprobar la orden** contestando **¿Se pagará?**. Ahí nace la orden de compra |
-| 5 | **Aprobada** *(si dijo que no se pagará todavía)* | Norbelis Sequea | Volver a contestar **¿Se pagará?** cuando haya con qué |
-| 5 | **Cuenta abierta** *(a crédito)* | Almacén y Norbelis Sequea | Recibir cuando llegue; marcarla pagada al vencer |
-| 6 | **Pagada** *(en la ficha: **Pagada · por recibir**)* | Almacén | **Recibir material** en el almacén general |
-| 7 | **Recibida** | Compras | Pulsar **Marcar finalizada** |
-| 8 | **Finalizada** | — | Cerrada |
+| 1 | **En revisión de almacén** | Almacén | Revisar qué tiene el almacén general. Lo que hay sale por una **solicitud de salida**; a Compras pasa solo lo que falta (9.6) |
+| 2 | **Pendiente** | Compras | **Aprobar Orden de Pedido** |
+| 3 | **Aprobada** (en la pestaña OC: **Pendiente (cargar ofertas)**) | Compras | Cargar las ofertas, comparar y **Aceptar esta oferta**. Ahí nace la **OC** (9.8) |
+| 4 | **Ordenes pendiente por aprobar** | Quien aprueba | **✔ Aprobar OC**, una por una o en **OC por lote** (9.9) |
+| 5 | **Confirmada (indicar método de pago)** | Compras | **💳 Indicar método de pago / Enviar para Pagar**: factura o nota de entrega, método, retenciones (9.10) |
+| 6 | **Confirmada pagar** | Quien aprueba | **💵 Marcar pagada**, con el comprobante (9.10) |
+| 7 | **Pendiente por recepción** | Almacén | **📦 Confirmar recepción** en el almacén general; puede ser parcial (9.13) |
+| 8 | **Recibida** | Compras | **✓ Finalizar orden**, con la evaluación del proveedor (9.13) |
+| 9 | **Finalizada** | — | Cerrada. Pasa al Histórico |
 
-Una compra finalizada **se queda a la vista** en su panel. No desaparece: si desapareciera, no habría dónde comprobar qué se compró y que llegó.
+Al aprobar la OC, **la condición de pago decide la columna siguiente**:
 
-**La compra contra entrega va en otro orden.** Si se pactó pagar al recibir, al aprobarla no se pregunta **¿Se pagará?**: la orden queda en **Contra entrega · por recibir**, primero entra el material y después se decide el pago de lo que llegó.
+- **De contado** o **anticipado** → **Confirmada (indicar método de pago)**, y sigue el camino de arriba.
+- **A crédito** → **Crédito / cuentas abiertas**. Se paga con **abonos** y se puede mandar a recepción antes de saldarla (9.10).
+- **Contra entrega** → directo a **Pendiente por recepción**. Primero se recibe, y después se indica el método y se paga **lo que llegó**.
 
-#### 1. La revisión del almacén general
+#### Las salidas que no son un fallo
 
-Todo pedido enviado entra a **Revisión de almacén** y le llega un aviso a quienes tienen el rol Almacén. El almacenista abre la compra y pulsa **Revisar en el almacén**. Por cada renglón:
-
-1. Elige en **Artículo del almacén** qué artículo de ALM-GEN entrega. La lista solo ofrece lo que hay, con la existencia al lado («Hay 12 UND»).
-2. Escribe cuánto entrega. **Entregar N** lo llena solo con lo que se puede. No deja pasar de lo pedido ni de lo que hay.
-3. No se pregunta quién lo recibe: lo que entrega lo recibe el **almacén general (inventario)**, a nombre de quien pidió.
-
-Al guardar:
-
-| Si el almacén… | La compra… |
-| --- | --- |
-| Entrega **todo** | Queda **Finalizada**. No se compra nada |
-| Entrega **una parte** | Pasa a **Pedido** solo con lo que falta: el renglón entregado entero sale del pedido y el parcial queda con la diferencia |
-| No tiene **nada** | Pasa a **Pedido** tal cual |
-
-**Lo que entrega el almacén sale por una solicitud de salida** de ALM-GEN, la de **Salidas** (26.2), con su autorización de siempre: el material sale físicamente cuando se aprueba y se entrega allí. Si esa salida **se rechaza o se cancela**, lo que no salió vuelve solo a Compras y se avisa. En la ficha queda la tarjeta **Revisión del almacén general** con lo que entregó, el número de la solicitud de salida y el botón **WhatsApp** con la respuesta.
-
-#### 2. Proponer con el método de pago
-
-En **Confirmada**, Compras carga las cotizaciones y pulsa **Proponer para aprobar** en la que conviene. Ahí mismo dice:
-
-- con qué entrega el proveedor: **Nota de entrega** o **Factura**;
-- el **método de pago** (o **Con productos (intercambio)**), la **moneda** —la de la cotización o bolívares—, los **datos del beneficiario** y si lleva **IGTF**.
-
-Si Compras cambia el pago de una propuesta que ya está esperando aprobación, queda anotado y se avisa. **Quien aprueba solo puede aprobar el pago que tiene en pantalla**: si cambió mientras lo miraba, el sistema dice «Compras cambió el pago de esta propuesta mientras usted la revisaba. Recargue la página y revíselo antes de aprobar.»
-
-#### 3. Aprobar y decidir el pago
-
-En **Órdenes pendientes por aprobar**, Norbelis ve el **Pago indicado por Compras** y contesta **¿Se pagará esta orden?**:
-
-- **✓ Sí, se pagará** → la orden queda **Pagada** (con una referencia opcional). No mueve ninguna cuenta.
-- **✕ No se pagará** → hay que elegir el motivo: **sin fondos**, **esperando respuesta** u **otro** (escrito). La orden queda **Aprobada** y por pagar, y se puede marcar pagada más tarde desde la misma ficha.
-
-Si la compra no procede, no es un «no se pagará»: es **Devolver a compras**.
-
-Al aprobar se abre el **WhatsApp del pago** (PAGADA, o NO PAGADA con el motivo). Antes de aprobar, Compras o quien aprueba pueden mandar el **WhatsApp para aprobar**. Todos los mensajes se ven antes de mandarlos.
-
-#### 4. A crédito: cuenta abierta
-
-Si la cotización es a **crédito (15, 30 o 60 días)**, al aprobar **no se pregunta ¿Se pagará?**. La orden queda en **Cuenta abierta**, con su vencimiento: **el día de la aprobación más los días del crédito**. La tarjeta dice **Vence en N días**, en naranja cuando faltan tres o menos y en rojo cuando está vencida.
-
-El material **se recibe sin esperar el pago**. Cuando toque pagar, Norbelis contesta **¿Se pagará?** desde la ficha. Si ya llegó todo, la orden queda **Recibida**; si no, **Pagada · por recibir**.
-
-#### 5. Recibir y finalizar
-
-Lo comprado **se recibe en el almacén general**: el diálogo deja fijo ALM-GEN, y el sistema no acepta otro. Si el pedido era para otro sitio, se traslada desde allí (7.7). En la ficha está el botón **WhatsApp de la recepción**, con lo que llegó de cada renglón.
-
-Cuando llegó todo, la compra queda en **Recibida** y Compras recibe el aviso. Compras pulsa **Marcar finalizada** (con una nota si hace falta). La compra pasa a **Finalizada** y se abre el **WhatsApp de finalizada**.
-
-#### Las dos salidas que no son un fallo
-
-Además de los pasos, una compra puede terminar de dos maneras que no son errores del sistema sino hechos del negocio:
-
-- **Cancelada.** Solo antes de que salga el dinero.
-- **El proveedor desistió.** Después de pagar. Existe porque el sistema tiene que poder decir cuánto dinero está fuera y desde hace cuántos días. Se cierra eligiendo qué pasó con ese dinero: **Reembolso**, **Saldo a favor** o **Pérdida**.
+- **Cancelada.** Una solicitud que ya no hace falta, antes de tener OC. Pide un motivo.
+- **Anulada.** Una OC que no sigue: pide un motivo y no mueve inventario ni dinero.
+- **Proveedor desistió.** El proveedor no cumple: la orden sale de su camino con el motivo, y se puede volver a elegir otra oferta.
+- **Atendida por almacén.** El almacén general tenía todo lo pedido: no pasa a Compras.
 
 #### Los retrocesos
 
-- **Quien aprueba devuelve a compras.** La compra vuelve de **Órdenes pendientes por aprobar** a **Confirmada**, y **la cotización elegida se borra**: si se devuelve, es porque esa opción no sirve.
-- **La salida del almacén no se aprueba.** Si la solicitud de salida de la revisión se rechaza o se cancela en Salidas, lo que no salió vuelve a Compras solo.
-- **Una orden aprobada se puede editar.** Con su casilla, **Editar la orden** cambia los renglones, y **Corregir el precio** cambia el de uno solo. **Si la edición sube la orden más de 100 dólares, vuelve a la gerencia**: la orden se cancela y el pedido espera otra aprobación. La compra directa no pasa por ahí.
+- **↩ Re-elegir oferta** / **✎ Modificar OC**: la OC vuelve a **Pendiente (cargar ofertas)** para elegir otra oferta. También se hace en lote desde **OC por lote**.
+- **✎ Editar OC (todo)**: cambia precios, cantidades y condiciones de una OC; si la cambia de manera que hay que volver a aprobarla, regresa a **Ordenes pendiente por aprobar**.
+- **💳 Editar método de pago / datos**: corrige el método o las retenciones antes de pagar.
+- **Si la salida del almacén se rechaza o se cancela** en Salidas, lo que no salió vuelve solo a Compras y se avisa.
 
-#### La factura del proveedor
+### 9.3 La pantalla Pedidos / Compras
 
-Al circuito le falta un papel que no aparece en la tabla de arriba: **la factura que emite el proveedor**.
+**Administración › Compras › Pedidos / Compras**, o **Solicitud de pedido** arriba en el menú.
 
-**Ninguna orden se aprueba sin decir con qué entrega el proveedor.** Al **Proponer para aprobar**, Compras declara si el proveedor entrega con **nota de entrega** o con **factura**, junto con el método de pago. No es opcional.
+#### Las pestañas
 
-**Si entrega con factura, se registra desde la propia orden**, con el botón **Registrar factura** de su ficha, y queda atada a ella. Mientras falte, la ficha lo dice: **Sin registrarla, su IVA no se puede descontar.** Registrarla no mueve la tarjeta: una compra recibida se queda en **Recibida** con factura o sin ella. La pantalla **Facturas de proveedor** reúne las que ya se registraron (9.11).
+En este orden, como en MGG:
 
-**En el flujo nuevo, la orden se marca pagada al aprobarla o después, dentro de Compras, sin mover cuentas.** El pago que se registra sobre la factura, en su propia pantalla, es otro camino que sí saca dinero de una cuenta, y el sistema no los cruza: la empresa tiene que decidir de antemano cuál de los dos usa, y usar ese.
-
-#### Lo que se corrige y lo que no
-
-- **Un pedido se puede corregir** mientras esté en **Borrador**, **Pedido** o **Confirmada** y no tenga cotizaciones. En la ficha del pedido, el botón **Corregir** abre el mismo formulario del alta ya lleno, y queda anotado en el historial. Lo corrige quien lo creó.
-- **Con cotizaciones cargadas, no.** Los renglones de una cotización cuelgan de los del pedido, y corregir el pedido los dejaría vacíos. El botón no aparece en ese caso.
-- **Una compra cancelada no se reabre.** Si vuelve a hacer falta, se crea un pedido nuevo.
-- **Una recepción no se corrige.** El libro de inventario no se modifica: una corrección se hace con un ajuste, y los dos apuntes quedan visibles.
-
-### 9.3 El tablero
-
-**Administración › Compras › Tablero**
-
-Es la pantalla de cabecera del módulo: una tarjeta por compra, repartidas en paneles según el paso en el que están. No hay una lista de pedidos por un lado y otra de órdenes por otro; es todo lo mismo visto de una vez.
-
-#### Qué se ve
-
-Arriba, el título **Compras** y los botones **Histórico de compras** (lo que había antes del 06/11/2026, cerrado y de solo lectura) y **Nuevo pedido**.
-
-Si hay compras que figuran como pagadas y llevan más de una semana sin recibirse del todo, aparece un aviso con cuántas son y cuánto suman sus órdenes: **3 compras figuran como pagadas y no constan recibidas del todo desde hace más de una semana. Sus órdenes suman …** Es el aviso más importante de la pantalla.
-
-Debajo, los paneles, en rejilla. Cada uno lleva su título, en letra pequeña la acción que hace falta, y a la derecha cuántas tarjetas tiene:
-
-| Panel | Acción que falta |
+| Pestaña | Qué muestra |
 | --- | --- |
-| **Revisión de almacén** | **El almacén general dice qué tiene** |
-| **Pedido** | **Confirmar** |
-| **Confirmada** | **Indicar proveedores** |
-| **Órdenes pendientes por aprobar** | **Aprobar y decidir si se paga** |
-| **Aprobada** | **Decidir el pago** |
-| **Cuenta abierta** | **Recibir y pagar al vencer** |
-| **Pagada** | **Falta que llegue el material** |
-| **Recibida** | **Marcar finalizada** |
-| **Finalizada** | **Cerrada** |
-| **Cancelada** | **No sigue** |
-| **El proveedor desistió** | **Resolver el dinero** |
+| **✉ Solicitud de Pedido** | Las solicitudes de productos, de la revisión del almacén a la aprobación |
+| **🧾 Órdenes de Compra** | Las OC de productos, de cargar ofertas a finalizada |
+| **📋 OC por lote** | La lista para aprobar varias OC juntas (9.9) |
+| **🛒 Compra Directa** | El acceso a la Compra Directa de La Cantera (9.5) |
+| **🛠 Servicios** | Las solicitudes de servicio (SV-…) con sus columnas (9.14) |
+| **🔧 Servicio Directo** | Los servicios ya contratados o prestados, sin solicitud (9.14) |
 
-La franja de color de un panel solo se enciende si tiene tarjetas. Un panel vacío muestra **Sin órdenes**.
+La pantalla recuerda la última pestaña y la vista que usó cada quien.
+
+#### La barra de arriba
+
+A la derecha, para quien lleva Compras:
+
+- **⌕ Histórico** — lo cerrado y las compras anteriores (9.15).
+- **📊 Reporte por renglón** y **📆 Cierre diario** (9.15).
+- **📒 Categorías** — las unidades solicitantes, las categorías y los tipos de servicio (solo Compras en control total).
+- **🛒 Solicitud de Mercado** (en **Solicitud de Pedido**), **+ Nuevo servicio** (en **Servicios**) y **+ Nueva orden**.
+
+Debajo, el buscador —**Buscar por código, proveedor, solicitante, ítem, estado, monto, fecha…**: busca en todo lo de la orden, sin acentos, y con varias palabras exige todas—, el selector de estado (en el Kanban deja solo esa columna), **Realizada por: todos los usuarios** y el interruptor **▦ Kanban** / **☰ Lista**.
+
+#### Las columnas de la pestaña Órdenes de Compra
+
+**Pendiente (cargar ofertas)** · **Ordenes pendiente por aprobar** · **Crédito / cuentas abiertas** · **Confirmada (indicar método de pago)** · **Confirmada pagar** · **Pendiente por recepción** · **Pagada** · **Recibida** · **Finalizada** · **Anulada** · **Proveedor desistió**.
+
+**Cada columna enseña diez tarjetas como mucho**, salvo **Pendiente (cargar ofertas)**. Lo que sobra se lee al pie: **+ 12 más · ver en el Histórico →**, que abre el Histórico con ese estado ya marcado.
 
 #### Qué lleva cada tarjeta
 
-De arriba abajo: el número del documento —el de la orden si ya existe, y si no el del pedido—, el título de la compra, cuántos renglones tiene (**3 ítems**), y **· Urgente** o **· Prioridad alta** cuando la prioridad no es normal. Después, quién lo solicita, o **Sin solicitante**, con el destino al lado si lo hay. Luego la fecha de creación, el proveedor cuando ya se sabe, una etiqueta de señal, y al pie el monto en dólares o el texto **Sin cotizar** si todavía no hay precio, con el tiempo transcurrido a la derecha.
+El código (la OC si ya existe, y debajo la OP), **🚨 URGENTE** si lo es y **💬 n** si hay mensajes sin leer en el chat de la orden. Después el proveedor —o **Solicita: …** si todavía no hay—, cuántos ítems, **↻ n** si cambió de proveedor, **🧾 Contiene retención**, **📦 Revisada por almacén**, quién solicita y quién la cargó, la modalidad de pago (**Pago en $** o **Pago en Bs (BCV)**), y según el paso: el método y el **monto a pagar**, el **Abonado · Saldo** de un crédito, **✓ Pagada** con su referencia, **📦 Recibida** o **Recepción parcial · 2/5 completos**, y **lista para finalizar**. Al pie, el total y hace cuánto se creó. Un total que no cuadra con sus partes sale con **⚠** en naranja.
 
-Las etiquetas de señal son estas:
+**Pulsar una tarjeta abre la ficha de la orden**, que es donde se hace todo: los datos, los ítems, las ofertas, el pago, la recepción, el **Historial** (cada paso con quién y cuándo) y el **chat** interno de la orden.
 
-| Etiqueta | Cuándo aparece |
+La pantalla se actualiza sola cuando otra persona mueve algo.
+
+### 9.4 La solicitud de pedido
+
+Se crea con **+ Nueva solicitud** (quien no lleva Compras) o **+ Nueva orden** (Compras). Es donde alguien pide lo que necesita **con el nombre general de cada cosa**: «Botas», «Filtro de aire». El nombre con que entra al inventario lo pone Compras al cotizar.
+
+| Campo | Detalle |
 | --- | --- |
-| **Borrador** | El pedido todavía no se ha enviado |
-| **Sin cotizaciones** | Está confirmada y nadie ha cargado precios |
-| **3 cotizaciones** | Cuántos proveedores han cotizado |
-| **Falta el método de pago** | Está aprobada y no se ha marcado pagada |
-| **Por pagar** | La instrucción de pago ya está cargada |
-| **Vence en 12 días** / **Vence hoy** / **Vencida hace 3 días** | En **Cuenta abierta**: cuánto falta para que venza el crédito. Naranja a tres días o menos, rojo vencida |
-| **Pagada hoy** | Se pagó hoy y aún no llega el material |
-| **12 días sin recibir** | Los días desde el pago. Cambia de verde a naranja a la semana, y a rojo pasados quince días |
-| **Dinero sin resolver** | El proveedor desistió y nadie ha decidido qué pasó con el dinero |
-| **Reembolsado** / **Queda a favor** / **Dado por perdido** | Ya se resolvió el dinero de un desistimiento |
+| **Unidad solicitante** | De la lista de **📒 Categorías**; se puede agregar una nueva |
+| **Quién lo solicita** | Empieza en su propio nombre. Pedir a nombre de otro es de Compras, Operaciones, Almacén, Recursos humanos o de quien tenga Compras en escritura |
+| **Los renglones** | Qué se necesita, cantidad y unidad; marca y modelo si importan |
+| **Notas** | Para qué es, talla, medida, lo que ayude a comprar bien |
+| **Urgente** | La tarjeta sale con borde rojo y **🚨 URGENTE** |
+| **Imágenes** | Hasta cuatro fotos de referencia |
 
-Mientras carga se lee **Cargando el tablero…** Si no hay ninguna compra, aparece **Sin compras registradas** —**Las compras empiezan con un pedido: un repuesto, combustible o un servicio. Cree el primero.**— con el botón **Crear el primer pedido**.
+**No se elige a qué almacén va**: todo entra al almacén general. Al enviarla nace el código **SP-2026-0001** y la solicitud entra a **En revisión de almacén**, con aviso al almacén. Se abre su **💬 WhatsApp de la SP**.
 
-#### Qué se puede hacer
-
-1. Pulse en cualquier parte de una tarjeta para abrir la ficha de esa compra.
-2. Pulse **Nuevo pedido** para crear uno.
-
-Debajo de los paneles está el bloque **Acciones**, con tres grupos de atajos. Sale mientras la ayuda esté visible, y cada atajo solo a quien tiene permiso sobre la pantalla a la que lleva:
-
-| Grupo | Atajos |
-| --- | --- |
-| **La cadena de una compra** | Numerados, en el orden en que ocurren: **Pedir algo**, **Revisar en el almacén general**, **Cotizar y proponer con el pago**, **Aprobar y decidir el pago**, **Recibir el material**, **Marcar finalizada** |
-| **Compra directa** | **Registrar una compra directa** e **Historial de directas** |
-| **Alrededor de la compra** | **Cargar proveedores por planilla**, **Proveedores**, **Facturas del proveedor** y **Gasto por unidad** |
-
-Al pie, en **Primeros pasos**: *«Una compra pasa por seis pasos: se pide, el almacén general dice qué tiene, se cotiza lo que falta con su método de pago, se aprueba decidiendo si se paga (a crédito queda en cuenta abierta), se recibe en el almacén general y se marca finalizada.»*, y *«La compra directa es para lo que se paga en el acto, y no pasa por esos pasos. Tiene su propio historial, donde se ve qué se pagó y qué falta por llegar.»*
-
-**Ninguna acción cambia el estado de una compra desde el tablero**: todo ocurre dentro de la ficha, donde está el contexto completo de lo que se va a decidir.
-
-El tablero se actualiza solo cuando otra persona mueve algo, y además se recarga cada cinco minutos.
-
-**No hay buscador, ni filtros, ni forma de cambiar el orden.** Las tarjetas vienen siempre de la más reciente a la más antigua.
-
-**El tablero no se imprime**: los papeles del módulo —la **orden de compra**, la **cotización** y el **comprobante de pago**— salen de la ficha de cada compra (9.6).
-
-### 9.4 Nuevo pedido
-
-Se llega desde el botón **Nuevo pedido** del tablero. **No está en el menú**, porque un pedido siempre nace mirando el tablero.
-
-Es donde alguien pide lo que necesita, con el nombre general de cada cosa. Al enviarlo, **el pedido entra al tablero en la columna Revisión de almacén**: primero el almacén general dice qué tiene. Arriba a la derecha, **Volver al tablero**.
-
-La pantalla es una sola columna: arriba **Datos del pedido** y debajo **Qué se necesita**, con **Un renglón por cosa distinta.**
-
-#### Datos del pedido
-
-| Campo | ¿Hace falta? | Detalle |
-| --- | --- | --- |
-| **Título** | Sí | **Es lo que se lee en la tarjeta del tablero.** |
-| **Motivo de compra (opcional)** | No | Si hace falta explicarlo. Cada renglón ya lleva su observación |
-| **Solicitante** | — | **Si a quien lo necesita le falta algo, se le pregunta a esta persona.** Empieza en su propio nombre, marcado «(yo)». La lista trae a cada persona activa con su cargo, y al final **Otra persona — no tiene usuario** |
-| **Nombre del solicitante** | Sí, si eligió **Otra persona** | |
-| **Cargo o frente** | No | Solo si eligió **Otra persona** |
-| **Prioridad** | No | **Normal**, **Alta** o **Urgente — para la planta**. Empieza en **Normal** |
-| **Fecha requerida** | No | |
-
-**Otra persona** existe porque en la cantera la mayoría de quienes necesitan algo no tienen computadora ni cuenta: el mecánico pide por radio y alguien en la oficina carga el pedido. Sin esa opción el sistema anotaría a quien está en la oficina y no a quien hay que preguntarle si llega otra cosa.
-
-Quien carga su propio pedido y tiene firma guardada puede marcar **Poner mi firma digital en «Solicitado por»**.
-
-**No se elige a qué almacén va.** El recuadro **Llega al almacén general (ALM-GEN).** lo dice: todo lo que se compra entra al almacén general, y de ahí se traslada al almacén o al frente que lo necesite. El sistema lo pone solo. La compra directa (9.5) sigue entrando donde se diga.
-
-#### Qué se necesita — un recuadro por renglón
-
-| Campo | ¿Hace falta? | Detalle |
-| --- | --- | --- |
-| **Renglón 1 · qué se necesita** | Sí | **Con palabras generales**: «Botas», «Filtro de aire», «Guantes» |
-| **Cantidad** | Sí | Admite decimales |
-| **Unidad** | No | Empieza en **UND** |
-| **Observación** | No | Talla, marca, medida, para qué es |
-
-**Quien pide no busca el artículo en el inventario.** Escribe la cosa con su nombre general. El nombre con que entra al inventario lo pone Compras al cotizar (9.8).
-
-Pulse **Agregar renglón** por cada cosa distinta. **Quitar** borra un renglón, y está apagado cuando solo queda uno.
-
-#### Cómo se envía
-
-1. Llene los datos del pedido y los renglones.
-2. Pulse **Enviar el pedido**. Mientras guarda dice **Enviando…**
-3. El sistema abre sola la ficha de esa compra.
-
-También está **Guardar borrador**, que deja el pedido con la etiqueta **Borrador**. Un borrador se puede completar después con **Corregir**, desde su ficha (9.2).
-
-**Si a un renglón le falta algo, el sistema no envía y dice cuál**: «Al renglón 2 («BOTAS») le falta la cantidad.» o «Al renglón 2 le falta decir qué se necesita.» Un recuadro vacío del todo se ignora.
-
-Del pedido sale un número: **SOL-2026-0001**.
+**Una solicitud se puede editar** mientras está en **Pendiente**, **Aprobada** o en revisión (quien la creó o Compras), y **cancelar** con un motivo mientras no tenga OC.
 
 ### 9.5 La compra directa
 
-**Administración › Compras › Compra directa**
+**Administración › Compras › Compra directa**, o la pestaña **🛒 Compra Directa** de **Pedidos / Compras**.
 
-Para **lo que ya se compró**, con su factura en la mano. No pasa por cotizaciones ni por el gerente. La pantalla tiene dos pestañas: **Registrar** e **Historial**.
+**La Compra Directa de La Cantera sigue como estaba**: no es la de MGG ni pasa por Pedidos / Compras. Para **lo que ya se compró**, con su factura en la mano. No pasa por cotizaciones ni por el gerente. La pantalla tiene dos pestañas: **Registrar** e **Historial**.
 
 Un pedido pregunta; esto declara. Cuando alguien vuelve del pueblo con dos cajas de guantes y su factura, no hay nada que cotizar ni a quién proponérselo: la compra ya ocurrió y lo único que falta es que el sistema se entere, valorice el inventario y guarde el papel para el IVA.
 
@@ -2369,13 +2235,13 @@ Un **Artículo nuevo** se agrega primero al catálogo, desde el mismo renglón, 
 
 Los totales se calculan mientras se escribe, y debajo dice con qué tasa se van a congelar: **Se congela con la tasa BCV del … : Bs … por dólar.** Sin tasa del día, la pantalla avisa y ofrece **Registrar la tasa de hoy**.
 
-Cierra con **Aceptar la compra**. Después la pantalla vuelve al tablero.
+Cierra con **Aceptar la compra**. Después la pantalla abre el **Historial de directas**, con la compra recién registrada arriba.
 
 #### Por qué hace falta la factura para que entre el material
 
 Si se marca **Entra al almacén ahora** sin haber adjuntado la factura, la casilla lo dice: «Hace falta la factura: sin el papel del proveedor el material no entra.»
 
-**Es la misma regla de todo el sistema**, la que impide recibir material sin el papel que lo respalda (9.9). Una compra directa es justo el caso en que la persona tiene la factura delante, así que cumplirla no cuesta nada, y saltársela abriría una puerta trasera a lo único que garantiza que lo que entra al almacén tiene respaldo.
+**Es la misma regla de todo el sistema**, la que impide recibir material sin el papel que lo respalda (9.13). Una compra directa es justo el caso en que la persona tiene la factura delante, así que cumplirla no cuesta nada, y saltársela abriría una puerta trasera a lo único que garantiza que lo que entra al almacén tiene respaldo.
 
 Por eso la pantalla hace las cosas en este orden: **crea la compra, cuelga la factura, y entonces recibe.** Si una de esas tres cosas falla, lo dice: la compra puede quedar guardada sin su factura, o con su factura y sin el material dentro.
 
@@ -2383,135 +2249,38 @@ Por eso la pantalla hace las cosas en este orden: **crea la compra, cuelga la fa
 
 Una compra directa **no es un camino aparte**: recorre la misma escalera de siempre en una sola operación. Crea la solicitud —ya aprobada—, la cotización con los precios de la factura y la orden. De ahí en adelante todo lo que ya existe funciona igual: el libro de compras, el crédito fiscal, el costo promedio del almacén.
 
-**Se corrige como cualquier orden**, desde su ficha, con **Editar la orden** (9.6). Una compra directa no vuelve a la gerencia por subir de precio.
+**Se corrige desde su ficha**, con **Editar la orden**: se abre pulsando su número en el historial. Una compra directa no vuelve a la gerencia por subir de precio.
 
 #### El historial de directas
 
 **Administración › Compras › Historial de directas**, o la pestaña **Historial**. Las compras directas, con un filtro de **Estatus** y un rango de fechas, cuántas son y cuánto suman en dólares. Las columnas son **Orden**, **Proveedor**, **Estatus**, **Total** y **Material**, y la que falta por llegar ofrece **Recibir**.
 
-### 9.6 El detalle de una compra
+### 9.6 La revisión del almacén general
 
-Se llega pulsando una tarjeta del tablero. **No está en el menú.**
+**Operación › Inventario › Solicitudes de pedido**
 
-Es la ficha completa: qué se pidió, qué cotizaron los proveedores, la orden emitida, los pagos y el historial. **Todas** las acciones que hacen avanzar una compra se ejecutan desde aquí.
+Toda solicitud de productos entra primero a **En revisión de almacén**, y le llega un aviso a quien recibe en el almacén. **A Compras llega solo lo que el almacén general no tiene.** La Solicitud de Mercado y los servicios no pasan por aquí: nacen en **Pendiente**.
 
-En la cabecera está el título de la compra y, debajo, la línea que la identifica: **SOL-2026-0001 · Orden OC-2026-0007 · pedido por** el nombre y, entre paréntesis, el cargo. A la derecha, **Corregir** cuando el pedido todavía se puede corregir (9.2), y **Tablero**, que devuelve a la pantalla anterior.
+La pantalla tiene tres pestañas: **🕒 Por revisar**, **✅ Revisadas** (las de los últimos 30 días) y **📥 Recepciones por recibir** (9.13).
 
-#### Las tarjetas de la ficha
+1. En **🕒 Por revisar**, elija la solicitud. Arriba sale con quién la pidió, para qué y si es urgente; **📄 Ver PDF** abre la solicitud en papel.
+2. Por cada renglón, diga cuánto tiene el almacén general: el número se mueve con **−** y **+**, y al lado se ve la existencia. Si el renglón es de nombre general, elija el **artículo de ALM-GEN** que entrega. No deja pasar de lo pedido ni de lo que hay.
+3. Lo que va marcando **se guarda solo**: si se interrumpe, se sigue después donde quedó.
+4. Pulse **✅ Confirmar revisión de Almacén General**. Antes de cerrar enseña el resumen: lo que entrega el almacén y lo que va a Compras.
 
-**Qué se pidió.** Lo que se pidió y para qué, con la etiqueta de estado a la derecha. La tabla tiene tres columnas: **Descripción**, **Cantidad** y **Unidad**.
+Al confirmar:
 
-**Cotizaciones.** Cada cotización es una tarjeta con el proveedor, su número —**COT-2026-0001**—, el RIF, la fecha, el total y su equivalente en la otra moneda, y tres datos más: **Entrega**, **IVA** y **Validez**. La elegida lleva **Propuesta al gerente**. Cuando hay más de una, unas etiquetas dicen en qué gana cada una: **Más económica**, la de más plazo o la que se paga al recibir, la de entrega más rápida. Cada cotización tiene su **PDF**.
-
-**Orden OC-…** La orden emitida, con el proveedor y la fecha de aprobación. Sus columnas son **Descripción**, **Cant.**, **Precio** y **Subtotal**, y en cuanto la orden puede recibirse se le añade **Recibido**: en verde si llegó todo, en naranja si llegó parte y en gris si no ha llegado nada. Al pie, **Subtotal**, **Descuento** y **Flete** cuando los hay, **IVA**, **Total** y el **Equivalente** en la otra moneda. Un precio que se corrigió lleva la marca **corregido**.
-
-En la cabecera de esa misma tarjeta está el botón **Imprimir**, que saca **la orden de compra en papel**, y, si el proveedor entrega con factura, **Registrar factura** (9.11).
-
-**Pagos.** Aparece en cuanto hay instrucciones de pago: **Lo que se autorizó pagar y lo que ya se pagó.** Cada instrucción muestra el método, cuándo se cargó, su estado —**Por pagar**, **Pagada**, **Devuelta a compras** o **Anulada**—, el monto, el impuesto cuando corresponde, los datos de la transacción y la nota. Si la misma compra ya tiene pagos registrados por su factura, la tarjeta lo advierte: **Esta compra ya tiene pagos registrados por su factura**.
-
-**Historial.** **Quién movió esta compra y cuándo.** Cada línea trae el paso, el nombre de quien lo hizo, la fecha y hora y la nota que escribió. Si no hay nada todavía: **Sin movimientos todavía.**
-
-**Qué sigue.** Es el panel lateral, y es el que hay que mirar primero: **muestra solo la acción que toca ahora**. En el teléfono sube al principio de la pantalla.
-
-**Datos.** El resto de la ficha: **Pedido**, **Solicita**, **Cargado por** cuando quien teclea no es quien pide, **Creado**, **Prioridad**, **Se necesita**, **Destino**, **Confirmado por**, **Aprobado por** y, si se aprobó con un permiso extendido, **Bajo autorización de**. Lo que falta se muestra como **—**.
-
-#### Imprimir la orden de compra
-
-1. Abra la ficha de la compra. El botón **Imprimir** está en la cabecera de la tarjeta **Orden OC-…**. Solo aparece cuando la compra ya tiene orden.
-2. Se abre el visor con el documento entero a la vista. Con **Leer en** se puede ver la orden expresada en la otra moneda, con sus tasas congeladas.
-3. Revíselo y pulse **Descargar**, o **Cerrar** si no hace falta. **Nada se guarda hasta que pulse Descargar.**
-
-El archivo se llama `orden-compra-oc-2026-0007.pdf`.
-
-**Sale con la misma cabecera que los demás papeles del sistema** (13.2): el logo, la razón social, la actividad, el RIF y el domicilio fiscal de la empresa, y a la derecha tres datos —**N° orden**, **Ref. pedido** y **Emitida**—. Debajo, entre dos rayas finas y centrado, el rótulo **ORDEN DE COMPRA**.
-
-Lo que viene después, en este orden:
-
-| Bloque | Qué trae |
+| Si el almacén… | La solicitud… |
 | --- | --- |
-| **Proveedor** | Nombre, **RIF**, **Teléfono** y **Dirección**. La empresa no se repite aquí: ya está arriba |
-| **CONDICIONES** | **Departamento**, **Solicitante**, **Solicitada el**, **Finalidad**, **Notas**, **Clasificación**, **Entrega prometida**, **Condición de pago**, **Documentos**, **Aprobada por** y **Aprobada el**, **Confirmada por** y **Confirmada el** |
-| **ÍTEMS** | La tabla: **SKU · Descripción · Categoría · Cantidad · Precio unit. · Subtotal**, y el **TOTAL** con su moneda |
-| Desglose | **Subtotal**, **Descuento**, **Flete** e **IVA**, y **solo si hay algo que desglosar**. Una orden sin descuento, sin flete y exenta no los enseña en cero |
-| **NOTAS / OBSERVACIONES** | Lo que el pedido dice que se necesita |
+| Tiene **todo** | Queda **Atendida por almacén**. No se compra nada |
+| Tiene **una parte** | Pasa a **Pendiente** con lo que falta; lo entregado queda anotado en cada renglón |
+| No tiene **nada** | Pasa a **Pendiente** tal cual |
 
-**La condición de pago va escrita en palabras** —«Crédito 30 días»—, nunca en el código interno.
+**Lo que entrega el almacén sale por una solicitud de salida** de ALM-GEN, la de **Salidas** (26.2), con su autorización de siempre: el material sale físicamente cuando se aprueba y se entrega allí. Su número queda en la ficha de la solicitud. **Si esa salida se rechaza o se cancela**, lo que no salió vuelve solo a Compras y se avisa.
 
-**Dos rayas de firma: Solicitado por y Autorizado por**, con el nombre debajo y, si la persona la eligió, su firma digital. **Si quien autorizó lo hizo con un permiso concedido por otra persona, el papel lo dice**: debajo de **Autorizado por** va «Bajo autorización de» y el nombre de quien le extendió el permiso.
+Al terminar se abre el **💬 Mensaje de almacén**: ✅ *ALMACÉN HA REVISADO LA ORDEN SP-…*, con 📦 lo que entrega el almacén, 📤 la solicitud de salida por la que sale, y 🛒 lo que va a solicitar a Compras.
 
-Al pie de cada página: **Documento generado por el sistema**, el número del pedido del que salió y la fecha y hora, y a la derecha **Página 1 de 2** cuando pasa de una hoja.
-
-**Una orden cancelada o anulada sale con el sello ANULADA cruzado.** Una orden cancelada que se imprimiera sin decirlo es una orden que alguien puede despachar por error.
-
-#### Cuando alguien aprueba con un permiso que no es suyo por el puesto
-
-Aprobar una compra va con la gerencia general. Pero el sistema permite **extenderle esa facultad a una persona concreta y por un plazo** —el gerente se va de viaje, hay que seguir comprando—, y eso cambia tres cosas.
-
-**Al aprobar, hay que decirlo.** El panel pide marcar que se aprueba **bajo autorización del gerente general**, y el botón no se enciende sin esa casilla.
-
-**La orden dice quién autorizó.** Debajo de **Autorizado por**, el papel dice de quién viene la facultad.
-
-**Y hay que dejar el respaldo.** A quien aprueba por su puesto no se le pide nada más. A quien aprueba con un permiso extendido se le pide el papel —el correo, el mensaje, la nota— que lo autorizaba, en el mismo panel al aprobar o después en **Papeles recibidos**, con el tipo **Respaldo de la autorización**. Ese tipo solo lo ve quien puede aprobar, y solo sobre una orden que se aprobó de esa manera.
-
-#### El comprobante de pago
-
-Cada instrucción **ya pagada** en dinero lleva su propio botón, **Comprobante de pago**, que saca un PDF. Es lo que se le manda al proveedor cuando pregunta si ya le pagaron.
-
-Trae la orden y el pedido de los que sale, el proveedor, quién lo solicitó, la condición de pago, el total de la orden, el método con el que se pagó, el monto, la fecha y la referencia.
-
-**Solo aparece cuando la instrucción está pagada**, y no en los pagos con material ni con saldo a favor.
-
-#### Los papeles que manda el proveedor
-
-Debajo de la orden hay una tarjeta, **Papeles recibidos**: *«Lo que entregó el proveedor: el comprobante del pago, la nota de entrega, la factura.»* Con los años el papel se pierde; esta copia no.
-
-Cuelga de la orden, así que **no aparece hasta que la compra tiene orden**. Primero se elige el **Tipo de documento** y después **Elegir el archivo**, en ese orden, para que nadie suba una factura rotulada como nota de entrega por ir rápido. Los suben Compras y Almacén; los quita Compras.
-
-| Tipo | Cuándo |
-| --- | --- |
-| **Comprobante de pago** | El que manda el banco o el proveedor |
-| **Nota de entrega** | El papel con el que llegó el material |
-| **Factura del proveedor** | La que da derecho al crédito fiscal |
-| **Otro papel** | Cualquier otra cosa que convenga guardar |
-
-**Los archivos van a un sitio privado**, no a una dirección pública: se abren con un enlace que se firma en el momento y caduca a los cinco minutos. Un enlace público sería eterno y reenviable.
-
-#### Qué muestra Qué sigue en cada paso
-
-| Estado de la compra | Si le toca a usted | Si le toca a otro |
-| --- | --- | --- |
-| **Borrador** | Botón **Enviar el pedido** | Nadie más lo ve |
-| **Pedido** | Botón **Confirmar el pedido** (Compras) | **Esperando que compras lo confirme.** |
-| **Confirmada · indicar proveedores** | Botón **Cargar cotización** y, en cada una, **Proponer al gerente** (Compras) | **Compras está pidiendo precios a los proveedores.** |
-| **Por confirmar el gerente** | Botones **Aprobar la compra** y **Devolver a compras** (con sus casillas) | **Esperando la confirmación del gerente general.** |
-| **Aprobada · indicar método de pago** | Decir con qué entrega el proveedor, y **Indicar método de pago**, **Pagar con material** o **Usar saldo a favor** (Compras) | **Compras está cargando el método de pago.** |
-| **Por pagar** | Botones **Registrar el pago** y **Devolver a compras** en cada instrucción (Compras) | **El pago lo registra compras.** |
-| **Pagada · por recibir**, **Contra entrega · por recibir** y **Recibida parcialmente** | Botón **Recibir material** (Almacén) | **La recepción la registra almacén.** |
-| **El proveedor desistió**, con dinero pendiente | Botón **Resolver el dinero** (Gerencia general o Compras) | La tarjeta se queda a la vista hasta que se resuelva |
-
-**Antes de aprobar, el panel dice el monto exacto por el que se emitirá la orden.** Es la última pantalla en la que el precio se decide sin dejar rastro: después, cambiarlo es **Editar la orden** o **Corregir el precio**, con su casilla y su motivo, y si la orden sube más de 100 dólares vuelve a la gerencia (9.2).
-
-**Editar la orden** se ofrece mientras no se haya recibido nada y la orden no esté cancelada. Deja cambiar el proveedor, el título, la moneda, la condición de pago y los renglones, enseña lo de antes y lo que queda, y pide un motivo. **Corregir el precio** se abre pulsando el precio de un renglón que no se ha recibido: **Se corrige también en la cotización de la que salió**, y pide un motivo de al menos diez letras.
-
-#### Cancelar
-
-**Cancelar la compra** está disponible mientras el pedido esté en **Borrador**, **Pedido**, **Confirmada** o **Por confirmar el gerente**. Una vez emitida la orden, lo que se cancela es la orden.
-
-**Cancelar la orden** solo lo ven Compras y Gerencia general, y solo mientras la orden esté en **Aprobada · indicar método de pago** o **Por pagar**. Después ya no: **si ya se pagó y el proveedor no entregó, lo que corresponde es registrar el desistimiento**, porque una cancelación borraría del tablero una compra que todavía tiene dinero de la empresa por resolver. El botón **El proveedor desistió** lo ven Compras y Gerencia general mientras la orden espera el material.
-
-#### Los diálogos de motivo
-
-Cinco acciones piden explicación antes de ejecutarse. Todas tienen el mismo campo **Motivo**, con la ayuda **Queda en el historial de la compra.**, y en todas **el botón de confirmar está apagado hasta que el motivo tenga cinco letras**.
-
-| Acción | Qué avisa el diálogo | Botón |
-| --- | --- | --- |
-| **Cancelar la compra** | **La tarjeta se va a la columna Cancelada y no se puede reabrir.** | **Cancelar la compra** |
-| **Devolver a compras** *(desde la gerencia)* | **Vuelve a la columna de cotizaciones para que consigan otra opción.** | **Devolver** |
-| **Cancelar la orden** | **Solo se puede antes de que se registre el pago.** | **Cancelar la orden** |
-| **El proveedor desistió** | **La compra ya está pagada. La tarjeta se queda a la vista hasta que se resuelva el dinero.** | **Registrar desistimiento** |
-| **Devolver a compras** *(una instrucción de pago)* | **El pago no se ejecuta y compras tendrá que autorizarlo de nuevo.** | **Devolver** |
-
-El diálogo **Resolver el dinero** es distinto: muestra cuánto se pagó y a quién, y tiene un solo campo, **Resolución**, con tres opciones —**Reembolso**, **Saldo a favor** y **Pérdida**—. Empieza en la primera, y cierra con **Guardar**.
+**En el teléfono** la misma revisión está en **Solicitudes de pedido** (9.18).
 
 ### 9.7 Proveedores
 
@@ -2553,226 +2322,83 @@ Arriba, cuatro cifras: **Total invertido**, **Invertido este mes**, **Artículos
 
 Si se le pagó con material que valía más que la orden, aparecen además los **Saldos a favor de la empresa**: **Lo que este proveedor le debe a la empresa por intercambios en los que el material valió más.** Un saldo pendiente de cobro tiene el botón **Cobrar**, para el rol Compras, y el dinero entra a la cuenta que se elija.
 
-### 9.8 Cargar una cotización
+### 9.8 Aprobar la OP, cotizar y elegir la oferta
 
-Se llega desde la ficha de una compra confirmada, con el botón **Cargar cotización**. Solo lo ve el rol Compras.
+#### Aprobar la Orden de Pedido
 
-Es donde se carga el precio que mandó cada proveedor, **tal como lo mandó**, para poder compararlos. El diálogo se llama **Cotización del proveedor**, y su descripción lo dice: **Se carga tal como la mandó el proveedor. Del mismo proveedor caben varias: una por cada oferta que mande.** Cada carga es una cotización nueva, con su propio número.
+En **Pendiente**, Compras abre la solicitud, revisa los renglones y pulsa **Aprobar Orden de Pedido**. Antes puede ajustar **✎ Cantidades** o quitar un renglón que ya no hace falta. Si no procede, **Cancelar** con su motivo. Aprobada, la orden pasa a la pestaña **🧾 Órdenes de Compra**, columna **Pendiente (cargar ofertas)**. Con **↓ PDF para cotizar** sale la solicitud de cotización para mandarla a los proveedores.
 
-**Si lo que hace falta es cambiarle algo a una que ya está cargada, no se vuelve a cargar: se corrige** —ver más abajo—. Cargar añade otra oferta a la mesa; corregir arregla la que ya estaba.
+#### Cargar las ofertas
 
-Antes de nada, el diálogo mira la tasa del BCV. Si la hay, avisa con qué tasa y de qué fecha se va a congelar la cotización. Si no la hay, aparece **No hay tasa del BCV registrada. Sin ella no se puede valorar la cotización.** con el enlace **Registrar la tasa de hoy**. Es el bloqueo más frecuente al empezar el día, y se resuelve en **Sistema › Tasas de cambio**.
-
-#### Los campos
-
-En la cabecera: **Proveedor** —obligatorio, y hasta elegirlo el botón de guardar está apagado—, **Fecha**, que empieza en hoy, y **Moneda**: **Solo las que tienen tasa registrada.** Al elegir el proveedor, el sistema cambia solo la moneda y la condición de pago a las suyas.
-
-Debajo, en **Precios por renglón**, por cada renglón del pedido: **Cantidad**, que empieza en lo pedido, **Precio unitario** y la casilla **Exento de IVA**. Bajo cada renglón se lee lo que se pidió, para poder compararlo.
-
-**Solo se guardan los renglones que tengan precio escrito.** Los que quedan en blanco se omiten sin avisar.
-
-**La cantidad puede diferir de la pedida a propósito**, porque el proveedor vende por caja de doce y se pidieron diez. Se carga lo que él ofrece, no lo que se pidió.
-
-#### El nombre con que entra al inventario
-
-El pedido viene con nombres generales («Botas»). **Antes de proponer, cada renglón cotizado necesita su artículo del inventario**: sin él, lo que llegue no entraría al inventario. Debajo de cada renglón aparece **¿Con qué nombre entra al inventario?**, con dos caminos:
-
-- **Ya existe en el inventario**: se busca el artículo real y se elige. El renglón toma su nombre y su unidad.
-- **O créelo con este nombre**: viene escrito el nombre del pedido. Se deja tal cual o se corrige, se elige la **Categoría** y se pulsa **Crear**. El código se pone solo. Si ya hay uno que se llama parecido, el sistema lo enseña antes.
-
-Se guarda al momento sobre el pedido, no sobre la cotización: vale para todas las cotizaciones de esa compra. Ya nombrado, el renglón dice **En el inventario:** con el código y el nombre, y **Cambiar** deja elegir otro mientras la compra no se haya propuesto. En la ficha de la compra, debajo del nombre, queda **Se pidió como «Botas»**.
-
-Lo que se mide en metros cúbicos o toneladas se crea en **Artículos**, con su densidad, y después se elige aquí.
-
-#### Marca y presentación
-
-En cada renglón hay además **Marca** y **Presentación**. **Quien pide, pide en litros**, que es como se consume, y **quien compra recibe del proveedor otra cosa**: una marca y una presentación —bidón, barril, saco—. La **Marca** se escribe tal como la puso el proveedor; la **Presentación** se elige de las que el catálogo tiene para ese artículo, y empieza en **Como venga**. Son **lo que distingue dos cotizaciones del mismo proveedor**: en la tarjeta salen resumidas en una línea que empieza por **Ofrece**.
-
-Al pie: **Descuento** y **Flete**, que empiezan en cero; **IVA %**, que empieza en la alícuota de los datos de la empresa; **Entrega en (días)**; **Condición de pago**; **Validez (días)**, que empieza en 15; y **Observación**. Después, **Guardar cotización**.
-
-El recuadro de totales que se ve mientras se escribe —**Subtotal**, **Base imponible**, **IVA**, **Total**— es un adelanto. El total que queda guardado lo calcula el sistema al guardar.
-
-#### Corregir una cotización ya cargada
-
-Pasa todo el rato: la cotización está cargada y hay que ajustarle las condiciones de pago antes de proponerla, o el proveedor corrige un precio.
-
-**En la tarjeta de cada cotización hay un botón Editar**, junto a **Proponer al gerente** y **Eliminar**. Abre **Corregir la COT-2026-0001**, ya lleno con lo que la cotización dice hoy: **Se corrige sobre la misma cotización: conserva su número y su sitio en el historial.** Cierra con **Guardar los cambios**, y en el historial queda anotado que se corrigió y quién lo hizo.
-
-**El proveedor no se puede cambiar.** Sale fijo, porque cambiarlo no sería corregir esta cotización sino cargar la de otro, y para eso está **Cargar cotización**.
-
-**Si se cambia la fecha, cambia la tasa.** La cotización guarda congelada la del día que lleva escrito, así que mover la fecha vuelve a pedir la tasa del BCV de ese día.
-
-> **Una cotización propuesta al gerente no se corrige.** Los botones **Editar** y **Eliminar** desaparecen mientras lo esté, y si se intenta por otro camino el sistema se niega: «Esta cotización está propuesta al gerente. Retire la propuesta antes de corregirla, o él aprobaría unas condiciones distintas de las que se le enseñaron.» Se retira con el botón **Retirar la propuesta**, que está en la misma tarjeta; luego se corrige y se vuelve a proponer, y las tres cosas quedan anotadas.
-
-**Tampoco se corrige una que ya generó su orden de compra**: lo que se cambia entonces es la orden (9.6).
-
-#### Proponer más de una al gerente
-
-**La propuesta es una marca de cada cotización**, así que **Proponer al gerente** suma en vez de sustituir. En cada tarjeta propuesta aparece **Propuesta al gerente** y el botón cambia a **Retirar la propuesta**.
-
-El encabezado de la tarjeta lo resume: **3 cotizaciones · 2 con el gerente**. Con dos o más, unas etiquetas dicen en qué gana cada una: **Más económica**, **Más plazo** o **Se paga al recibir**, **Entrega más rápida**. Si no hay ninguna: **Sin cotizaciones** —**Registre las cotizaciones de los proveedores. Con dos o más, la comparación es automática.**—.
-
-**Retirar la última devuelve el pedido a compras.** Vuelve a **Confirmada** y queda anotado: un pedido esperando en la gerencia sin nada que aprobar no tiene sentido.
-
-**A la gerencia le toca escoger.** Con una sola propuesta, el panel de aprobación dice por cuánto se emite la orden. **Con dos o más aparece una lista para marcar cuál se aprueba** —proveedor, total, días de entrega y número— y el botón no se deja pulsar hasta que se marque una. El sistema no escoge por su cuenta. La elegida queda con la etiqueta **La que aprobó el gerente**, y el historial dice cuál fue.
-
-#### Bajarla en PDF
-
-**En cada tarjeta hay un botón PDF**, el primero de la fila. Saca la cotización en papel para mandarla por correo o llevarla a una reunión sin tener que entrar al sistema.
-
-Sale con **el mismo membrete que la orden de compra** y con la marca y la presentación de cada renglón. Si está propuesta o aprobada, lleva el sello que lo dice: **PROPUESTA AL GERENTE** o **APROBADA**.
-
-**No lleva firma, y el pie dice por qué:** «Transcripción de la oferta recibida · el papel del proveedor es el que vale». No es el documento del proveedor sino lo que el sistema anotó de él: si algún día las cifras no coinciden, manda el original.
-
-#### Cómo se calcula el total
-
-1. El **subtotal** es la suma de cantidad por precio de cada renglón.
-2. El **descuento se reparte proporcionalmente sobre lo gravado**, para que un descuento aplicado sobre renglones exentos no rebaje el IVA que sí se debe.
-3. El **flete forma parte de la base imponible**.
-4. El **IVA** es esa base por el porcentaje.
-5. El **total** es subtotal menos descuento, más flete, más IVA.
-
-La tasa del BCV del día **queda congelada** dentro de la cotización, como evidencia de a qué cambio se valoró ese precio.
-
-Una cotización se puede **Eliminar** mientras no esté propuesta al gerente y no haya generado una orden.
-
-### 9.9 Recibir material
-
-Se llega desde la ficha de una compra en **Pagada · por recibir**, **Contra entrega · por recibir**, **Cuenta abierta** (a crédito, sin haber pagado) o **Recibida parcialmente**, con el botón **Recibir material**. En la ficha lo ve el rol Almacén; los demás leen **La recepción la registra almacén.**
-
-**Las órdenes de compra se reciben en el almacén general (ALM-GEN).** El diálogo lo deja fijo y el sistema no acepta otro: «Las órdenes de compra se reciben en el almacén general (ALM-GEN). De ahí se trasladan a donde hagan falta.» La compra directa sigue entrando donde diga.
-
-**Sin el papel del proveedor no se puede recibir.** Si en la tarjeta **Papeles recibidos** no hay ni factura ni nota de entrega, la ficha lo dice en ámbar: «Falta el papel del proveedor. Suba la **factura** o la **nota de entrega** en «Papeles recibidos», aquí abajo, y se podrá recibir.»
-
-**El comprobante de pago no sirve para esto**, y la propia pantalla lo aclara: «El comprobante de pago puede llegar después.» Dice que se pagó, no que llegó, y lo que hay que respaldar al recibir es que el material entró.
-
-La descripción del diálogo avisa de lo que más importa: **Lo que se registre aquí entra al inventario y no se puede editar después: una corrección se hace con un ajuste.**
-
-En **Qué llegó** aparecen **solo los renglones que todavía tienen algo pendiente**, cada uno con lo pedido, lo ya recibido y lo que falta. Si no falta nada, se lee **Ya se recibió todo lo de esta orden.**
-
-| Campo | ¿Hace falta? | Detalle |
-| --- | --- | --- |
-| **Almacén que recibe** | Sí | En una orden de compra, fijo en el almacén general. En una compra directa, empieza en el destino que dijo el pedido |
-| **Fecha de recepción** | No | Empieza en hoy. **No admite fechas futuras** |
-| **Cantidad recibida** | No | Uno por renglón. Empieza en todo lo que falta, y el sistema no admite más. **Déjelo en cero si este renglón no llegó todavía.** |
-| **Nota** | No | Número de guía, quién trajo el material, estado en que llegó |
-
-**Si el precio de un renglón se sale mucho de lo que ese artículo viene costando**, el diálogo lo dice antes de recibir y pide marcar **El precio de la orden es correcto — quedará anotado en el movimiento**.
-
-Después, **Registrar la recepción**. El botón está apagado si todas las cantidades están en cero o falta el almacén.
-
-Al registrar, el material entra al inventario con su propio número de movimiento y su costo en dólares, calculado con las tasas que quedaron congeladas en la orden. **Solo entra al inventario lo que lleva existencias**: un flete o una reparación se compran y se pagan, pero no hay nada que guardar en un estante, así que la orden avanza sin generar movimiento.
-
-El estado de la orden se recalcula solo: **Recibida** si no falta nada, **Recibida parcialmente** si falta algo. A crédito, mientras no esté pagada, sigue en **Cuenta abierta**. Con todo recibido, Compras la cierra con **Marcar finalizada** (9.2).
-
-#### La pantalla de Recepciones
-
-El mismo diálogo se alcanza desde **Compras › Recepciones**, sin tener que abrir la compra: **Compras cuyo material aún no ha ingresado al almacén: las pagadas y las contra entrega.** Arriba, cuántas hay por recibir; si no hay ninguna, **Sin recepciones pendientes**.
-
-Quien sigue una compra la busca por su número, pero quien está en el portón ve llegar un camión y sabe **de qué proveedor viene y qué trae**, no de qué orden salió. Cada tarjeta enseña el proveedor, cuándo se pagó, cuánto costó y qué falta renglón por renglón, con **Llegó una parte** cuando ya entró algo. El botón **Registrar recepción** lo ve quien tiene escritura sobre Inventario.
-
-Debajo, **Lo último que entró**: las entradas por compra más recientes, con su número de movimiento, el material, el almacén y la cantidad. Sirve para comprobar de un vistazo que lo que se recibió hace un rato quedó registrado.
-
-### 9.10 Indicar el método de pago
-
-> **En el flujo nuevo (desde el 06/11/2026) el método de pago se dice al proponer la cotización** (9.2, «Proponer con el método de pago»), y el pago lo marca quien aprueba. Lo que sigue describe el diálogo de antes, que solo aparece en órdenes que no traen el pago desde la propuesta.
-
-Se llega desde la ficha de una compra en **Aprobada · indicar método de pago**, con el botón **Indicar método de pago**. Solo lo ve el rol Compras.
-
-Sirve para decir **cómo y a quién** se le paga al proveedor. El diálogo se llama **Método de pago**: **Con esto la orden pasa a tesorería para que ejecute el pago.**
-
-#### Antes de nada: con qué entrega el proveedor
-
-Encima del botón, mientras no se responda, hay un recuadro naranja con esta pregunta:
-
-> **¿Con qué entrega el proveedor?** *Solo la factura da derecho al crédito fiscal y entra en el libro de compras. Sin decirlo no se puede pagar.*
-
-Se responde con uno de dos botones: **Nota de entrega** o **Factura**. **No hay tercera opción y no se puede posponer**: hasta que se pulse uno, **Indicar método de pago** está apagado. Se pregunta aquí, y no dentro del formulario de pago, porque el sistema se niega a instruir un pago sin este dato.
-
-Una vez respondido, el recuadro desaparece y queda una línea en gris: **El proveedor entrega con factura.** o **El proveedor entrega con nota de entrega.** Si fue factura, se añade: **Sin registrarla, su IVA no se puede descontar.**
-
-**La respuesta no se puede cambiar desde la pantalla.** Si fue un error, se avisa a quien administra el sistema. Lo único que el sistema impide es pasar de factura a nota de entrega cuando la factura ya está registrada: «Esta orden ya tiene una factura registrada. Anúlela antes de decir que se entregó con nota de entrega.» Una orden que quedó sin declarar no tiene dónde declararse (15.1).
-
-#### Los campos
+En la ficha, el bloque de ofertas lleva **+ Agregar oferta** (hasta seis por orden). Por oferta:
 
 | Campo | Detalle |
 | --- | --- |
-| **Cómo se paga** | Sale del catálogo de métodos de pago. Empieza en el método preferido del proveedor, si lo tiene |
-| **Moneda** | Empieza en la de la orden. Cada método decide qué monedas admite, así que a veces no hay nada que elegir |
-| **Monto** | **Falta por pagar:** y la cifra. Empieza en lo que falta, no en el total |
-| **Datos de la transacción** | Los que pida el método: banco, número de cuenta, titular, teléfono, correo… |
-| **Nota para tesorería** | Llamar antes de transferir, pagar solo en horario de oficina |
+| **Proveedor** | De la lista, o uno nuevo allí mismo con su razón social y RIF |
+| Los precios por renglón | Precio BCV y, si lo ofrece, precio en divisa efectivo. Marca y modelo; una variante de marca es otra fila del mismo renglón |
+| **Ficha del inventario** | En los renglones de nombre general, **con qué nombre entra al inventario**: un artículo existente o uno nuevo |
+| **Descuento obtenido**, IVA (incluido o aparte), IGTF y **Ajuste** con su motivo | Para que el total cuadre con el papel del proveedor |
+| **Fecha de entrega prometida**, condición de pago, **Notas** | La condición (**Pago de Contado**, **Pago Contra Entrega**, **Pago Anticipado** o **Pago a Crédito**) decide el camino después de aprobar |
+| Datos técnicos y logística | Procedencia, calidad, quién paga flete, transporte, embalaje y seguros |
+| Adjuntos | La cotización del proveedor en PDF o foto |
 
-**Los métodos de pago son un catálogo, no una lista fija.** Cada uno trae escrito en qué moneda se puede usar, qué datos exige y si pide la referencia al darse por pagado.
+#### La comparativa y el puntaje
 
-**Cuidado con los datos de la transacción: la pantalla no los marca como obligatorios, pero el sistema los exige al enviar.** Si falta alguno, la respuesta lo dice: «Para pagar por … faltan estos datos: …», con el método y la lista de lo que hace falta. Conviene rellenarlos todos antes.
+Las ofertas se ordenan de la más barata a la más cara y cada una lleva su **Score**, el de MGG: **precio 40 %**, **puntualidad 25 %**, **calidad 25 %** y **cumplimiento 10 %**. Puntualidad, calidad y cumplimiento salen de las evaluaciones que se hicieron al finalizar las compras anteriores a ese proveedor (9.13): un proveedor nuevo arranca sin historia. La mejor lleva **★ Aceptar oferta recomendada**.
 
-Si la moneda no es el bolívar, aparece marcada la casilla **Causa IGTF del 3%**, con el monto, **Sale además del monto.** Se puede desmarcar si esa operación no lo causa.
+#### Elegir la oferta: nace la OC
 
-Para terminar, **Enviar a tesorería**.
+**Aceptar esta oferta** abre **Elegir oferta · proveedor**: se marca qué renglones se le compran y la **modalidad de pago** —**Pago en $ (Divisa)** o **Pago en Bs al cambio (tasa BCV)**—, y se escribe **por qué se elige esa oferta** (mejor precio en efectivo, entrega inmediata, único con stock…), con imágenes si hace falta. Al aceptar nace la **OC-2026-0001** y la orden pasa a **Ordenes pendiente por aprobar**, con aviso a quien aprueba.
 
-#### Cambiar el método en una orden ya aprobada
+**Una orden puede repartirse entre varios proveedores.** Si a cada proveedor le conviene comprarle unas cosas, **🧩 Asignar por producto (multi-proveedor)** reparte los renglones: cada proveedor queda con su propia **sub-OC** y la orden madre queda **Repartida entre proveedores**. Lo que todavía no tiene proveedor se sigue cotizando con **🧩 Asignar / cargar ofertas de lo que falta**.
 
-Pasa a menudo: la orden se aprobó para pagarla por transferencia y el proveedor pide pago móvil, o al revés. Sobre una instrucción que siga **Por pagar**, quien tenga su casilla ve **Cambiar el método**.
+Antes de aprobarla, Compras puede **✎ Editar OC (todo)** —precios, cantidades, condición— o **↩ Re-elegir oferta**, que la devuelve a **Pendiente (cargar ofertas)**. Con **↓ OC PDF** sale la orden de compra en papel, y con **💬 WhatsApp para aprobar** el aviso a quien aprueba.
 
-> **Cambiar el método de pago.** *La orden sigue aprobada y en la cola. Solo cambia por dónde sale el dinero.*
+### 9.9 Aprobar la OC: una por una o por lote
 
-**Lo que no toca:** ni el monto, ni la moneda, ni el estado de la orden. La aprobación del gerente sigue valiendo, porque lo que aprobó —qué se compra, a quién y por cuánto— no ha cambiado.
+**Aprueba Compras en control total o administración**, y también quien esté en **Usuarios autorizados para aprobar** con **Aprobar órdenes de compra** (13.1). Quien carga la oferta no necesita poder aprobarla.
 
-**Solo se ofrecen los métodos que sirven para la moneda que la instrucción ya tiene.**
+- **Una por una:** en la ficha, **✔ Aprobar OC**.
+- **Por lote:** en la pestaña **📋 OC por lote** está la lista **Órdenes de compra pendientes** con Item, N°ODC, Solicitado por, Proveedor, Descripción, Monto $, Fecha de compra, Fecha de firma y Estatus. Se marcan las que se quieren y **✔ Aprobar en lote (n)**. Desde la misma lista, **✎ Modificar (n)** las devuelve a cargar ofertas y **⊘ Anular (n)** las anula con un motivo. **↓ PDF (n)** saca la relación de las marcadas y **💬 WhatsApp (n)** el aviso con su lista. **Incluir confirmadas** suma las que ya se aprobaron, que salen con **CONFIRMADA** en verde.
 
-**Hay que decir por qué.** El motivo pide un mínimo de cinco letras y **queda anotado**: quién lo cambió, cuándo, de qué método a cuál y con qué razón. Es la diferencia entre un cambio de método y un pago desviado a otra cuenta.
+Al aprobar, cada OC va adonde dice su condición de pago (9.2): **Confirmada (indicar método de pago)**, **Crédito / cuentas abiertas** o, si es contra entrega, **Pendiente por recepción**. La firma de quien aprobó sale en el PDF de la OC si la tiene cargada (13.1).
 
-**Los datos de la transacción arrancan con los que ya había**, y se vacían si se elige otro método: los de una transferencia no sirven para un pago móvil.
+### 9.10 Indicar el método de pago y pagar
 
-#### Se puede pagar en partes
+#### Indicar el método de pago
 
-Una orden admite **varias instrucciones de pago**: mitad ahora y mitad al entregar. Por eso el **Monto** viene con lo que falta y no con el total.
+En **Confirmada (indicar método de pago)**, Compras pulsa **💳 Indicar método de pago / Enviar para Pagar**:
 
-**Y cada instrucción puede ir en una moneda distinta.** Es lo que permite pagar **la base en divisa y el IVA en bolívares a la tasa oficial del BCV**:
+1. **El teléfono de administración del proveedor**, una sola vez: queda en su ficha y las próximas OC lo traen.
+2. **El documento con que entrega el proveedor: Factura o Nota de entrega.** Con nota de entrega se confirma que se verificó lo recibido.
+3. **Las retenciones, solo con factura**: **IVA**, **ISLR**, **IGTF** e **ISAE**, cada una **en porcentaje o en monto**; las que no se retienen se dejan en blanco. El porcentaje se calcula sobre su base y la pantalla la dice al lado: IVA sobre el IVA de la OC, ISLR e ISAE sobre la base imponible, IGTF sobre el total. **Las retenciones se descuentan del monto a pagar.**
+4. **El método** —**Divisas en efectivo**, **Efectivo (Bs)**, **Transferencia**, **Pago móvil**, **Binance / USDT**, **Zelle** u **Otro**— con los datos del beneficiario. Las cuentas del proveedor quedan guardadas y se eligen la próxima vez. Con **+ Agregar método (multipago)** el pago se reparte en varios métodos o monedas, diciendo cuánto va por cada uno.
+5. Si el proveedor mandó una **imagen o QR de pago** (el de Binance, por ejemplo), se sube aquí.
+6. El **descuento en el pago**, si lo hubo.
 
-1. **Indicar método de pago** con la moneda de la divisa —USDT, dólares— y el monto de la base.
-2. Otra vez **Indicar método de pago**, esta vez en **bolívares**, por el IVA.
+El resumen enseña el cálculo: total − descuento − cada retención = **monto a pagar**. Al enviar, la OC pasa a **Confirmada pagar** y se abre el **💬 WhatsApp para pagar**. **🧾 Documento y retenciones** y **💳 Editar método de pago / datos** corrigen lo indicado mientras no se haya pagado.
 
-**Debajo del monto, Repartir lo que falta ofrece tres botones que hacen la cuenta**: **Todo**, **Solo la base** y **Solo el IVA**, cada uno con su cifra ya calculada. Solo aparecen mientras queden por pagar base e IVA: cuando ya no queda base, el reparto no se ofrece y el monto es el IVA que falta.
+#### Confirmar el pago
 
-**Si la moneda elegida no es la de la orden, la cifra se convierte con la tasa que la orden lleva congelada**, no con la de hoy. Es la que el sistema usa para comprobar cuánto falta, así que es la única con la que la cuenta cuadra. La pantalla dice qué tasa está usando.
+En **Confirmada pagar**, quien aprueba pulsa **💵 Marcar pagada** y registra el pago: la **fecha**, la **moneda** (dólares, bolívares o USDT), el **monto** y, si no es en dólares, la **tasa**; la **referencia** —no hace falta en efectivo— y el **comprobante de pago** (PDF o imagen, hasta 10 MB), con una nota. El sistema guarda el monto en dólares. La OC pasa a **Pendiente por recepción**, o a **Pagada** si ya se había recibido (contra entrega) o si es un servicio. Se abre el **💬 Aviso de pago**, y en la ficha queda **📥 Comprobante de pago** para verlo después.
 
-**El reparto solo se calcula pagando en la moneda de la orden o en bolívares.** Para otra divisa hace falta su tasa de hoy, que esta pantalla no tiene, y entonces el monto se escribe a mano.
+#### A crédito: los abonos
 
-Es una propuesta: el monto que vale es el que quede escrito, y se puede corregir.
+Una OC a crédito queda en **Crédito / cuentas abiertas** con su **saldo**: el monto a pagar menos lo abonado. Cada pago parcial es un **💵 Registrar abono** (fecha, moneda, monto, tasa, referencia y comprobante), y **📋 Ver crédito / historial** enseña todos los abonos con su comprobante y el saldo que quedó. La tarjeta dice **Abonado $ … · Saldo $ …**.
 
-> **Cuidado con el IGTF, que es la mitad del motivo de repartir así.** Un pago en divisa causa el **3 %** y uno en bolívares no. Pagar el IVA en bolívares se ahorra ese 3 % sobre esa parte.
+**No hace falta saldar el crédito para recibir**: **📦 Enviar a Pendiente por recepción** la manda al almacén con el saldo abierto. Cuando el saldo llega a cero, la orden queda pagada sola y la tarjeta dice **✓ Pagado · a recepción** o **✓ Pagado · finalizar**.
 
-**Lo que falta por pagar se calcula en dólares y se vuelve a expresar en la moneda de la orden.** Es lo que permite mezclar monedas sin que la cuenta se descuadre: dos instrucciones, una de $9.140,66 y otra de Bs 1.151.755,29, cubren exactamente una orden de $10.603,17.
+#### Contra entrega
 
-**La orden solo pasa a Pagada · por recibir cuando ya no queda nada por pagar.** Con un abono parcial se queda esperando el resto.
-
-#### Pagar con material o con saldo a favor
-
-En el mismo paso, junto a **Indicar método de pago**, están **Pagar con material**, cuando lo que se le da al proveedor es material del almacén, y **Usar saldo a favor**, cuando el proveedor tiene un saldo pendiente con la empresa en esa moneda. Las dos se apagan hasta que se dice con qué entrega el proveedor. Un pago con material se registra después con su propio botón, **Registrar el pago con material**.
-
-#### Registrar el pago
-
-Cuando la instrucción está **Por pagar**, el rol **Compras** ve en ella **Registrar el pago** y **Devolver a compras**, y quien tenga la casilla, también **Cambiar el método**. La cola de todos los pagos pendientes está en **Administración › Compras › Pagos por hacer** (12.4).
-
-**Registrar el pago** abre un diálogo con los datos del destino a la vista y tres campos:
-
-| Campo | Detalle |
-| --- | --- |
-| **Cuenta** | De dónde sale el dinero. Solo se ofrecen cuentas **en la misma moneda** de la instrucción |
-| **Número de referencia** | **El número que devolvió el banco o la plataforma.** En efectivo, si se deja vacío, se numera solo |
-| **Fecha del pago** | **Vacío es hoy. Es la fecha que aparece en el estado de cuenta.** |
-
-Para terminar, **Confirmar el pago**. El pago queda escrito en el libro de la cuenta, y **si la cuenta no admite sobregiro, el pago no puede pasar de su saldo** (12.0).
-
-Si no hay ninguna cuenta en esa moneda, se lee **No hay ninguna registrada en VES**, o la moneda que sea. Las cuentas se crean en **Tesorería › Bancos y cajas** (12.3).
+La OC contra entrega llega a **Pendiente por recepción** sin método de pago. Se recibe lo que llegó (9.13) y **se paga solo lo recibido**: la tarjeta dice **💳 indicar método (pagar lo recibido)** y la ficha ofrece **💳 Indicar método de pago (pagar lo recibido)**. De ahí sigue el camino normal: **Confirmada pagar** → **💵 Marcar pagada** → **Pagada** → finalizar.
 
 ### 9.11 Facturas de proveedor
 
 **Administración › Compras › Proveedores › Facturas recibidas**
 
-Es la segunda pestaña de Proveedores. El título de la pantalla es **Facturas recibidas de proveedores**: **Facturas de proveedores contra órdenes de compra aprobadas. Sustentan el crédito fiscal del IVA.**
+Es la segunda pestaña de Proveedores. **Las OC de Pedidos / Compras no se registran aquí**: su factura o nota de entrega se carga en la propia orden, al indicar el método de pago (9.10), al recibir (9.13) o con **📎 Cargar factura / nota de entrega**. Esta pantalla reúne las facturas registradas contra órdenes del flujo anterior y de la Compra Directa.
+
+El título de la pantalla es **Facturas recibidas de proveedores**: **Facturas de proveedores contra órdenes de compra aprobadas. Sustentan el crédito fiscal del IVA.**
 
 **Una factura va siempre contra una orden.** Nace en la ficha de la compra, con el botón **Registrar factura** de la tarjeta de la orden, que sale cuando el proveedor declaró que entrega con factura y lo ve el rol Compras. El formulario se abre con el proveedor, la orden y la moneda ya puestos. Es lo que impide que se cargue una factura suelta que no case con ninguna orden.
 
@@ -2944,186 +2570,164 @@ Escriba el **Motivo** —**Queda en el registro de auditoría con su nombre y la
 
 **Administración › Compras › Gasto por unidad.** **Gasto de compras por unidad de destino. Cada pedido indica su destino y aquí se totaliza.** Una fila por unidad, con **Pedidos**, **Comprado**, **Este mes**, **Consumido** y **Peso**.
 
-### 9.13 Lo que conviene entender
+### 9.13 Recibir en el almacén y finalizar
 
-#### Quién pide, quién aprueba, quién recibe
+#### La recepción, en el almacén general
 
-Cada paso del circuito lo hace alguien distinto, y la pantalla lo reparte por rol o por casilla (9.1). Lo importante de ese reparto es lo que no comprueba.
+**Operación › Inventario › Solicitudes de pedido › 📥 Recepciones por recibir.** Ahí están las OC que esperan mercancía: las pagadas, las a crédito enviadas a recepción y las contra entrega. **La recibe quien tiene Inventario en escritura o el rol de almacén**, nunca Compras por su cuenta, y **todo entra al almacén general (ALM-GEN)**.
 
-**El sistema comprueba el rol o la casilla, pero no que sean personas distintas.** Al aprobar, mira que quien aprueba tenga la casilla y que la compra esté en el paso correcto. No compara nombres. Si una misma persona tiene el rol de Compras y la casilla de aprobar, **puede recorrer sola todo el circuito hasta la orden de compra**: pedir, confirmar, cargar la cotización, proponerla y aprobarla.
+**📦 Confirmar recepción** abre **Recibir OC-…**. Por renglón:
 
-Lo mismo, y más amplio, ocurre con el rol de Administrador: **pasa siempre, en todo**. Si un rol quedara sin asignar a nadie, el sistema se bloquearía y no habría forma de destrabarlo desde dentro.
+- **Cuánto llegó.** Empieza en lo que falta; se corrige a lo que llegó de verdad. No deja recibir más de lo pedido.
+- **La marca con que llegó**, si es otra: entonces pide una nota corta explicando el cambio (⚠ Llegó otra marca: anotá por qué).
+- Si el renglón era de nombre general y Compras no le dio ficha, **la ficha del inventario** con que entra: una existente o una nueva con su nombre, categoría y unidad de uso.
+- Lo que **no entra al inventario** (un servicio, algo de consumo inmediato) se marca así.
 
-La consecuencia práctica es una sola, y conviene tenerla presente al repartir los roles: **la separación de funciones aquí es una decisión de administración, no una barrera del sistema**. Lo que el sistema sí garantiza es el rastro: quién hizo cada paso y cuándo queda escrito en el **Historial** de la compra, y la ficha muestra **Cargado por** cuando quien teclea no es quien pide.
+Abajo, **la factura o nota de entrega escaneada**, las **fotos** de lo que llegó y la **Nota de recepción**, que es **obligatoria si llegó menos de lo pedido**.
 
-#### Una sola aprobación, sea cual sea el monto
+**La recepción puede ser parcial.** Lo que llegó entra al inventario en ese momento, con su costo; la OC sigue en **Pendiente por recepción** con **📦 Recibir lo que falta**, y la tarjeta dice **Recepción parcial · 2/5 completos**. Cada recepción lleva su número (R1, R2…) y queda en **📥 Ver recepción**. Cuando llega todo, la OC pasa a **Recibida** y Compras recibe el aviso. Al guardar se abre el **💬 WhatsApp de la recepción**.
 
-Una compra de veinte dólares y una de veinte mil recorren el mismo camino y necesitan la misma aprobación. No hay segundo aprobador según el monto.
+**Si el pedido era para otro sitio**, se traslada desde ALM-GEN por **Salidas y traslados › Traslados** (26.3).
 
-**La única cifra que el sistema vigila es la de después:** si una orden ya aprobada se edita y sube más de 100 dólares, vuelve a la gerencia (9.2). **Nadie debe suponer que una compra grande se detendrá sola antes de aprobarse.** Si hace falta un control por monto, es un acuerdo entre personas.
+#### Finalizar con la evaluación del proveedor
 
-#### Recepciones parciales
+En **Recibida** (o **Pagada**, si se pagó después de recibir), Compras pulsa **✓ Finalizar orden**. Antes de cerrar, **se evalúa al proveedor**:
 
-Casi ninguna entrega llega completa a la primera, y el sistema está hecho contando con eso.
+| Campo | Qué va |
+| --- | --- |
+| **Calidad a evaluar** | De 1 a 5 |
+| **Puntualidad** | Si cumplió la fecha prometida, llegó antes o llegó tarde, con la **Fecha prometida (de la oferta)** y la **Fecha de recibido** |
+| **Tipo de comprobante** y la factura | Si todavía no se cargó |
+| **Comentario adicional** | Lo que valga la pena recordar del proveedor |
 
-**Si llega menos de lo pedido**, se escribe en **Cantidad recibida** lo que realmente llegó, y cero en los renglones que no llegaron. La orden queda en **Recibida parcialmente** y **sigue en el panel Pagada** del tablero. El botón **Recibir material** sigue disponible, y la próxima vez el diálogo muestra solo lo que falta. En la tabla de la orden, la columna **Recibido** se ve naranja mientras esté incompleto y verde cuando llegue todo. La orden pasa a **Recibida** sola cuando ya no falta nada.
+**Esa evaluación es la que alimenta el Score** de las próximas comparativas (9.8). La orden queda **Finalizada** y sale del tablero hacia el Histórico (9.15). Se abre el **💬 Aviso de finalizado**. Después, si hace falta, **📎 Cargar factura / nota de entrega** sube el papel que faltó.
 
-**El contador de días sin recibir sigue corriendo** durante la recepción parcial, y la compra sigue en el aviso del tablero. Mientras falte material pagado, el dinero sigue fuera.
+**Solo se finaliza lo recibido y pagado**: una OC a crédito, cuando el saldo llegó a cero (9.10); una contra entrega, cuando se pagó lo recibido.
 
-**Si llega más de lo pedido, no se puede registrar.** Recibir de más no es un descuido: o llegó otra cosa, o el precio pactado ya no cubre lo que entró, y en cualquiera de los dos casos hay que mirarlo antes de meterlo al inventario. Se recibe lo pedido y el excedente se resuelve aparte, con un ajuste de inventario o devolviéndolo al proveedor.
+### 9.14 Servicios, servicio directo y Solicitud de Mercado
 
-**Si el proveedor no entrega nunca**, se registra **El proveedor desistió** y después se usa **Resolver el dinero**.
+#### 🛠 Servicios
 
-#### Cómo se numeran los documentos
+La pestaña **🛠 Servicios** es el mismo camino que una OC, con nombres de servicio: **Solicitado** · **Aprobado (cotizar)** · **Pendiente por aprobación** · **Crédito / cuenta abierta** · **Confirmado (método de pago)** · **Confirmado pagar** · **Pendiente por realizar** · **Pagado** · **Servicio realizado** · **Finalizado** · **Cancelado**.
 
-Cada documento lleva un número con la forma prefijo, año y cuatro cifras.
+**+ Nuevo servicio** pide la unidad solicitante, quién lo solicita y una línea por servicio: la **categoría** (recarga de gas o de agua, mantenimiento de maquinaria, de vehículos, de motos, de electrodomésticos…), el **equipo** de Maquinaria cuando aplica, el **tipo de servicio**, la cantidad —en una recarga, las bombonas o botellones y los kilos o litros— y el precio estimado. **▸ Detalle** agrega las piezas y trabajos de la línea. El código es **SV-2026-0001**.
 
-| Documento | Ejemplo | Cuándo se asigna |
-| --- | --- | --- |
-| Pedido | **SOL-2026-0001** | Al crear el pedido |
-| Cotización | **COT-2026-0001** | Al guardar la cotización |
-| Orden de compra | **OC-2026-0007** | Al aprobar la compra |
+Diferencias con una OC: **un servicio no pasa por el almacén** ni entra al inventario, y **conserva su código SV** (no recibe OC, salvo que se reparta entre proveedores). En lugar de recibirlo, Compras deja constancia de que se prestó con **🔧 Servicio realizado**: por línea, cuánto se prestó, y una nota si fue menos. Pagado, pasa a **Pagado**; realizado, a **Servicio realizado**; y se finaliza con la evaluación del proveedor.
 
-Cuatro reglas que evitan discusiones:
+#### 🔧 Servicio Directo
 
-- **El contador se reinicia cada año**, y el año se toma con la hora de Caracas, no con la del equipo desde el que se teclea.
-- **El número lo asigna el sistema, nunca la pantalla.** Dos personas cargando a la vez obtendrían el mismo número si cada una lo calculara por su cuenta.
-- **Cada número es único.** Puede haber huecos en la serie si una operación se cae después de tomar el número.
-- **La numeración del pedido y la de la orden son independientes.** El pedido **SOL-2026-0001** puede terminar en la orden **OC-2026-0007**. Y si una orden se cancela y se emite otra para el mismo pedido, la nueva lleva su propio número.
+Para un servicio **ya contratado o ya prestado**, sin solicitud ni cotización. Lo registra quien lleva Compras en control total. Sus columnas: **En proceso** → **Por pagar** → **Confirmado pagar** → **Finalizada**.
 
-#### Lo que el sistema no hace
+1. **+ Nuevo servicio directo**: las líneas de servicio (como en un servicio), el **proveedor o taller** —o uno nuevo allí mismo— y la unidad solicitante. Nace como **SVD-2026-0001**, **En proceso**.
+2. **Cargar factura y monto del servicio**: la factura (PDF o imagen) y el monto de cada línea, en dólares. Pasa a **Por pagar**.
+3. **💳 Indicar método de pago**: el mismo de una OC (9.10), con documento, retenciones y método. Pasa a **Confirmado pagar**.
+4. **💵 Marcar pagado** (quien aprueba), con el comprobante de pago. Pasa a **Finalizada**.
 
-- **No coteja lo pedido con lo recibido y lo facturado.** Ese cuadre lo hace la persona.
-- **No deja corregir con qué entrega el proveedor** una vez declarado (9.10).
-- **No avisa de las compras que prometieron factura y no la registraron.** Lo dice la ficha de cada una mientras está en el paso 4, y en ninguna lista.
-- **El tablero no se imprime.**
+Mientras no se haya pagado se corrigen la factura y los montos (**✎ Factura/monto**, **✎ Editar montos**) y se cargan más facturas.
 
-### 9.14 Cuando el sistema no le deja
+#### 🛒 Solicitud de Mercado
 
-| Lo que ve | Qué significa | Qué hacer |
-| --- | --- | --- |
-| «Esta acción la realiza: Compras. Su usuario no tiene ese rol…» | Ese paso le toca a otro rol | Pida el rol a la administración, o que lo haga quien lo tenga |
-| «Su usuario no tiene permiso para …» | Falta la casilla de esa acción: aprobar, devolver, editar la orden, hacer una compra directa… | Se da en la matriz de permisos (13.1) |
-| «Su usuario no tiene acceso a …» | Su permiso sobre el módulo no llega al nivel que pide esa acción | Pida el permiso a la administración, o que lo haga quien lo tenga |
-| «Escriba qué se compró: el título es lo que se lee en el tablero.» | El concepto de una compra directa tiene menos de tres letras | Escríbalo |
-| «Una compra no puede tener fecha futura.» | La fecha de la compra directa es de mañana o más allá | Corríjala |
-| «De esta orden ya se recibió todo.» | Se pulsó recibir sobre una orden completa | No falta nada por entrar |
-| «Póngale un título al pedido: es lo que se lee en el tablero.» | El título quedó corto | Escriba un título que se entienda desde el tablero |
-| «Indique quién solicita: elija a alguien del sistema o escriba su nombre.» | No se eligió persona ni se escribió un nombre | Elija a alguien de la lista o escriba el nombre |
-| «El nombre de quien solicita es demasiado corto para identificar a nadie.» | El nombre tiene menos de tres letras | Escriba el nombre completo |
-| «Quien solicita no existe o está inactivo.» | Esa persona no está activa | Elija a otra persona o escriba su nombre |
-| «El pedido necesita al menos un renglón.» | Ningún renglón tenía descripción y cantidad | Llene al menos un renglón completo |
-| «El renglón 2 no tiene descripción.» | Ese renglón quedó sin describir | Escriba qué es, o quite el renglón |
-| «La cantidad del renglón 2 debe ser mayor que cero.» | Falta la cantidad | Escriba cuánto se necesita |
-| «Este pedido está en "…" y ya no se corrige aquí. Si está con el gerente, retire lo propuesto; si ya se aprobó, la orden manda.» | El pedido pasó de Confirmada | Lo que dice el propio mensaje |
-| «Solo quien creó el pedido puede corregirlo.» | El pedido es de otra persona | Pídale a esa persona que lo corrija |
-| «Antes de proponer, diga con qué nombre entra al inventario: «BOTAS».» | Un renglón de esa cotización no tiene artículo del inventario | En la cotización, debajo del renglón: elija el artículo real o créelo con ese nombre (9.8) |
-| «Solo quien creó el borrador puede enviarlo.» | El borrador es de otra persona | Pídale a esa persona que lo envíe |
-| «Solo se envía un borrador. Este pedido está en "…".» | Ese pedido ya se envió | Revise el tablero: ya está en circulación |
-| «Solo se confirma un pedido recién enviado. Este está en "…".» | Ya alguien lo confirmó | Siga por el paso siguiente |
-| «Hay 3 cotizaciones propuestas: hay que decir cuál se aprueba.» | No se marcó ninguna | Marque cuál se aprueba en la lista del panel |
-| «No hay tasa BCV registrada para el 04/08/2026 ni para ninguna fecha anterior. Regístrela en Sistema › Tasas de cambio.» | Sin tasa no se valora nada | Regístrela en **Sistema › Tasas de cambio** y repita la operación |
-| «Una cotización no puede tener fecha futura.» | La fecha es de mañana o después | Corrija la fecha |
-| «La cotización necesita al menos un renglón con precio.» | Ningún renglón llevaba precio | Escriba el precio de al menos un renglón |
-| «Las cotizaciones se cargan sobre un pedido confirmado. Este está en "…".» | El pedido todavía no se confirmó | Que compras lo confirme primero |
-| «El RIF "J123" no tiene forma válida. Se espera J-12345678-9.» | El RIF está mal escrito | Corríjalo con esa forma |
-| «Ya hay un proveedor registrado con el RIF J-12345678-9.» | Ese proveedor ya existe | Búsquelo en la lista. Si está inactivo, actívelo |
-| «El nombre o razón social del proveedor es obligatorio.» | La razón social quedó corta | Escriba la razón social completa |
-| «Esta cotización está propuesta al gerente. Retire la propuesta antes de eliminarla.» | Es la que está en manos de la gerencia | Retire la propuesta, y después elimínela |
-| «Esta cotización ya generó una orden de compra y no se puede eliminar.» | De ahí salió la orden | Si la compra no procede, cancele la orden |
-| «El pedido no tiene ninguna cotización propuesta.» | No hay nada que aprobar | Que compras proponga una cotización |
-| «Diga qué hay que corregir: sin eso, compras vuelve a mandar lo mismo.» | El motivo de la devolución quedó corto | Escriba qué hay que corregir |
-| «Antes de pagar hay que decir con qué entrega el proveedor: nota de entrega o factura. Solo la factura da derecho al crédito fiscal y entra en el libro de compras.» | No se declaró el comprobante | Pulse **Nota de entrega** o **Factura** en la ficha |
-| «Esta compra es contra entrega: se paga lo que llegue, y todavia no se ha recibido nada.» | La orden contra entrega no ha recibido material | Reciba primero; después se paga lo que llegó |
-| «Esta orden esta en "…" y no admite instrucciones de pago.» | La orden ya no está en el paso de pagar | Revise la tarjeta de pagos de la ficha |
-| «El monto a pagar debe ser mayor que cero.» | El monto quedó en cero | Escriba cuánto se paga |
-| «Con esta instruccion se pagaria mas que el total de la orden (…). Ya hay … instruido.» | Entre todas las instrucciones se pasa del total | Revise lo ya instruido y ajuste el monto |
-| «Para pagar por … faltan estos datos: ….» | Faltan datos de la transacción | Rellene los datos que dice el mensaje |
-| «Falta el número de referencia de la transacción.» | Falta la referencia del banco | Escriba el número que devolvió el banco |
-| «Indique de qué cuenta sale el dinero.» | No se eligió la cuenta | Elija la cuenta desde la que se pagó |
-| «Esta instrucción está en "PAGADA" y no se puede volver a pagar.» | Ese pago ya se registró | Revise la tarjeta de pagos |
-| «Solo se devuelve una instrucción pendiente de pago.» | Esa instrucción ya no está por pagar | Revise su estado en la tarjeta de pagos |
-| «Hay que decir por qué se cambia el método de pago.» | Falta el motivo del cambio | Escriba por qué |
-| «Escriba por qué se edita la orden: queda en la bitácora.» | Falta el motivo de la edición | Escriba por qué |
-| «La orden OC-2026-0007 ya recibió material: sus renglones movieron existencias y costo. Anúlela si está mal.» | La orden ya no se edita | Lo recibido se corrige con un ajuste de inventario |
-| «Falta el papel del proveedor: sin factura o nota de entrega el material no entra.» | No hay factura ni nota de entrega en **Papeles recibidos** | Súbala y vuelva a recibir |
-| «Esta orden está en "Recibida" y no admite recepción.» | Ya se recibió todo, o la orden no está en un paso de recibir | Revise el estado de la orden en su ficha |
-| «El almacén indicado no existe o está inactivo.» | Ese almacén no está activo | Elija otro almacén, o pida que lo activen |
-| «No se indicó ninguna cantidad recibida.» | Todas las cantidades quedaron en cero | Escriba lo que llegó de verdad |
-| «De "FILTRO DE AIRE" se pidieron 10 y ya se recibieron 8. No se pueden recibir 5 más.» | Llegó más de lo pedido | Reciba lo que falta. El excedente se resuelve aparte |
-| «Una orden en "Recibida" no se puede marcar como desistida.» | El desistimiento solo vale para órdenes que esperan el material | Revise el estado de la orden |
-| «Describa qué pasó con el proveedor.» | El motivo del desistimiento quedó corto | Escriba qué ocurrió |
-| «Esta orden no está marcada como desistida.» | No hay dinero pendiente que resolver | Revise el estado de la orden |
-| «Un pedido en "…" ya no se cancela desde aquí. Si ya hay orden de compra, cancélela en la orden.» | La compra pasó de la etapa de pedido | Cancele la orden desde su propia tarjeta |
-| «Una orden en "…" ya no se cancela. Si ya se pagó y el proveedor no entregó, márquela como desistida.» | Ya se pagó: cancelar borraría del tablero dinero pendiente | Use **El proveedor desistió** y después **Resolver el dinero** |
-| «Escriba por qué se cancela. Sin motivo, dentro de un mes nadie sabrá qué pasó.» | El motivo quedó corto | Escriba por qué se cancela |
-| «Una factura va contra una orden de compra: es la que dice qué se compró y a qué precio. Si esta compra no tiene orden, créela primero y registre la factura desde ahí.» | Se intentó registrar una factura sin orden | Regístrela desde la ficha de la compra |
-| «La factura necesita su número, que es el que trae impreso.» | El número de la factura quedó vacío | Copie el número que trae el papel |
-| «No se registra una factura con fecha futura.» | La fecha de emisión es de mañana o después | Corrija la fecha |
-| «La factura suma cero. Revise el exento, la base imponible y el IVA.» | Las tres cifras quedaron vacías o en cero | Escriba las cifras del papel |
-| «El papel dice 1160.00 y lo tecleado suma 1150.00. Revise el exento (0), la base (1000) y el IVA (150).» | El total impreso no coincide con lo tecleado | Repase las tres cifras contra el papel. Si el papel es el que está mal, resuélvalo con el proveedor |
-| «La factura F-00123 de "FERRETERIA EL TORNILLO" ya está registrada. Registrarla dos veces descuenta dos veces el mismo crédito fiscal.» | Esa factura de ese proveedor ya se cargó | Búsquela en la lista. Ya está |
-| «Escriba por qué se anula la factura.» | El motivo quedó corto | Escriba qué pasó con esa factura |
-| «La factura F-00123 ya estaba anulada.» | Alguien la anuló antes | Revise la lista: ya está fuera del libro |
-| «La factura F-00123 tiene 1 pago(s) registrados. Anúlelos primero: el dinero salió y tiene que volver al libro con su propio asiento.» | Se quiere anular una factura que ya se pagó | Anule los pagos desde la ficha y vuelva a intentarlo |
-| «La factura F-00123 está … y no admite pagos.» | Esa factura ya está pagada o anulada | Revise su ficha |
-| «El monto del pago tiene que ser mayor que cero.» | El monto quedó vacío o en cero | Escriba cuánto se paga |
-| «A la factura F-00123 le faltan 500 $ y se están pagando 800 $.» | Se está pagando más de lo que se debe | Ajuste el monto a lo que falta |
-| «El pago PGC-2026-0001 ya estaba anulado.» | Otra persona lo anuló primero | Cierre y vuelva a abrir la ficha: ya está anulado |
+Los víveres y artículos de limpieza para la cocina. En **✉ Solicitud de Pedido**, **🛒 Solicitud de Mercado** abre la lista de los productos de las categorías de cocina, marcados, con las cantidades de la última Solicitud de Mercado como sugerencia; se quita lo que no haga falta y se ajustan cantidades. Va **URGENTE**, con la finalidad **PEDIDO PARA RESTABLECER EL MERCADO**, la unidad **COCINA** precargada y una nota. **No pasa por la revisión del almacén**: nace en **Pendiente**, y de ahí sigue el camino de cualquier OP.
 
-#### Los mensajes del flujo nuevo
+**La cocina la pide desde Alimentación** con **Pedir el mercado** (25.5), sin necesitar el permiso de Compras: sale la misma Solicitud de Mercado, a nombre de quien la pidió.
 
-| Mensaje | Qué pasó | Qué hacer |
-| --- | --- | --- |
-| «Las órdenes de compra solo las aprueba NORBELIS SEQUEA.» | Otro usuario intentó aprobar | Aprueba solo ella. Mándele el **WhatsApp para aprobar** |
-| «Compras tiene que indicar cómo se paga antes de aprobar…» | La propuesta no trae el método de pago | **Devolver a compras** para que la proponga con el pago |
-| «Compras cambió el pago de esta propuesta mientras usted la revisaba…» | El pago cambió después de abrir la pantalla | Recargue la página, revise el pago nuevo y apruebe |
-| «Escriba por qué no se pagará todavía.» | Se marcó **No se pagará** sin motivo | Elija el motivo o escríbalo |
-| «La orden … tiene una instrucción de pago pendiente que no es la que propuso Compras…» | Alguien cargó un pago con otros datos | Devuelva esa instrucción y vuelva a marcar **Sí, se pagará** |
-| «El renglón … se pidieron 3 y se intentan entregar 5.» | En la revisión del almacén se puso más de lo pedido | Entregue como mucho lo pedido |
-| «De … hay 2 en el almacén general y se quieren entregar 5.» | No alcanza la existencia | Entregue lo que hay; lo demás pasa a Compras |
-| «Las órdenes de compra se reciben en el almacén general (ALM-GEN)…» | Se intentó recibir en otro almacén | Reciba en ALM-GEN y traslade después |
-| «La compra se finaliza cuando llegó todo el material…» | Falta material por recibir | Reciba lo que falta y vuelva a intentarlo |
+### 9.15 Reportes e histórico
 
-### 9.15 Guía rápida por rol
+Los tres botones de la barra de **Pedidos / Compras**, para quien lleva Compras.
 
-Para la capacitación del flujo nuevo. Cada uno solo necesita su fila.
+#### 📊 Reporte por renglón
 
-| Quién | Dónde lo ve | Qué hace |
-| --- | --- | --- |
-| **Quien pide** | **Nuevo pedido** | Escribe qué necesita con su nombre general, la cantidad y para qué. Lo envía. No hace nada más: le llega el aviso cuando el almacén responde |
-| **Almacenista (ALM-GEN)** | Panel **Revisión de almacén**, y el aviso «Pedido por revisar en el almacén general» | **Revisar en el almacén**: por renglón, qué artículo entrega y cuánto. Manda el WhatsApp. Después aprueba y entrega la **solicitud de salida** en Salidas |
-| **Almacenista (ALM-GEN)** | Panel **Pagada** o **Cuenta abierta**, y **Compras › Recepciones** | Con la factura o nota de entrega subida, **Recibir material** en ALM-GEN. Manda el **WhatsApp de la recepción** |
-| **Compras** | Paneles **Pedido** y **Confirmada** | **Confirmar el pedido**, cargar cotizaciones y **Proponer para aprobar** con factura o nota, método, moneda y datos del beneficiario. Manda el **WhatsApp para aprobar** |
-| **Norbelis Sequea** | Panel **Órdenes pendientes por aprobar**, **Aprobada** y **Cuenta abierta** | Revisa el pago indicado y **Aprobar la orden** contestando **¿Se pagará?** (Sí → pagada; No → motivo). Más tarde marca pagadas las que quedaron pendientes o a crédito |
-| **Compras** | Panel **Recibida** | **Marcar finalizada** y mandar el **WhatsApp de finalizada** |
+**Reporte de compras por renglón**: todo lo que está pendiente de pago, **una fila por compra**, con su **código**, su **tipo** (OC, Servicio o Servicio directo), su **motivo** y su **monto a pagar** (total − descuento − retenciones), agrupado en cuatro renglones de color:
+
+| Renglón | Qué entra |
+| --- | --- |
+| ⏳ **PENDIENTE POR APROBAR** | OC y servicios en **Ordenes pendiente por aprobar** |
+| 💳 **CUENTAS A CRÉDITO** | Créditos con saldo, con **ABONADO** y **SALDO** |
+| 🏦 **POR INDICAR MÉTODO DE PAGO** | OC y servicios en **Confirmada (indicar método de pago)**, y servicios directos con la factura cargada |
+| 💰 **POR PAGAR** | OC y servicios en **Confirmada pagar**, y servicios directos confirmados |
+
+Cada renglón cierra con su total (en crédito, el saldo pendiente) y al final va el **TOTAL GENERAL**. Se actualiza en vivo. Al pie: **📄 PDF (vista previa)**, **📊 Excel**, **💬 WhatsApp** y **🖨 Imprimir**, que manda el reporte directo a la impresora. Sin nada pendiente dice «✅ No hay compras pendientes en este momento.»
+
+#### 📆 Cierre diario
+
+El resumen de un período: **Día**, **Semana** (de lunes a domingo), **Mes** o **Rango de fechas**, con el botón **Hoy**. Las fechas se leen en hora de Venezuela. Cuatro cifras:
+
+| Tarjeta | Qué cuenta |
+| --- | --- |
+| 📋 **Total de pedidos** | Solicitudes creadas en el período |
+| ⏳ **Total órdenes pendientes por aprobar** | OC que entraron a aprobación en el período y siguen ahí |
+| 💰 **Total órdenes por pagar** | OC confirmadas en el período que siguen sin pagarse |
+| ✅ **Total órdenes pagadas** | OC pagadas en el período |
+
+Debajo, **💵 Detalle de órdenes pendientes por pagar** (orden, proveedor y monto, con su total); **🧾 Pagos del período**, cada pago registrado en Compras —OC pagada, abono de un crédito, servicio directo pagado— con su método, el total, **las retenciones** y **el monto pagado**, y los totales de lo pagado y de lo retenido; y **👥 Rendimiento por analista**, las cotizaciones que cargó y las órdenes que finalizó cada uno. Salidas: **📊 Excel**, **💬 WhatsApp** y **📄 Ver PDF (vista previa)**; cada una anota la hora exacta en que se imprime.
+
+#### ⌕ Histórico
+
+**Histórico de Pedidos / Compras** (dirección `/app/pedidos/historico`). Tiene dos pestañas.
+
+**🧾 Pedidos / Compras** reúne **lo cerrado**: las órdenes **Finalizadas**, **Anuladas**, **Canceladas** y las que el **Proveedor desistió**, más los **servicios directos finalizados**.
+
+- El buscador grande encuentra por **cualquier dato**: OP, OC, usuario, proveedor, SKU, estado, monto, fecha, método de pago, nota. Sin acentos, y con varias palabras exige todas.
+- **Realizada por** deja solo lo que hizo un usuario: quien creó la OC, o quien cargó la solicitud si no llegó a OC.
+- Los **chips de estado** filtran (se pueden marcar varios); **⌚ Filtrar por fecha** abre el panel con el **Tipo de fecha** (**Creación**, **Aprobación**, **OC emitida** o **Finalización**) y **Desde** / **Hasta**; **↓ Más reciente primero** cambia el orden; **✕ Limpiar filtros** lo deshace todo. A la derecha, cuántos resultados hay.
+- La tabla: **OP**, **OC**, **Solicitante**, **Proveedor**, **Total**, **Estado**, **Fecha solicitud** y **OC emitida**.
+
+**Pulsar una fila abre el detalle**, de solo lectura: estado y total, solicitante, proveedor, condición y método de pago, las fechas de cada paso, los ítems con su total, el motivo y las notas. Sus botones: **📂 Abrir la orden** (la ficha completa, con el PDF de la OC y el historial), **🧾 Comprobante de pago**, **📎 Ver factura / soporte**, **📎 QR de pago**, **📎 Abono 1 · $ …** por cada abono con comprobante, y **🖨 Imprimir PDF** con el detalle del pedido. Un servicio directo se abre en su pestaña.
+
+**📊 Materiales con más demanda** ordena lo que más se pide, por **Cantidad** o por **Monto ($)**, en todo el histórico o en un día, mes o rango: las doce primeras en barras y la tabla completa, con **↓ Exportar PDF**.
+
+El **+ n más · ver en el Histórico →** de una columna de **Órdenes de Compra** llega aquí con ese estado marcado, aunque sea uno en curso.
+
+**🗄 Compras anteriores** es lo que se cargó en el **flujo de compras anterior** (números **SOL-** y sus órdenes **OC-**), **solo para consultar**: nada de ahí se mueve. Tiene su buscador (número, orden, proveedor, quién pidió, qué se pidió), el total en dólares y, por compra, en qué etapa quedó. Las compras directas se suman con **Incluir compras directas**. Cada número abre su ficha de siempre, en modo consulta.
 
 ### 9.16 Los mensajes de WhatsApp
 
-Cada paso tiene su mensaje, con sus emojis, al estilo de MGG. **Ninguno sale solo**: el botón abre la vista previa, y desde ahí **📋 Copiar mensaje** o **💬 Enviar por WhatsApp**. En el teléfono, **Enviar por WhatsApp** abre la hoja de compartir del teléfono para elegir el chat o el grupo.
+Cada paso tiene su mensaje, con sus emojis, al estilo de MGG. **Ninguno sale solo**: el botón abre la vista previa y desde ahí **📋 Copiar mensaje** o **💬 Enviar por WhatsApp**. En el teléfono, **Enviar por WhatsApp** abre la hoja de compartir para elegir el chat o el grupo.
 
-| Mensaje | Empieza con | Dónde está | Se abre solo |
-| --- | --- | --- | --- |
-| **Del pedido** | 📋 *SOLICITUD DE PEDIDO SOL-…* | Botón **WhatsApp** en **Qué se pidió** | Sí, al **Enviar el pedido** |
-| **Del almacén** | ✅ *ALMACÉN GENERAL HA REVISADO EL PEDIDO…*, con 📦 lo que tiene y 🛒 lo que va a Compras | Tarjeta **Revisión del almacén general** | Sí, al terminar la revisión |
-| **Para aprobar** | 🔹 *SOLICITUD…* ⏳ *Pendiente por aprobar* | **Qué sigue**, con la propuesta hecha | No |
-| **Para pagar** | 🔹 *ORDEN…* 💰 *Aprobada · por pagar*, o 💳 *CUENTA ABIERTA* | **Qué sigue**, mientras la orden no esté pagada | No |
-| **Del pago** | 🔹 *ORDEN…* 📊 *Estado:* PAGADA / NO PAGADA · motivo | **Qué sigue** | Sí, al aprobar o al decidir el pago |
-| **De la recepción** | 📥 *RECEPCIÓN EN ALMACÉN* | **Qué sigue** y **Compras › Recepciones** | Sí, al **Recibir material** |
-| **De finalizada** | ✅ *COMPRA FINALIZADA* | **Qué sigue** | Sí, al **Marcar finalizada** |
-| **Pendientes por pagar** | 📊 *PENDIENTES POR PAGAR*: órdenes por pagar con su total y, aparte, las cuentas a crédito | Botón **Pendientes por pagar** del tablero | No |
-| **Reporte** | 📊 *REPORTE DE COMPRAS*: todo lo que está en curso, por etapa, con montos | Botón **Reporte** del tablero | No |
+| Mensaje | Dónde está |
+| --- | --- |
+| **💬 WhatsApp de la SP** (o **del servicio**) | En la ficha, al crear la solicitud |
+| **💬 Mensaje de almacén** | Al confirmar la revisión del almacén (9.6) |
+| **💬 WhatsApp para aprobar** | En la ficha de la OC por aprobar, y **💬 WhatsApp (n)** en **OC por lote** |
+| **💬 WhatsApp para pagar** | Al indicar el método de pago, con los datos del beneficiario y el monto a pagar |
+| **💬 Aviso de pago** | Al marcar pagada, y uno por cada abono |
+| **💬 WhatsApp de la recepción** | Al confirmar una recepción, con lo que llegó de cada renglón |
+| **💬 Aviso de finalizado** | Al finalizar, con la evaluación |
+| **📊 Reporte por renglón** y **📆 Cierre diario** | Botón **💬 WhatsApp** de cada reporte (9.15) |
 
-### 9.17 Compras en el teléfono
+### 9.17 Cuando el sistema no le deja
 
-En el teléfono, el tablero muestra arriba **Vista de teléfono** (también se llega por la dirección `/app/compras/telefono`). Es una pantalla con botones grandes por tarea, como las de MGG:
+| Lo que ve | Qué significa | Qué hacer |
+| --- | --- | --- |
+| «Esa orden ya está en Compras: no la puedes abrir.» | Quien no lleva Compras abrió un enlace de una orden que ya pasó a Compras | Su solicitud sigue su camino; pregunte a Compras |
+| «Esa orden no existe o fue eliminada.» | El enlace es viejo o el número está mal | Búsquela en la pantalla o en el Histórico |
+| «Añade al menos un producto» / «Marcá al menos un artículo a comprar» | La solicitud quedó sin renglones a comprar | Agregue o marque al menos uno |
+| «La cantidad de "…" debe ser mayor que 0.» | Un renglón quedó sin cantidad | Escriba cuánto se necesita |
+| «"…" ya está en la solicitud: cambiá su cantidad en la lista.» | El mismo artículo está dos veces | Junte las cantidades en un solo renglón |
+| «La solicitud va con nombres generales: el analista de Compras pone el nombre de inventario al cotizar.» | Quien pide intentó elegir un artículo del inventario | Escríbalo con su nombre general |
+| «Solo se paga una OC en «Confirmada pagar» (está en «…»).» | Falta indicar el método de pago, o ya se pagó | Indique el método (9.10) o revise la ficha |
+| «Las retenciones no pueden superar el monto a pagar.» | Las retenciones suman más que lo que se paga | Revise los porcentajes y los montos |
+| «La OC no tiene IVA: la retención de IVA va en monto o se deja en blanco.» | Se pidió un porcentaje de IVA sobre una OC sin IVA | Póngala en monto o déjela en blanco |
+| «Confirmá la Nota de entrega (verificaste lo recibido) antes de enviar a pagar.» | Se eligió nota de entrega sin confirmar | Marque la confirmación |
+| «…: llegó … en vez de …. Escribí una nota corta explicando el cambio de marca.» | En la recepción llegó otra marca | Escriba la nota |
+| «La lista del mercado está vacía: marque al menos un víver.» | **Pedir el mercado** sin nada marcado | Marque al menos un víver |
+| Un mensaje que dice qué permiso falta | El paso le toca a otro | Pida el permiso a la administración (13.1), o que lo haga quien lo tiene |
 
-- **➕ Nuevo pedido**.
-- **🏬 Por revisar**: los pedidos que esperan al almacén general. **Revisar** abre la revisión allí mismo y al terminar sale su WhatsApp.
-- **📥 Por recibir**: las órdenes que esperan material, con lo que falta de cada renglón. **Recibir** abre la recepción y al guardar sale el WhatsApp de la recepción.
-- **⏳ Por aprobar**, **💰 Por pagar**, **🚨 Urgentes** y **✅ Finalizadas**: las compras de esa etapa. **Abrir** lleva a la ficha (a Norbelis le dice **Aprobar**).
+### 9.18 En el teléfono
 
-Cada tarjeta tiene **💬 WhatsApp** con el mensaje del pedido. Arriba hay un buscador, **Volver** regresa a los botones y **Tablero** lleva al tablero completo.
+- **Quien pide** usa **Solicitud de pedido** desde el teléfono igual que en la computadora: la pantalla se acomoda.
+- **El almacén** tiene su pantalla de teléfono, **Solicitudes de pedido** (dirección `/app/solicitudes-pedido/telefono`, casilla de teléfono de solicitudes en 13.1): las solicitudes por revisar con botones grandes, la revisión por renglón y su WhatsApp, y las **recepciones por recibir** con su WhatsApp.
+- **Compras**: la casilla **Pantalla de teléfono de compras** lleva ahora a **Pedidos / Compras**. La pantalla de teléfono del flujo anterior se retiró con él.
+
+### 9.19 Guía rápida por rol
+
+| Quién | Dónde lo ve | Qué hace |
+| --- | --- | --- |
+| **Quien pide** | **Solicitud de pedido** | **+ Nueva solicitud**: qué necesita con su nombre general, cuánto y para qué. Sigue en qué fase va |
+| **Almacenista** | **Inventario › Solicitudes de pedido** | **🕒 Por revisar**: dice qué tiene ALM-GEN y confirma; entrega por la solicitud de salida. **📥 Recepciones por recibir**: **📦 Confirmar recepción** con el papel del proveedor |
+| **Compras** | **Pedidos / Compras** | **Aprobar Orden de Pedido**, cargar ofertas, **Aceptar esta oferta**; **💳 Indicar método de pago** con documento y retenciones; abonos de los créditos; **✓ Finalizar orden** con la evaluación; servicios y servicio directo; reportes |
+| **Quien aprueba** | **🧾 Órdenes de Compra** y **📋 OC por lote** | **✔ Aprobar OC** o **✔ Aprobar en lote**; **💵 Marcar pagada** con el comprobante |
+| **La cocina** | **Alimentación › Pedir el mercado** | Arma la lista y la manda como Solicitud de Mercado |
 
 ---
 
@@ -5756,7 +5360,7 @@ Desde el 7 de noviembre de 2026 esta pestaña trabaja como la de MGG: **todo es 
 
 **Los administradores tienen control total sobre todo**: todos los módulos, aprobar órdenes de compra, aprobar salidas, todas las pantallas de teléfono y el respaldo de la base. No hace falta marcarles nada.
 
-**La solicitud de pedido la hace cualquier usuario.** Está arriba en el menú, debajo de **Panel**, para todos. Quien no lleva compras, al enviarla, ve **Solicitud SOL-… enviada** con su botón de **WhatsApp**, y no entra al tablero de compras: el proceso de compras es solo de quien tenga el módulo **Compras**. **Pide siempre a su nombre**: elegir a otro solicitante —un usuario u «Otra persona — no tiene usuario»— es de Compras, Operaciones, Almacén, Recursos humanos o de quien tenga Compras en escritura. Si no, cualquiera podría firmar un pedido como la gerencia.
+**La solicitud de pedido la hace cualquier usuario.** Está arriba en el menú, debajo de **Panel**, para todos, y abre **Pedidos / Compras** (9.3). Quien no lleva compras ve solo **Solicitudes de Pedido**: crea las suyas con **+ Nueva solicitud** (código **SP-…**, con su **💬 WhatsApp de la SP**) y sigue en qué fase van; el resto del proceso —revisión del almacén, cotizar, aprobar la OC, pagar, recibir y finalizar— es de quien tenga el módulo **Compras** (9.1). **Aprobar las órdenes de compra y registrar su pago** es de Compras en control total, de administración y de quien esté en **Usuarios autorizados para aprobar** con **Aprobar órdenes de compra**. **Pide siempre a su nombre**: elegir a otro solicitante —un usuario u «Otra persona — no tiene usuario»— es de Compras, Operaciones, Almacén, Recursos humanos o de quien tenga Compras en escritura. Si no, cualquiera podría firmar un pedido como la gerencia.
 
 ##### Usuarios autorizados para aprobar
 
@@ -6371,7 +5975,7 @@ Estos no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las 
 | --- | --- |
 | **Inventario › Existencias › Movimientos** | Los 1000 más recientes, y avisa si hay más |
 | **Salidas y traslados › Historial** | Los 200 más recientes, y avisa si hay más |
-| **Compras › Recepciones** y **Tesorería › Libro de tesorería** | 200 |
+| **Compras › Recepciones** (flujo anterior) y **Tesorería › Libro de tesorería** | 200 |
 | **Facturación** (facturas, notas de crédito y notas de entrega), **Ventas › Cotizaciones**, **Salidas y traslados › Salidas** y los vales de **Combustible** | 200 |
 | **Salidas y traslados › Traslados**, **Compras › Historial de directas** y **Maquinaria › Historial de taller** | 300 |
 | **Compras › Proveedores › Facturas recibidas** | 400 |
@@ -7579,9 +7183,9 @@ Una comida no se edita ni se borra: **se anula con motivo**, y los víveres vuel
 
 ### 25.5 Pedir el mercado
 
-El botón **Pedir el mercado** arma la lista de compra de la cocina sin teclearla: aparecen **todos los víveres del catálogo, ya marcados**, con la cantidad de la última solicitud de mercado como sugerencia y, al lado de cada uno, cuánto hay en existencia. El trabajo es quitar lo que no hace falta y ajustar números. Si falta algo que no es víver —la escoba, el jabón— se agrega **cualquier artículo del catálogo** con el campo **Artículo**; y lo que no existe todavía se escribe en **Descripción**, como texto libre, para que la oficina decida al cotizar. Abajo están el **Destino** y una **Nota para la oficina**.
+El botón **Pedir el mercado** arma la lista de compra de la cocina sin teclearla: aparecen **todos los víveres del catálogo, ya marcados**, con la cantidad de la última solicitud de mercado como sugerencia y, al lado de cada uno, cuánto hay en existencia. El trabajo es quitar lo que no hace falta y ajustar números. Si falta algo que no es víver —la escoba, el jabón— se agrega **cualquier artículo del catálogo** con el campo **Artículo**; y lo que no existe todavía se escribe en **Descripción**, como texto libre, para que la oficina decida al cotizar. Abajo están **Para dónde es** y una **Nota para la oficina**.
 
-Lo que sale de ahí **no es un papel aparte: es un pedido de compras de verdad** — número SOL, prioridad urgente, título «Reposición del mercado» — que entra al tablero de Compras y sigue el circuito de siempre: cotizar, aprobar, pagar y recibir. La recepción es la entrada de inventario que repone los víveres. **El Destino puede quedar sin elegir** —dice «Se decide al recibir»—, y entonces el almacén se escoge al recibir el material. Para pedirlo basta la **escritura en Alimentación**: no hace falta el permiso de Compras, porque del pedido en adelante todo lo decide la oficina.
+Lo que sale de ahí **no es un papel aparte: es la Solicitud de Mercado de Pedidos / Compras** (9.14) — código **SP-…**, URGENTE, con la finalidad «PEDIDO PARA RESTABLECER EL MERCADO» y la unidad COCINA — que entra en **Pendiente**, sin pasar por la revisión del almacén, y sigue el circuito de siempre: aprobar, cotizar, aprobar la OC, pagar y recibir. **Se recibe en el almacén general**, y la recepción es la entrada de inventario que repone los víveres. **Para dónde es** puede quedar sin elegir —dice «Se recibe en el almacén general»—; si se elige otro almacén, queda escrito en la nota para que se traslade desde el general. Las observaciones y la **Nota para la oficina** van en la nota de la solicitud. Para pedirlo basta la **escritura en Alimentación**: no hace falta el permiso de Compras, porque de la solicitud en adelante todo lo decide la oficina.
 
 ### 25.6 Reporte e informe del período
 

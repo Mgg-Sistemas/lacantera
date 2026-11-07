@@ -253,6 +253,12 @@ export const PANTALLAS_SIN_ENTRADA: Array<{
     seccion: 'Operación',
   },
   {
+    label: 'Histórico de Pedidos / Compras',
+    to: '/app/pedidos/historico',
+    grupo: 'Compras',
+    seccion: 'Administración',
+  },
+  {
     label: 'Facturas de proveedor',
     to: '/app/compras/facturas',
     grupo: 'Compras',
@@ -296,7 +302,9 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/tesoreria': 'movimientos ingresos egresos flujo',
   '/app/tesoreria/reportes':
     'reporte reportes libro mayor debe haber saldo cierre mes gastos categoria resumen moneda pdf excel',
-  '/app/compras': 'orden pedido oc requisicion comprar',
+  '/app/pedidos': 'orden pedido oc requisicion comprar solicitud cotizar oferta servicio mercado lote pagar',
+  '/app/pedidos/historico':
+    'historico historial finalizadas anuladas canceladas compras anteriores viejas sol reporte demanda materiales',
   '/app/compras/directa': 'compra rapida ya hecha factura sin cotizar sin gerente contado',
   '/app/compras/proveedores': 'rif suplidor',
   '/app/compras/recepciones': 'recibir entrada mercancia llegada',
@@ -371,7 +379,8 @@ export function moduloDeRuta(ruta: string): string {
   base, no la pantalla—; saber a quién le toca qué no le hace daño a nadie y le
   ahorra a media empresa preguntarlo.
 */
-// La solicitud de pedido también: la hace cualquiera (06/11/2026). Y desde el
+// La solicitud de pedido también: la hace cualquiera (06/11/2026); desde la
+// fase 5b `/app/compras/nuevo` solo redirige a `/app/pedidos`. Y desde el
 // 07/11/2026, la página de Pedidos / Compras como en MGG: quien no lleva
 // compras entra y ve solo sus solicitudes (el «soloSolicitud» de MGG); lo que
 // ve cada quien lo decide la base.
@@ -405,8 +414,9 @@ export const PANTALLAS_DE_TELEFONO: PantallaDeTelefono[] = [
   { accion: 'COMBUSTIBLE.SURTIDOR_TELEFONO', ruta: '/app/combustible/surtidor', label: 'Surtidor', icon: Fuel },
   { accion: 'ALIMENTACION.COCINA_TELEFONO', ruta: '/app/alimentacion/cocina', label: 'Cocina', icon: UtensilsCrossed },
   { accion: 'INVENTARIO.ALMACEN_TELEFONO', ruta: '/app/inventario/almacen', label: 'Almacén', icon: Boxes },
-  // La de compras (07/11/2026): revisar, recibir, aprobar y pagar desde el teléfono.
-  { accion: 'COMPRAS.TELEFONO', ruta: '/app/compras/telefono', label: 'Compras', icon: ShoppingCart },
+  // La de compras (07/11/2026). Desde la fase 5b lleva a «Pedidos / Compras»:
+  // la pantalla de teléfono del flujo anterior se retiró con él.
+  { accion: 'COMPRAS.TELEFONO', ruta: '/app/pedidos', label: 'Compras', icon: ShoppingCart },
   // La revisión de las solicitudes de pedido en el almacén (07/11/2026, MGG
   // vista «solicitudes»). La última: solo aterriza aquí quien no tiene otra.
   {
@@ -687,12 +697,11 @@ export const navigation: NavSection[] = [
           // compra no piensa en dos documentos sino en una sola compra.
           /*
             PEDIDOS / COMPRAS COMO EN MGG (07/11/2026). Va primero: es la
-            pantalla nueva del módulo. El tablero de siempre queda como
-            «anterior» mientras lo que ya estaba en curso termina su camino;
-            se retira en la fase 4.
+            pantalla del módulo. «Tablero (anterior)» se retiró en la fase 5b:
+            lo que se cargó en el flujo anterior se consulta en Histórico ›
+            «Compras anteriores», y `/app/compras` lleva aquí.
           */
           { label: 'Pedidos / Compras', to: '/app/pedidos' },
-          { label: 'Tablero (anterior)', to: '/app/compras' },
           /*
             La compra directa es entrada propia y no un boton dentro del
             tablero, porque no es un paso del camino de un pedido: es otro
@@ -708,7 +717,11 @@ export const navigation: NavSection[] = [
           // factura pertenece a alguien, y es ahí donde se busca. Como entrada
           // suelta invitaba a registrarla sin decir contra qué orden.
           { label: 'Proveedores', to: '/app/compras/proveedores' },
-          { label: 'Recepciones', to: '/app/compras/recepciones' },
+          // «Recepciones» (las órdenes del flujo anterior por recibir) salió del
+          // menú en la fase 5b: lo de Pedidos / Compras lo recibe el almacén en
+          // Inventario › Solicitudes de pedido › «📥 Recepciones por recibir», y
+          // una compra directa pendiente se recibe desde su historial. La
+          // dirección sigue abierta para quien la tenga guardada.
           /*
             LOS PAGOS ENTRAN EN COMPRAS
 

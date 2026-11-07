@@ -1270,8 +1270,8 @@ export function DetalleCompra() {
         titulo="Pedido no encontrado"
         descripcion="El pedido no existe o el enlace es incorrecto."
         accion={
-          <Link to="/app/compras">
-            <Button variant="outline">Ver los pedidos</Button>
+          <Link to="/app/pedidos/historico?pestana=anteriores">
+            <Button variant="outline">Ver las compras anteriores</Button>
           </Link>
         }
       />
@@ -1503,30 +1503,17 @@ export function DetalleCompra() {
                 error caro: emitir un lunes con la tasa del viernes. */}
             <ChipTasa className="self-center" />
             {/*
-              CORREGIR EL PEDIDO, TAMBIÉN DESPUÉS DE ENVIARLO.
+              «CORREGIR» SE RETIRÓ CON EL FLUJO ANTERIOR (fase 5b, 07/11/2026).
 
-              Lo pidió Jesmary: una unidad mal puesta obligaba a cancelar el
-              pedido entero y volver a teclear los siete renglones.
-
-              Se ofrece hasta CONFIRMADA y solo mientras no haya cotizaciones.
-              Lo segundo no es prudencia: los renglones de una cotización
-              cuelgan de los del pedido con borrado en cascada, y corregir aquí
-              los rehace — se llevaría las cotizaciones por delante sin dar un
-              solo error. La base se niega igual; aquí no se ofrece el botón
-              para no mandar a nadie a que le digan que no.
+              El formulario de pedido viejo ya no existe: lo nuevo se pide en
+              «Pedidos / Compras». Esta ficha queda para consultar lo que se
+              cargó antes y para la Compra Directa, que sigue viva. La vuelta
+              lleva a donde se consulta cada cosa: el historial de directas o
+              Histórico › «Compras anteriores».
             */}
-            {puedeCompras &&
-            ['BORRADOR', 'PEDIDO', 'CONFIRMADA'].includes(compra.estado) &&
-            cotizaciones.length === 0 ? (
-              <Link to={`/app/compras/${compra.id}/editar`}>
-                <Button variant="outline" icon={<Pencil />}>
-                  Corregir
-                </Button>
-              </Link>
-            ) : null}
-            <Link to={enHistorico ? '/app/compras/historico' : '/app/compras'}>
+            <Link to={compra.directa ? '/app/compras/directa/historial' : '/app/pedidos/historico?pestana=anteriores'}>
               <Button variant="outline" icon={<ArrowLeft />}>
-                {enHistorico ? 'Histórico' : 'Tablero'}
+                {compra.directa ? 'Historial de directas' : 'Compras anteriores'}
               </Button>
             </Link>
           </>

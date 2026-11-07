@@ -75,7 +75,7 @@ function avisosDe(r: ReturnType<typeof useResumenPanel>['data']): Aviso[] {
       tono: 'danger',
       titulo: `${r.compras_atrasadas} compra${r.compras_atrasadas === 1 ? '' : 's'} pagada${r.compras_atrasadas === 1 ? '' : 's'} sin recibir`,
       detalle: 'Figuran como pagadas y no constan recibidas del todo desde hace más de una semana.',
-      ruta: '/app/compras',
+      ruta: '/app/pedidos',
     })
   }
 
@@ -91,7 +91,7 @@ function avisosDe(r: ReturnType<typeof useResumenPanel>['data']): Aviso[] {
     avisos.push({
       tono: 'warning',
       titulo: `${r.compras_por_aprobar} compra${r.compras_por_aprobar === 1 ? '' : 's'} esperando al gerente`,
-      ruta: '/app/compras',
+      ruta: '/app/pedidos',
     })
   }
 
@@ -240,7 +240,7 @@ const QUE_HACER: GrupoDeAcciones[] = [
         titulo: 'Pedir algo que hace falta',
         detalle: 'Un repuesto, combustible, un servicio.',
         icono: ShoppingCart,
-        a: '/app/compras/nuevo',
+        a: '/app/pedidos',
         exige: 'ESCRITURA',
       },
       {
@@ -415,7 +415,7 @@ export function Dashboard() {
             */}
             {veCompras ? (
               <StatCard
-                a="/app/compras"
+                a="/app/pedidos"
                 label="Esperan aprobación"
                 value={enteros(porAprobar.length)}
                 icon={<Stamp />}
@@ -644,9 +644,9 @@ export function Dashboard() {
                 ))}
               </ul>
 
-              <Link to="/app/compras" className="mt-4 block">
+              <Link to="/app/pedidos" className="mt-4 block">
                 <Button variant="soft" size="sm" block>
-                  Ver el tablero
+                  Ver Pedidos / Compras
                 </Button>
               </Link>
             </Card>

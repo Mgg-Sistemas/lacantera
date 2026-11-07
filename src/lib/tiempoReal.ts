@@ -33,10 +33,10 @@ const AFECTA: Record<string, string[][]> = {
   compras_unidades_solicitantes: [['pedidos', 'unidades'], ['pedidos', 'catalogos']],
   // Fase 2: las cotizaciones mueven la comparativa y el score; el chat, su
   // hilo y el «💬 n» de las tarjetas.
-  compras_ofertas: [['pedidos', 'ofertas'], ['pedidos', 'estadisticas-proveedores']],
+  compras_ofertas: [['pedidos', 'ofertas'], ['pedidos', 'estadisticas-proveedores'], ['pedidos', 'reportes']],
   compras_mensajes: [['pedidos', 'mensajes']],
   // Fase 3: los abonos de un crédito y las cuentas del proveedor para pagarle.
-  compras_abonos: [['pedidos', 'abonos']],
+  compras_abonos: [['pedidos', 'abonos'], ['pedidos', 'reportes']],
   proveedor_datos_pago: [['pedidos', 'datos-pago']],
   // Fase 4: cada recepción del almacén (la orden ya avisa por `compras_ordenes`)
   // y la evaluación al finalizar, que mueve el score de las cotizaciones.
@@ -45,7 +45,9 @@ const AFECTA: Record<string, string[][]> = {
   // Fase 5a: los catálogos de «📒 Categorías» y el servicio directo.
   compras_categorias_servicio: [['pedidos', 'catalogos']],
   compras_tipos_servicio: [['pedidos', 'catalogos']],
-  compras_servicios_directos: [['pedidos', 'servicios-directos']],
+  // Fase 5b: el reporte por renglón y el cierre diario cuentan también los
+  // servicios directos, los abonos y las cotizaciones.
+  compras_servicios_directos: [['pedidos', 'servicios-directos'], ['pedidos', 'reportes']],
   proveedores: [['proveedores']],
 
   // Maquinaria y taller. La orden de mantenimiento toca tres pantallas: la

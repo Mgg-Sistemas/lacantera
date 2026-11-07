@@ -237,9 +237,6 @@ const PorPagar = pagina(() =>
 const HistorialDirectas = pagina(() =>
   import('@/pages/compras/HistorialDirectas').then((m) => ({ default: m.HistorialDirectas })),
 )
-const HistoricoCompras = pagina(() =>
-  import('@/pages/compras/HistoricoCompras').then((m) => ({ default: m.HistoricoCompras })),
-)
 const DetalleCompra = pagina(() =>
   import('@/pages/compras/DetalleCompra').then((m) => ({ default: m.DetalleCompra })),
 )
@@ -254,20 +251,6 @@ const Proveedores = pagina(() =>
 )
 const CompraDirecta = pagina(() =>
   import('@/pages/compras/CompraDirecta').then((m) => ({ default: m.CompraDirecta })),
-)
-const NuevoPedido = pagina(() =>
-  import('@/pages/compras/NuevoPedido').then((m) => ({ default: m.NuevoPedido })),
-)
-// Comparte modulo con «Nuevo pedido» y por tanto trozo: es el mismo formulario,
-// y separarlo obligaria a cargar dos veces lo mismo para hacer lo mismo.
-const CorregirPedido = pagina(() =>
-  import('@/pages/compras/NuevoPedido').then((m) => ({ default: m.CorregirPedido })),
-)
-const TableroCompras = pagina(() =>
-  import('@/pages/compras/Tablero').then((m) => ({ default: m.TableroCompras })),
-)
-const ComprasTelefono = pagina(() =>
-  import('@/pages/compras/ComprasTelefono').then((m) => ({ default: m.ComprasTelefono })),
 )
 const TableroVentas = pagina(() =>
   import('@/pages/ventas/Tablero').then((m) => ({ default: m.TableroVentas })),
@@ -366,6 +349,10 @@ const SolicitudesAlmacenPage = pagina(() =>
 const SolicitudesAlmacenMovil = pagina(() =>
   import('@/pages/pedidos/SolicitudesAlmacenMovil').then((m) => ({ default: m.SolicitudesAlmacenMovil })),
 )
+// Fase 5b: el Histórico de MGG (`/app/pedidos/historico`), con «Compras anteriores».
+const HistoricoPedidos = pagina(() =>
+  import('@/pages/pedidos/HistoricoPage').then((m) => ({ default: m.HistoricoPage })),
+)
 // El manual pesa medio megabyte de texto. Partido, solo lo descarga quien lo abre.
 const Manual = pagina(() => import('@/pages/Manual').then((m) => ({ default: m.Manual })))
 
@@ -394,8 +381,17 @@ const paginas: Record<string, ReactNode> = {
   '/app/despachos': <TableroDespachos />,
   '/app/despachos/tickets': <Tickets />,
   '/app/despachos/guias': <Guias />,
-  '/app/compras': <TableroCompras />,
+  /*
+    EL FLUJO DE COMPRAS ANTERIOR SE RETIRÓ DEL MENÚ (fase 5b, 07/11/2026).
+
+    Su tablero, «Nuevo pedido» y la pantalla de teléfono ya no existen: todo se
+    pide y se compra en «Pedidos / Compras». Quien tenga guardada la dirección
+    vieja cae en la nueva; lo que se cargó antes se consulta, solo para leer,
+    en Histórico › «Compras anteriores». Las tablas y los datos no se tocaron.
+  */
+  '/app/compras': <Navigate to="/app/pedidos" replace />,
   '/app/pedidos': <PedidosPage />,
+  '/app/pedidos/historico': <HistoricoPedidos />,
   '/app/solicitudes-pedido': <SolicitudesAlmacenPage />,
   '/app/compras/proveedores': <Proveedores />,
   '/app/compras/proveedores/:id': <FichaProveedor />,
@@ -591,6 +587,12 @@ function AFichaDeCamion() {
   return <Navigate to={`/app/maquinaria/camiones/${id ?? ''}`} replace />
 }
 
+/** «Corregir» un pedido del flujo anterior ya no existe: se ve su ficha, solo para leer. */
+function ALaCompraAnterior() {
+  const { id } = useParams()
+  return <Navigate to={`/app/compras/${id ?? ''}`} replace />
+}
+
 function RutaProtegida({ children }: { children: ReactNode }) {
   const { session, cargando } = useSesion()
   const lugar = useLocation()
@@ -746,15 +748,20 @@ export default function App() {
 
               {/* Pantallas que no están en el menú porque se llega a ellas desde
                   el tablero, no desde la navegación. */}
-              <Route path="compras/nuevo" element={<NuevoPedido />} />
+              {/* El flujo anterior se retiró (fase 5b): sus direcciones llevan
+                  al nuevo o al Histórico. «compras/nuevo» está abierta a todos
+                  (`RUTAS_PROPIAS`), así que la redirección también. */}
+              <Route path="compras/nuevo" element={<Navigate to="/app/pedidos" replace />} />
               <Route path="compras/directa" element={<CompraDirecta />} />
-              <Route path="compras/:id/editar" element={<CorregirPedido />} />
+              <Route path="compras/:id/editar" element={<ALaCompraAnterior />} />
               {/* Antes que `compras/:id`, que si no atraparía «directa» como si
                   fuera el número de una orden. */}
               <Route path="compras/directa/historial" element={<HistorialDirectas />} />
-              <Route path="compras/historico" element={<HistoricoCompras />} />
-              {/* Compras en el teléfono (como las pantallas de teléfono de MGG). */}
-              <Route path="compras/telefono" element={<ComprasTelefono />} />
+              <Route
+                path="compras/historico"
+                element={<Navigate to="/app/pedidos/historico?pestana=anteriores" replace />}
+              />
+              <Route path="compras/telefono" element={<Navigate to="/app/pedidos" replace />} />
               <Route path="compras/:id" element={<DetalleCompra />} />
               {/* La revisión del almacén en el teléfono (MGG «solicitudes»). */}
               <Route path="solicitudes-pedido/telefono" element={<SolicitudesAlmacenMovil />} />
