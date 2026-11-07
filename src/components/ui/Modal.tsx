@@ -14,13 +14,15 @@ interface ModalProps {
   children: ReactNode
   /** Botones. Van al pie, alineados a la derecha. */
   acciones?: ReactNode
-  ancho?: 'sm' | 'md' | 'lg'
+  ancho?: 'sm' | 'md' | 'lg' | 'xl'
 }
 
 const anchos = {
   sm: 'max-w-md',
   md: 'max-w-xl',
   lg: 'max-w-3xl',
+  // Las tablas anchas de compras (cotización por ítem, asignar por producto).
+  xl: 'max-w-6xl',
 }
 
 export function Modal({

@@ -9,9 +9,11 @@ import { Input } from '@/components/ui/Input'
 import { Segmento } from '@/components/ui/Segmento'
 import { Cargando, Vacio } from '@/components/ui/Estado'
 import { cn } from '@/lib/cn'
+import { useProveedores } from '@/lib/api/catalogo'
 import {
   useAprobarOrden,
   useCancelarOrden,
+  useNoLeidos,
   usePedidos,
   usePermisosPedidos,
   type EstadoOrden,
@@ -21,7 +23,9 @@ import {
 import {
   ACENTO_COLUMNA,
   ESTADOS_FASES_SP,
+  KANBAN_COLS_OC,
   KANBAN_COLS_PEDIDOS,
+  TOPE_COLUMNA_OC,
   coincide,
   fechaHoraVE,
   money,
@@ -30,19 +34,27 @@ import {
   relTime,
   type TonoEstado,
 } from '@/lib/pedidos'
+import { desglosarOc, infoModalidad } from '@/lib/ofertas'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
 import { CrearOrdenModal } from './CrearOrdenModal'
 import { EstadoBadge, OrdenDetailModal } from './OrdenDetailModal'
 import { ConfirmDialog, MotivoModal } from './Dialogos'
 
 /*
-  PEDIDOS / COMPRAS (MGG `PedidosPage`) · FASE 1
+  PEDIDOS / COMPRAS (MGG `PedidosPage`) · FASES 1 Y 2
 
   Angélica, 07/11/2026: el módulo de compras se reemplaza por una copia exacta
   del de MGG —estructura, pestañas, columnas, tarjetas, botones y textos con
-  sus emojis—, dibujada con las piezas de La Cantera. Esta es la fase 1: la
-  pestaña «✉ Solicitud de Pedido» completa. Las demás pestañas están en su
-  sitio con un aviso de la fase en que llegan.
+  sus emojis—, dibujada con las piezas de La Cantera. La fase 1 es la pestaña
+  «✉ Solicitud de Pedido»; la fase 2, «🧾 Órdenes de Compra» con las columnas
+  de MGG (cargar ofertas, OC por aprobar, … proveedor desistió) y sus
+  tarjetas con proveedor, modalidad de pago y «💬 n». Aprobar, pagar y recibir
+  llegan con las fases 3 y 4: hasta entonces esas columnas solo muestran. Las
+  demás pestañas están en su sitio con un aviso de la fase en que llegan.
+
+  El tope de 10 tarjetas por columna de la pestaña OC lleva en MGG al
+  Histórico; aquí, hasta que llegue el Histórico (fase 5), a la Lista filtrada
+  por ese estado.
 
   QUIÉN VE QUÉ. Pedir lo puede cualquiera (06/11/2026). Quien no lleva Compras
   es el «soloSolicitud» de MGG: no ve pestañas ni filtros de OC, solo sus
@@ -53,8 +65,9 @@ import { ConfirmDialog, MotivoModal } from './Dialogos'
     - «⌕ Histórico», «📊 Reporte por renglón», «📆 Cierre diario», «📒
       Categorías» y «🛒 Solicitud de Mercado» llegan en la fase 5, con sus
       pantallas. No se dibujan botones que no llevan a nada.
-    - El administrador arranca en «✉ Solicitud de Pedido» y no en «🧾 Órdenes
-      de Compra» como en MGG: esa pestaña todavía es un aviso.
+    - El administrador arranca en la última pestaña que usó (la primera vez,
+      «✉ Solicitud de Pedido»), no siempre en «🧾 Órdenes de Compra» como en
+      MGG: aprobar la OC todavía no está (fase 3).
 */
 
 type Scope = 'pedidos' | 'oc' | 'oc_lote' | 'compra_directa' | 'servicio' | 'servicio_directo'
@@ -98,7 +111,6 @@ const PESTANAS: { scope: Scope; label: string; title: string }[] = [
 
 /** En qué fase llega cada pestaña que todavía no está. */
 const FASE_DE: Partial<Record<Scope, string>> = {
-  oc: 'fase 2 (cotizar, cargar ofertas y crear la OC) y fase 3 (aprobar y pagar)',
   oc_lote: 'fase 3 (aprobar OC por lote)',
   servicio: 'fase 5 (servicios)',
   servicio_directo: 'fase 5 (servicio directo)',
@@ -155,6 +167,14 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
 
   const ordenes = useMemo(() => pedidos.data ?? [], [pedidos.data])
 
+  const proveedoresQ = useProveedores(false)
+  const nombreProveedor = useMemo(() => {
+    const m = new Map<number, string>()
+    for (const p of proveedoresQ.data ?? []) m.set(p.id, p.nombre)
+    return (id: number | null | undefined) => (id ? (m.get(id) ?? null) : null)
+  }, [proveedoresQ.data])
+  const noLeidos = useNoLeidos(permisos.yo)
+
   // Servicios muestra solo clase='servicio'; el resto, solo productos. Sin
   // Compras, solo las fases de la SP.
   const ordenesDePestana = useMemo(
@@ -177,15 +197,14 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
         (o) =>
           !(filterEstado && o.estado !== filterEstado) &&
           !(filterCreador && o.creado_por !== filterCreador) &&
-          coincide(o, filterText),
+          coincide(o, filterText, nombreProveedor(o.proveedor_id)),
       ),
-    [ordenesDePestana, filterEstado, filterCreador, filterText],
+    [ordenesDePestana, filterEstado, filterCreador, filterText, nombreProveedor],
   )
 
+  const columnas = scope === 'oc' ? KANBAN_COLS_OC : KANBAN_COLS_PEDIDOS
   const kanbanCols =
-    filterEstado && KANBAN_COLS_PEDIDOS.some((c) => c.key === filterEstado)
-      ? KANBAN_COLS_PEDIDOS.filter((c) => c.key === filterEstado)
-      : KANBAN_COLS_PEDIDOS
+    filterEstado && columnas.some((c) => c.key === filterEstado) ? columnas.filter((c) => c.key === filterEstado) : columnas
 
   // ?detalle=ID abre el detalle (avisos y búsqueda global). Se consume de la URL.
   const [searchParams, setSearchParams] = useSearchParams()
@@ -379,12 +398,21 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
             <KanbanBoard
               ordenes={filteredOrdenes}
               cols={kanbanCols}
+              tope={scope === 'oc' ? TOPE_COLUMNA_OC : null}
+              proveedor={nombreProveedor}
+              noLeidos={noLeidos.data}
               onOpen={(id) => setModal({ kind: 'detail', ordenId: id })}
+              onVerMas={(estado) => {
+                setFilterEstado(estado)
+                switchView('lista')
+              }}
             />
           ) : (
             <OrdenesTable
               ordenes={filteredOrdenes}
               canManageProcurement={canManageProcurement}
+              proveedor={nombreProveedor}
+              noLeidos={noLeidos.data}
               onView={(id) => setModal({ kind: 'detail', ordenId: id })}
               onApprove={(o) => setModal({ kind: 'approve', orden: o })}
             />
@@ -394,8 +422,11 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
 
       {modal.kind === 'detail' && currentDetail ? (
         <OrdenDetailModal
+          key={currentDetail.id}
           orden={currentDetail}
+          ordenes={ordenes}
           permisos={permisos}
+          onAbrir={(id) => setModal({ kind: 'detail', ordenId: id })}
           onClose={() => setModal({ kind: 'none' })}
           onApprove={() => setModal({ kind: 'approve', orden: currentDetail })}
           onEditar={() => setModal({ kind: 'edit', orden: currentDetail })}
@@ -462,14 +493,23 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
 // Vista Lista (MGG `OrdenesTable`)
 // ---------------------------------------------------------------------------
 
+type NombreProveedor = (id: number | null | undefined) => string | null
+
+/** MGG «↻ n»: cuántas veces cambió el proveedor de la orden. */
+const cambiosDeProveedor = (o: Orden): number => (o.historial ?? []).filter((h) => h.evento === 'proveedor_cambiado').length
+
 function OrdenesTable({
   ordenes,
   canManageProcurement,
+  proveedor,
+  noLeidos,
   onView,
   onApprove,
 }: {
   ordenes: Orden[]
   canManageProcurement: boolean
+  proveedor: NombreProveedor
+  noLeidos: Map<number, number> | undefined
   onView: (id: number) => void
   onApprove: (o: Orden) => void
 }) {
@@ -496,41 +536,54 @@ function OrdenesTable({
           </tr>
         </thead>
         <tbody>
-          {ordenes.map((o) => (
-            <tr
-              key={o.id}
-              className="border-hairline hover:bg-ink/3 cursor-pointer border-b last:border-b-0"
-              onClick={() => onView(o.id)}
-              title="Ver detalle"
-            >
-              <td className="px-4 py-2.5 font-mono">
-                {o.codigo}
-                {o.urgente ? (
-                  <span className="bg-danger ml-1.5 rounded px-1.5 py-0.5 font-sans text-[10px] font-semibold text-white">
-                    🚨 URGENTE
-                  </span>
-                ) : null}
-              </td>
-              <td className="px-4 py-2.5">—</td>
-              <td className="px-4 py-2.5">{quienSolicita(o) ?? '—'}</td>
-              <td className="px-4 py-2.5 text-right font-mono">{o.items.length}</td>
-              <td className="px-4 py-2.5 text-right font-mono">{money(o.total)}</td>
-              <td className="px-4 py-2.5">
-                <EstadoBadge estado={o.estado} />
-              </td>
-              <td className="text-ink/55 px-4 py-2.5 text-xs">{fechaHoraVE(o.creado_en)}</td>
-              <td className="px-4 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                <Button size="sm" variant="ghost" onClick={() => onView(o.id)}>
-                  Ver
-                </Button>
-                {canManageProcurement && o.estado === 'pendiente' ? (
-                  <Button size="sm" className="bg-success hover:bg-success ml-1 hover:brightness-95" onClick={() => onApprove(o)}>
-                    Aprobar
+          {ordenes.map((o) => {
+            const sinLeer = noLeidos?.get(o.id) ?? 0
+            const cambios = cambiosDeProveedor(o)
+            return (
+              <tr
+                key={o.id}
+                className="border-hairline hover:bg-ink/3 cursor-pointer border-b last:border-b-0"
+                onClick={() => onView(o.id)}
+                title="Ver detalle"
+              >
+                <td className="px-4 py-2.5 font-mono">
+                  {o.oc_codigo ?? o.codigo}
+                  {o.oc_codigo ? <div className="text-ink/45 text-[11px]">{o.codigo}</div> : null}
+                  {o.urgente ? (
+                    <span className="bg-danger ml-1.5 rounded px-1.5 py-0.5 font-sans text-[10px] font-semibold text-white">
+                      🚨 URGENTE
+                    </span>
+                  ) : null}
+                  {sinLeer ? (
+                    <Chip tone="royal" className="ml-1.5 font-sans" title={`${sinLeer} mensaje(s) sin leer`}>
+                      💬 {sinLeer}
+                    </Chip>
+                  ) : null}
+                </td>
+                <td className="px-4 py-2.5">
+                  {proveedor(o.proveedor_id) ?? '—'}
+                  {cambios ? <div className="text-warning text-[11px]">↻ {cambios} cambio(s) de proveedor</div> : null}
+                </td>
+                <td className="px-4 py-2.5">{quienSolicita(o) ?? '—'}</td>
+                <td className="px-4 py-2.5 text-right font-mono">{o.items.length}</td>
+                <td className="px-4 py-2.5 text-right font-mono">{money(o.total)}</td>
+                <td className="px-4 py-2.5">
+                  <EstadoBadge estado={o.estado} />
+                </td>
+                <td className="text-ink/55 px-4 py-2.5 text-xs">{fechaHoraVE(o.creado_en)}</td>
+                <td className="px-4 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                  <Button size="sm" variant="ghost" onClick={() => onView(o.id)}>
+                    Ver
                   </Button>
-                ) : null}
-              </td>
-            </tr>
-          ))}
+                  {canManageProcurement && o.estado === 'pendiente' ? (
+                    <Button size="sm" className="bg-success hover:bg-success ml-1 hover:brightness-95" onClick={() => onApprove(o)}>
+                      Aprobar
+                    </Button>
+                  ) : null}
+                </td>
+              </tr>
+            )
+          })}
         </tbody>
       </table>
     </Card>
@@ -544,11 +597,20 @@ function OrdenesTable({
 function KanbanBoard({
   ordenes,
   cols,
+  tope,
+  proveedor,
+  noLeidos,
   onOpen,
+  onVerMas,
 }: {
   ordenes: Orden[]
   cols: { key: EstadoOrden; label: string }[]
+  /** Pestaña OC: 10 tarjetas por columna salvo «Pendiente (cargar ofertas)». */
+  tope: number | null
+  proveedor: NombreProveedor
+  noLeidos: Map<number, number> | undefined
   onOpen: (id: number) => void
+  onVerMas: (estado: EstadoOrden) => void
 }) {
   const byState = useMemo(() => {
     const map = new Map<EstadoOrden, Orden[]>()
@@ -562,6 +624,9 @@ function KanbanBoard({
       {cols.map((col) => {
         const items = byState.get(col.key) ?? []
         const acento = ACENTO_COLUMNA[col.key]
+        const limite = tope && col.key !== 'aprobada' ? tope : null
+        const visibles = limite ? items.slice(0, limite) : items
+        const sobran = items.length - visibles.length
         return (
           <section
             key={col.key}
@@ -583,8 +648,25 @@ function KanbanBoard({
                   Sin órdenes
                 </div>
               ) : (
-                items.map((o) => <KanbanCard key={o.id} orden={o} onOpen={onOpen} />)
+                visibles.map((o) => (
+                  <KanbanCard
+                    key={o.id}
+                    orden={o}
+                    proveedor={proveedor(o.proveedor_id)}
+                    sinLeer={noLeidos?.get(o.id) ?? 0}
+                    onOpen={onOpen}
+                  />
+                ))
               )}
+              {sobran > 0 ? (
+                <button
+                  type="button"
+                  className="text-royal-700 dark:text-royal-300 px-2 py-1 text-left text-xs font-medium hover:underline"
+                  onClick={() => onVerMas(col.key)}
+                >
+                  + {sobran} más · ver en la Lista →
+                </button>
+              ) : null}
             </div>
           </section>
         )
@@ -593,10 +675,27 @@ function KanbanBoard({
   )
 }
 
-const KanbanCard = memo(function KanbanCard({ orden, onOpen }: { orden: Orden; onOpen: (id: number) => void }) {
+const KanbanCard = memo(function KanbanCard({
+  orden,
+  proveedor,
+  sinLeer,
+  onOpen,
+}: {
+  orden: Orden
+  proveedor: string | null
+  sinLeer: number
+  onOpen: (id: number) => void
+}) {
   const solicita = quienSolicita(orden)
   const cargo = quienCargo(orden)
   const n = orden.items.length
+  const cambios = cambiosDeProveedor(orden)
+  const bcv = Number(orden.oferta_precio_bcv) || 0
+  const efe = Number(orden.oferta_precio_efectivo) || 0
+  const iva = Number(orden.iva) || 0
+  const des = desglosarOc(orden)
+  const cuadra = !orden.oc_codigo || des.cuadra
+  const ivaPct = iva && des.subtotal ? Math.round((iva / Math.max(0.01, des.subtotal - des.descuento - (orden.iva_incluido ? iva : 0))) * 100) : 0
   return (
     <div
       role="button"
@@ -611,20 +710,35 @@ const KanbanCard = memo(function KanbanCard({ orden, onOpen }: { orden: Orden; o
       )}
     >
       <div className="flex flex-wrap items-center gap-1.5 font-mono text-xs font-semibold">
-        {orden.codigo}
+        {orden.oc_codigo ?? orden.codigo}
         {orden.urgente ? (
           <span className="bg-danger rounded px-1.5 py-0.5 font-sans text-[10px] font-semibold text-white">
             🚨 URGENTE
           </span>
         ) : null}
+        {sinLeer ? (
+          <Chip tone="royal" className="ml-auto font-sans" title={`${sinLeer} mensaje(s) sin leer`}>
+            💬 {sinLeer}
+          </Chip>
+        ) : null}
       </div>
+      {orden.oc_codigo ? <div className="text-ink/45 font-mono text-[11px]">{orden.codigo}</div> : null}
       <div className="text-ink/90 mt-1 font-semibold">
-        {solicita || orden.unidad_solicitante ? `Solicita: ${solicita ?? orden.unidad_solicitante}` : 'Sin proveedor asignado'}
+        {proveedor
+          ? proveedor
+          : solicita || orden.unidad_solicitante
+            ? `Solicita: ${solicita ?? orden.unidad_solicitante}`
+            : 'Sin proveedor asignado'}
       </div>
       <div className="text-ink/60 mt-1 flex flex-wrap items-center gap-1.5 text-xs">
         <span>
           {n} ítem{n !== 1 ? 's' : ''}
         </span>
+        {cambios ? (
+          <Chip tone="warning" title="Cambios de proveedor">
+            ↻ {cambios}
+          </Chip>
+        ) : null}
         {orden.revisada_almacen_en ? (
           <Chip tone="info" title={`Revisada por almacén · ${fechaHoraVE(orden.revisada_almacen_en)}`}>
             📦 Revisada por almacén
@@ -647,8 +761,30 @@ const KanbanCard = memo(function KanbanCard({ orden, onOpen }: { orden: Orden; o
         {cargo ? <span className="text-ink/45">✎ {cargo}</span> : null}
         <span className="text-ink/45">· {fechaHoraVE(orden.creado_en)}</span>
       </div>
+      {proveedor && orden.modalidad_pago ? (
+        <div className="mt-1 text-[11px]">
+          <Chip tone={orden.modalidad_pago === 'usd' ? 'success' : 'info'}>
+            {infoModalidad(orden.modalidad_pago).icono} {infoModalidad(orden.modalidad_pago).label}
+          </Chip>
+          {bcv > 0 && efe > 0 && efe < bcv ? (
+            <div className="text-ink/55 mt-0.5">
+              Cotiz. BCV: {money(bcv)} → en $: {money(efe)} (-{money(bcv - efe)})
+            </div>
+          ) : efe > 0 && orden.modalidad_pago === 'usd' ? (
+            <div className="text-ink/55 mt-0.5">Opción en $: {money(efe)}</div>
+          ) : null}
+          {iva ? (
+            <div className="text-ink/55">
+              incl. IVA {ivaPct}% · {money(iva)}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       <div className="mt-2 flex items-center justify-between">
-        <span className="font-mono font-semibold">{money(orden.total)}</span>
+        <span className={cn('font-mono font-semibold', !cuadra && 'text-warning')} title={cuadra ? undefined : 'El total no cuadra con sus partes'}>
+          {cuadra ? '' : '⚠ '}
+          {money(orden.total)}
+        </span>
         <span className="text-ink/45 text-xs" title={fechaHoraVE(orden.creado_en)}>
           {relTime(orden.creado_en)}
         </span>

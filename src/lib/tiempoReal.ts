@@ -31,6 +31,10 @@ const AFECTA: Record<string, string[][]> = {
   // quien pide, el almacén y Compras, cada uno en su pantalla.
   compras_ordenes: [['pedidos']],
   compras_unidades_solicitantes: [['pedidos', 'unidades']],
+  // Fase 2: las cotizaciones mueven la comparativa y el score; el chat, su
+  // hilo y el «💬 n» de las tarjetas.
+  compras_ofertas: [['pedidos', 'ofertas'], ['pedidos', 'estadisticas-proveedores']],
+  compras_mensajes: [['pedidos', 'mensajes']],
   proveedores: [['proveedores']],
 
   // Maquinaria y taller. La orden de mantenimiento toca tres pantallas: la

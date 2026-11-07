@@ -53,6 +53,89 @@ export function mensajeSolicitudPedido(o: Orden): string {
   return partes.join('\n')
 }
 
+// ---------------------------------------------------------------------------
+// Fase 2: la OC (MGG `ordenPagoTxt.ts`)
+// ---------------------------------------------------------------------------
+
+/** MGG `montoTxt`: «$1.234,56» o «Bs 1.234,56». */
+export function montoTxt(n: number | string | null | undefined, moneda = '$'): string {
+  const v = (Number(n) || 0).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return moneda === '$' ? `$${v}` : `${moneda} ${v}`
+}
+
+/** MGG `detalleTxt`: el motivo y la finalidad, sin repetir. */
+export function detalleTxt(o: Pick<Orden, 'motivo' | 'finalidad'>): string {
+  const motivo = (o.motivo ?? '').trim()
+  const finalidad = (o.finalidad ?? '').trim()
+  return [motivo, finalidad === motivo ? '' : finalidad].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim()
+}
+
+/** Una cotización de la orden para el mensaje «para aprobar». */
+export interface CotizacionMensaje {
+  proveedor: string
+  /** Monto final a pagar de la cotización, en $. */
+  monto: number
+  elegida: boolean
+  /** Quién la escogió (solo la elegida). */
+  elegidaPor?: string | null
+}
+
+/** MGG `lineasCotizaciones`: el monto en $ y en Bs con la tasa del día; sin tasa, solo en $. */
+export function lineasCotizaciones(cotizaciones: CotizacionMensaje[], tasaBs?: number | null): string[] {
+  if (!cotizaciones.length) return []
+  const tasa = Number(tasaBs) > 0 ? Number(tasaBs) : null
+  const montos = (n: number) => [montoTxt(n, '$'), tasa ? montoTxt(n * tasa, 'Bs') : null].filter(Boolean).join(' · ')
+  const L: string[] = ['', `📊 *COTIZACIONES (${cotizaciones.length}):*`]
+  cotizaciones.forEach((c, i) => {
+    L.push(`• *Cotización ${i + 1}:* ${c.proveedor || '—'} · ${montos(c.monto)}${c.elegida ? ' ✅' : ''}`)
+  })
+  const i = cotizaciones.findIndex((c) => c.elegida)
+  if (i >= 0) {
+    const quien = (cotizaciones[i].elegidaPor ?? '').trim()
+    L.push(`✅ *${quien ? `El analista ${quien} escogió` : 'Se escogió'} la Cotización ${i + 1}* (${cotizaciones[i].proveedor || '—'})`)
+  }
+  L.push('')
+  return L
+}
+
+/**
+ * MGG `textoOrdenAprobacion` («💬 WhatsApp para aprobar»): la OC está «Ordenes
+ * pendiente por aprobar» y quien aprueba decide viendo lo esencial. Al pie va
+ * el nombre de la empresa (en MGG, «MINERAL GROUP GUAYANA C.A.»).
+ */
+export function textoOrdenAprobacion(
+  o: Orden,
+  d: {
+    proveedor: string
+    condicion: string | null
+    empresa: string
+    cotizaciones?: CotizacionMensaje[]
+    tasaBs?: number | null
+  },
+): string {
+  const detalle = detalleTxt(o)
+  const nota = (o.notas ?? '').trim()
+  const productos = (o.items ?? []).filter((i) => i.comprar !== false)
+  const solicita = (quienSolicita(o) ?? '').trim()
+  const analista = (o.oc_creada_por_nombre ?? o.aprobada_por_nombre ?? '').trim()
+
+  const L: string[] = []
+  L.push(`🔹 *ORDEN:* ${o.oc_codigo ?? o.codigo}`)
+  L.push('⏳ *Pendiente por aprobar*')
+  if (o.urgente) L.push('🚨 *URGENTE*')
+  L.push(`🏭 *Proveedor:* ${d.proveedor || '—'}`)
+  if (detalle) L.push(`📝 *Detalle:* ${detalle}`)
+  if (nota) L.push(`📌 *Nota:* ${nota.replace(/\s*\r?\n\s*/g, ' ')}`)
+  if (solicita) L.push(`🙋 *Solicita:* ${solicita}`)
+  if (analista) L.push(`🛒 *Analista de compras:* ${analista}`)
+  if (productos.length) L.push(`📦 *Productos:* ${productos.length}`)
+  if (d.condicion) L.push(`📋 *Condición:* ${d.condicion}`)
+  L.push(...lineasCotizaciones(d.cotizaciones ?? [], d.tasaBs))
+  L.push(`💵 *Total:* ${montoTxt(o.total, '$')}`)
+  L.push(`🏢 *${d.empresa.toUpperCase()}*`)
+  return L.join('\n')
+}
+
 /** MGG `mensajeRevisionAlmacen`: lo que entrega el almacén y lo que va a Compras. */
 export function mensajeRevisionAlmacen(o: Orden): string {
   const { tiene, falta } = resumenRevision(o.items ?? [])

@@ -68,6 +68,16 @@ export interface ItemOrden {
   almacen_articulo_id?: number | null
   /** La salida que no se aprobó y devolvió el renglón a Compras. */
   almacen_sin_salida?: string | null
+  // La OC (fase 2): lo que sale de la cotización aceptada.
+  /** El precio BCV unitario de la cotización (para volver a «Pago en Bs»). */
+  precio_bcv?: number | null
+  /** La medida en que vende el proveedor (BULTO) y cuántas unidades de uso trae. */
+  unidad_compra?: string | null
+  factor_compra?: number | null
+  /** «Se guarda en inventario como»: la ficha ligada a un renglón de nombre general. */
+  articulo_nombre?: string | null
+  /** Producto que el proveedor agregó en su cotización (la SP no lo pedía). */
+  agregado?: boolean
 }
 
 export interface EventoHistorial {
@@ -132,6 +142,110 @@ export interface Orden {
   oc_aprobada_en: string | null
   condiciones_pago: string | null
   modalidad_pago: 'usd' | 'bs' | null
+  // La OC (fase 2).
+  oc_creada_por: string | null
+  oc_aprobada_por: string | null
+  oferta_detalle: DetalleOferta | null
+  oferta_precio_efectivo: number | string | null
+  oferta_precio_bcv: number | string | null
+  oferta_motivo: string | null
+  oferta_motivo_adjuntos: Imagen[] | null
+  descuento_obtenido: number | string | null
+  iva: number | string | null
+  igtf: number | string | null
+  iva_incluido: boolean
+  ajuste: number | string | null
+  ajuste_motivo: string | null
+  pago_en_divisa: boolean | null
+  total_divisa: number | string | null
+  clasificacion: string[]
+  anulada_por_nombre: string | null
+  anulada_en: string | null
+  motivo_anulacion: string | null
+  recibida_en: string | null
+  abonado_total: number | string
+}
+
+/** Datos técnicos y logística de la oferta elegida (MGG `oferta_detalle`). */
+export interface DetalleOferta {
+  marca?: string | null
+  modelo?: string | null
+  procedencia?: string | null
+  materiales?: string | null
+  dimensiones?: string | null
+  peso?: string | null
+  calidad?: string | null
+  logistica?: Partial<Record<'flete' | 'transporte' | 'embalaje' | 'seguros', 'incluido' | 'comprador'>> | null
+}
+
+/** Una fila de la cotización. Varias con el mismo sku son variantes de marca. */
+export interface ItemOferta {
+  sku: string
+  nombre: string
+  cantidad: number
+  precio: number
+  precio_usd?: number | null
+  unidad?: string | null
+  marca?: string | null
+  modelo?: string | null
+  unidad_compra?: string | null
+  factor_compra?: number | null
+  /** «Se guarda en inventario como» (renglón general) o el producto agregado. */
+  articulo_id?: number | null
+  articulo_nombre?: string | null
+  agregado?: boolean
+  comprar?: boolean
+}
+
+/** Una cotización (MGG `ofertas_proveedor`). */
+export interface Oferta {
+  id: number
+  orden_id: number
+  proveedor_id: number
+  items: ItemOferta[]
+  precio_total: number | string
+  precio_efectivo: number | string | null
+  descuento: number | string | null
+  iva: number | string | null
+  igtf: number | string | null
+  iva_incluido: boolean
+  ajuste: number | string | null
+  ajuste_motivo: string | null
+  fecha_entrega_prometida: string | null
+  condiciones_pago: string | null
+  notas: string | null
+  detalle: DetalleOferta | null
+  estado: 'pendiente' | 'aceptada' | 'descartada'
+  score_calculado: number | string | null
+  motivo_descarte: string | null
+  adjuntos: Imagen[]
+  registrada_por: string
+  registrada_por_nombre: string | null
+  registrada_en: string
+  decidida_por: string | null
+  decidida_por_nombre: string | null
+  decidida_en: string | null
+}
+
+/** Lo que alimenta el score (MGG `ProveedorStats`). */
+export interface EstadisticaProveedor {
+  proveedor_id: number
+  puntualidad_pct: number
+  calidad_avg: number
+  cumplimiento_pct: number
+  total_evaluaciones: number
+  total_ordenes: number
+}
+
+/** Un mensaje del chat interno de la orden (MGG `oc_mensajes`). */
+export interface MensajeOrden {
+  id: number
+  orden_id: number
+  texto: string
+  autor: string
+  autor_nombre: string | null
+  leido_por: string[]
+  creado_en: string
 }
 
 /** Los permisos de MGG traducidos (ver `compras_mis_permisos_de_pedidos`). */
@@ -149,6 +263,8 @@ export interface PermisosPedidos {
 }
 
 export const BUCKET_PEDIDOS = 'compras-pedidos'
+/** Las fotos/PDF de las cotizaciones y del motivo de elección (MGG `ofertas-pdf`). */
+export const BUCKET_OFERTAS = 'compras-ofertas'
 export const MAX_IMAGENES_OP = 4
 
 // ---------------------------------------------------------------------------
@@ -393,4 +509,268 @@ export async function guardarImagenesOrden(
     await supabase.storage.from(BUCKET_PEDIDOS).remove(quitar)
   }
   await rpc('compras_guardar_imagenes', { p_id: ordenId, p_imagenes: [...quedan, ...subidas] })
+}
+
+// ---------------------------------------------------------------------------
+// Fase 2: cotizaciones, OC y chat
+// ---------------------------------------------------------------------------
+
+/** Las cotizaciones de unas órdenes (las madres), la más barata primero (MGG). */
+export function useOfertas(ordenIds: number[]) {
+  const ids = [...new Set(ordenIds)].sort((a, b) => a - b)
+  return useQuery({
+    queryKey: ['pedidos', 'ofertas', ids],
+    queryFn: async () =>
+      desenvolver<Oferta[]>(
+        await supabase.from('compras_ofertas').select('*').in('orden_id', ids).order('precio_total', { ascending: true }),
+      ),
+    enabled: ids.length > 0,
+  })
+}
+
+export function useEstadisticasProveedores(activo = true) {
+  return useQuery({
+    queryKey: ['pedidos', 'estadisticas-proveedores'],
+    queryFn: () => rpc<EstadisticaProveedor[]>('compras_estadisticas_proveedores'),
+    enabled: activo,
+    staleTime: 60_000,
+  })
+}
+
+/** Una dirección firmada de cinco minutos, como `ofertas-pdf` en MGG. */
+export async function urlAdjuntoOferta(path: string): Promise<string> {
+  const { data, error } = await supabase.storage.from(BUCKET_OFERTAS).createSignedUrl(path, 300)
+  if (error || !data) throw new Error(error?.message ?? 'No se pudo abrir el adjunto')
+  return data.signedUrl
+}
+
+/** MGG `subirAdjuntosOferta`: `{ordenId}/{provId}-{nonce}-{nombre}`. */
+export async function subirAdjuntosOferta(madreId: number, prefijo: string, archivos: File[]): Promise<Imagen[]> {
+  const out: Imagen[] = []
+  for (const f of archivos) {
+    const limpio = f.name.replace(/[^\w.-]+/g, '_').slice(-80) || 'archivo'
+    const nonce = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
+    const path = `${madreId}/${prefijo}-${nonce}-${limpio}`
+    const { error } = await supabase.storage
+      .from(BUCKET_OFERTAS)
+      .upload(path, f, { upsert: false, contentType: f.type || undefined })
+    if (error) throw new Error(error.message)
+    out.push({ path, filename: f.name })
+  }
+  return out
+}
+
+export interface DatosOferta {
+  items: Array<Partial<ItemOferta> & { sku: string }>
+  descuento: number | null
+  iva: number | null
+  igtf: number | null
+  iva_incluido: boolean
+  ajuste: number | null
+  ajuste_motivo: string | null
+  fecha_entrega_prometida: string | null
+  condiciones_pago: string | null
+  notas: string | null
+  detalle: DetalleOferta | null
+  adjuntos: Imagen[]
+}
+
+export interface ProveedorNuevo {
+  razon_social: string
+  rif: string
+  telefono: string | null
+  correo: string | null
+  direccion: string | null
+}
+
+export function useGuardarOferta() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (d: {
+      ordenId: number
+      ofertaId: number | null
+      proveedorId: number | null
+      proveedorNuevo: ProveedorNuevo | null
+      datos: DatosOferta
+      motivoCambio?: string | null
+    }) =>
+      rpc<{ id: number; proveedor_id: number; proveedor_creado: boolean; orden_id: number }>('compras_guardar_oferta', {
+        p_orden_id: d.ordenId,
+        p_oferta_id: d.ofertaId,
+        p_proveedor_id: d.proveedorId,
+        p_proveedor_nuevo: d.proveedorNuevo,
+        p_datos: d.datos,
+        p_motivo_cambio: d.motivoCambio ?? null,
+      }),
+    onSuccess: (r) => {
+      void qc.invalidateQueries({ queryKey: ['pedidos'] })
+      if (r.proveedor_creado) void qc.invalidateQueries({ queryKey: ['proveedores'] })
+    },
+  })
+}
+
+export function useEliminarOferta() {
+  const invalidar = useInvalidar()
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const adjuntos = await rpc<Imagen[]>('compras_eliminar_oferta', { p_oferta_id: id })
+      // Que no se borre del depósito no deja nada mal: la oferta ya no existe.
+      if (adjuntos?.length) await supabase.storage.from(BUCKET_OFERTAS).remove(adjuntos.map((a) => a.path))
+    },
+    onSuccess: invalidar,
+  })
+}
+
+/** [{sku, idx}] — idx: la fila (marca) elegida dentro de `oferta.items`. */
+export type Seleccion = Array<{ sku: string; idx: number | null }>
+
+export function useAceptarOferta() {
+  const invalidar = useInvalidar()
+  return useMutation({
+    mutationFn: (d: {
+      ordenId: number
+      ofertaId: number
+      seleccion: Seleccion
+      modalidad: 'usd' | 'bs'
+      motivo: string | null
+      adjuntos: Imagen[]
+      score: number | null
+    }) =>
+      rpc<{ id: number; codigo: string; oc_codigo: string; sub_oc: boolean }>('compras_aceptar_oferta', {
+        p_orden_id: d.ordenId,
+        p_oferta_id: d.ofertaId,
+        p_seleccion: d.seleccion,
+        p_modalidad: d.modalidad,
+        p_motivo: d.motivo,
+        p_motivo_adjuntos: d.adjuntos,
+        p_score: d.score,
+      }),
+    onSuccess: invalidar,
+  })
+}
+
+export function useAsignarProveedores() {
+  const invalidar = useInvalidar()
+  return useMutation({
+    mutationFn: (d: { ordenId: number; asignaciones: Array<{ oferta_id: number; skus: string[]; modalidad: 'usd' | 'bs' }> }) =>
+      rpc<Array<{ id: number; codigo: string; oc_codigo: string }>>('compras_asignar_proveedores', {
+        p_orden_id: d.ordenId,
+        p_asignaciones: d.asignaciones,
+      }),
+    onSuccess: invalidar,
+  })
+}
+
+export function useReabrirOc() {
+  const invalidar = useInvalidar()
+  return useMutation({
+    mutationFn: (d: { id: number; motivo: string | null }) => rpc('compras_reabrir_oc', { p_id: d.id, p_motivo: d.motivo }),
+    onSuccess: invalidar,
+  })
+}
+
+export function useDesistirProveedor() {
+  const invalidar = useInvalidar()
+  return useMutation({
+    mutationFn: (d: { id: number; motivo: string }) => rpc('compras_desistir_proveedor', { p_id: d.id, p_motivo: d.motivo }),
+    onSuccess: invalidar,
+  })
+}
+
+export function useAnularOc() {
+  const invalidar = useInvalidar()
+  return useMutation({
+    mutationFn: (d: { id: number; motivo: string }) => rpc('compras_anular_oc', { p_id: d.id, p_motivo: d.motivo }),
+    onSuccess: invalidar,
+  })
+}
+
+export interface DatosEditarOc {
+  items: Array<{
+    sku: string
+    nombre: string
+    cantidad: number
+    precio: number
+    marca: string | null
+    modelo: string | null
+    finalidad: string | null
+    articulo_id?: number | null
+  }>
+  proveedor_id: number | null
+  condiciones_pago: string | null
+  notas: string | null
+  descuento: number | null
+  iva?: number | null
+  igtf?: number | null
+  iva_incluido?: boolean
+  ajuste?: number | null
+  ajuste_motivo?: string | null
+  unidad_solicitante?: string | null
+  solicitante_nombre?: string | null
+  motivo?: string | null
+  finalidad?: string | null
+  urgente?: boolean
+}
+
+export function useEditarOc() {
+  const invalidar = useInvalidar()
+  return useMutation({
+    mutationFn: (d: { id: number; datos: DatosEditarOc }) =>
+      rpc<{ sin_cambios: boolean; reabierta: boolean }>('compras_editar_oc', { p_id: d.id, p_datos: d.datos }),
+    onSuccess: invalidar,
+  })
+}
+
+export function useCambiarModalidad() {
+  const invalidar = useInvalidar()
+  return useMutation({
+    mutationFn: (d: { id: number; modalidad: 'usd' | 'bs' }) =>
+      rpc('compras_cambiar_modalidad_pago', { p_id: d.id, p_modalidad: d.modalidad }),
+    onSuccess: invalidar,
+  })
+}
+
+/** El hilo de una orden, del más viejo al más nuevo. */
+export function useMensajesOrden(ordenId: number) {
+  return useQuery({
+    queryKey: ['pedidos', 'mensajes', ordenId],
+    queryFn: async () =>
+      desenvolver<MensajeOrden[]>(
+        await supabase
+          .from('compras_mensajes')
+          .select('*')
+          .eq('orden_id', ordenId)
+          .order('creado_en', { ascending: true })
+          .limit(500),
+      ),
+  })
+}
+
+/** Cuántos mensajes sin leer tiene cada orden (MGG `noLeidosPorOrden`). */
+export function useNoLeidos(yo: string | null | undefined) {
+  return useQuery({
+    queryKey: ['pedidos', 'mensajes', 'no-leidos', yo],
+    enabled: !!yo,
+    queryFn: async () => {
+      const filas = desenvolver<Array<{ orden_id: number }>>(
+        await supabase.from('compras_mensajes').select('orden_id').not('leido_por', 'cs', `{${yo}}`).limit(2000),
+      )
+      const m = new Map<number, number>()
+      for (const f of filas) m.set(f.orden_id, (m.get(f.orden_id) ?? 0) + 1)
+      return m
+    },
+  })
+}
+
+export function useEnviarMensaje() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (d: { ordenId: number; texto: string }) =>
+      rpc<MensajeOrden>('compras_enviar_mensaje', { p_orden_id: d.ordenId, p_texto: d.texto }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['pedidos', 'mensajes'] }),
+  })
+}
+
+export async function marcarMensajesLeidos(ordenId: number): Promise<void> {
+  await rpc('compras_marcar_mensajes_leidos', { p_orden_id: ordenId })
 }
