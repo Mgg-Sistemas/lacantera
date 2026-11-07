@@ -13,7 +13,18 @@
   «Revisó: …» y lo que tiene, sin bloques por sede ni traslados. Lo que el
   almacén entrega sale por una solicitud de salida, y el mensaje lo dice.
 */
-import type { Orden } from '@/lib/api/pedidos'
+import type { Abono, Orden } from '@/lib/api/pedidos'
+import { labelCondicionPago } from '@/lib/ofertas'
+import {
+  basesPago,
+  esCredito,
+  etiquetaDocumento,
+  labelMetodoPago,
+  labelRetencion,
+  montoAPagar,
+  saldoCredito,
+  type DatosPago,
+} from '@/lib/pagos'
 import {
   cantidadSolicitada,
   fechaHoraVE,
@@ -132,6 +143,199 @@ export function textoOrdenAprobacion(
   if (d.condicion) L.push(`📋 *Condición:* ${d.condicion}`)
   L.push(...lineasCotizaciones(d.cotizaciones ?? [], d.tasaBs))
   L.push(`💵 *Total:* ${montoTxt(o.total, '$')}`)
+  L.push(`🏢 *${d.empresa.toUpperCase()}*`)
+  return L.join('\n')
+}
+
+// ---------------------------------------------------------------------------
+// Fase 3: aprobación y pago (MGG `ordenPagoTxt.ts`, sin Tesorería)
+// ---------------------------------------------------------------------------
+
+/** MGG `bancoTxt`: «Banco de Venezuela (0102)». Aquí la lista ya dice «0102 · BANCO DE VENEZUELA». */
+function bancoTxt(b?: string | null): string {
+  const t = (b ?? '').trim()
+  const m = /^(\d{4})\s*·\s*(.+)$/.exec(t)
+  return m ? `${m[2]} (${m[1]})` : t
+}
+
+/** Las líneas «* Banco / * CI / * Tlf …» de un método con datos (MGG). */
+function lineasDatosPago(metodo: string, d: DatosPago | undefined): string[] {
+  if (!d) return []
+  const L: string[] = []
+  const add = (k: string, v?: string) => {
+    if (v && v.trim()) L.push(`* ${k}: ${v.trim()}`)
+  }
+  if (metodo === 'pago_movil') {
+    add('Banco', bancoTxt(d.banco))
+    add('CI/RIF', d.ci_rif)
+    add('Tlf', d.telefono)
+  } else if (metodo === 'transferencia') {
+    add('Titular', d.nombre)
+    add('CI/RIF', d.ci)
+    add('Banco', bancoTxt(d.banco))
+    add('Cuenta', d.cuenta)
+  } else if (metodo === 'zelle') {
+    add('Titular', d.nombre)
+    add('Correo', d.email)
+  } else if (metodo === 'binance_usdt') {
+    add('Correo/ID', d.email_o_id)
+  }
+  return L
+}
+
+/** Lo que el mensaje necesita además de la orden. */
+export interface DatosMensajePago {
+  proveedor: string
+  empresa: string
+  condicion: string | null
+  cotizaciones?: CotizacionMensaje[]
+  tasaBs?: number | null
+}
+
+const fechaDia = (iso: string): string => iso.slice(0, 10).split('-').reverse().join('/')
+
+/**
+ * MGG `textoOrdenPago` («💬 WhatsApp para pagar»), sin Tesorería: el documento,
+ * cada retención y el «Monto a pagar» (total − descuento − retenciones), que
+ * aquí siempre se restan. Con abonos, lo abonado y el saldo. Los métodos con
+ * los datos del proveedor no salen en crédito (MGG).
+ */
+export function textoOrdenPago(o: Orden, d: DatosMensajePago): string {
+  const detalle = detalleTxt(o)
+  const nota = (o.notas ?? '').trim()
+  const solicita = (quienSolicita(o) ?? '').trim()
+  const analista = (o.oc_creada_por_nombre ?? o.aprobada_por_nombre ?? '').trim()
+  const autorizo = (o.oc_aprobada_por_nombre ?? '').trim()
+  const abonado = Number(o.abonado_total) || 0
+  const credito = esCredito(o) || o.estado === 'cuenta_abierta' || abonado > 0
+  const rets = o.retenciones ?? []
+  const aPagar = montoAPagar(o)
+  const tasa = Number(d.tasaBs) > 0 ? Number(d.tasaBs) : null
+
+  const L: string[] = []
+  L.push(`🔹 *ORDEN:* ${o.oc_codigo ?? o.codigo}`)
+  L.push(o.urgente ? '🚨 *Requerimiento:* URGENTE' : '🟢 *Requerimiento:* Normal')
+  L.push(`🏭 *Proveedor:* ${d.proveedor || '—'}`)
+  if (detalle) L.push(`📝 *Detalle:* ${detalle}`)
+  if (nota) L.push(`📌 *Nota:* ${nota.replace(/\s*\r?\n\s*/g, ' ')}`)
+  if (solicita) L.push(`🙋 *Solicita:* ${solicita}`)
+  if (analista) L.push(`🛒 *Analista de compras:* ${analista}`)
+  if (autorizo) L.push(`👔 *Autorizó:* ${autorizo}`)
+  if (o.oc_aprobada_en) L.push(`📅 *Fecha de aprobación:* ${fechaHoraVE(o.oc_aprobada_en)}`)
+  if (d.condicion) L.push(`📋 *Condición:* ${d.condicion}`)
+  L.push(...lineasCotizaciones(d.cotizaciones ?? [], d.tasaBs))
+  L.push(`💵 *Total:* ${montoTxt(basesPago(o).total, '$')}`)
+  if (o.comprobante_tipo) L.push(`🧾 *Documento:* ${etiquetaDocumento(o.comprobante_tipo)}`)
+  if (Number(o.descuento_pago) > 0) L.push(`🏷 *Descuento en el pago:* −${montoTxt(o.descuento_pago, '$')}`)
+  for (const r of rets) L.push(`🧾 *Retención ${labelRetencion(r)}:* −${montoTxt(r.monto, '$')}`)
+  if (rets.length || Number(o.descuento_pago) > 0) L.push(`✅ *Monto a pagar:* ${montoTxt(aPagar, '$')}`)
+  if (abonado > 0) {
+    L.push(`✅ *Abonado:* ${montoTxt(abonado, '$')}`)
+    L.push(`🔺 *Saldo pendiente:* ${montoTxt(saldoCredito(o), '$')}`)
+  }
+  const enBs = abonado > 0 ? saldoCredito(o) : aPagar
+  if (tasa) {
+    L.push(
+      `💱 *En Bs:* ${montoTxt(enBs * tasa, 'Bs')} (tasa ${tasa.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 4 })})`,
+    )
+  }
+  if (!credito) {
+    const metodos = o.metodo_pago ?? []
+    if (!metodos.length) L.push('💳 *Pago:* (todavía sin método de pago indicado)')
+    for (const m of metodos) {
+      const conMonto = Number(m.monto) > 0 && !(metodos.length === 1 && Math.abs(Number(m.monto) - aPagar) < 0.01)
+      L.push(`💳 *${labelMetodoPago(m.metodo)}:*${conMonto ? ` ${montoTxt(m.monto, m.moneda === 'USD' ? '$' : m.moneda)}` : ''}`)
+      L.push(...lineasDatosPago(m.metodo, m.datos))
+    }
+  }
+  L.push(`🏢 *${d.empresa.toUpperCase()}*`)
+  return L.join('\n')
+}
+
+/** El aviso de que la OC se aprobó y adónde sigue (MGG lo dice en la campana). */
+export function textoOcAprobada(o: Orden, d: { proveedor: string; empresa: string; condicion: string | null }): string {
+  const sigue =
+    o.estado === 'por_recibir'
+      ? 'Pendiente por recepción (contra entrega: se paga lo recibido)'
+      : o.estado === 'cuenta_abierta'
+        ? 'Crédito · cuenta abierta (se paga con abonos)'
+        : 'Indicar el método de pago'
+  const L: string[] = []
+  L.push(`✅ *OC APROBADA: ${o.oc_codigo ?? o.codigo}*`)
+  if (o.urgente) L.push('🚨 *URGENTE*')
+  L.push(`🏭 *Proveedor:* ${d.proveedor || '—'}`)
+  const solicita = (quienSolicita(o) ?? '').trim()
+  if (solicita) L.push(`🙋 *Solicita:* ${solicita}`)
+  if (o.oc_aprobada_por_nombre) L.push(`👔 *Autorizó:* ${o.oc_aprobada_por_nombre}`)
+  if (o.oc_aprobada_en) L.push(`📅 *Fecha de aprobación:* ${fechaHoraVE(o.oc_aprobada_en)}`)
+  if (d.condicion) L.push(`📋 *Condición:* ${d.condicion}`)
+  L.push(`➡ *Sigue:* ${sigue}`)
+  L.push(`💵 *Total:* ${montoTxt(o.total, '$')}`)
+  L.push(`🏢 *${d.empresa.toUpperCase()}*`)
+  return L.join('\n')
+}
+
+/**
+ * MGG `textoOrdenTesoreria` («PAGADA POR TESORERIA»); aquí paga Compras, y el
+ * mensaje lleva la referencia, la fecha y que sigue la recepción.
+ */
+export function textoOrdenPagada(o: Orden, d: { proveedor: string; empresa: string }): string {
+  const nota = (o.notas ?? '').trim()
+  const analista = (o.oc_creada_por_nombre ?? o.aprobada_por_nombre ?? '').trim()
+  const solicita = (quienSolicita(o) ?? '').trim()
+  const L: string[] = []
+  L.push(`🔹 *ORDEN:* ${o.oc_codigo ?? o.codigo}`)
+  L.push(`🏭 *Proveedor:* ${d.proveedor || '—'}`)
+  if (nota) L.push(`📌 *Nota del analista:* ${nota.replace(/\s*\r?\n\s*/g, ' ')}`)
+  if (analista) L.push(`🛒 *Analista encargado:* ${analista}`)
+  if (solicita) L.push(`🙋 *Solicita:* ${solicita}`)
+  L.push(`💵 *Monto en $:* ${montoTxt(o.pago_monto_usd ?? montoAPagar(o), '$')}`)
+  if (o.pago_moneda === 'Bs') {
+    L.push(`💱 *Pagado en Bs:* ${montoTxt(o.pago_monto, 'Bs')} (tasa ${Number(o.pago_tasa).toLocaleString('es-VE')})`)
+  }
+  if (o.pago_referencia) L.push(`🧾 *Referencia:* ${o.pago_referencia}`)
+  if (o.pago_fecha) L.push(`📅 *Fecha de pago:* ${fechaDia(o.pago_fecha)}`)
+  if (o.pagada_por_nombre) L.push(`👤 *Registró:* ${o.pagada_por_nombre}`)
+  L.push(`📊 *Estado:* *${o.estado === 'pagada' ? 'PAGADA' : 'PAGADA · PENDIENTE POR RECEPCIÓN'}*`)
+  L.push(`🏢 *${d.empresa.toUpperCase()}*`)
+  return L.join('\n')
+}
+
+/** El abono registrado, con lo abonado y el saldo. */
+export function textoAbono(o: Orden, a: Abono, d: { proveedor: string; empresa: string }): string {
+  const L: string[] = []
+  L.push('💳 *ABONO REGISTRADO · CRÉDITO*')
+  L.push(`🔹 *ORDEN:* ${o.oc_codigo ?? o.codigo}`)
+  L.push(`🏭 *Proveedor:* ${d.proveedor || '—'}`)
+  L.push(
+    `💵 *Abono:* ${montoTxt(a.monto, '$')}${a.moneda === 'Bs' ? ` (${montoTxt(a.monto_moneda, 'Bs')} a ${Number(a.tasa).toLocaleString('es-VE')})` : ''}`,
+  )
+  L.push(`💳 *Método:* ${labelMetodoPago(a.metodo)}`)
+  if (a.referencia) L.push(`🧾 *Referencia:* ${a.referencia}`)
+  L.push(`📅 *Fecha:* ${fechaDia(a.fecha)}`)
+  L.push(`💵 *Monto a pagar:* ${montoTxt(montoAPagar(o), '$')}`)
+  L.push(`✅ *Abonado:* ${montoTxt(o.abonado_total, '$')}`)
+  const saldo = saldoCredito(o)
+  L.push(saldo > 0.01 ? `🔺 *Saldo pendiente:* ${montoTxt(saldo, '$')}` : '✅ *Crédito pagado en su totalidad*')
+  L.push(`🏢 *${d.empresa.toUpperCase()}*`)
+  return L.join('\n')
+}
+
+/** «📋 OC por lote»: las OC por aprobar, en un solo mensaje. */
+export function textoLoteAprobacion(ordenes: Orden[], d: { proveedorDe: (o: Orden) => string; empresa: string }): string {
+  const L: string[] = []
+  L.push(`📋 *ÓRDENES DE COMPRA PENDIENTES POR APROBAR (${ordenes.length})*`)
+  L.push(`📅 *Generado:* ${fechaHoraVE()}`)
+  L.push('')
+  ordenes.forEach((o, i) => {
+    L.push(`${i + 1}. 🔹 *${o.oc_codigo ?? o.codigo}* · ${d.proveedorDe(o) || '—'}${o.urgente ? ' · 🚨 URGENTE' : ''}`)
+    const sol = [o.unidad_solicitante, quienSolicita(o)].filter(Boolean).join(' — ')
+    L.push(
+      `    💵 ${montoTxt(o.total, '$')}${o.condiciones_pago ? ` · ${labelCondicionPago(o.condiciones_pago)}` : ''}${sol ? ` · 🙋 ${sol}` : ''}`,
+    )
+  })
+  L.push('')
+  L.push(`💰 *Total (${ordenes.length} órdenes):* *${montoTxt(ordenes.reduce((a, o) => a + (Number(o.total) || 0), 0), '$')}*`)
   L.push(`🏢 *${d.empresa.toUpperCase()}*`)
   return L.join('\n')
 }

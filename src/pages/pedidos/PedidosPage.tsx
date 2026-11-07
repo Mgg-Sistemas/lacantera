@@ -35,22 +35,26 @@ import {
   type TonoEstado,
 } from '@/lib/pedidos'
 import { desglosarOc, infoModalidad } from '@/lib/ofertas'
+import { esCredito, labelMetodoPago, montoAPagar, saldoCredito, totalRetenciones } from '@/lib/pagos'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
 import { CrearOrdenModal } from './CrearOrdenModal'
 import { EstadoBadge, OrdenDetailModal } from './OrdenDetailModal'
 import { ConfirmDialog, MotivoModal } from './Dialogos'
+import { OcPorLoteView } from './OcPorLoteView'
 
 /*
-  PEDIDOS / COMPRAS (MGG `PedidosPage`) · FASES 1 Y 2
+  PEDIDOS / COMPRAS (MGG `PedidosPage`) · FASES 1, 2 Y 3
 
   Angélica, 07/11/2026: el módulo de compras se reemplaza por una copia exacta
   del de MGG —estructura, pestañas, columnas, tarjetas, botones y textos con
   sus emojis—, dibujada con las piezas de La Cantera. La fase 1 es la pestaña
   «✉ Solicitud de Pedido»; la fase 2, «🧾 Órdenes de Compra» con las columnas
   de MGG (cargar ofertas, OC por aprobar, … proveedor desistió) y sus
-  tarjetas con proveedor, modalidad de pago y «💬 n». Aprobar, pagar y recibir
-  llegan con las fases 3 y 4: hasta entonces esas columnas solo muestran. Las
-  demás pestañas están en su sitio con un aviso de la fase en que llegan.
+  tarjetas con proveedor, modalidad de pago y «💬 n». La fase 3 aprueba y
+  paga dentro de Compras (sin Tesorería): «📋 OC por lote», y en las tarjetas
+  el método, el monto a pagar (total − retenciones), el saldo del crédito y el
+  pago registrado. Recibir y finalizar llegan con la fase 4. Las demás
+  pestañas están en su sitio con un aviso de la fase en que llegan.
 
   El tope de 10 tarjetas por columna de la pestaña OC lleva en MGG al
   Histórico; aquí, hasta que llegue el Histórico (fase 5), a la Lista filtrada
@@ -67,7 +71,7 @@ import { ConfirmDialog, MotivoModal } from './Dialogos'
       pantallas. No se dibujan botones que no llevan a nada.
     - El administrador arranca en la última pestaña que usó (la primera vez,
       «✉ Solicitud de Pedido»), no siempre en «🧾 Órdenes de Compra» como en
-      MGG: aprobar la OC todavía no está (fase 3).
+      MGG.
 */
 
 type Scope = 'pedidos' | 'oc' | 'oc_lote' | 'compra_directa' | 'servicio' | 'servicio_directo'
@@ -111,7 +115,6 @@ const PESTANAS: { scope: Scope; label: string; title: string }[] = [
 
 /** En qué fase llega cada pestaña que todavía no está. */
 const FASE_DE: Partial<Record<Scope, string>> = {
-  oc_lote: 'fase 3 (aprobar OC por lote)',
   servicio: 'fase 5 (servicios)',
   servicio_directo: 'fase 5 (servicio directo)',
 }
@@ -317,6 +320,14 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
             </Link>
           </div>
         </Card>
+      ) : scope === 'oc_lote' ? (
+        <OcPorLoteView
+          ordenes={ordenes}
+          permisos={permisos}
+          cargando={pedidos.isPending}
+          proveedor={nombreProveedor}
+          onOpen={(id) => setModal({ kind: 'detail', ordenId: id })}
+        />
       ) : FASE_DE[scope] ? (
         <Card className="max-w-xl">
           <Vacio
@@ -696,6 +707,33 @@ const KanbanCard = memo(function KanbanCard({
   const des = desglosarOc(orden)
   const cuadra = !orden.oc_codigo || des.cuadra
   const ivaPct = iva && des.subtotal ? Math.round((iva / Math.max(0.01, des.subtotal - des.descuento - (orden.iva_incluido ? iva : 0))) * 100) : 0
+  // El pago (fase 3): lo que MGG muestra en las columnas de Tesorería, aquí en la tarjeta.
+  const rets = orden.retenciones ?? []
+  const credito = esCredito(orden) && ['cuenta_abierta', 'por_recibir', 'recibida', 'pagada'].includes(orden.estado)
+  const saldo = credito ? saldoCredito(orden) : 0
+  const creditoSaldado = credito && Number(orden.abonado_total) > 0 && saldo <= 0.01
+  const metodos = (orden.metodo_pago ?? []).map((m) => labelMetodoPago(m.metodo)).join(' + ')
+  const pago =
+    credito && !creditoSaldado ? (
+      <span className="text-warning">
+        💳 Abonado {money(orden.abonado_total)} · Saldo {money(saldo)}
+      </span>
+    ) : orden.pagada_en && orden.pago_monto_usd != null ? (
+      <span className="text-success">
+        ✓ Pagada {money(orden.pago_monto_usd)}
+        {orden.pago_referencia ? <span className="text-ink/50"> · ref. {orden.pago_referencia}</span> : null}
+      </span>
+    ) : orden.estado === 'oc_aprobada' || orden.estado === 'confirmada_metodo' ? (
+      <span className="text-ink/65">
+        {metodos ? <>💳 {metodos} · </> : null}
+        {rets.length || Number(orden.descuento_pago) > 0 ? (
+          <span title={`Retenciones −${money(totalRetenciones(rets))}`}>A pagar </span>
+        ) : null}
+        {rets.length || Number(orden.descuento_pago) > 0 || metodos ? (
+          <strong className="font-mono">{money(montoAPagar(orden))}</strong>
+        ) : null}
+      </span>
+    ) : null
   return (
     <div
       role="button"
@@ -739,6 +777,17 @@ const KanbanCard = memo(function KanbanCard({
             ↻ {cambios}
           </Chip>
         ) : null}
+        {creditoSaldado ? (
+          <Chip tone="success" title="Crédito pagado en su totalidad">
+            ✓ Pagado · {orden.recibida_en ? 'finalizar' : 'a recepción'}
+          </Chip>
+        ) : null}
+        {rets.length ? (
+          <Chip tone="neutral" title={rets.map((r) => `${r.tipo} −${money(r.monto)}`).join(' · ')}>
+            🧾 Contiene retención
+          </Chip>
+        ) : null}
+        {orden.pagada_en && !esCredito(orden) ? <span className="text-ink/45">✓ Pagada</span> : null}
         {orden.revisada_almacen_en ? (
           <Chip tone="info" title={`Revisada por almacén · ${fechaHoraVE(orden.revisada_almacen_en)}`}>
             📦 Revisada por almacén
@@ -780,6 +829,7 @@ const KanbanCard = memo(function KanbanCard({
           ) : null}
         </div>
       ) : null}
+      {pago ? <div className="mt-1 text-[11px]">{pago}</div> : null}
       <div className="mt-2 flex items-center justify-between">
         <span className={cn('font-mono font-semibold', !cuadra && 'text-warning')} title={cuadra ? undefined : 'El total no cuadra con sus partes'}>
           {cuadra ? '' : '⚠ '}

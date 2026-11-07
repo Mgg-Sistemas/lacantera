@@ -35,6 +35,9 @@ const AFECTA: Record<string, string[][]> = {
   // hilo y el «💬 n» de las tarjetas.
   compras_ofertas: [['pedidos', 'ofertas'], ['pedidos', 'estadisticas-proveedores']],
   compras_mensajes: [['pedidos', 'mensajes']],
+  // Fase 3: los abonos de un crédito y las cuentas del proveedor para pagarle.
+  compras_abonos: [['pedidos', 'abonos']],
+  proveedor_datos_pago: [['pedidos', 'datos-pago']],
   proveedores: [['proveedores']],
 
   // Maquinaria y taller. La orden de mantenimiento toca tres pantallas: la

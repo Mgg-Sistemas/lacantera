@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { desenvolver, rpc } from './rpc'
+import type { DatosPago, PagoMetodo, Retencion } from '@/lib/pagos'
 
 /*
   PEDIDOS / COMPRAS COMO EN MGG (fase 1, 07/11/2026)
@@ -164,6 +165,31 @@ export interface Orden {
   motivo_anulacion: string | null
   recibida_en: string | null
   abonado_total: number | string
+  // El pago (fase 3, sin Tesorería).
+  metodo_pago: PagoMetodo[] | null
+  metodo_pago_por_nombre: string | null
+  metodo_pago_en: string | null
+  descuento_pago: number | string | null
+  pago_qr_path: string | null
+  pago_qr_nombre: string | null
+  numero_administracion: string | null
+  comprobante_tipo: 'factura' | 'nota_entrega' | null
+  retenciones: Retencion[]
+  pagada_por: string | null
+  pagada_por_nombre: string | null
+  pagada_en: string | null
+  pago_fecha: string | null
+  pago_referencia: string | null
+  pago_monto: number | string | null
+  pago_moneda: 'USD' | 'Bs' | 'USDT' | null
+  pago_tasa: number | string | null
+  pago_monto_usd: number | string | null
+  pago_comprobante_path: string | null
+  pago_comprobante_nombre: string | null
+  pago_nota: string | null
+  // La recepción (fase 4): contra entrega paga lo recibido.
+  recibido_total: number | string | null
+  finalizada_en: string | null
 }
 
 /** Datos técnicos y logística de la oferta elegida (MGG `oferta_detalle`). */
@@ -266,6 +292,8 @@ export const BUCKET_PEDIDOS = 'compras-pedidos'
 /** Las fotos/PDF de las cotizaciones y del motivo de elección (MGG `ofertas-pdf`). */
 export const BUCKET_OFERTAS = 'compras-ofertas'
 export const MAX_IMAGENES_OP = 4
+/** Comprobantes de pago y de abonos, y la imagen / QR de pago (fase 3). */
+export const BUCKET_PAGOS = 'compras-pagos'
 
 // ---------------------------------------------------------------------------
 // Lecturas
@@ -773,4 +801,221 @@ export function useEnviarMensaje() {
 
 export async function marcarMensajesLeidos(ordenId: number): Promise<void> {
   await rpc('compras_marcar_mensajes_leidos', { p_orden_id: ordenId })
+}
+
+// ---------------------------------------------------------------------------
+// Fase 3: aprobación y pago (dentro de Compras, sin Tesorería)
+// ---------------------------------------------------------------------------
+
+/** Un abono a un crédito (MGG `abonos_credito`, sin caja). */
+export interface Abono {
+  id: number
+  orden_id: number
+  fecha: string
+  /** En dólares: lo que baja del saldo. */
+  monto: number | string
+  moneda: 'USD' | 'Bs' | 'USDT'
+  monto_moneda: number | string
+  tasa: number | string | null
+  metodo: string
+  referencia: string | null
+  comprobante_path: string | null
+  comprobante_nombre: string | null
+  nota: string | null
+  saldo_restante: number | string | null
+  registrado_por: string
+  registrado_por_nombre: string | null
+  registrado_en: string
+}
+
+/** Una cuenta del proveedor para pagarle (MGG `proveedor_datos_pago`). */
+export interface CuentaProveedor {
+  id: number
+  proveedor_id: number
+  metodo: string
+  datos: DatosPago
+  clave: string
+  actualizado_en: string
+}
+
+/** Un archivo ya subido: {path, filename}. */
+export type ArchivoSubido = Imagen
+
+/** «✔ Aprobar OC» individual y «✔ Aprobar en lote» (MGG `aprobarOcsEnLote`). */
+export function useAprobarOc() {
+  const invalidar = useInvalidar()
+  return useMutation({
+    mutationFn: (ids: number[]) =>
+      rpc<Array<{ id: number; codigo: string; oc_codigo: string | null; estado: EstadoOrden }>>('compras_aprobar_oc', {
+        p_ids: ids,
+      }),
+    onSuccess: invalidar,
+  })
+}
+
+export interface DatosMetodoPago {
+  metodos: Array<{ metodo: string; monto: number; datos?: DatosPago }>
+  numero_administracion: string
+  comprobante_tipo: 'factura' | 'nota_entrega'
+  retenciones: Array<{ tipo: string; modo: string; valor: number | null }>
+  descuento_pago?: number | null
+  qr?: ArchivoSubido | null
+  confirmo_recepcion?: boolean
+}
+
+export function useIndicarMetodoPago() {
+  const invalidar = useInvalidar()
+  return useMutation({
+    mutationFn: (d: { id: number; datos: DatosMetodoPago }) =>
+      rpc<{ id: number; estado: EstadoOrden; monto_a_pagar: number }>('compras_indicar_metodo_pago', {
+        p_id: d.id,
+        p_datos: d.datos,
+      }),
+    onSuccess: invalidar,
+  })
+}
+
+export function useCorregirMetodoPago() {
+  const invalidar = useInvalidar()
+  return useMutation({
+    mutationFn: (d: { id: number; datos: DatosMetodoPago }) =>
+      rpc<{ id: number; estado: EstadoOrden; monto_a_pagar: number }>('compras_corregir_metodo_pago', {
+        p_id: d.id,
+        p_datos: d.datos,
+      }),
+    onSuccess: invalidar,
+  })
+}
+
+export function useDocumentoRetenciones() {
+  const invalidar = useInvalidar()
+  return useMutation({
+    mutationFn: (d: {
+      id: number
+      comprobante_tipo: 'factura' | 'nota_entrega'
+      retenciones: DatosMetodoPago['retenciones']
+    }) =>
+      rpc<{ id: number; monto_a_pagar: number; saldo: number }>('compras_documento_retenciones', {
+        p_id: d.id,
+        p_comprobante_tipo: d.comprobante_tipo,
+        p_retenciones: d.retenciones,
+      }),
+    onSuccess: invalidar,
+  })
+}
+
+/** Lo que se escribe al registrar un pago o un abono. */
+export interface DatosPagoRegistrado {
+  fecha: string
+  monto: number
+  moneda: 'USD' | 'Bs' | 'USDT'
+  tasa: number | null
+  referencia: string | null
+  comprobante: ArchivoSubido | null
+  nota: string | null
+  /** Solo el abono: con qué se abonó. */
+  metodo?: string
+}
+
+export function useMarcarPagada() {
+  const invalidar = useInvalidar()
+  return useMutation({
+    mutationFn: (d: { id: number; datos: DatosPagoRegistrado }) =>
+      rpc<{ id: number; estado: EstadoOrden; monto_usd: number }>('compras_marcar_pagada', { p_id: d.id, p_datos: d.datos }),
+    onSuccess: invalidar,
+  })
+}
+
+export function useRegistrarAbono() {
+  const invalidar = useInvalidar()
+  return useMutation({
+    mutationFn: (d: { id: number; datos: DatosPagoRegistrado }) =>
+      rpc<{ id: number; abonado_total: number; saldo: number }>('compras_registrar_abono', { p_id: d.id, p_datos: d.datos }),
+    onSuccess: invalidar,
+  })
+}
+
+export function useEnviarCreditoARecepcion() {
+  const invalidar = useInvalidar()
+  return useMutation({
+    mutationFn: (id: number) => rpc('compras_enviar_credito_a_recepcion', { p_id: id }),
+    onSuccess: invalidar,
+  })
+}
+
+/** Los abonos de una orden, del más viejo al más nuevo. */
+export function useAbonos(ordenId: number, activo = true) {
+  return useQuery({
+    queryKey: ['pedidos', 'abonos', ordenId],
+    enabled: activo,
+    queryFn: async () =>
+      desenvolver<Abono[]>(
+        await supabase
+          .from('compras_abonos')
+          .select('*')
+          .eq('orden_id', ordenId)
+          .order('registrado_en', { ascending: true }),
+      ),
+  })
+}
+
+/** Las cuentas guardadas del proveedor, la más reciente primero. */
+export function useCuentasProveedor(proveedorId: number | null | undefined) {
+  return useQuery({
+    queryKey: ['pedidos', 'datos-pago', proveedorId],
+    enabled: !!proveedorId,
+    queryFn: async () =>
+      desenvolver<CuentaProveedor[]>(
+        await supabase
+          .from('proveedor_datos_pago')
+          .select('*')
+          .eq('proveedor_id', proveedorId!)
+          .order('actualizado_en', { ascending: false }),
+      ),
+  })
+}
+
+export function useQuitarCuentaProveedor() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => rpc('compras_quitar_datos_pago', { p_id: id }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['pedidos', 'datos-pago'] }),
+  })
+}
+
+/** El teléfono de administración que ya está en la ficha del proveedor. */
+export function useTelefonoAdministracion(proveedorId: number | null | undefined) {
+  return useQuery({
+    queryKey: ['proveedores', 'numero-administracion', proveedorId],
+    enabled: !!proveedorId,
+    queryFn: async () =>
+      desenvolver<{ numero_administracion: string | null } | null>(
+        await supabase.from('proveedores').select('numero_administracion').eq('id', proveedorId!).maybeSingle(),
+      )?.numero_administracion ?? null,
+  })
+}
+
+/** `{ordenId}/{pago|abono|qr}-{nonce}-{nombre}` en el depósito de pagos. */
+export async function subirArchivoPago(ordenId: number, prefijo: 'pago' | 'abono' | 'qr', f: File): Promise<ArchivoSubido> {
+  if (f.size > 10 * 1024 * 1024) throw new Error('El archivo supera los 10 MB.')
+  const limpio = f.name.replace(/[^\w.-]+/g, '_').slice(-80) || 'archivo'
+  const nonce = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
+  const path = `${ordenId}/${prefijo}-${nonce}-${limpio}`
+  const { error } = await supabase.storage
+    .from(BUCKET_PAGOS)
+    .upload(path, f, { upsert: false, contentType: f.type || undefined })
+  if (error) throw new Error(error.message)
+  return { path, filename: f.name }
+}
+
+/** Si el registro falla, el archivo recién subido se borra (que no quede huérfano). */
+export async function borrarArchivoPago(path: string): Promise<void> {
+  await supabase.storage.from(BUCKET_PAGOS).remove([path])
+}
+
+/** Una dirección firmada de diez minutos, como `compras-oc` en MGG. */
+export async function urlArchivoPago(path: string): Promise<string> {
+  const { data, error } = await supabase.storage.from(BUCKET_PAGOS).createSignedUrl(path, 600)
+  if (error || !data) throw new Error(error?.message ?? 'No se pudo abrir el comprobante')
+  return data.signedUrl
 }
