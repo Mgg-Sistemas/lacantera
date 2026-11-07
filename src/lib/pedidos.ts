@@ -59,6 +59,24 @@ export const KANBAN_COLS_PEDIDOS: { key: EstadoOrden; label: string }[] = [
   { key: 'cancelada', label: 'Cancelada' },
 ]
 
+/** Pestaña «🧾 Órdenes de Compra» (MGG `KANBAN_COLS_OC`). */
+export const KANBAN_COLS_OC: { key: EstadoOrden; label: string }[] = [
+  { key: 'aprobada', label: 'Pendiente (cargar ofertas)' },
+  { key: 'oc_creada', label: 'Ordenes pendiente por aprobar' },
+  { key: 'cuenta_abierta', label: 'Crédito / cuentas abiertas' },
+  { key: 'confirmada_metodo', label: 'Confirmada (indicar método de pago)' },
+  { key: 'oc_aprobada', label: 'Confirmada pagar' },
+  { key: 'por_recibir', label: 'Pendiente por recepción' },
+  { key: 'pagada', label: 'Pagada' },
+  { key: 'recibida', label: 'Recibida' },
+  { key: 'finalizada', label: 'Finalizada' },
+  { key: 'anulada', label: 'Anulada' },
+  { key: 'desistida_proveedor', label: 'Proveedor desistió' },
+]
+
+/** MGG: en la pestaña OC, 10 tarjetas por columna salvo «Pendiente (cargar ofertas)». */
+export const TOPE_COLUMNA_OC = 10
+
 /** Las fases de la SP: lo único que ve quien no lleva Compras (MGG `ESTADOS_FASES_SP`). */
 export const ESTADOS_FASES_SP = new Set<EstadoOrden>(KANBAN_COLS_PEDIDOS.map((c) => c.key))
 
@@ -114,6 +132,10 @@ const EVENTOS: Record<string, string> = {
   items_actualizados: 'Ítems a comprar actualizados',
   // Propio de La Cantera: la solicitud de salida del almacén no se aprobó.
   salida_rechazada: 'El almacén no entregó · la salida no se aprobó',
+  // Fase 2. En MGG estos tres salen con su nombre crudo; aquí, con etiqueta.
+  proveedores_asignados: 'Proveedores asignados (sub-OC por proveedor)',
+  modalidad_pago_cambiada: 'Modalidad de pago cambiada',
+  anulada: 'OC anulada',
 }
 
 export const etiquetaEvento = (ev: string): string => EVENTOS[ev] ?? ev
@@ -146,13 +168,33 @@ const CLASE_EVENTO: Record<string, TonoEstado> = {
   finalizada: 'success',
   revisada_almacen: 'info',
   salida_rechazada: 'warning',
+  proveedores_asignados: 'info',
+  modalidad_pago_cambiada: 'info',
+  anulada: 'danger',
 }
 
 export const claseEvento = (ev: string): TonoEstado => CLASE_EVENTO[ev] ?? 'neutral'
 
-/** Lo que va detrás de la etiqueta: « · motivo» o el detalle del almacén. */
+/**
+ * Lo que va detrás de la etiqueta: el cambio de proveedor «de A → B · motivo»
+ * (MGG `extrasCambioProveedor`), « · motivo», o el detalle del almacén.
+ */
 export function extraEvento(h: EventoHistorial): string {
-  if (typeof h.motivo === 'string' && h.motivo.trim()) return ` · ${h.motivo}`
+  const motivo = typeof h.motivo === 'string' && h.motivo.trim() ? ` · ${h.motivo}` : ''
+  if (typeof h.proveedorAnterior === 'string' && typeof h.proveedorNuevo === 'string') {
+    return ` · de ${h.proveedorAnterior} → ${h.proveedorNuevo}${motivo}`
+  }
+  if (h.evento === 'oc_creada' && typeof h.proveedor === 'string') {
+    return ` · ${h.proveedor}${typeof h.oc_codigo === 'string' ? ` · ${h.oc_codigo}` : ''}${typeof h.parent === 'string' ? ` · de ${h.parent}` : ''}`
+  }
+  if (h.evento === 'desistida_proveedor' && typeof h.proveedor === 'string') return ` · ${h.proveedor}${motivo}`
+  if (h.evento === 'proveedores_asignados' && Array.isArray(h.proveedores)) {
+    return ` · ${(h.proveedores as unknown[]).join(', ')}${h.completo ? ' · todo asignado' : ' · queda algo por asignar'}`
+  }
+  if (h.evento === 'modalidad_pago_cambiada') {
+    return ` · ${h.a === 'usd' ? 'Pago en $ (Divisa)' : 'Pago en Bs al cambio (tasa BCV)'}`
+  }
+  if (motivo) return motivo
   if ((h.evento === 'revisada_almacen' || h.evento === 'salida_rechazada') && typeof h.detalle === 'string' && h.detalle.trim()) {
     return ` · ${h.detalle}`
   }
