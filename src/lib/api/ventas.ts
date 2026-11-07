@@ -76,6 +76,35 @@ export function useClientes(soloActivos = false) {
   })
 }
 
+/**
+ * Lo que deben los clientes por NOTAS DE ENTREGA (07/11/2026): las marcadas
+ * pendientes por cobrar, sin cobrar y no anuladas. Aparte de `deuda_usd`, que es
+ * de facturas y descuenta del límite de crédito. Solo lectura: se cobra marcando
+ * la nota en Notas de entrega.
+ */
+export interface NotaPorCobrarDeCliente {
+  cliente_id: number | null
+  cliente: string | null
+  rif: string | null
+  nota_id: number
+  numero: string
+  fecha: string
+  fecha_pago: string | null
+  vencida: boolean
+  moneda: string
+  total: string
+  total_bs: string | null
+  total_usd: string | null
+}
+
+export function useNotasPorCobrarDeClientes() {
+  return useQuery({
+    // Bajo ['ventas', 'notas'] para que se refresque cuando una nota se cobra.
+    queryKey: ['ventas', 'notas', 'por-cobrar-de-clientes'],
+    queryFn: () => rpc<NotaPorCobrarDeCliente[]>('notas_por_cobrar_de_clientes', {}),
+  })
+}
+
 export interface ClienteAGuardar {
   id?: number
   rif: string

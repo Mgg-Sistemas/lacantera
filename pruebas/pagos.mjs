@@ -177,5 +177,30 @@ export default async function pruebaPagos(tx) {
   const [{ n: medias }] = await tx`select count(*)::int as n from public.listar_pagos_bancarios() where referencia = 'PRB-IMP-3'`
   comprobar(medias === 0, 'y no deja la importación a medias')
 
+  // -------------------------------------------------------------------------
+  grupo('Clientes · los que deben por notas de entrega')
+
+  // Una nota real se marca por cobrar con fecha vencida: todo se deshace al final.
+  await comoDueno(tx)
+  await tx`update public.notas_entrega
+              set pendiente_por_cobrar = true, fecha_pago = current_date - 3, cobrada_en = null
+            where id = ${nota.id}`
+
+  await como(tx, mira)
+  const debe = await tx`select * from public.notas_por_cobrar_de_clientes() where nota_id = ${nota.id}`
+  comprobar(debe.length === 1, 'quien entra a Ventas (sin ser admin) ve la nota por cobrar')
+  comprobar(debe[0]?.vencida === true, 'y sale vencida, porque su fecha de pago ya pasó')
+  comprobar(Number(debe[0]?.total_bs) === Number(nota.total_bs), 'con el mismo total que la nota')
+
+  await comoDueno(tx)
+  await tx`update public.notas_entrega set cobrada_en = now() where id = ${nota.id}`
+  await como(tx, mira)
+  const [{ n: cobrada }] = await tx`select count(*)::int as n from public.notas_por_cobrar_de_clientes() where nota_id = ${nota.id}`
+  comprobar(cobrada === 0, 'una vez cobrada, deja de salir')
+
+  await como(tx, ajeno)
+  const fuera = await debeFallar(tx, (sp) => sp`select * from public.notas_por_cobrar_de_clientes()`)
+  comprobar(Boolean(fuera), 'quien no entra a Ventas no ve lo que deben los clientes')
+
   await comoDueno(tx)
 }
