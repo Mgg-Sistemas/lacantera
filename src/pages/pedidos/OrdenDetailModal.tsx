@@ -1,16 +1,26 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
 import { Chip } from '@/components/ui/Chip'
 import { Visor } from '@/components/Visor'
 import { cn } from '@/lib/cn'
-import { useArticulos } from '@/lib/api/catalogo'
+import { useArticulos, useProveedores } from '@/lib/api/catalogo'
 import { useEmpresa, empresaDelPapel } from '@/lib/api/empresa'
+import { useTasaVigente } from '@/lib/api/tasas'
 import {
+  urlAdjuntoOferta,
   urlImagen,
+  useAnularOc,
+  useCambiarModalidad,
+  useDesistirProveedor,
   useEditarCantidades,
+  useEstadisticasProveedores,
   useMarcarComprar,
+  useOfertas,
+  useReabrirOc,
   type ItemOrden,
+  type Oferta,
   type Orden,
   type PermisosPedidos,
 } from '@/lib/api/pedidos'
@@ -27,25 +37,49 @@ import {
   textoEstadoSedes,
   type TonoEstado,
 } from '@/lib/pedidos'
-import { mensajeRevisionAlmacen, mensajeSolicitudPedido } from '@/lib/ficha/pedidosWhatsapp'
+import {
+  DATOS_TECNICOS,
+  LOGISTICA,
+  avisoDeCuadre,
+  desglosarOc,
+  esHijaViva,
+  infoModalidad,
+  itemsPendientes,
+  labelCondicionPago,
+  montoFinalOferta,
+  type ScoredOferta,
+} from '@/lib/ofertas'
+import { mensajeRevisionAlmacen, mensajeSolicitudPedido, textoOrdenAprobacion } from '@/lib/ficha/pedidosWhatsapp'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
-import { armarSolicitudPedidoPdf } from '@/lib/ficha/pedidosPdf'
+import { armarOrdenCompraPdf, armarSolicitudCotizacionPdf, armarSolicitudPedidoPdf } from '@/lib/ficha/pedidosPdf'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
 import { ModalWhatsappCompra } from '@/pages/compras/ModalWhatsappCompra'
-import { ConfirmDialog } from './Dialogos'
+import { ConfirmDialog, MotivoModal } from './Dialogos'
+import { OfertasComparativa } from './OfertasComparativa'
+import { AgregarOfertaModal } from './AgregarOfertaModal'
+import { AceptarOfertaModal } from './AceptarOfertaModal'
+import { AsignarProveedoresModal } from './AsignarProveedoresModal'
+import { EditarOcModal } from './EditarOcModal'
+import { ChatOC } from './ChatOC'
 
 /*
-  EL DETALLE DE UNA ORDEN (MGG `OrdenDetailModal`), EN LO QUE TOCA A LA FASE 1
+  EL DETALLE DE UNA ORDEN (MGG `OrdenDetailModal`), FASES 1 Y 2
 
-  Los avisos de arriba (urgente, en revisión de almacén, revisada por almacén),
-  las filas clave → valor, la tabla «Ítems» con «✎ Cantidades» y la columna
-  «Comprar», el historial y los botones del pie de los estados de la SP:
-  «↓ PDF de la OP», «💬 WhatsApp de la SP», «💬 Mensaje de almacén»,
-  «Cancelar orden», «✎ Editar orden» y «Aprobar Orden de Pedido». Los de la OC
-  (ofertas, aprobar, pagar, recibir, finalizar) llegan con sus fases.
+  Fase 1: los avisos de arriba (urgente, en revisión de almacén, revisada por
+  almacén), las filas clave → valor, la tabla «Ítems» con «✎ Cantidades» y la
+  columna «Comprar», el historial y los botones de la SP.
+
+  Fase 2: el proveedor, la condición y la modalidad de pago de la OC, los
+  datos de la oferta elegida y su motivo, la tarjeta «🧩 Sub-órdenes por
+  proveedor», el panel «Ofertas y comparativa», el pie de totales de la OC,
+  el chat interno y los botones de la etapa de cotización y de la OC por
+  aprobar (PDF para cotizar, asignar por producto, proveedor desistió, editar
+  OC, re-elegir oferta, OC PDF, WhatsApp para aprobar, anular OC, cambiar de
+  proveedor). «✔ Aprobar OC», el método de pago, el pago y la recepción
+  llegan con las fases 3 y 4.
 
   No se minimiza a la barra de abajo como en MGG: esa barra es una pieza del
-  armazón de MGG que La Cantera no tiene, y para la fase 1 no hacía falta.
+  armazón de MGG que La Cantera no tiene.
 */
 
 const PUNTO: Record<TonoEstado, string> = {
@@ -56,6 +90,11 @@ const PUNTO: Record<TonoEstado, string> = {
   danger: 'bg-danger',
   neutral: 'bg-ink/30',
 }
+
+/** Donde se ve el panel de ofertas (MGG `mostrarOfertas`). */
+const ESTADOS_CON_OFERTAS = new Set(['aprobada', 'desistida_proveedor', 'oc_creada', 'confirmada_metodo', 'oc_aprobada', 'pagada'])
+/** Los de la OC: se descarga «↓ OC PDF». */
+const ESTADOS_OC = new Set(['oc_creada', 'confirmada_metodo', 'cuenta_abierta', 'oc_aprobada', 'por_recibir', 'pagada', 'recibida', 'finalizada'])
 
 export function EstadoBadge({ estado }: { estado: string }) {
   const e = ESTADOS[estado as keyof typeof ESTADOS]
@@ -71,23 +110,41 @@ function Fila({ k, children }: { k: string; children: ReactNode }) {
   )
 }
 
+type SubModal =
+  | { kind: 'none' }
+  | { kind: 'oferta'; oferta: Oferta | null; soloSkus?: Set<string>; volverAAsignar?: boolean }
+  | { kind: 'aceptar'; scored: ScoredOferta }
+  | { kind: 'asignar' }
+  | { kind: 'editar_oc' }
+  | { kind: 'desistir' }
+  | { kind: 'anular' }
+  | { kind: 'reabrir' }
+  | { kind: 'cambiar_proveedor' }
+
 export function OrdenDetailModal({
   orden: o,
+  ordenes,
   permisos,
   onClose,
   onApprove,
   onEditar,
   onCancel,
+  onAbrir,
 }: {
   orden: Orden
+  /** Todas las que se ven: de aquí salen la madre y sus sub-OC. */
+  ordenes: Orden[]
   permisos: PermisosPedidos
   onClose: () => void
   onApprove: () => void
   onEditar: () => void
   onCancel: () => void
+  /** Abrir otra orden (la madre o una sub-OC). */
+  onAbrir: (id: number) => void
 }) {
   const yo = permisos.yo
   const canManageProcurement = permisos.gestiona
+  const puedeAprobarOc = permisos.aprueba_oc
   const isPendiente = o.estado === 'pendiente'
   const enRevisionAlmacen = o.estado === 'revision_almacen'
   const canApprove = canManageProcurement && isPendiente
@@ -104,6 +161,24 @@ export function OrdenDetailModal({
     (permisos.escribe || o.creado_por === yo || o.solicitante_id === yo)
   const revisadaAlmacen = o.clase !== 'servicio' && revisadaPorAlmacen(o)
 
+  // La madre y sus sub-OC (MGG `ordenDeOfertas`: las ofertas viven en la madre).
+  const madre = useMemo(
+    () => (o.parent_orden_id ? (ordenes.find((x) => x.id === o.parent_orden_id) ?? o) : o),
+    [o, ordenes],
+  )
+  const hijas = useMemo(() => ordenes.filter((x) => x.parent_orden_id === madre.id), [ordenes, madre.id])
+  const misHijas = o.parent_orden_id ? [] : hijas
+  const pendientesMadre = useMemo(() => itemsPendientes(madre, hijas), [madre, hijas])
+
+  const veOfertas = permisos.compras && o.clase !== 'servicio' && ESTADOS_CON_OFERTAS.has(o.estado)
+  const ofertasQ = useOfertas(permisos.compras ? [madre.id] : [])
+  const ofertas = useMemo(() => ofertasQ.data ?? [], [ofertasQ.data])
+  const { data: stats } = useEstadisticasProveedores(permisos.compras)
+  const { data: proveedores } = useProveedores(false)
+  const proveedorDe = (id: number | null | undefined) => (id ? proveedores?.find((p) => p.id === id) : undefined)
+  const prov = proveedorDe(o.proveedor_id)
+  const { data: tasa } = useTasaVigente()
+
   const { data: articulos } = useArticulos()
   const categoriaDe = useMemo(() => {
     const m = new Map<number, string>()
@@ -114,9 +189,15 @@ export function OrdenDetailModal({
 
   const marcarComprar = useMarcarComprar()
   const editarCantidades = useEditarCantidades()
+  const desistir = useDesistirProveedor()
+  const anular = useAnularOc()
+  const reabrir = useReabrirOc()
+  const cambiarModalidad = useCambiarModalidad()
 
+  const [sub, setSub] = useState<SubModal>({ kind: 'none' })
   const [mensajeWs, setMensajeWs] = useState<{ titulo: string; texto: string } | null>(null)
   const [pdf, setPdf] = useState<ArchivoArmado | null>(null)
+  const [tituloPdf, setTituloPdf] = useState('')
   const [errorPdf, setErrorPdf] = useState<string | null>(null)
 
   const [editandoCant, setEditandoCant] = useState(false)
@@ -178,20 +259,78 @@ export function OrdenDetailModal({
     }
   }
 
-  async function handleDownloadPdf() {
+  async function armarPdf(titulo: string, armar: () => Promise<ArchivoArmado>) {
     try {
       setErrorPdf(null)
-      setPdf(await armarSolicitudPedidoPdf(o, empresaDelPapel(empresa)))
+      setTituloPdf(titulo)
+      setPdf(await armar())
     } catch (e) {
       setErrorPdf(mensajeDe(e, 'No se pudo generar el PDF'))
     }
   }
 
-  async function verImagen(path: string) {
+  const ofertaAceptada = ofertas.find((f) => f.estado === 'aceptada' && f.proveedor_id === o.proveedor_id) ?? null
+
+  function pdfOc() {
+    void armarPdf(`Orden de compra ${o.oc_codigo ?? o.codigo}`, () =>
+      armarOrdenCompraPdf(o, empresaDelPapel(empresa), {
+        proveedor: prov
+          ? {
+              nombre: prov.nombre,
+              rif: prov.rif,
+              contacto: prov.contacto,
+              correo: prov.correo,
+              telefono: prov.telefono,
+              direccion: prov.direccion,
+            }
+          : null,
+        fechaEntregaPrometida: ofertaAceptada?.fecha_entrega_prometida ?? null,
+        categoriaDe: (id) => (id ? (categoriaDe.get(id) ?? null) : null),
+      }),
+    )
+  }
+
+  function whatsappAprobar() {
+    // Las cotizaciones de la orden, del monto final más bajo al más alto (MGG).
+    const cotizaciones = [...ofertas]
+      .map((f) => ({ f, monto: montoFinalOferta(f).final }))
+      .sort((a, b) => a.monto - b.monto)
+      .map(({ f, monto }) => {
+        const elegida = f.estado === 'aceptada' && (o.proveedor_id ? f.proveedor_id === o.proveedor_id : true)
+        return {
+          proveedor: proveedorDe(f.proveedor_id)?.nombre ?? '—',
+          monto,
+          elegida,
+          elegidaPor: elegida ? f.decidida_por_nombre : null,
+        }
+      })
+    setMensajeWs({
+      titulo: `Avisar para aprobar · ${o.oc_codigo ?? o.codigo}`,
+      texto: textoOrdenAprobacion(o, {
+        proveedor: prov?.nombre ?? '',
+        condicion: o.condiciones_pago ? labelCondicionPago(o.condiciones_pago) : null,
+        empresa: empresaDelPapel(empresa).razonSocial,
+        cotizaciones,
+        tasaBs: tasa ? Number(tasa.tasa) : null,
+      }),
+    })
+  }
+
+  async function verImagen(path: string, deOferta = false) {
     try {
-      window.open(await urlImagen(path), '_blank', 'noopener')
+      window.open(await (deOferta ? urlAdjuntoOferta(path) : urlImagen(path)), '_blank', 'noopener')
     } catch (e) {
       toast(mensajeDe(e, 'No se pudo abrir la imagen'), 'error')
+    }
+  }
+
+  async function onCambiarModalidad() {
+    const a = o.modalidad_pago === 'usd' ? 'bs' : 'usd'
+    try {
+      await cambiarModalidad.mutateAsync({ id: o.id, modalidad: a })
+      toast(`Modalidad cambiada a ${a === 'usd' ? 'Pago en $ (USD / Divisa)' : 'Pago en Bs al cambio (tasa BCV)'}`, 'success')
+    } catch (e) {
+      toast(mensajeDe(e, 'No se pudo cambiar la modalidad de pago'), 'error')
     }
   }
 
@@ -199,11 +338,24 @@ export function OrdenDetailModal({
   const puedeEditarComprar =
     !conPrecio && canManageProcurement && o.estado !== 'revision_almacen' && o.estado !== 'atendida_almacen'
   const historial = [...(o.historial ?? [])].reverse()
+  const ocCodigo = o.oc_codigo ?? o.codigo
+  const anulable =
+    puedeAprobarOc &&
+    (o.estado === 'confirmada_metodo' ||
+      o.estado === 'oc_aprobada' ||
+      (o.estado === 'por_recibir' && !o.recibida_en) ||
+      (o.estado === 'cuenta_abierta' && !Number(o.abonado_total)))
+  const desglose = desglosarOc(o)
+  const aviso = conPrecio ? avisoDeCuadre(o, money) : null
 
   const buttons = (
     <>
       {isPendiente ? (
-        <Button variant="ghost" onClick={() => void handleDownloadPdf()} title="Descargar la Orden de Pedido en PDF">
+        <Button
+          variant="ghost"
+          onClick={() => void armarPdf(`Solicitud de Pedido ${o.codigo}`, () => armarSolicitudPedidoPdf(o, empresaDelPapel(empresa)))}
+          title="Descargar la Orden de Pedido en PDF"
+        >
           ↓ PDF de la OP
         </Button>
       ) : null}
@@ -230,6 +382,81 @@ export function OrdenDetailModal({
           Cancelar orden
         </Button>
       ) : null}
+
+      {/* Cotización (fase 2) */}
+      {(o.estado === 'aprobada' || o.estado === 'asignada') && permisos.compras ? (
+        <Button
+          variant="ghost"
+          title="Descargar la solicitud en PDF (materiales, medidas y cantidades) para mandarla a cotizar"
+          onClick={() => void armarPdf(`Solicitud de cotización ${o.codigo}`, () => armarSolicitudCotizacionPdf(o, empresaDelPapel(empresa)))}
+        >
+          ↓ PDF para cotizar
+        </Button>
+      ) : null}
+      {(o.estado === 'aprobada' || o.estado === 'asignada') && canManageProcurement && !o.parent_orden_id ? (
+        <Button
+          title="Repartir los productos entre varios proveedores (una OC por proveedor)"
+          onClick={() => setSub({ kind: 'asignar' })}
+        >
+          🧩 Asignar por producto (multi-proveedor)
+        </Button>
+      ) : null}
+
+      {/* OC por aprobar */}
+      {o.estado === 'oc_creada' && canManageProcurement ? (
+        <>
+          <Button variant="ghost" title="El proveedor no cumplió: la orden queda abierta para otro" onClick={() => setSub({ kind: 'desistir' })}>
+            ⚠ Proveedor desistió
+          </Button>
+          <Button
+            variant="ghost"
+            title="Antes de aprobarla se corrige todo: unidad y persona que solicita, motivo, finalidad, proveedor, productos (marca, cantidad, precio), descuento, IVA e IGTF, condición y nota"
+            onClick={() => setSub({ kind: 'editar_oc' })}
+          >
+            ✎ Editar OC (todo)
+          </Button>
+          <Button variant="ghost" title="Volver a las ofertas para elegir otra" onClick={() => setSub({ kind: 'reabrir' })}>
+            ↩ Re-elegir oferta
+          </Button>
+          <Button variant="ghost" onClick={pdfOc}>
+            ↓ OC PDF
+          </Button>
+          <Button variant="ghost" title="Mensaje para pedir la aprobación de la OC" onClick={whatsappAprobar}>
+            💬 WhatsApp para aprobar
+          </Button>
+          <Button variant="danger" onClick={() => setSub({ kind: 'anular' })}>
+            ⊘ Anular OC
+          </Button>
+        </>
+      ) : null}
+
+      {/* OC confirmada: indicar el método de pago llega en la fase 3 */}
+      {o.estado === 'confirmada_metodo' && canManageProcurement ? (
+        <>
+          <Button variant="ghost" onClick={pdfOc}>
+            ↓ OC PDF
+          </Button>
+          <Button variant="ghost" title="Un cambio material devuelve la OC a aprobación" onClick={() => setSub({ kind: 'editar_oc' })}>
+            ✎ Modificar OC
+          </Button>
+          <Button variant="ghost" onClick={() => setSub({ kind: 'cambiar_proveedor' })}>
+            🔁 Cambiar de proveedor (volver a cotizar)
+          </Button>
+        </>
+      ) : null}
+
+      {ESTADOS_OC.has(o.estado) && o.estado !== 'oc_creada' && !(o.estado === 'confirmada_metodo' && canManageProcurement) &&
+      (canManageProcurement || o.estado === 'oc_aprobada') ? (
+        <Button variant="ghost" onClick={pdfOc}>
+          ↓ OC PDF
+        </Button>
+      ) : null}
+      {anulable ? (
+        <Button variant="danger" onClick={() => setSub({ kind: 'anular' })}>
+          ⊘ Anular OC
+        </Button>
+      ) : null}
+
       {canEditar ? (
         <Button variant="ghost" onClick={onEditar} title="Editar la orden antes de su aprobación">
           ✎ Editar orden
@@ -249,6 +476,10 @@ export function OrdenDetailModal({
       </Button>
     </>
   )
+
+  const det = o.oferta_detalle
+  const bcvOferta = Number(o.oferta_precio_bcv) || 0
+  const efeOferta = Number(o.oferta_precio_efectivo) || 0
 
   return (
     <>
@@ -326,7 +557,15 @@ export function OrdenDetailModal({
           <Fila k="Estado">
             <EstadoBadge estado={o.estado} />
           </Fila>
-          <Fila k="Proveedor actual">—</Fila>
+          <Fila k="Proveedor actual">
+            {prov ? (
+              <>
+                {prov.nombre} <span className="text-ink/50">· {prov.rif}</span>
+              </>
+            ) : (
+              '—'
+            )}
+          </Fila>
           <Fila k="Unidad solicitante">{o.unidad_solicitante ?? '—'}</Fila>
           <Fila k="Solicita">{o.solicitante_nombre ?? '—'}</Fila>
           <Fila k="Cargada por">{o.creado_por_nombre ?? '—'}</Fila>
@@ -364,7 +603,146 @@ export function OrdenDetailModal({
               <span className="text-ink/50">por {o.oc_aprobada_por_nombre ?? '—'}</span>
             </Fila>
           ) : null}
+          {o.anulada_en ? (
+            <Fila k="Anulada">
+              {fechaHoraVE(o.anulada_en)} · {o.motivo_anulacion ?? ''}{' '}
+              <span className="text-ink/50">por {o.anulada_por_nombre ?? '—'}</span>
+            </Fila>
+          ) : null}
+          {o.oc_codigo || o.condiciones_pago ? (
+            <Fila k="Condición de pago">
+              <Chip tone="royal">{o.condiciones_pago ? labelCondicionPago(o.condiciones_pago) : 'Contado / anticipado'}</Chip>
+            </Fila>
+          ) : null}
+          {det && (DATOS_TECNICOS.some((t) => det[t.clave]) || det.logistica || (bcvOferta > 0 && efeOferta > 0)) ? (
+            <Fila k="Datos de la oferta">
+              <div className="space-y-0.5 text-xs">
+                {DATOS_TECNICOS.filter((t) => det[t.clave]).map((t) => (
+                  <div key={t.clave}>
+                    <strong>{t.label}:</strong> {det[t.clave]}
+                  </div>
+                ))}
+                {LOGISTICA.filter((l) => det.logistica?.[l.clave]).map((l) => (
+                  <div key={l.clave}>
+                    🚚 <strong>{l.label}:</strong> {det.logistica?.[l.clave] === 'incluido' ? 'incluido' : 'por cuenta del comprador'}
+                  </div>
+                ))}
+                {bcvOferta > 0 && efeOferta > 0 && efeOferta < bcvOferta ? (
+                  <div>
+                    💵 Efectivo: {money(efeOferta)}{' '}
+                    <Chip tone="success">−{Math.round(((bcvOferta - efeOferta) / bcvOferta) * 100)}%</Chip>{' '}
+                    <span className="text-ink/50">(BCV {money(bcvOferta)})</span>
+                  </div>
+                ) : null}
+              </div>
+            </Fila>
+          ) : null}
+          {o.modalidad_pago && o.oc_codigo ? (
+            <Fila k="Modalidad de pago">
+              <div className="flex flex-wrap items-center gap-2">
+                <Chip tone={o.modalidad_pago === 'usd' ? 'success' : 'info'}>
+                  {infoModalidad(o.modalidad_pago).icono} {infoModalidad(o.modalidad_pago).larga} · {money(o.total)}
+                </Chip>
+                {o.modalidad_pago === 'usd' && bcvOferta > 0 ? (
+                  <span className="text-ink/50 text-xs">(Cotización original a tasa BCV: {money(bcvOferta)})</span>
+                ) : null}
+                {(o.estado === 'oc_creada' || o.estado === 'confirmada_metodo') && canManageProcurement ? (
+                  <Button size="sm" variant="ghost" disabled={cambiarModalidad.isPending} onClick={() => void onCambiarModalidad()}>
+                    {o.modalidad_pago === 'usd' ? '🔄 Cambiar a Pago en Bs (BCV)' : '🔄 Cambiar a Pago en $ (Divisa)'}
+                  </Button>
+                ) : null}
+              </div>
+            </Fila>
+          ) : null}
+          {o.oferta_motivo?.trim() || o.oferta_motivo_adjuntos?.length ? (
+            <Fila k="📝 Motivo de elección">
+              {o.oferta_motivo ? <div>{o.oferta_motivo}</div> : null}
+              <div className="flex flex-wrap gap-1">
+                {(o.oferta_motivo_adjuntos ?? []).map((a) => (
+                  <Button key={a.path} size="sm" variant="ghost" onClick={() => void verImagen(a.path, true)}>
+                    📎 {a.filename}
+                  </Button>
+                ))}
+              </div>
+            </Fila>
+          ) : null}
+          {o.motivo?.trim() ? <Fila k="Motivo">{o.motivo}</Fila> : null}
+          {o.finalidad?.trim() ? <Fila k="Finalidad">{o.finalidad}</Fila> : null}
         </div>
+
+        {/* 🧩 Sub-órdenes por proveedor */}
+        {misHijas.length ? (
+          <Card className="mt-5">
+            <h4 className="text-ink/85 mb-2 font-semibold">🧩 Sub-órdenes por proveedor ({misHijas.length})</h4>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[560px] text-sm">
+                <thead className="text-ink/55 text-left text-xs">
+                  <tr>
+                    <th className="py-1 pr-2">OC</th>
+                    <th className="py-1 pr-2">Proveedor</th>
+                    <th className="py-1 pr-2 text-right">Productos</th>
+                    <th className="py-1 pr-2 text-right">Total</th>
+                    <th className="py-1">Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {misHijas.map((h) => (
+                    <tr key={h.id} className="border-hairline hover:bg-ink/3 cursor-pointer border-t" onClick={() => onAbrir(h.id)}>
+                      <td className="py-1.5 pr-2 font-mono text-xs">
+                        {h.oc_codigo ?? '—'}
+                        <div className="text-ink/45">{h.codigo}</div>
+                      </td>
+                      <td className="py-1.5 pr-2">{proveedorDe(h.proveedor_id)?.nombre ?? '—'}</td>
+                      <td className="py-1.5 pr-2 text-right">{h.items.filter((i) => i.comprar !== false).length}</td>
+                      <td className="py-1.5 pr-2 text-right font-mono">{money(h.total)}</td>
+                      <td className="py-1.5">
+                        <EstadoBadge estado={h.estado} />
+                        {!esHijaViva(h) ? <span className="text-ink/45 ml-1 text-xs">(sus productos vuelven a esta OP)</span> : null}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-ink/55 mt-2 text-xs">Cada sub-OC se confirma, paga y recibe por separado (método de pago por proveedor).</p>
+            {pendientesMadre.length ? (
+              <div className="border-warning bg-warning/6 mt-2 rounded-[6px] border px-3 py-2">
+                <div className="font-semibold">
+                  ⚠ {pendientesMadre.length} ítem(s) sin asignar — la SP sigue en «Pendiente (cargar ofertas)»
+                </div>
+                <ul className="text-ink/70 ml-4 list-disc text-xs">
+                  {pendientesMadre.map((it) => (
+                    <li key={it.sku}>
+                      {it.nombre} · {fmtCant(it.cantidad)} {it.unidad ?? ''}
+                    </li>
+                  ))}
+                </ul>
+                {canManageProcurement && ['aprobada', 'asignada', 'desistida_proveedor'].includes(o.estado) ? (
+                  <Button size="sm" className="mt-1" onClick={() => setSub({ kind: 'asignar' })}>
+                    🧩 Asignar / cargar ofertas de lo que falta
+                  </Button>
+                ) : null}
+              </div>
+            ) : null}
+          </Card>
+        ) : null}
+
+        {veOfertas ? (
+          <OfertasComparativa
+            orden={o}
+            madre={madre}
+            hijas={hijas}
+            ofertas={ofertas}
+            cargando={ofertasQ.isPending}
+            stats={stats ?? []}
+            proveedorDe={proveedorDe}
+            canDecidir={canManageProcurement}
+            onAgregar={() => setSub({ kind: 'oferta', oferta: null })}
+            onEditar={(f) => setSub({ kind: 'oferta', oferta: f })}
+            onAceptar={(s) => setSub({ kind: 'aceptar', scored: s })}
+            onIrMadre={() => onAbrir(madre.id)}
+          />
+        ) : null}
 
         <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
           <h4 className="text-ink/85 font-semibold">Ítems</h4>
@@ -421,17 +799,17 @@ export function OrdenDetailModal({
             <tbody>
               {o.items.map((it, idx) => {
                 const marcado = skusAEliminar.has(it.sku)
-                const u = it.unidad ? ` ${it.unidad}` : ''
+                const u = it.unidad_compra ? ` ${it.unidad_compra}` : it.unidad ? ` ${it.unidad}` : ''
                 return (
                   <tr
                     key={`${it.sku}-${idx}`}
                     className="border-hairline border-t"
-                    style={{ opacity: marcado ? 0.45 : !conPrecio && it.comprar === false ? 0.5 : 1 }}
+                    style={{ opacity: marcado ? 0.45 : it.comprar === false ? 0.5 : 1 }}
                   >
                     <td className="px-3 py-2 font-mono text-xs">{it.sku}</td>
                     <td className={cn('px-3 py-2', marcado && 'line-through')}>
                       {it.nombre}
-                      {it.general ? (
+                      {it.general && !it.articulo_id ? (
                         <Chip
                           tone="warning"
                           className="ml-1.5"
@@ -440,8 +818,21 @@ export function OrdenDetailModal({
                           nombre general
                         </Chip>
                       ) : null}
+                      {it.agregado ? (
+                        <Chip tone="info" className="ml-1.5" title="El proveedor lo agregó en su cotización">
+                          agregado
+                        </Chip>
+                      ) : null}
+                      {it.articulo_nombre && it.articulo_nombre !== it.nombre ? (
+                        <div className="text-ink/55 text-xs">📦 Se guarda en inventario como {it.articulo_nombre}</div>
+                      ) : null}
                       {[it.marca, it.modelo].filter(Boolean).length > 0 ? (
                         <div className="text-ink/55 text-xs">🏷 {[it.marca, it.modelo].filter(Boolean).join(' · ')}</div>
+                      ) : null}
+                      {it.unidad_compra && it.factor_compra ? (
+                        <div className="text-ink/55 text-xs">
+                          1 {it.unidad_compra} = {fmtCant(it.factor_compra)} {it.unidad}
+                        </div>
                       ) : null}
                       {it.finalidad ? <div className="text-ink/55 text-xs">🎯 {it.finalidad}</div> : null}
                       {it.almacen_sin_salida ? (
@@ -457,7 +848,7 @@ export function OrdenDetailModal({
                     {revisadaAlmacen ? (
                       <>
                         <td className="px-3 py-2 text-right">
-                          {it.cantidad_solicitada != null ? `${fmtCant(it.cantidad_solicitada)}${u}` : '—'}
+                          {it.cantidad_solicitada != null ? `${fmtCant(it.cantidad_solicitada)} ${it.unidad ?? ''}` : '—'}
                         </td>
                         <td
                           className={cn(
@@ -465,7 +856,7 @@ export function OrdenDetailModal({
                             Number(it.cantidad_almacen) > 0 && 'text-success font-semibold',
                           )}
                         >
-                          {it.cantidad_almacen != null ? `${fmtCant(it.cantidad_almacen)}${u}` : '—'}
+                          {it.cantidad_almacen != null ? `${fmtCant(it.cantidad_almacen)} ${it.unidad ?? ''}` : '—'}
                         </td>
                       </>
                     ) : null}
@@ -546,18 +937,36 @@ export function OrdenDetailModal({
               })}
             </tbody>
             {conPrecio ? (
-              <tfoot>
+              <tfoot className="text-sm">
+                {(
+                  [
+                    [desglose.ivaIncluido ? 'Base (precios con IVA)' : 'Base', money(desglose.subtotal), ''],
+                    desglose.descuento ? ['Descuento obtenido', `−${money(desglose.descuento)}`, 'text-success'] : null,
+                    desglose.iva ? [desglose.ivaIncluido ? 'IVA (incluido en los precios) · ya sumado' : 'IVA', money(desglose.iva), ''] : null,
+                    desglose.igtf ? ['IGTF', money(desglose.igtf), ''] : null,
+                    desglose.ajuste ? [o.ajuste_motivo ? `Ajuste · ${o.ajuste_motivo}` : 'Ajuste', money(desglose.ajuste), ''] : null,
+                  ].filter((x): x is string[] => !!x && (desglose.total !== desglose.subtotal || desglose.ivaIncluido))
+                ).map(([k, v, c]) => (
+                  <tr key={k} className="border-hairline border-t">
+                    <td colSpan={revisadaAlmacen ? 8 : 6} className="text-ink/60 px-3 py-1.5 text-right">
+                      {k}
+                    </td>
+                    <td className={cn('px-3 py-1.5 text-right', c)}>{v}</td>
+                    <td />
+                  </tr>
+                ))}
                 <tr className="border-hairline border-t font-semibold">
                   <td colSpan={revisadaAlmacen ? 8 : 6} className="px-3 py-2 text-right">
                     TOTAL
                   </td>
-                  <td className="px-3 py-2 text-right">{money(o.total)}</td>
+                  <td className={cn('px-3 py-2 text-right', !desglose.cuadra && 'text-warning')}>{money(o.total)}</td>
                   <td />
                 </tr>
               </tfoot>
             ) : null}
           </table>
         </div>
+        {aviso ? <p className="text-warning mt-1 text-xs">⚠ {aviso}</p> : null}
 
         <h4 className="text-ink/85 mt-6 mb-2 font-semibold">Historial</h4>
         {historial.length === 0 ? (
@@ -577,6 +986,12 @@ export function OrdenDetailModal({
                   {etiquetaEvento(h.evento)}
                   {extraEvento(h)}
                 </div>
+                {h.evento === 'oc_reabierta' && typeof h.confirmada_por === 'string' ? (
+                  <div className="text-warning text-xs">↩ Vuelve a cotizar · se anula la confirmación de {h.confirmada_por}</div>
+                ) : null}
+                {h.evento === 'oc_reabierta_edicion' && typeof h.confirmada_por === 'string' ? (
+                  <div className="text-warning text-xs">↩ Vuelve a aprobación · se anula la confirmación de {h.confirmada_por}</div>
+                ) : null}
                 <div className="text-ink/50 text-xs">
                   {fechaHoraVE(h.at)} · {h.actor_nombre ?? '—'}
                 </div>
@@ -584,6 +999,8 @@ export function OrdenDetailModal({
             ))}
           </ol>
         )}
+
+        <ChatOC orden={o} yo={yo} />
       </Modal>
 
       {porEliminar ? (
@@ -596,6 +1013,140 @@ export function OrdenDetailModal({
           onConfirm={() => {
             setSkusAEliminar((s) => new Set(s).add(porEliminar.sku))
             setPorEliminar(null)
+          }}
+        />
+      ) : null}
+
+      {sub.kind === 'oferta' ? (
+        <AgregarOfertaModal
+          orden={o}
+          madre={madre}
+          ofertas={ofertas}
+          oferta={sub.oferta}
+          soloSkus={sub.soloSkus}
+          skusTomados={new Set(hijas.filter(esHijaViva).flatMap((h) => h.items.map((i) => i.sku)))}
+          onClose={() => setSub(sub.volverAAsignar ? { kind: 'asignar' } : { kind: 'none' })}
+          onSaved={() => setSub(sub.volverAAsignar ? { kind: 'asignar' } : { kind: 'none' })}
+        />
+      ) : null}
+
+      {sub.kind === 'aceptar' ? (
+        <AceptarOfertaModal
+          orden={o}
+          madre={madre}
+          hijas={hijas}
+          scored={sub.scored}
+          proveedorNombre={proveedorDe(sub.scored.oferta.proveedor_id)?.nombre ?? 'Proveedor'}
+          onClose={() => setSub({ kind: 'none' })}
+          onDone={() => setSub({ kind: 'none' })}
+        />
+      ) : null}
+
+      {sub.kind === 'asignar' ? (
+        <AsignarProveedoresModal
+          madre={madre}
+          hijas={hijas}
+          ofertas={ofertas}
+          stats={stats ?? []}
+          proveedorDe={proveedorDe}
+          onCargarOferta={(skus) => setSub({ kind: 'oferta', oferta: null, soloSkus: skus, volverAAsignar: true })}
+          onClose={() => setSub({ kind: 'none' })}
+          onDone={() => setSub({ kind: 'none' })}
+        />
+      ) : null}
+
+      {sub.kind === 'editar_oc' ? (
+        <EditarOcModal
+          orden={o}
+          proveedores={proveedores ?? []}
+          onClose={() => setSub({ kind: 'none' })}
+          onDone={() => setSub({ kind: 'none' })}
+        />
+      ) : null}
+
+      {sub.kind === 'desistir' ? (
+        <MotivoModal
+          title={`Desistimiento · ${o.codigo}`}
+          intro="Registra que el proveedor no cumplió. La orden quedará abierta para reasignar a otro proveedor."
+          label="¿Por qué no cumplió?"
+          placeholder="No respondió, no entregó a tiempo, retiró la propuesta…"
+          confirmText="Registrar desistimiento"
+          busy={desistir.isPending}
+          onClose={() => setSub({ kind: 'none' })}
+          onConfirm={async (motivo) => {
+            try {
+              await desistir.mutateAsync({ id: o.id, motivo })
+              toast(`Proveedor desistió en ${o.codigo} · abierta para reasignar`, 'warning')
+              setSub({ kind: 'none' })
+            } catch (e) {
+              toast(mensajeDe(e, 'No se pudo registrar el desistimiento'), 'error')
+            }
+          }}
+        />
+      ) : null}
+
+      {sub.kind === 'anular' ? (
+        <MotivoModal
+          title={`Anular OC · ${ocCodigo}`}
+          intro="La OC pasa a estado ANULADA y no continúa el flujo. No mueve inventario ni caja."
+          label="Motivo de la anulación"
+          placeholder="Ya no se requiere, error de carga, se reemplaza por otra…"
+          confirmText="Anular OC"
+          doubleConfirm={`¿Seguro que querés anular la OC ${ocCodigo}? Esta acción no se puede deshacer.`}
+          busy={anular.isPending}
+          onClose={() => setSub({ kind: 'none' })}
+          onConfirm={async (motivo) => {
+            try {
+              await anular.mutateAsync({ id: o.id, motivo })
+              toast(`OC anulada: ${ocCodigo}`, 'warning')
+              setSub({ kind: 'none' })
+            } catch (e) {
+              toast(mensajeDe(e, 'No se pudo anular la OC'), 'error')
+            }
+          }}
+        />
+      ) : null}
+
+      {sub.kind === 'reabrir' ? (
+        <ConfirmDialog
+          title={`Modificar OC · ${ocCodigo}`}
+          message="La OC vuelve a “Pendiente · cargar ofertas”: se reabren las ofertas de los proveedores para que elijas de nuevo la ganadora. ¿Continuar?"
+          confirmText="Modificar (volver a ofertas)"
+          busy={reabrir.isPending}
+          onCancel={() => setSub({ kind: 'none' })}
+          onConfirm={async () => {
+            try {
+              await reabrir.mutateAsync({ id: o.id, motivo: null })
+              toast(`OC ${ocCodigo} reabierta para re-elegir oferta`, 'info')
+              setSub({ kind: 'none' })
+            } catch (e) {
+              toast(mensajeDe(e, 'No se pudo reabrir la OC'), 'error')
+            }
+          }}
+        />
+      ) : null}
+
+      {sub.kind === 'cambiar_proveedor' ? (
+        <MotivoModal
+          title={`Cambiar de proveedor · ${ocCodigo}`}
+          intro="⚠ Para cambiar de proveedor se vuelve a cotizar: la OC regresa a «Pendiente (cargar ofertas)», se reabren las ofertas y se anula la confirmación que tenía."
+          label="Motivo del cambio de proveedor (obligatorio)"
+          placeholder="Ej.: el proveedor no tiene existencia / mejor precio de otro proveedor"
+          confirmText="↩ Reabrir cotizaciones"
+          busy={reabrir.isPending}
+          onClose={() => setSub({ kind: 'none' })}
+          onConfirm={async (motivo) => {
+            if (motivo.length < 5) {
+              toast('El motivo es muy corto (mínimo 5 letras).', 'error')
+              return
+            }
+            try {
+              await reabrir.mutateAsync({ id: o.id, motivo })
+              toast(`OC ${ocCodigo} · cambio de proveedor: vuelve a «cargar ofertas» para escoger nueva cotización`, 'info')
+              setSub({ kind: 'none' })
+            } catch (e) {
+              toast(mensajeDe(e, 'No se pudo reabrir la OC'), 'error')
+            }
           }}
         />
       ) : null}
@@ -613,7 +1164,7 @@ export function OrdenDetailModal({
         }}
         blob={pdf?.blob ?? null}
         nombreArchivo={pdf?.nombre ?? `${o.codigo}.pdf`}
-        titulo={`Solicitud de Pedido ${o.codigo}`}
+        titulo={tituloPdf || `Orden ${o.codigo}`}
         descripcion={empresaDelPapel(empresa).razonSocial}
       />
     </>
