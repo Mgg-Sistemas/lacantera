@@ -292,7 +292,7 @@ export function FacturasProveedor() {
             titulo="Sin facturas registradas"
             descripcion="Las facturas se registran desde su orden de compra. Sin registrarla, el IVA pagado no se puede descontar del IVA cobrado."
             accion={
-              <Button variant="outline" onClick={() => navegar('/app/compras')}>
+              <Button variant="outline" onClick={() => navegar('/app/pedidos')}>
                 Ir a las compras
               </Button>
             }

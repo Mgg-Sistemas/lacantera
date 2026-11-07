@@ -441,8 +441,11 @@ export function CompraDirecta() {
       y el detalle de compras se abre por el id del PEDIDO. Mandar ahi el de la
       orden abriria otra compra o ninguna, que es peor que volver al tablero.
       Cuando haga falta llegar directo, la funcion tendra que devolver los dos.
+
+      Desde la fase 5b (07/11/2026) el tablero anterior ya no existe: se vuelve
+      al historial de directas, donde la compra recién registrada sale primera.
     */
-    void navigate('/app/compras')
+    void navigate('/app/compras/directa/historial')
   }
 
   const enDivisa = moneda !== 'VES'
@@ -456,9 +459,9 @@ export function CompraDirecta() {
         actions={
           <>
             <ChipTasa className="self-center" />
-            <Link to="/app/compras">
+            <Link to="/app/pedidos?scope=compra_directa">
               <Button variant="outline" icon={<ArrowLeft />}>
-                Volver al tablero
+                Volver a Pedidos / Compras
               </Button>
             </Link>
           </>
@@ -973,7 +976,7 @@ export function CompraDirecta() {
         ) : null}
 
         <div className="flex flex-wrap justify-end gap-2 pb-8">
-          <Link to="/app/compras">
+          <Link to="/app/pedidos?scope=compra_directa">
             <Button variant="ghost">Cancelar</Button>
           </Link>
           <Button disabled={!puedeGuardar} onClick={() => void guardar()}>

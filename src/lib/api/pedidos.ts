@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { desenvolver, rpc } from './rpc'
 import type { DatosPago, PagoMetodo, Retencion } from '@/lib/pagos'
+import { normalizarCierre, normalizarFilas } from '@/lib/reportesCompras'
 
 /*
   PEDIDOS / COMPRAS COMO EN MGG (fase 1, 07/11/2026)
@@ -1757,4 +1758,69 @@ export async function urlArchivoDirecto(path: string): Promise<string> {
   const { data, error } = await supabase.storage.from(BUCKET_SERVICIOS_DIRECTOS).createSignedUrl(path, 600)
   if (error || !data) throw new Error(error?.message ?? 'No se pudo abrir la factura')
   return data.signedUrl
+}
+
+// ---------------------------------------------------------------------------
+// 📊 Reportes e histórico (fase 5b, MGG `ReporteComprasModal`,
+// `CierreDiarioModal`, `HistoricoPage`)
+// ---------------------------------------------------------------------------
+
+/** Las compras pendientes, una fila por compra (MGG `listReporteCompras`). */
+export function useReporteCompras(activo = true) {
+  return useQuery({
+    queryKey: ['pedidos', 'reportes', 'por-renglon'],
+    queryFn: async () => normalizarFilas(await rpc<unknown>('compras_reporte_por_renglon')),
+    enabled: activo,
+  })
+}
+
+/** El cierre del período, del día `desde` al día `hasta` (hora de Venezuela). */
+export function useCierreDiario(desde: string, hasta: string, activo = true) {
+  return useQuery({
+    queryKey: ['pedidos', 'reportes', 'cierre', desde, hasta],
+    queryFn: async () =>
+      normalizarCierre(await rpc<Record<string, unknown>>('compras_cierre_diario', { p_desde: desde, p_hasta: hasta })),
+    enabled: activo && !!desde && !!hasta,
+  })
+}
+
+/** Una compra del flujo anterior (`v_compras_anteriores`), solo para leer. */
+export interface CompraAnterior {
+  solicitud_id: number
+  numero: string
+  titulo: string
+  prioridad: string | null
+  destino: string | null
+  estado_solicitud: string
+  creada_en: string
+  solicitante: string | null
+  registrada_por_nombre: string | null
+  orden_id: number | null
+  orden_numero: string | null
+  estado_orden: string | null
+  condicion_pago: string | null
+  proveedor: string | null
+  moneda: string | null
+  total: number | string | null
+  total_usd: number | string | null
+  total_bs: number | string | null
+  renglones: number
+  columna: string | null
+  historico_en: string | null
+  historico_columna: string | null
+  historico_nota: string | null
+  directa: boolean
+  finalidad: string | null
+  finalizada_en: string | null
+}
+
+export function useComprasAnteriores(activo = true) {
+  return useQuery({
+    queryKey: ['compras', 'anteriores'],
+    queryFn: async () =>
+      desenvolver<CompraAnterior[]>(
+        await supabase.from('v_compras_anteriores').select('*').order('creada_en', { ascending: false }),
+      ),
+    enabled: activo,
+  })
 }

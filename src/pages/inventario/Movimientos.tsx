@@ -747,7 +747,7 @@ export function Movimientos() {
 
                       {m.orden_id ? (
                         <Chip tone={m.orden?.solicitud?.directa ? 'warning' : 'royal'} className="mr-2">
-                          <Link to="/app/compras">
+                          <Link to="/app/pedidos/historico?pestana=anteriores">
                             {m.orden?.solicitud?.directa ? 'Compra directa' : 'Compra'}
                             {m.orden?.numero ? ` ${m.orden.numero}` : ''}
                           </Link>

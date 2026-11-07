@@ -27,10 +27,11 @@ import { cn } from '@/lib/cn'
     en ninguna pantalla de existencias. Al lado de cada víver se dice cuánto
     hay, para decidir con ese dato delante.
 
-  - Lo que sale de aquí es un pedido de compras DE VERDAD (SOL-…, urgente):
-    entra al tablero de Compras y sigue su circuito —cotizar, aprobar,
-    pagar, recibir—. Esta pantalla no inventa un flujo; solo ahorra el
-    tecleo de armarlo.
+  - Lo que sale de aquí es la Solicitud de Mercado de «Pedidos / Compras»
+    (SP-…, urgente; antes de la fase 5b era un SOL- del flujo anterior) y
+    sigue su circuito —aprobar, cotizar, pagar, recibir en el almacén
+    general—. Esta pantalla no inventa un flujo; solo ahorra el tecleo de
+    armarlo.
 */
 
 interface Marcado {
@@ -185,9 +186,9 @@ export function PedirMercado({ onCerrar }: { onCerrar: () => void }) {
         acciones={<Button onClick={onCerrar}>Listo</Button>}
       >
         <p className="text-ink/70 text-sm">
-          Salió como el pedido <span className="text-ink/90 font-mono">{acuse}</span>, urgente. De aquí en
-          adelante va por Compras: lo cotizan, lo aprueban y, cuando llegue, la recepción ingresa los víveres
-          al inventario.
+          Salió como la Solicitud de Mercado <span className="text-ink/90 font-mono">{acuse}</span>, urgente. De
+          aquí en adelante va por Pedidos / Compras: la aprueban, la cotizan, la pagan y, cuando llegue, el almacén
+          general la recibe e ingresa los víveres al inventario.
         </p>
       </Modal>
     )
@@ -417,8 +418,8 @@ export function PedirMercado({ onCerrar }: { onCerrar: () => void }) {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <SelectBuscable
-              label="Destino"
-              vacio="Se decide al recibir"
+              label="Para dónde es"
+              vacio="Se recibe en el almacén general"
               valor={almacen}
               onCambio={setAlmacen}
               opciones={(almacenes ?? [])
