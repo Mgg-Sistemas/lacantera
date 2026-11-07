@@ -38,6 +38,10 @@ const AFECTA: Record<string, string[][]> = {
   // Fase 3: los abonos de un crédito y las cuentas del proveedor para pagarle.
   compras_abonos: [['pedidos', 'abonos']],
   proveedor_datos_pago: [['pedidos', 'datos-pago']],
+  // Fase 4: cada recepción del almacén (la orden ya avisa por `compras_ordenes`)
+  // y la evaluación al finalizar, que mueve el score de las cotizaciones.
+  compras_recepciones: [['pedidos', 'recepciones'], ['pedidos', 'por-recibir']],
+  compras_evaluaciones: [['pedidos', 'evaluaciones'], ['pedidos', 'estadisticas-proveedores']],
   proveedores: [['proveedores']],
 
   // Maquinaria y taller. La orden de mantenimiento toca tres pantallas: la

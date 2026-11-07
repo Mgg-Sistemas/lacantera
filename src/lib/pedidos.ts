@@ -142,6 +142,11 @@ const EVENTOS: Record<string, string> = {
   // Fase 3, propios de La Cantera (sin Tesorería ni Retenciones).
   documento_retenciones: 'Documento y retenciones indicados',
   credito_a_recepcion: 'Crédito · enviada a Pendiente por recepción',
+  // Fase 4. MGG tiene `recibida` y `finalizada`; la recepción parcial
+  // acumulada, la evaluación como evento y el comprobante son de La Cantera.
+  recibida_parcial: 'Recepción parcial en almacén',
+  evaluacion: 'Proveedor evaluado',
+  comprobante_adjunto: 'Factura / nota de entrega cargada',
 }
 
 export const etiquetaEvento = (ev: string): string => EVENTOS[ev] ?? ev
@@ -180,6 +185,9 @@ const CLASE_EVENTO: Record<string, TonoEstado> = {
   anulada: 'danger',
   documento_retenciones: 'info',
   credito_a_recepcion: 'info',
+  recibida_parcial: 'warning',
+  evaluacion: 'info',
+  comprobante_adjunto: 'info',
 }
 
 export const claseEvento = (ev: string): TonoEstado => CLASE_EVENTO[ev] ?? 'neutral'
@@ -205,6 +213,8 @@ export function extraEvento(h: EventoHistorial): string {
   }
   const pago = extraPago(h)
   if (pago) return pago
+  const recepcion = extraRecepcion(h)
+  if (recepcion) return recepcion
   if (motivo) return motivo
   if ((h.evento === 'revisada_almacen' || h.evento === 'salida_rechazada') && typeof h.detalle === 'string' && h.detalle.trim()) {
     return ` · ${h.detalle}`
@@ -278,6 +288,120 @@ function extraPago(h: EventoHistorial): string {
   const t = partes.filter(Boolean).join(' · ')
   return t ? ` · ${t}` : ''
 }
+
+/** «5 · Excelente» (MGG `CALIDAD_LABEL`). */
+export const CALIDAD_LABEL: Record<number, string> = {
+  5: '5 · Excelente',
+  4: '4 · Buena',
+  3: '3 · Aceptable',
+  2: '2 · Deficiente',
+  1: '1 · Muy mala',
+}
+
+/** «★★★★☆». */
+export const estrellas = (n: number): string => {
+  const k = Math.max(0, Math.min(5, Math.round(num(n))))
+  return '★'.repeat(k) + '☆'.repeat(5 - k)
+}
+
+/** «en la fecha prometida», «2 día(s) antes», «3 día(s) después». */
+export function textoPuntualidad(dias: number): string {
+  const d = Math.round(num(dias))
+  if (d === 0) return 'en la fecha prometida'
+  return d > 0 ? `${d} día(s) antes de lo prometido (adelantado)` : `${Math.abs(d)} día(s) después de lo prometido (atrasado)`
+}
+
+/** Lo que dicen los eventos de la recepción y del cierre (fase 4). */
+function extraRecepcion(h: EventoHistorial): string {
+  const partes: string[] = []
+  switch (h.evento) {
+    case 'recibida':
+    case 'recibida_parcial': {
+      if (typeof h.recepcion === 'string') partes.push(h.recepcion)
+      const ren = Array.isArray(h.renglones)
+        ? (h.renglones as Array<{ nombre?: string; cantidad?: number; unidad?: string; pedido?: number; recibido?: number }>)
+        : []
+      if (ren.length) {
+        partes.push(
+          ren
+            .map(
+              (r) =>
+                `${r.nombre ?? ''} ${fmtCant(r.cantidad)}${r.unidad ? ` ${r.unidad}` : ''}${
+                  r.pedido != null && num(r.recibido) < num(r.pedido) ? ` (van ${fmtCant(r.recibido)} de ${fmtCant(r.pedido)})` : ''
+                }`,
+            )
+            .join(', '),
+        )
+      }
+      if (h.recibido_total != null) partes.push(`recibido ${money(h.recibido_total as number)}`)
+      const faltan = Array.isArray(h.faltan) ? (h.faltan as Array<{ nombre?: string; falta?: number; unidad?: string }>) : []
+      if (faltan.length) {
+        partes.push(
+          `${h.cerrada_sin_completar ? 'no llegó' : 'falta'}: ${faltan.map((f) => `${f.nombre ?? ''} ${fmtCant(f.falta)}${f.unidad ? ` ${f.unidad}` : ''}`).join(', ')}`,
+        )
+      }
+      if (h.sin_inventario) partes.push('sin sumar al inventario')
+      if (Array.isArray(h.fichas_creadas) && h.fichas_creadas.length) partes.push(`ficha nueva: ${(h.fichas_creadas as string[]).join(', ')}`)
+      if (Array.isArray(h.marcas_cambiadas) && h.marcas_cambiadas.length) partes.push(`otra marca: ${(h.marcas_cambiadas as string[]).join(', ')}`)
+      if (typeof h.nota === 'string' && h.nota.trim()) partes.push(`📝 ${h.nota}`)
+      break
+    }
+    case 'evaluacion':
+      if (h.calidad != null) partes.push(`${estrellas(h.calidad as number)} ${CALIDAD_LABEL[num(h.calidad)] ?? h.calidad}`)
+      if (h.puntualidad_dias != null) partes.push(textoPuntualidad(h.puntualidad_dias as number))
+      if (typeof h.comentario === 'string' && h.comentario.trim()) partes.push(h.comentario)
+      break
+    case 'finalizada':
+      if (typeof h.factura === 'string') partes.push(`📎 ${h.factura}`)
+      break
+    case 'comprobante_adjunto':
+      partes.push(h.tipo === 'nota_entrega' ? 'Nota de entrega' : 'Factura')
+      if (typeof h.archivo === 'string') partes.push(`📎 ${h.archivo}`)
+      break
+    default:
+      return ''
+  }
+  const t = partes.filter(Boolean).join(' · ')
+  return t ? ` · ${t}` : ''
+}
+
+// ---------------------------------------------------------------------------
+// La recepción (fase 4)
+// ---------------------------------------------------------------------------
+
+/** Lo recibido de un renglón (acumulado), en la unidad de compra. */
+export const recibidoDe = (it: ItemOrden): number => num(it.cantidad_recibida)
+
+/** Lo que falta por llegar de un renglón. */
+export const faltaDe = (it: ItemOrden): number => Math.max(r4(num(it.cantidad) - recibidoDe(it)), 0)
+
+/** La unidad en que se cuenta al recibir: la de compra (BULTO) o la de uso. */
+export const unidadRecepcion = (it: ItemOrden): string => (it.unidad_compra || it.unidad || '').trim()
+
+/** Los renglones que se reciben (los que se compran). */
+export const renglonesARecibir = (o: Pick<Orden, 'items'>): ItemOrden[] => (o.items ?? []).filter((it) => it.comprar !== false)
+
+/** ¿Hubo ya alguna recepción? */
+export const tieneRecepcion = (o: Pick<Orden, 'recibido_total' | 'recibida_en'>): boolean =>
+  o.recibido_total != null || !!o.recibida_en
+
+/** MGG `recibirOrdenParcial`: estados recibibles, sin `recibida_en`. */
+export const esRecibible = (o: Pick<Orden, 'estado' | 'recibida_en' | 'oc_codigo'>): boolean =>
+  !!o.oc_codigo && !o.recibida_en && ['por_recibir', 'cuenta_abierta', 'pagada'].includes(o.estado)
+
+/** «Recibido x de y»: cuántos renglones están completos. */
+export function progresoRecepcion(o: Pick<Orden, 'items'>): { completos: number; total: number; parcial: boolean } {
+  const ren = renglonesARecibir(o)
+  const completos = ren.filter((it) => faltaDe(it) <= 0).length
+  return { completos, total: ren.length, parcial: ren.some((it) => recibidoDe(it) > 0) && completos < ren.length }
+}
+
+/**
+ * MGG: «✓ Finalizar orden» con la orden recibida y pagada: recibida (no contra
+ * entrega sin pagar), contra entrega pagada, o crédito saldado y recibido.
+ */
+export const puedeFinalizarse = (o: Pick<Orden, 'estado' | 'recibida_en' | 'pagada_en'>): boolean =>
+  !!o.recibida_en && !!o.pagada_en && ['recibida', 'pagada', 'cuenta_abierta'].includes(o.estado)
 
 // ---------------------------------------------------------------------------
 // Quién pide y quién cargó (MGG `quienSolicita.ts`)

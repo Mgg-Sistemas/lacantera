@@ -79,6 +79,16 @@ export interface ItemOrden {
   articulo_nombre?: string | null
   /** Producto que el proveedor agregó en su cotización (la SP no lo pedía). */
   agregado?: boolean
+  // La recepción (fase 4), en la unidad de compra.
+  /** Lo recibido, acumulado entre todas las recepciones. */
+  cantidad_recibida?: number | null
+  /** La marca con la que llegó, si es otra. */
+  marca_recibida?: string | null
+  nota_marca?: string | null
+  /** Este renglón no entra al inventario (servicio o consumo inmediato). */
+  sin_inventario?: boolean
+  /** La ficha se creó al recibir (renglón de nombre general). */
+  ficha_creada?: boolean
 }
 
 export interface EventoHistorial {
@@ -189,6 +199,15 @@ export interface Orden {
   pago_nota: string | null
   // La recepción (fase 4): contra entrega paga lo recibido.
   recibido_total: number | string | null
+  recibida_por: string | null
+  recibida_por_nombre: string | null
+  nota_recepcion: string | null
+  sin_inventario: boolean
+  recepcion_fotos: Array<Imagen & { recepcion?: number }> | null
+  factura_path: string | null
+  factura_nombre: string | null
+  factura_tipo: 'factura' | 'nota_entrega' | null
+  finalizada_por_nombre: string | null
   finalizada_en: string | null
 }
 
@@ -283,6 +302,8 @@ export interface PermisosPedidos {
   gestiona: boolean
   aprueba_oc: boolean
   revisa_almacen: boolean
+  /** Recibe en el almacén general (Inventario en escritura o rol de almacén). */
+  recibe_almacen?: boolean
   pide_por_otro: boolean
   yo: string
   mi_nombre: string | null
@@ -294,6 +315,8 @@ export const BUCKET_OFERTAS = 'compras-ofertas'
 export const MAX_IMAGENES_OP = 4
 /** Comprobantes de pago y de abonos, y la imagen / QR de pago (fase 3). */
 export const BUCKET_PAGOS = 'compras-pagos'
+/** Fotos de la recepción y la factura / nota de entrega escaneada (fase 4). */
+export const BUCKET_RECEPCIONES = 'compras-recepciones'
 
 // ---------------------------------------------------------------------------
 // Lecturas
@@ -1017,5 +1040,249 @@ export async function borrarArchivoPago(path: string): Promise<void> {
 export async function urlArchivoPago(path: string): Promise<string> {
   const { data, error } = await supabase.storage.from(BUCKET_PAGOS).createSignedUrl(path, 600)
   if (error || !data) throw new Error(error?.message ?? 'No se pudo abrir el comprobante')
+  return data.signedUrl
+}
+
+// ---------------------------------------------------------------------------
+// Fase 4: recepción en el almacén general y cierre en Compras
+// ---------------------------------------------------------------------------
+
+/** Un renglón de una recepción: lo que llegó y su movimiento de inventario. */
+export interface RenglonRecepcion {
+  sku: string
+  nombre: string
+  articulo_id?: number | null
+  articulo_nombre?: string | null
+  /** Lo que llegó en esta recepción, en la unidad de compra. */
+  cantidad: number
+  unidad?: string | null
+  factor?: number | null
+  /** Lo que entró al inventario, en la unidad de uso de la ficha. */
+  cantidad_inventario?: number | null
+  unidad_inventario?: string | null
+  precio: number
+  costo_usd?: number | null
+  valor: number
+  movimiento_id?: number | null
+  movimiento_numero?: string | null
+  aviso_costo?: number | null
+  sin_inventario?: boolean
+  ficha_creada?: boolean
+  marca_recibida?: string | null
+  nota_marca?: string | null
+  pedido: number
+  /** Lo recibido acumulado tras esta recepción. */
+  recibido: number
+}
+
+/** Una recepción de una OC (R1, R2…). */
+export interface Recepcion {
+  id: number
+  orden_id: number
+  numero: number
+  codigo: string
+  orden_codigo: string
+  oc_codigo: string | null
+  proveedor_id: number | null
+  proveedor_nombre: string | null
+  almacen_id: number
+  renglones: RenglonRecepcion[]
+  valor: number | string
+  nota: string | null
+  sin_inventario: boolean
+  completa: boolean
+  cierra: boolean
+  faltan: Array<{ sku: string; nombre: string; falta: number; unidad: string | null }>
+  fotos: Imagen[]
+  documento_tipo: 'factura' | 'nota_entrega' | null
+  documento_path: string | null
+  documento_nombre: string | null
+  recibida_por: string
+  recibida_por_nombre: string | null
+  recibida_en: string
+}
+
+/** La evaluación del proveedor al finalizar (MGG `evaluaciones_recepcion`). */
+export interface Evaluacion {
+  id: number
+  orden_id: number
+  proveedor_id: number
+  calidad: number
+  puntualidad_dias: number
+  fecha_prometida: string | null
+  fecha_recibido: string | null
+  comentario: string | null
+  evaluado_por_nombre: string | null
+  evaluado_por_rol: 'almacenista' | 'jefe'
+  evaluado_en: string
+}
+
+/** Una orden en «Recepciones por recibir», con su proveedor (el almacén no lee proveedores). */
+export interface PorRecibir {
+  orden: Orden
+  proveedor: string | null
+  proveedor_rif: string | null
+  recepciones: number
+}
+
+/** «Recepciones por recibir» (MGG `listOrdenesPorRecibir`). */
+export function usePorRecibir(activo = true) {
+  return useQuery({
+    queryKey: ['pedidos', 'por-recibir'],
+    queryFn: () => rpc<PorRecibir[]>('compras_por_recibir'),
+    enabled: activo,
+    refetchOnWindowFocus: true,
+  })
+}
+
+/** Las recepciones de una orden, de la primera a la última. */
+export function useRecepcionesDeOrden(ordenId: number, activo = true) {
+  return useQuery({
+    queryKey: ['pedidos', 'recepciones', 'orden', ordenId],
+    enabled: activo,
+    queryFn: async () =>
+      desenvolver<Recepcion[]>(
+        await supabase.from('compras_recepciones').select('*').eq('orden_id', ordenId).order('numero', { ascending: true }),
+      ),
+  })
+}
+
+/** El histórico de recepciones del almacén entre dos fechas (aaaa-mm-dd, hora de Caracas). */
+export function useRecepcionesEntre(desde: string, hasta: string, activo = true) {
+  return useQuery({
+    queryKey: ['pedidos', 'recepciones', 'entre', desde, hasta],
+    enabled: activo && !!desde && !!hasta,
+    queryFn: async () =>
+      desenvolver<Recepcion[]>(
+        await supabase
+          .from('compras_recepciones')
+          .select('*')
+          .gte('recibida_en', `${desde}T00:00:00-04:00`)
+          .lte('recibida_en', `${hasta}T23:59:59.999-04:00`)
+          .order('recibida_en', { ascending: false })
+          .limit(500),
+      ),
+  })
+}
+
+export function useEvaluacionDeOrden(ordenId: number, activo = true) {
+  return useQuery({
+    queryKey: ['pedidos', 'evaluaciones', ordenId],
+    enabled: activo,
+    queryFn: async () =>
+      desenvolver<Evaluacion | null>(
+        await supabase.from('compras_evaluaciones').select('*').eq('orden_id', ordenId).maybeSingle(),
+      ),
+  })
+}
+
+/** La ficha de un renglón de nombre general al recibirlo: una que ya existe o una nueva. */
+export type FichaRecepcion =
+  | { articulo_id: number }
+  | { crear: { nombre: string; categoria: string; unidad: string; confirmado?: boolean } }
+
+/** Un archivo con su tipo de documento. */
+export type DocumentoSubido = ArchivoSubido & { tipo: 'factura' | 'nota_entrega' }
+
+export interface DatosRecepcion {
+  renglones: Array<{
+    sku: string
+    cantidad: number
+    marca_recibida?: string | null
+    nota_marca?: string | null
+    sin_inventario?: boolean
+    ficha?: FichaRecepcion | null
+  }>
+  nota: string | null
+  sin_inventario: boolean
+  /** No llega más: cerrar la recepción con lo recibido. */
+  cerrar: boolean
+  fotos: ArchivoSubido[]
+  documento: DocumentoSubido | null
+}
+
+export interface ResultadoRecepcion {
+  id: number
+  estado: EstadoOrden
+  recepcion_id: number
+  codigo: string
+  numero: number
+  completa: boolean
+  cerrada: boolean
+  valor: number
+  recibido_total: number
+}
+
+export function useRecibirOrden() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (d: { id: number; datos: DatosRecepcion }) =>
+      rpc<ResultadoRecepcion>('compras_recibir_orden', { p_id: d.id, p_datos: d.datos }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['pedidos'] })
+      // Entró al inventario de ALM-GEN, y quizá una ficha nueva al catálogo.
+      for (const k of ['existencias', 'existencias-totales', 'movimientos', 'articulos']) {
+        void qc.invalidateQueries({ queryKey: [k] })
+      }
+    },
+  })
+}
+
+export interface DatosFinalizar {
+  calidad: number
+  puntualidad_dias: number
+  fecha_prometida: string | null
+  fecha_recibido: string | null
+  comentario: string | null
+  factura: DocumentoSubido | null
+}
+
+export function useFinalizarOrden() {
+  const invalidar = useInvalidar()
+  return useMutation({
+    mutationFn: (d: { id: number; datos: DatosFinalizar }) =>
+      rpc<{ id: number; estado: EstadoOrden; evaluacion_id: number | null }>('compras_finalizar_orden', {
+        p_id: d.id,
+        p_datos: d.datos,
+      }),
+    onSuccess: invalidar,
+  })
+}
+
+export function useAdjuntarComprobante() {
+  const invalidar = useInvalidar()
+  return useMutation({
+    mutationFn: (d: { id: number; archivo: DocumentoSubido }) =>
+      rpc('compras_adjuntar_comprobante', { p_id: d.id, p_archivo: d.archivo }),
+    onSuccess: invalidar,
+  })
+}
+
+/** `{ordenId}/{foto|documento|factura}-{nonce}-{nombre}` en el depósito de recepciones. */
+export async function subirArchivoRecepcion(
+  ordenId: number,
+  prefijo: 'foto' | 'documento' | 'factura',
+  f: File,
+): Promise<ArchivoSubido> {
+  if (f.size > 10 * 1024 * 1024) throw new Error('El archivo supera los 10 MB.')
+  const limpio = f.name.replace(/[^\w.-]+/g, '_').slice(-80) || 'archivo'
+  const nonce = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
+  const path = `${ordenId}/${prefijo}-${nonce}-${limpio}`
+  const { error } = await supabase.storage
+    .from(BUCKET_RECEPCIONES)
+    .upload(path, f, { upsert: false, contentType: f.type || undefined })
+  if (error) throw new Error(error.message)
+  return { path, filename: f.name }
+}
+
+/** Si la recepción falla, lo recién subido se borra (que no quede huérfano). */
+export async function borrarArchivosRecepcion(paths: string[]): Promise<void> {
+  if (paths.length) await supabase.storage.from(BUCKET_RECEPCIONES).remove(paths)
+}
+
+/** Una dirección firmada de diez minutos. */
+export async function urlArchivoRecepcion(path: string): Promise<string> {
+  const { data, error } = await supabase.storage.from(BUCKET_RECEPCIONES).createSignedUrl(path, 600)
+  if (error || !data) throw new Error(error?.message ?? 'No se pudo abrir el archivo')
   return data.signedUrl
 }

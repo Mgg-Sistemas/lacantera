@@ -13,7 +13,7 @@
   «Revisó: …» y lo que tiene, sin bloques por sede ni traslados. Lo que el
   almacén entrega sale por una solicitud de salida, y el mensaje lo dice.
 */
-import type { Abono, Orden } from '@/lib/api/pedidos'
+import type { Abono, Evaluacion, Orden, Recepcion } from '@/lib/api/pedidos'
 import { labelCondicionPago } from '@/lib/ofertas'
 import {
   basesPago,
@@ -26,7 +26,10 @@ import {
   type DatosPago,
 } from '@/lib/pagos'
 import {
+  CALIDAD_LABEL,
   cantidadSolicitada,
+  estrellas,
+  textoPuntualidad,
   fechaHoraVE,
   fmtCant,
   quienSolicita,
@@ -317,6 +320,81 @@ export function textoAbono(o: Orden, a: Abono, d: { proveedor: string; empresa: 
   L.push(`✅ *Abonado:* ${montoTxt(o.abonado_total, '$')}`)
   const saldo = saldoCredito(o)
   L.push(saldo > 0.01 ? `🔺 *Saldo pendiente:* ${montoTxt(saldo, '$')}` : '✅ *Crédito pagado en su totalidad*')
+  L.push(`🏢 *${d.empresa.toUpperCase()}*`)
+  return L.join('\n')
+}
+
+// ---------------------------------------------------------------------------
+// Fase 4: la recepción y el cierre (MGG `recepcionReporte.ts`)
+// ---------------------------------------------------------------------------
+
+/**
+ * MGG `mensajeRecepcion`: el aviso de una recepción en el almacén, la total y
+ * la parcial (esta con lo que falta). Sin Delivery: no va «🛵 Delivery».
+ */
+export function mensajeRecepcion(
+  r: Recepcion,
+  d: { empresa: string; almacen?: string; faltan?: Recepcion['faltan'] },
+): string {
+  const almacen = d.almacen ?? 'Almacén General'
+  const faltan = d.faltan ?? r.faltan ?? []
+  const parcial = !r.completa
+  const L: string[] = []
+  L.push(parcial && !r.cierra ? '📥 *RECEPCIÓN PARCIAL EN ALMACÉN*' : '📥 *RECEPCIÓN EN ALMACÉN*')
+  L.push(`🔖 *N°:* ${r.codigo}`)
+  L.push(`📄 *Orden:* ${[r.oc_codigo, r.orden_codigo].filter(Boolean).join(' · ')}`)
+  if (r.proveedor_nombre) L.push(`🏭 *Proveedor:* ${r.proveedor_nombre}`)
+  L.push(`🏬 *Almacén:* ${almacen}`)
+  L.push('')
+  const ren = r.renglones ?? []
+  L.push(`📦 *Materiales (${ren.length}):*`)
+  for (const it of ren) {
+    const u = (it.unidad ?? '').trim()
+    const de = it.pedido != null && Number(it.recibido) < Number(it.pedido) ? ` (van ${fmtCant(it.recibido)} de ${fmtCant(it.pedido)})` : ''
+    L.push(`• ${it.nombre}: ${fmtCant(it.cantidad)}${u ? ` ${u}` : ''}${de}`)
+  }
+  const valor = Number(r.valor) || 0
+  if (valor > 0) L.push(`💵 *Valor recibido:* ${montoTxt(valor, '$')}`)
+  if (faltan.length) {
+    L.push('')
+    L.push(r.cierra ? '⚠ *NO LLEGÓ (se cierra con lo recibido):*' : '⏳ *FALTA POR RECIBIR:*')
+    for (const f of faltan) L.push(`• ${f.nombre}: ${fmtCant(f.falta)}${f.unidad ? ` ${f.unidad}` : ''}`)
+  }
+  if (r.nota?.trim()) L.push(`📝 *Nota:* ${r.nota.trim()}`)
+  if (r.fotos?.length) L.push(`📷 *Fotos:* ${r.fotos.length}`)
+  if (r.documento_nombre) L.push(`🧾 *${r.documento_tipo === 'nota_entrega' ? 'Nota de entrega' : 'Factura'}:* adjunta`)
+  L.push('')
+  if (r.recibida_por_nombre) L.push(`👷 *Recibido por:* ${r.recibida_por_nombre}`)
+  L.push(`🕒 ${fechaHoraVE(r.recibida_en)}`)
+  L.push('')
+  L.push(`🏢 *${d.empresa.toUpperCase()}* · ${almacen}`)
+  return L.join('\n')
+}
+
+/** «✓ Finalizar orden»: el cierre, con la evaluación del proveedor. */
+export function textoFinalizada(
+  o: Orden,
+  e: Pick<Evaluacion, 'calidad' | 'puntualidad_dias' | 'comentario'> | null,
+  d: { proveedor: string; empresa: string },
+): string {
+  const solicita = (quienSolicita(o) ?? '').trim()
+  const L: string[] = []
+  L.push(`✅ *PEDIDO FINALIZADO: ${o.oc_codigo ?? o.codigo}*`)
+  if (o.oc_codigo) L.push(`📋 *Solicitud:* ${o.codigo}`)
+  L.push(`🏭 *Proveedor:* ${d.proveedor || '—'}`)
+  if (solicita) L.push(`🙋 *Solicita:* ${[o.unidad_solicitante, solicita].filter(Boolean).join(' — ')}`)
+  L.push(`💵 *Total:* ${montoTxt(o.total, '$')}`)
+  if (o.recibido_total != null) {
+    L.push(`📦 *Recibido:* ${montoTxt(o.recibido_total, '$')}${o.recibida_en ? ` · ${fechaHoraVE(o.recibida_en)}` : ''}`)
+  }
+  if (o.pagada_en) L.push(`💳 *Pagada:* ${o.pago_monto_usd != null ? montoTxt(o.pago_monto_usd, '$') : montoTxt(montoAPagar(o), '$')}`)
+  if (e) {
+    L.push(`⭐ *Calidad:* ${estrellas(e.calidad)} ${CALIDAD_LABEL[e.calidad] ?? e.calidad}`)
+    L.push(`🕒 *Puntualidad:* ${textoPuntualidad(e.puntualidad_dias)}`)
+    if (e.comentario?.trim()) L.push(`📝 *Comentario:* ${e.comentario.trim()}`)
+  }
+  if (o.finalizada_por_nombre) L.push(`👔 *Finalizó:* ${o.finalizada_por_nombre}`)
+  L.push(`📅 ${fechaHoraVE(o.finalizada_en)}`)
   L.push(`🏢 *${d.empresa.toUpperCase()}*`)
   return L.join('\n')
 }
