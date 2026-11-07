@@ -9,15 +9,19 @@ import { BANCOS } from '@/lib/bancos'
 import type { Proveedor } from '@/lib/api/catalogo'
 import {
   borrarArchivoPago,
+  borrarArchivosDirecto,
+  subirArchivoDirecto,
   subirArchivoPago,
   useCorregirMetodoPago,
   useCuentasProveedor,
   useDocumentoRetenciones,
   useIndicarMetodoPago,
+  useMetodoPagoServicioDirecto,
   useTelefonoAdministracion,
   type ArchivoSubido,
   type CuentaProveedor,
   type Orden,
+  type ServicioDirecto,
 } from '@/lib/api/pedidos'
 import { money } from '@/lib/pedidos'
 import { infoModalidad, r2 } from '@/lib/ofertas'
@@ -63,6 +67,12 @@ import { mensajeDe, toast } from '@/lib/avisosFlotantes'
       otra; al enviar quedan en su ficha (MGG guarda una por método).
     - En modo «corregir» (OC ya en «Confirmada pagar») también se corrigen el
       documento y las retenciones: no hay módulo de Retenciones que lo haga.
+
+  El SERVICIO DIRECTO (fase 5a) usa esta misma pantalla con `directo`: en MGG
+  lo paga Tesorería; aquí se indica el método, el documento y las
+  retenciones igual que una OC. Sin «Opción de pago elegida» ni «🔁 Cambiar
+  de proveedor» (no se cotizó), y el teléfono de administración solo se pide
+  si hay proveedor (va a su ficha).
 */
 
 const CAMPO = 'rounded-control border-ink/20 bg-surface h-9 min-w-0 border px-2 text-sm'
@@ -173,6 +183,7 @@ export function DocumentoYRetenciones({
   form,
   onForm,
   descuento = 0,
+  deQue = 'la OC',
 }: {
   orden: Orden
   doc: 'factura' | 'nota_entrega'
@@ -180,6 +191,8 @@ export function DocumentoYRetenciones({
   form: RetencionesForm
   onForm: (f: RetencionesForm) => void
   descuento?: number
+  /** «la OC» o «el servicio»: de qué es el total. */
+  deQue?: string
 }) {
   const rets = useMemo(() => (doc === 'factura' ? calcularRetenciones(o, form) : []), [o, form, doc])
   const b = basesPago(o)
@@ -213,7 +226,7 @@ export function DocumentoYRetenciones({
         <div className="border-hairline mb-3 rounded-[8px] border px-3 py-2.5">
           <div className="text-ink/85 text-sm font-semibold">Retenciones</div>
           <p className="text-ink/55 mb-2 text-xs">
-            Indicá cada retención en % o en monto; las que no retienen se dejan en blanco. Se restan del total de la OC.
+            Indicá cada retención en % o en monto; las que no retienen se dejan en blanco. Se restan del total de {deQue}.
           </p>
           <div className="space-y-2">
             {TIPOS_RETENCION.map((tipo) => {
@@ -254,7 +267,7 @@ export function DocumentoYRetenciones({
 
       <div className="border-royal-600/40 bg-royal-600/5 mb-3 rounded-[8px] border px-3 py-2 text-sm">
         <div className="flex justify-between">
-          <span>Total OC</span>
+          <span>{deQue === 'la OC' ? 'Total OC' : 'Total del servicio'}</span>
           <strong className="font-mono">{money(b.total)}</strong>
         </div>
         {descuento > 0 ? (
@@ -291,6 +304,7 @@ export function MetodoPagoModal({
   onClose,
   onListo,
   onReabrir,
+  directo,
 }: {
   orden: Orden
   proveedor: Proveedor | undefined
@@ -300,10 +314,16 @@ export function MetodoPagoModal({
   onListo: () => void
   /** «🔁 Cambiar de proveedor (volver a cotizar)», con su motivo. */
   onReabrir?: (motivo: string) => Promise<void>
+  /** El servicio directo cuyo pago se indica (la `orden` es `ordenDesdeDirecto(directo)`). */
+  directo?: ServicioDirecto
 }) {
   const corrigiendo = modo === 'corregir'
   const indicar = useIndicarMetodoPago()
   const corregir = useCorregirMetodoPago()
+  const metodoDirecto = useMetodoPagoServicioDirecto()
+  // Sin proveedor (servicio directo) no hay ficha donde guardar el teléfono.
+  const pideTel = !directo || !!o.proveedor_id
+  const deQue = directo ? 'el servicio' : 'la OC'
   const { data: cuentas = [] } = useCuentasProveedor(o.proveedor_id)
   const { data: telFicha } = useTelefonoAdministracion(o.proveedor_id)
 
@@ -319,7 +339,7 @@ export function MetodoPagoModal({
   )
   const [tel, setTel] = useState(o.numero_administracion ?? '')
   const [telTocado, setTelTocado] = useState(false)
-  const [doc, setDoc] = useState<'factura' | 'nota_entrega'>(o.comprobante_tipo ?? 'nota_entrega')
+  const [doc, setDoc] = useState<'factura' | 'nota_entrega'>(o.comprobante_tipo ?? (directo ? 'factura' : 'nota_entrega'))
   const [retForm, setRetForm] = useState<RetencionesForm>(() => retencionesAForm(o.retenciones))
   const [qr, setQr] = useState<File | null>(null)
   const [incluyeDesc, setIncluyeDesc] = useState(false)
@@ -345,7 +365,7 @@ export function MetodoPagoModal({
   }, [cuentas, cuentasPuestas, corrigiendo])
 
   const esContraEntrega = o.condiciones_pago === 'contra_entrega'
-  const puedeCambiarProveedor = !corrigiendo && o.estado === 'confirmada_metodo' && !!onReabrir
+  const puedeCambiarProveedor = !directo && !corrigiendo && o.estado === 'confirmada_metodo' && !!onReabrir
   const b = basesPago(o)
   const descPct = incluyeDesc && descModo === 'pct' ? Math.max(0, Math.min(100, leerMonto(descStr))) : 0
   const descNum = !incluyeDesc ? 0 : descModo === 'pct' ? r2((b.total * descPct) / 100) : Math.max(0, r2(leerMonto(descStr)))
@@ -357,7 +377,7 @@ export function MetodoPagoModal({
 
   async function enviar() {
     setError(null)
-    if (!o.proveedor_id) return setError('Indicá el proveedor.')
+    if (!o.proveedor_id && !directo) return setError('Indicá el proveedor.')
     if (reabriendo) {
       const m = motivoCambio.trim()
       if (!m) return setError('Escribí el motivo del cambio de proveedor.')
@@ -371,8 +391,9 @@ export function MetodoPagoModal({
       }
       return
     }
-    if (!tel.trim()) return setError('Indicá el teléfono de administración del proveedor: se carga una sola vez y queda en su ficha.')
-    if (!telefonoAdministracionValido(tel))
+    if (pideTel && !tel.trim())
+      return setError('Indicá el teléfono de administración del proveedor: se carga una sola vez y queda en su ficha.')
+    if (pideTel && !telefonoAdministracionValido(tel))
       return setError(
         'El teléfono de administración no parece un teléfono (mínimo 7 dígitos; se admiten +, espacios, guiones y paréntesis).',
       )
@@ -386,7 +407,7 @@ export function MetodoPagoModal({
     }
     if (incluyeDesc && !corrigiendo) {
       if (descNum <= 0) return setError('Indicá el monto del descuento o desmarcá «El pago incluye descuento».')
-      if (descNum > b.total) return setError('El descuento no puede superar el total de la OC.')
+      if (descNum > b.total) return setError(`El descuento no puede superar el total de ${deQue}.`)
     }
     for (const p of patas) {
       if (requiereDatos(p.metodo)) {
@@ -400,7 +421,7 @@ export function MetodoPagoModal({
     try {
       if (qr && !corrigiendo) {
         if (qr.type && !qr.type.startsWith('image/')) throw new Error('El QR / comprobante de pago debe ser una imagen.')
-        subido = await subirArchivoPago(o.id, 'qr', qr)
+        subido = directo ? await subirArchivoDirecto(directo.id, 'qr', qr) : await subirArchivoPago(o.id, 'qr', qr)
       }
       const datos = {
         metodos: patas.map((p) => ({
@@ -419,18 +440,21 @@ export function MetodoPagoModal({
               confirmo_recepcion: esContraEntrega ? notaEntrega : undefined,
             }),
       }
-      const r = corrigiendo
-        ? await corregir.mutateAsync({ id: o.id, datos })
-        : await indicar.mutateAsync({ id: o.id, datos })
+      const r = directo
+        ? await metodoDirecto.mutateAsync({ id: directo.id, datos })
+        : corrigiendo
+          ? await corregir.mutateAsync({ id: o.id, datos })
+          : await indicar.mutateAsync({ id: o.id, datos })
+      const sujeto = directo ? `Servicio directo ${directo.codigo}` : `OC ${ocCodigo}`
       toast(
         corrigiendo
-          ? `OC ${ocCodigo} · método de pago corregido · monto a pagar ${money(r.monto_a_pagar)}`
-          : `OC ${ocCodigo} enviada para pagar · monto a pagar ${money(r.monto_a_pagar)}`,
+          ? `${sujeto} · método de pago corregido · monto a pagar ${money(r.monto_a_pagar)}`
+          : `${sujeto} enviad${directo ? 'o' : 'a'} para pagar · monto a pagar ${money(r.monto_a_pagar)}`,
         'success',
       )
       onListo()
     } catch (e) {
-      if (subido) void borrarArchivoPago(subido.path)
+      if (subido) void (directo ? borrarArchivosDirecto([subido.path]) : borrarArchivoPago(subido.path))
       setError(mensajeDe(e, 'No se pudo enviar'))
       setGuardando(false)
     }
@@ -440,7 +464,9 @@ export function MetodoPagoModal({
     <Modal
       abierto
       onCerrar={onClose}
-      titulo={`${corrigiendo ? 'Corregir método de pago' : 'Método de pago'} · OC ${ocCodigo}`}
+      titulo={`${corrigiendo ? 'Corregir método de pago' : 'Método de pago'} · ${
+        directo ? `SERVICIO DIRECTO ${directo.codigo}` : o.clase === 'servicio' ? `SERVICIO ${o.codigo}` : `OC ${ocCodigo}`
+      }`}
       ancho="lg"
       acciones={
         <>
@@ -456,12 +482,13 @@ export function MetodoPagoModal({
       {corrigiendo ? (
         <p className="text-ink/65 mb-3 text-sm">
           Corregí <strong>cómo se le paga al proveedor</strong>: el método y los datos del beneficiario (banco, CI/RIF, teléfono,
-          cuenta), el documento y las retenciones. La OC <strong>no se mueve</strong>: sigue en <strong>Confirmada pagar</strong>.
+          cuenta), el documento y las retenciones. {directo ? 'El servicio' : 'La OC'} <strong>no se mueve</strong>: sigue en{' '}
+          <strong>{directo ? 'Confirmado pagar' : 'Confirmada pagar'}</strong>.
           El cambio queda firmado en la trazabilidad y los datos corregidos se guardan en la ficha del proveedor.
         </p>
       ) : (
         <p className="text-ink/65 mb-3 text-sm">
-          Indicá <strong>con qué método(s)</strong> se va a pagar la OC (
+          Indicá <strong>con qué método(s)</strong> se va a pagar {deQue} (
           {esContraEntrega && o.recibido_total != null ? (
             <>
               recibido <strong>{money(o.recibido_total)}</strong>
@@ -495,7 +522,7 @@ export function MetodoPagoModal({
         <div className={cn('mb-3 rounded-[8px] border px-3 py-2.5', reabriendo ? 'border-royal-600' : 'border-hairline')}>
           <div className="text-ink/85 mb-1 text-sm font-semibold">Proveedor</div>
           <div className="flex flex-wrap items-center gap-2">
-            <strong>{proveedor?.nombre ?? '—'}</strong>
+            <strong>{proveedor?.nombre ?? directo?.proveedor_nombre ?? '—'}</strong>
             {proveedor?.rif ? <span className="text-ink/50 font-mono text-sm">{proveedor.rif}</span> : null}
             {puedeCambiarProveedor && !reabriendo ? (
               <Button
@@ -541,7 +568,7 @@ export function MetodoPagoModal({
               </Button>
             </>
           ) : null}
-          {!puedeCambiarProveedor && o.estado !== 'confirmada_metodo' ? (
+          {!directo && !puedeCambiarProveedor && o.estado !== 'confirmada_metodo' ? (
             <p className="text-ink/50 mt-1 text-xs">El proveedor ya no se puede cambiar: la OC ya fue recibida.</p>
           ) : null}
         </div>
@@ -554,7 +581,9 @@ export function MetodoPagoModal({
         </div>
       ) : (
         <>
-          <div className={cn('mb-3 rounded-[8px] border px-3 py-2.5', tel.trim() ? 'border-hairline' : 'border-warning')}>
+          <div
+            className={cn('mb-3 rounded-[8px] border px-3 py-2.5', tel.trim() ? 'border-hairline' : 'border-warning', !pideTel && 'hidden')}
+          >
             <Input
               label="📞 Teléfono de administración del proveedor (obligatorio)"
               type="tel"
@@ -574,7 +603,15 @@ export function MetodoPagoModal({
             />
           </div>
 
-          <DocumentoYRetenciones orden={o} doc={doc} onDoc={setDoc} form={retForm} onForm={setRetForm} descuento={descuentoActual} />
+          <DocumentoYRetenciones
+            orden={o}
+            doc={doc}
+            onDoc={setDoc}
+            form={retForm}
+            onForm={setRetForm}
+            descuento={descuentoActual}
+            deQue={deQue}
+          />
 
           {!corrigiendo ? (
             <>

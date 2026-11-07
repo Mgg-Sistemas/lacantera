@@ -8,13 +8,17 @@ import { cn } from '@/lib/cn'
 import { useTasaVigente } from '@/lib/api/tasas'
 import {
   borrarArchivoPago,
+  borrarArchivosDirecto,
+  subirArchivoDirecto,
   subirArchivoPago,
   useAbonos,
   useMarcarPagada,
+  usePagarServicioDirecto,
   useRegistrarAbono,
   type Abono,
   type ArchivoSubido,
   type Orden,
+  type ServicioDirecto,
 } from '@/lib/api/pedidos'
 import { fechaHoraVE, money } from '@/lib/pedidos'
 import { r2 } from '@/lib/ofertas'
@@ -35,6 +39,7 @@ import {
   type MonedaPago,
 } from '@/lib/pagos'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
+import { abrirArchivoDirecto } from './ordenDesdeDirecto'
 
 /*
   EL PAGO Y LOS ABONOS, DENTRO DE COMPRAS (fase 3)
@@ -167,8 +172,20 @@ function validarArchivo(f: File | null): string | null {
 // 💵 Marcar pagada
 // ---------------------------------------------------------------------------
 
-export function MarcarPagadaModal({ orden: o, onClose, onListo }: { orden: Orden; onClose: () => void; onListo: () => void }) {
+export function MarcarPagadaModal({
+  orden: o,
+  onClose,
+  onListo,
+  directo,
+}: {
+  orden: Orden
+  onClose: () => void
+  onListo: () => void
+  /** El servicio directo que se paga (la `orden` es `ordenDesdeDirecto(directo)`): queda Finalizado. */
+  directo?: ServicioDirecto
+}) {
   const pagar = useMarcarPagada()
+  const pagarDirecto = usePagarServicioDirecto()
   const { data: tasaHoy } = useTasaVigente()
   const aPagar = montoAPagar(o)
   const metodos = o.metodo_pago ?? []
@@ -209,26 +226,29 @@ export function MarcarPagadaModal({ orden: o, onClose, onListo }: { orden: Orden
     setGuardando(true)
     let subido: ArchivoSubido | null = null
     try {
-      if (archivo) subido = await subirArchivoPago(o.id, 'pago', archivo)
-      const r = await pagar.mutateAsync({
-        id: o.id,
-        datos: {
-          fecha,
-          monto: leerMonto(monto),
-          moneda,
-          tasa: moneda === 'Bs' ? leerMonto(tasa) : null,
-          referencia: referencia.trim() || null,
-          comprobante: subido,
-          nota: nota.trim() || null,
-        },
-      })
-      toast(
-        `OC ${ocCodigo} pagada · ${money(r.monto_usd)}${r.estado === 'por_recibir' ? ' · pendiente por recepción' : ''}`,
-        'success',
-      )
+      if (archivo) subido = directo ? await subirArchivoDirecto(directo.id, 'pago', archivo) : await subirArchivoPago(o.id, 'pago', archivo)
+      const datos = {
+        fecha,
+        monto: leerMonto(monto),
+        moneda,
+        tasa: moneda === 'Bs' ? leerMonto(tasa) : null,
+        referencia: referencia.trim() || null,
+        comprobante: subido,
+        nota: nota.trim() || null,
+      }
+      if (directo) {
+        const r = await pagarDirecto.mutateAsync({ id: directo.id, datos })
+        toast(`Servicio directo ${directo.codigo} pagado · ${money(r.monto_usd)}`, 'success')
+      } else {
+        const r = await pagar.mutateAsync({ id: o.id, datos })
+        toast(
+          `OC ${ocCodigo} pagada · ${money(r.monto_usd)}${r.estado === 'por_recibir' ? ' · pendiente por recepción' : ''}`,
+          'success',
+        )
+      }
       onListo()
     } catch (e) {
-      if (subido) void borrarArchivoPago(subido.path)
+      if (subido) void (directo ? borrarArchivosDirecto([subido.path]) : borrarArchivoPago(subido.path))
       setError(mensajeDe(e, 'No se pudo registrar el pago'))
       setGuardando(false)
     }
@@ -238,7 +258,7 @@ export function MarcarPagadaModal({ orden: o, onClose, onListo }: { orden: Orden
     <Modal
       abierto
       onCerrar={onClose}
-      titulo={`Pagar OC ${ocCodigo}`}
+      titulo={directo ? `Pagar servicio directo · ${directo.codigo}` : `Pagar OC ${ocCodigo}`}
       ancho="lg"
       acciones={
         <>
@@ -246,16 +266,29 @@ export function MarcarPagadaModal({ orden: o, onClose, onListo }: { orden: Orden
             Cancelar
           </Button>
           <Button className="bg-success hover:bg-success hover:brightness-95" onClick={() => void onPagar()} disabled={guardando}>
-            {guardando ? 'Guardando…' : `PAGAR ORDEN · ${money(aPagar)}`}
+            {guardando ? 'Guardando…' : `${directo ? 'PAGAR SERVICIO' : 'PAGAR ORDEN'} · ${money(aPagar)}`}
           </Button>
         </>
       }
     >
-      <p className="text-ink/65 mb-3 text-sm">
-        Registrá el pago al proveedor: la fecha, la referencia y el monto; el comprobante se puede subir o no. Al guardar, la OC
-        pasa a <strong>{o.recibida_en ? 'Pagada' : 'Pendiente por recepción'}</strong>
-        {o.recibida_en ? ' (ya se recibió: queda lista para finalizar).' : ' y el almacén recibe el aviso.'}
-      </p>
+      {directo ? (
+        <p className="text-ink/65 mb-3 text-sm">
+          Registrá el pago del servicio: la fecha, la referencia y el monto; el comprobante se puede subir o no. Al guardar, el
+          servicio queda <strong>Finalizado</strong>.
+        </p>
+      ) : o.clase === 'servicio' ? (
+        <p className="text-ink/65 mb-3 text-sm">
+          Registrá el pago al proveedor: la fecha, la referencia y el monto; el comprobante se puede subir o no. Al guardar, el
+          servicio pasa a <strong>Pagado</strong>
+          {o.recibida_en ? ' (ya se prestó: queda listo para finalizar).' : ': después Compras confirma «🔧 Servicio realizado».'}
+        </p>
+      ) : (
+        <p className="text-ink/65 mb-3 text-sm">
+          Registrá el pago al proveedor: la fecha, la referencia y el monto; el comprobante se puede subir o no. Al guardar, la OC
+          pasa a <strong>{o.recibida_en ? 'Pagada' : 'Pendiente por recepción'}</strong>
+          {o.recibida_en ? ' (ya se recibió: queda lista para finalizar).' : ' y el almacén recibe el aviso.'}
+        </p>
+      )}
       {error ? (
         <div className="border-danger text-danger mb-3 rounded-[6px] border px-3 py-2 text-sm">
           <strong>Error:</strong> {error}
@@ -263,7 +296,7 @@ export function MarcarPagadaModal({ orden: o, onClose, onListo }: { orden: Orden
       ) : null}
 
       <div className="mb-3 grid gap-2 sm:grid-cols-3">
-        <Mosaico k="Total OC" v={money(basesPago(o).total)} />
+        <Mosaico k={directo ? 'Total del servicio' : 'Total OC'} v={money(basesPago(o).total)} />
         <Mosaico k="Retenciones y descuento" v={`− ${money(r2(totalRetenciones(rets) + (Number(o.descuento_pago) || 0)))}`} tono="danger" />
         <Mosaico k="Monto a pagar" v={money(aPagar)} tono="success" />
       </div>
@@ -299,7 +332,7 @@ export function MarcarPagadaModal({ orden: o, onClose, onListo }: { orden: Orden
           </div>
         ) : null}
         {o.pago_qr_path ? (
-          <Button size="sm" variant="ghost" onClick={() => void abrirArchivo(o.pago_qr_path!)}>
+          <Button size="sm" variant="ghost" onClick={() => void (directo ? abrirArchivoDirecto(o.pago_qr_path!) : abrirArchivo(o.pago_qr_path!))}>
             📷 Ver QR / imagen de pago
           </Button>
         ) : null}
