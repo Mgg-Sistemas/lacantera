@@ -280,7 +280,7 @@ function Formulario({ pedido }: { pedido: Compra | null }) {
 
             <div className="sm:col-span-2">
             <Textarea
-              label="Para qué es (opcional)"
+              label="Motivo de compra (opcional)"
               placeholder="La muela está gastada y el material sale fuera de medida."
               hint="No hace falta: cada renglón ya lleva su observación."
               rows={3}
