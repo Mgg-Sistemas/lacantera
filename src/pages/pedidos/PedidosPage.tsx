@@ -47,7 +47,6 @@ import { OcPorLoteView } from './OcPorLoteView'
 import { NuevoServicioModal } from './NuevoServicioModal'
 import { SolicitudMercadoModal } from './SolicitudMercadoModal'
 import { CategoriasModal } from './CategoriasModal'
-import { ServicioDirectoView } from './ServicioDirectoView'
 import { ReporteComprasModal } from './ReporteComprasModal'
 import { CierreDiarioModal } from './CierreDiarioModal'
 
@@ -92,7 +91,8 @@ import { CierreDiarioModal } from './CierreDiarioModal'
       MGG.
 */
 
-type Scope = 'pedidos' | 'oc' | 'oc_lote' | 'compra_directa' | 'servicio' | 'servicio_directo'
+// «🔧 Servicio Directo» se quitó el 08/11/2026 por pedido de la dueña.
+type Scope = 'pedidos' | 'oc' | 'oc_lote' | 'compra_directa' | 'servicio'
 type ViewMode = 'kanban' | 'lista'
 
 const VIEW_KEY = 'pedidos.vista'
@@ -123,11 +123,6 @@ const PESTANAS: { scope: Scope; label: string; title: string }[] = [
     scope: 'servicio',
     label: '🛠 Servicios',
     title: 'Solicitudes de servicio (recarga de gas, recarga de agua, mantenimiento de maquinaria…)',
-  },
-  {
-    scope: 'servicio_directo',
-    label: '🔧 Servicio Directo',
-    title: 'Servicio sin solicitud previa: cargás la factura y el monto',
   },
 ]
 
@@ -273,13 +268,11 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
       ? 'Órdenes de Compra'
       : scope === 'compra_directa'
         ? 'Compra Directa'
-        : scope === 'servicio_directo'
-          ? 'Servicio Directo'
-          : scope === 'oc_lote'
-            ? 'OC por lote'
-            : scope === 'servicio'
-              ? 'Servicios'
-              : 'Órdenes'
+        : scope === 'oc_lote'
+          ? 'OC por lote'
+          : scope === 'servicio'
+            ? 'Servicios'
+            : 'Órdenes'
 
   const hint = soloSolicitud
     ? 'Crea tus solicitudes de pedido y sigue en qué fase van. Compras se encarga del resto.'
@@ -312,7 +305,7 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
               <Button variant="ghost" onClick={() => setModal({ kind: 'cierre' })}>
                 📆 Cierre diario
               </Button>
-              {scope !== 'compra_directa' && scope !== 'oc_lote' && scope !== 'servicio_directo' ? (
+              {scope !== 'compra_directa' && scope !== 'oc_lote' ? (
                 <AccionesDePestana scope={scope} gestiona={permisos.gestiona} onModal={setModal} />
               ) : null}
             </div>
@@ -373,8 +366,6 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
           proveedor={nombreProveedor}
           onOpen={(id) => setModal({ kind: 'detail', ordenId: id })}
         />
-      ) : scope === 'servicio_directo' ? (
-        <ServicioDirectoView permisos={permisos} />
       ) : (
         <>
           <div className="mb-4 flex flex-wrap items-end gap-2">
