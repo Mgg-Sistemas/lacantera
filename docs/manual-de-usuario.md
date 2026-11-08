@@ -2110,7 +2110,7 @@ Esta es la sección que hay que leer si solo se va a leer una. Todo lo demás de
 | 1 | **En revisión de almacén** | Almacén | Revisar qué tiene el almacén general. Lo que hay sale por una **solicitud de salida**; a Compras pasa solo lo que falta (9.6) |
 | 2 | **Pendiente** | Compras | **Aprobar Orden de Pedido** |
 | 3 | **Aprobada** (en la pestaña OC: **Pendiente (cargar ofertas)**) | Compras | Cargar las ofertas, comparar y **Aceptar esta oferta**. Ahí nace la **OC** (9.8) |
-| 4 | **Ordenes pendiente por aprobar** | Quien aprueba | **✔ Aprobar OC**, una por una o en **OC por lote** (9.9) |
+| 4 | **Ordenes pendiente por aprobar** | Quien aprueba | **✔ Aprobar OC** (9.9) |
 | 5 | **Confirmada (indicar método de pago)** | Compras | **💳 Indicar método de pago / Enviar para Pagar**: factura o nota de entrega, método, retenciones (9.10) |
 | 6 | **Confirmada pagar** | Quien aprueba | **💵 Marcar pagada**, con el comprobante (9.10) |
 | 7 | **Pendiente por recepción** | Almacén | **📦 Confirmar recepción** en el almacén general; puede ser parcial (9.13) |
@@ -2132,7 +2132,7 @@ Al aprobar la OC, **la condición de pago decide la columna siguiente**:
 
 #### Los retrocesos
 
-- **↩ Re-elegir oferta** / **✎ Modificar OC**: la OC vuelve a **Pendiente (cargar ofertas)** para elegir otra oferta. También se hace en lote desde **OC por lote**.
+- **↩ Re-elegir oferta** / **✎ Modificar OC**: la OC vuelve a **Pendiente (cargar ofertas)** para elegir otra oferta.
 - **✎ Editar OC (todo)**: cambia precios, cantidades y condiciones de una OC; si la cambia de manera que hay que volver a aprobarla, regresa a **Ordenes pendiente por aprobar**.
 - **💳 Editar método de pago / datos**: corrige el método o las retenciones antes de pagar.
 - **Si la salida del almacén se rechaza o se cancela** en Salidas, lo que no salió vuelve solo a Compras y se avisa.
@@ -2149,7 +2149,6 @@ En este orden, como en MGG:
 | --- | --- |
 | **✉ Solicitud de Pedido** | Las solicitudes de productos, de la revisión del almacén a la aprobación |
 | **🧾 Órdenes de Compra** | Las OC de productos, de cargar ofertas a finalizada |
-| **📋 OC por lote** | La lista para aprobar varias OC juntas (9.9) |
 | **🛒 Compra Directa** | El acceso a la Compra Directa de La Cantera (9.5) |
 | **🛠 Servicios** | Las solicitudes de servicio (SV-…) con sus columnas (9.14) |
 
@@ -2357,8 +2356,7 @@ Antes de aprobarla, Compras puede **✎ Editar OC (todo)** —precios, cantidade
 
 **Aprueba Compras en control total o administración**, y también quien esté en **Usuarios autorizados para aprobar** con **Aprobar órdenes de compra** (13.1). Quien carga la oferta no necesita poder aprobarla.
 
-- **Una por una:** en la ficha, **✔ Aprobar OC**.
-- **Por lote:** en la pestaña **📋 OC por lote** está la lista **Órdenes de compra pendientes** con Item, N°ODC, Solicitado por, Proveedor, Descripción, Monto $, Fecha de compra, Fecha de firma y Estatus. Se marcan las que se quieren y **✔ Aprobar en lote (n)**. Desde la misma lista, **✎ Modificar (n)** las devuelve a cargar ofertas y **⊘ Anular (n)** las anula con un motivo. **↓ PDF (n)** saca la relación de las marcadas y **💬 WhatsApp (n)** el aviso con su lista. **Incluir confirmadas** suma las que ya se aprobaron, que salen con **CONFIRMADA** en verde.
+Se aprueba en la ficha de la OC, con **✔ Aprobar OC**.
 
 Al aprobar, cada OC va adonde dice su condición de pago (9.2): **Confirmada (indicar método de pago)**, **Crédito / cuentas abiertas** o, si es contra entrega, **Pendiente por recepción**. La firma de quien aprobó sale en el PDF de la OC si la tiene cargada (13.1).
 
@@ -2676,7 +2674,7 @@ Cada paso tiene su mensaje, con sus emojis, al estilo de MGG. **Ninguno sale sol
 | --- | --- |
 | **💬 WhatsApp de la SP** (o **del servicio**) | En la ficha, al crear la solicitud |
 | **💬 Mensaje de almacén** | Al confirmar la revisión del almacén (9.6) |
-| **💬 WhatsApp para aprobar** | En la ficha de la OC por aprobar, y **💬 WhatsApp (n)** en **OC por lote** |
+| **💬 WhatsApp para aprobar** | En la ficha de la OC por aprobar |
 | **💬 WhatsApp para pagar** | Al indicar el método de pago, con los datos del beneficiario y el monto a pagar |
 | **💬 Aviso de pago** | Al marcar pagada, y uno por cada abono |
 | **💬 WhatsApp de la recepción** | Al confirmar una recepción, con lo que llegó de cada renglón |
@@ -2714,7 +2712,7 @@ Cada paso tiene su mensaje, con sus emojis, al estilo de MGG. **Ninguno sale sol
 | **Quien pide** | **Solicitud de pedido** | **+ Nueva solicitud**: qué necesita con su nombre general, cuánto y para qué. Sigue en qué fase va |
 | **Almacenista** | **Inventario › Solicitudes de pedido** | **🕒 Por revisar**: dice qué tiene ALM-GEN y confirma; entrega por la solicitud de salida. **📥 Recepciones por recibir**: **📦 Confirmar recepción** con el papel del proveedor |
 | **Compras** | **Pedidos / Compras** | **Aprobar Orden de Pedido**, cargar ofertas, **Aceptar esta oferta**; **💳 Indicar método de pago** con documento y retenciones; abonos de los créditos; **✓ Finalizar orden** con la evaluación; servicios; reportes |
-| **Quien aprueba** | **🧾 Órdenes de Compra** y **📋 OC por lote** | **✔ Aprobar OC** o **✔ Aprobar en lote**; **💵 Marcar pagada** con el comprobante |
+| **Quien aprueba** | **🧾 Órdenes de Compra** | **✔ Aprobar OC**; **💵 Marcar pagada** con el comprobante |
 | **La cocina** | **Alimentación › Pedir el mercado** | Arma la lista y la manda como Solicitud de Mercado |
 
 ---

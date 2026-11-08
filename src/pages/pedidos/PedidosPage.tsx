@@ -43,7 +43,6 @@ import { mensajeDe, toast } from '@/lib/avisosFlotantes'
 import { CrearOrdenModal } from './CrearOrdenModal'
 import { EstadoBadge, OrdenDetailModal } from './OrdenDetailModal'
 import { ConfirmDialog, MotivoModal } from './Dialogos'
-import { OcPorLoteView } from './OcPorLoteView'
 import { NuevoServicioModal } from './NuevoServicioModal'
 import { SolicitudMercadoModal } from './SolicitudMercadoModal'
 import { CategoriasModal } from './CategoriasModal'
@@ -59,7 +58,7 @@ import { CierreDiarioModal } from './CierreDiarioModal'
   «✉ Solicitud de Pedido»; la fase 2, «🧾 Órdenes de Compra» con las columnas
   de MGG (cargar ofertas, OC por aprobar, … proveedor desistió) y sus
   tarjetas con proveedor, modalidad de pago y «💬 n». La fase 3 aprueba y
-  paga dentro de Compras (sin Tesorería): «📋 OC por lote», y en las tarjetas
+  paga dentro de Compras (sin Tesorería): en las tarjetas
   el método, el monto a pagar (total − retenciones), el saldo del crédito y el
   pago registrado. La fase 4 recibe en el almacén (pantalla del almacén) y
   finaliza en Compras con la evaluación del proveedor; las tarjetas dicen lo
@@ -91,8 +90,8 @@ import { CierreDiarioModal } from './CierreDiarioModal'
       MGG.
 */
 
-// «🔧 Servicio Directo» se quitó el 08/11/2026 por pedido de la dueña.
-type Scope = 'pedidos' | 'oc' | 'oc_lote' | 'compra_directa' | 'servicio'
+// «🔧 Servicio Directo» y «📋 OC por lote» se quitaron el 08/11/2026 por pedido de la dueña.
+type Scope = 'pedidos' | 'oc' | 'compra_directa' | 'servicio'
 type ViewMode = 'kanban' | 'lista'
 
 const VIEW_KEY = 'pedidos.vista'
@@ -117,7 +116,6 @@ const guardar = (clave: string, valor: string) => {
 const PESTANAS: { scope: Scope; label: string; title: string }[] = [
   { scope: 'pedidos', label: '✉ Solicitud de Pedido', title: 'Ver solicitudes de pedido' },
   { scope: 'oc', label: '🧾 Órdenes de Compra', title: 'Ver órdenes de compra' },
-  { scope: 'oc_lote', label: '📋 OC por lote', title: 'Checklist de compras pendientes por pagar' },
   { scope: 'compra_directa', label: '🛒 Compra Directa', title: 'Compras sin proveedor' },
   {
     scope: 'servicio',
@@ -225,7 +223,7 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
   // ?detalle=ID abre el detalle (avisos y búsqueda global). Se consume de la URL.
   const [searchParams, setSearchParams] = useSearchParams()
 
-  // ?scope=… lleva a una pestaña (MGG: oc_lote|oc|pedidos|compra_directa…). El
+  // ?scope=… lleva a una pestaña (MGG: oc|pedidos|compra_directa…). El
   // `sd` del servicio directo se queda: lo consume su vista.
   useEffect(() => {
     const s = searchParams.get('scope')
@@ -268,23 +266,19 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
       ? 'Órdenes de Compra'
       : scope === 'compra_directa'
         ? 'Compra Directa'
-        : scope === 'oc_lote'
-          ? 'OC por lote'
-          : scope === 'servicio'
-            ? 'Servicios'
-            : 'Órdenes'
+        : scope === 'servicio'
+          ? 'Servicios'
+          : 'Órdenes'
 
   const hint = soloSolicitud
     ? 'Crea tus solicitudes de pedido y sigue en qué fase van. Compras se encarga del resto.'
     : scope === 'oc'
       ? 'Seguimiento del ciclo de compras: emisión de OC, recepción y finalización del pedido.'
-      : scope === 'oc_lote'
-        ? 'Checklist de órdenes de compra pendientes por confirmar. Aprobá en lote, imprimí o enviá por correo.'
-        : scope === 'compra_directa'
-          ? 'Compras sin proveedor. En proceso → Finalizada: al finalizar, el material entra al inventario.'
-          : isAdmin
-            ? 'Solicitudes de pedido generadas por analistas. Aprobá la mejor oferta antes de emitir la OC.'
-            : 'Crea solicitudes de pedido. El administrador aprueba antes de emitir la orden de compra.'
+      : scope === 'compra_directa'
+        ? 'Compras sin proveedor. En proceso → Finalizada: al finalizar, el material entra al inventario.'
+        : isAdmin
+          ? 'Solicitudes de pedido generadas por analistas. Aprobá la mejor oferta antes de emitir la OC.'
+          : 'Crea solicitudes de pedido. El administrador aprueba antes de emitir la orden de compra.'
 
   return (
     <div>
@@ -305,7 +299,7 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
               <Button variant="ghost" onClick={() => setModal({ kind: 'cierre' })}>
                 📆 Cierre diario
               </Button>
-              {scope !== 'compra_directa' && scope !== 'oc_lote' ? (
+              {scope !== 'compra_directa' ? (
                 <AccionesDePestana scope={scope} gestiona={permisos.gestiona} onModal={setModal} />
               ) : null}
             </div>
@@ -358,14 +352,6 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
             </Link>
           </div>
         </Card>
-      ) : scope === 'oc_lote' ? (
-        <OcPorLoteView
-          ordenes={ordenes}
-          permisos={permisos}
-          cargando={pedidos.isPending}
-          proveedor={nombreProveedor}
-          onOpen={(id) => setModal({ kind: 'detail', ordenId: id })}
-        />
       ) : (
         <>
           <div className="mb-4 flex flex-wrap items-end gap-2">
