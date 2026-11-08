@@ -256,6 +256,7 @@ export function Precios() {
               min="0"
               step="0.01"
               inputMode="decimal"
+              limite={{ maxDecimales: 2, sinNegativos: true }}
               value={edicion.precio}
               onChange={(e) => setEdicion({ ...edicion, precio: e.target.value })}
               required
@@ -266,6 +267,7 @@ export function Precios() {
               min="0"
               step="0.01"
               inputMode="decimal"
+              limite={{ maxDecimales: 2, sinNegativos: true }}
               value={edicion.precio_minimo}
               onChange={(e) => setEdicion({ ...edicion, precio_minimo: e.target.value })}
             />

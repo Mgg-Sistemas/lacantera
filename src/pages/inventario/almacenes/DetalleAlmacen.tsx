@@ -179,6 +179,7 @@ export function DetalleAlmacen({
       <Card className="mb-4">
         <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto] sm:items-end">
           <Input
+            maxLength={100}
             label="Buscar"
             icon={<Search />}
             placeholder="Nombre o código del producto"

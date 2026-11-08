@@ -134,7 +134,7 @@ function ModalDevolver({
       }
     >
       <div className="space-y-4">
-        <Textarea label="Nota" rows={2} value={nota} onChange={(e) => setNota(e.target.value)} />
+        <Textarea maxLength={500} label="Nota" rows={2} value={nota} onChange={(e) => setNota(e.target.value)} />
         {devolver.error ? <ErrorDeCarga error={devolver.error} /> : null}
       </div>
     </Modal>

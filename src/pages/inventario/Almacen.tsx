@@ -661,6 +661,7 @@ export function Almacen() {
             </div>
           ) : null}
           <Input
+            maxLength={100}
             label="Buscar producto"
             ocultarEtiqueta
             sinNormalizar
@@ -925,6 +926,7 @@ function FormNuevo({
 
       <div>
         <Input
+          maxLength={120}
           label="Nombre"
           value={nombre}
           autoFocus
@@ -955,6 +957,7 @@ function FormNuevo({
       />
 
       <Input
+        limite={{ maxDecimales: 4, sinNegativos: true }}
         label="¿Cuánto hay?"
         type="number"
         inputMode="decimal"
@@ -969,6 +972,7 @@ function FormNuevo({
       />
 
       <Input
+        limite={{ maxDecimales: 4, sinNegativos: true }}
         label={`Costo c/u (USD)${pideCosto ? ' *' : ''}`}
         type="number"
         inputMode="decimal"
@@ -1166,6 +1170,7 @@ function FormEntrada({
         />
       ) : (
         <Input
+          limite={{ maxDecimales: 4, sinNegativos: true }}
           label={`¿Cuánto llegó? (${u})`}
           type="number"
           inputMode="decimal"
@@ -1183,6 +1188,7 @@ function FormEntrada({
         <CostoDeArticulo valor={costo} onCambiar={cambiarCosto} articulo={art} moneda={moneda} disabled={sinValor} />
       ) : (
         <Input
+          limite={{ maxDecimales: 4, sinNegativos: true }}
           label="Costo c/u (USD) *"
           type="number"
           inputMode="decimal"
@@ -1239,6 +1245,7 @@ function FormEntrada({
       ) : null}
 
       <Input
+        maxLength={200}
         label="Nota"
         autoComplete="off"
         placeholder="De dónde vino, quién lo trajo…"

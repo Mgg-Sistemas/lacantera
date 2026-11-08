@@ -75,6 +75,7 @@ export function AlmacenMovimientos() {
           opciones={(articulos ?? []).map((a) => ({ valor: String(a.id), etiqueta: a.nombre }))}
         />
         <Input
+          maxLength={100}
           label="Buscar"
           ocultarEtiqueta
           value={buscado}

@@ -149,6 +149,7 @@ export function ModalTrasvase({
           opciones={opciones}
         />
         <Input
+          limite={{ maxDecimales: envase === SUELTO ? 4 : 0, sinNegativos: true }}
           label={envase === SUELTO ? unidad : 'Cuántos'}
           type="number"
           min="0"
@@ -163,6 +164,7 @@ export function ModalTrasvase({
           resto y preguntar dos veces por lo mismo confunde. */}
       {envase !== SUELTO ? (
         <Input
+          limite={{ maxDecimales: 4, sinNegativos: true }}
           className="mt-2"
           label={`Fracción en ${unidad}`}
           type="number"
@@ -280,6 +282,7 @@ export function ModalTrasvase({
       ) : null}
 
       <Textarea
+        maxLength={500}
         className="mt-3"
         label="Motivo"
         placeholder="Para que los operadores puedan moverlo sin montacargas"

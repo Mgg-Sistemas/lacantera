@@ -605,6 +605,8 @@ export function Almacenes() {
         >
           <div className="grid gap-4 sm:grid-cols-2">
             <Input
+              solo="alfanumerico"
+              maxLength={20}
               label="Código"
               placeholder={edicion.id ? 'ALM-0001' : 'Se pone solo'}
               hint={
@@ -616,6 +618,7 @@ export function Almacenes() {
               onChange={(e) => cambiar({ codigo: e.target.value.toUpperCase() })}
             />
             <Input
+              maxLength={120}
               label="Nombre"
               value={edicion.nombre}
               onChange={(e) => cambiar({ nombre: e.target.value })}
@@ -687,6 +690,7 @@ export function Almacenes() {
               }))}
             />
             <Input
+              maxLength={200}
               label="Ubicación"
               placeholder="Al lado de la planta"
               value={edicion.ubicacion}
@@ -704,6 +708,7 @@ export function Almacenes() {
             */}
             {edicion.tipo === 'COMBUSTIBLE' ? (
               <Input
+                limite={{ maxDecimales: 2, sinNegativos: true }}
                 label="Capacidad del tanque"
                 type="number"
                 min="0"
@@ -718,6 +723,7 @@ export function Almacenes() {
 
             {edicion.tipo === 'TALLER' ? (
               <Input
+                limite={{ maxEnteros: 3, maxDecimales: 0, sinNegativos: true }}
                 label="Trabajos simultáneos"
                 type="number"
                 min="1"

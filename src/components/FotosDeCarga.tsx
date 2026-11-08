@@ -350,6 +350,7 @@ export function FotosDeCarga({
             label="Motivo"
             rows={2}
             autoFocus
+            maxLength={500}
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
           />

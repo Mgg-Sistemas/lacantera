@@ -60,6 +60,7 @@ export function CasillaIgtf({
             max="100"
             step="0.01"
             inputMode="decimal"
+            limite={{ maxEnteros: 3, maxDecimales: 2, sinNegativos: true }}
             value={escrito}
             onChange={(e) => onAlicuota(e.target.value)}
             error={fueraDeRango ? 'Entre 0 y 100.' : undefined}

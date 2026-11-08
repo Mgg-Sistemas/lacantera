@@ -247,6 +247,7 @@ export function OtrasPresentaciones({ articuloId, unidad, className }: Props) {
           min="0"
           step="0.0001"
           inputMode="decimal"
+          limite={{ maxDecimales: 4, sinNegativos: true }}
           disabled={!sePudoLeer || !nombre}
           value={cuantas}
           onChange={(e) => setCuantas(e.target.value)}
@@ -333,6 +334,7 @@ function NuevaFormaDeLlegada({
         <Input
           label="Presentación"
           placeholder="Paila"
+          maxLength={40}
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
         />

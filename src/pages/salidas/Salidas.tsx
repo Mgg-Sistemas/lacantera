@@ -299,6 +299,7 @@ export function Salidas() {
         */}
         <Input
           label="Buscar una nota"
+          maxLength={100}
           value={nota}
           onChange={(e) => setNota(e.target.value)}
           placeholder="NS-2026-0012, o el número del movimiento"

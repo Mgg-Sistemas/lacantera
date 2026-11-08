@@ -116,6 +116,7 @@ export function MaterialPorRecibir() {
             no lo confirme; que Facturación anule este cobro y lo registre con la cantidad real.
           </p>
           <Textarea
+            maxLength={500}
             label="Nota"
             rows={2}
             placeholder="En qué llegó, quién lo trajo…"

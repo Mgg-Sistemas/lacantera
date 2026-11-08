@@ -560,6 +560,7 @@ export function Traslados() {
         <Textarea
           label="Motivo"
           rows={2}
+          maxLength={500}
           value={motivo}
           onChange={(e) => setMotivo(e.target.value)}
         />

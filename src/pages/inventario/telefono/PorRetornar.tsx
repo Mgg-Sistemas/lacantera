@@ -74,6 +74,7 @@ export function PorRetornar({
 
       {filas.length > 0 ? (
         <Input
+          maxLength={100}
           label="Buscar salida pendiente"
           ocultarEtiqueta
           sinNormalizar
@@ -215,6 +216,7 @@ function FormRetorno({
       </table>
 
       <Input
+        limite={{ maxDecimales: 4, sinNegativos: true }}
         label={`¿Cuánto retorna? (${u})`}
         type="number"
         inputMode="decimal"
@@ -227,6 +229,7 @@ function FormRetorno({
         }
       />
       <Input
+        maxLength={200}
         label="Nota"
         autoComplete="off"
         placeholder="En qué estado volvió, quién lo trajo…"

@@ -457,6 +457,7 @@ export function Facturacion() {
                 <Textarea
                   label="Observación"
                   rows={2}
+                  maxLength={500}
                   value={observacion}
                   onChange={(e) => setObservacion(e.target.value)}
                 />
@@ -745,6 +746,7 @@ export function Facturacion() {
             label="Motivo"
             hint="Queda en el registro de auditoría con su nombre y la hora."
             rows={3}
+            maxLength={500}
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
             required

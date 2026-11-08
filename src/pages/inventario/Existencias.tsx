@@ -898,6 +898,7 @@ export function Existencias() {
       <Card className="mb-4">
         <div className="grid gap-3 sm:grid-cols-[1fr_240px]">
           <Input
+            maxLength={100}
             label="Buscar"
             icon={<Search />}
             placeholder="Nombre o código del artículo"
@@ -1370,6 +1371,7 @@ export function Existencias() {
           }
         >
           <Textarea
+            maxLength={500}
             label="Motivo (queda en la auditoría)"
             value={motivoDuplicado}
             onChange={(e) => setMotivoDuplicado(e.target.value)}
@@ -2206,6 +2208,7 @@ export function Existencias() {
 
           {modal.tipo === 'entrada' ? (
             <Input
+              maxLength={60}
               className="mt-4"
               label="Referencia"
               hint="Quién lo trajo, o el número de una factura de fuera."
@@ -2215,6 +2218,7 @@ export function Existencias() {
           ) : null}
 
           <Textarea
+            maxLength={500}
             label={modal.tipo === 'entrada' ? 'Procedencia' : 'Motivo'}
             className="mt-4"
             rows={3}
@@ -2741,6 +2745,8 @@ export function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCer
 
       <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_11rem]">
         <Input
+          // Seis decimales, los que guarda la base y pedía ya el paso (08/11/2026).
+          limite={{ maxDecimales: 6, sinNegativos: true }}
           label="Costo correcto por unidad"
           type="number"
           min="0"
@@ -2848,6 +2854,7 @@ export function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCer
           Asi que se dice que tiene que llevar: el error y el respaldo.
         */}
       <Textarea
+        maxLength={500}
         label="Motivo"
         className="mt-4"
         rows={2}
