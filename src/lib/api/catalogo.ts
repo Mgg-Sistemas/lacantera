@@ -544,6 +544,21 @@ export function useCrearArticulo() {
 }
 
 /**
+ * El código que la base le puso a un artículo recién creado.
+ *
+ * 08/11/2026: `crear_articulo` devuelve solo el id, y el «Producto nuevo» del
+ * teléfono del almacén (copia de MGG) termina diciendo «Cargado en
+ * {almacén}: {código}» y lo manda por WhatsApp. Se lee la fila en vez de
+ * esperar a que se recargue el catálogo entero.
+ */
+export async function leerCodigoDeArticulo(id: number): Promise<string> {
+  const fila = desenvolver<{ codigo: string }>(
+    await supabase.from('articulos').select('codigo').eq('id', id).single(),
+  )
+  return fila.codigo
+}
+
+/**
  * Los que ya están y se llaman parecido.
  *
  * Christopher: «debemos asegurar que el sistema impide (o mínimo
