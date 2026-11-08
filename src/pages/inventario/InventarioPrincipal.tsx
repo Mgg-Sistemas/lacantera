@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { Boxes, ChevronDown, Search } from 'lucide-react'
 import { Pestanas } from '@/components/Pestanas'
 import type { Pestana } from '@/components/Pestanas'
 import { PESTANAS_MATERIAL } from '@/components/pestanasDeModulos'
-import { Visor } from '@/components/Visor'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -16,7 +15,6 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import {
   useArticulos,
-  useCambiarEstadoArticulo,
   useCategoriasDeInventario,
   useEliminarArticuloDuplicado,
   useMisRoles,
@@ -33,25 +31,31 @@ import type { Existencia } from '@/lib/api/inventario'
 import { usePorRecibir } from '@/lib/api/pedidos'
 import { useMisAcciones, useMisPermisos } from '@/lib/api/usuarios'
 import { hoyEnCaracas } from '@/lib/api/tasas'
-import { useEmpresa } from '@/lib/api/empresa'
-import { useSesion } from '@/lib/sesion'
-import { armarActaExistencias } from '@/lib/ficha/actaExistencias'
-import type { ArchivoArmado } from '@/lib/ficha/armado'
+import { descargarPlantilla } from '@/lib/hojas/plantilla'
 import { LA_CASA, detalleDeDueno } from '@/lib/deQuien'
-import { useNotaDeTraslado } from '@/pages/salidas/NotaDeTraslado'
 import { dolares, enteros } from '@/lib/formato'
 import { cn } from '@/lib/cn'
-import { Categorias } from './Articulos'
 import { ModalCorregirCosto, ModalDesglose } from './Existencias'
 import { MaterialPorRecibir } from './MaterialPorRecibir'
 import { ModalAlTaller } from './ModalAlTaller'
 import { ModalCambioDeDueno } from './ModalCambioDeDueno'
 import { ModalEditarArticulo } from './ModalEditarArticulo'
-import { ModalTraslado } from './ModalTraslado'
 import { ModalTrasvase } from './ModalTrasvase'
 import { QueHacerDelInventario } from './Tablero'
 import { decorate } from './restock'
 import type { AbcClass, Decoracion, ProductoParaRestock } from './restock'
+import { useColumnasDeArticulos } from './columnasDeArticulos'
+import { BorrarProducto } from './principal/BorrarProducto'
+import { CategoriasConCasillas } from './principal/CategoriasConCasillas'
+import { CategoriasYMedidas } from './principal/CategoriasYMedidas'
+import { Deshabilitados } from './principal/Deshabilitados'
+import { ExportarInventario } from './principal/ExportarInventario'
+import { ImportarExcel } from './principal/ImportarExcel'
+import { Movimiento } from './principal/Movimiento'
+import { Mover } from './principal/Mover'
+import { ResumenInventario } from './principal/ResumenInventario'
+import { SinCosto } from './principal/SinCosto'
+import { Trazabilidad } from './principal/Trazabilidad'
 
 /*
   ⬢ INVENTARIO · LA PANTALLA PRINCIPAL DE MGG (fase 2, 08/11/2026)
@@ -63,10 +67,14 @@ import type { AbcClass, Decoracion, ProductoParaRestock } from './restock'
   borra: queda plegado al final.
 
   REGLAS QUE MANDAN AQUÍ (spec `mgg-inventario/7-fases.md`, fase 2)
-  - Solo interfaz. Ninguna migración, ninguna escritura nueva: cada botón abre
-    el modal o la pantalla de La Cantera que ya hace eso. Los modales propios
-    de MGG llegan en las fases 3 («📋» trazabilidad y «↕» movimiento) y 4
-    (resumen, exportar, importar, sin costo, deshabilitados).
+  - Solo interfaz. Ninguna escritura nueva desde aquí: cada botón abre el
+    modal o la pantalla de La Cantera que ya hace eso.
+  - 08/11/2026, fases 3 y 4: los botones abren ya los modales de MGG, en
+    `./principal/`: «📋 Trazabilidad», «↕ Movimiento», «⇄ Mover», «✕ Borrar
+    producto» y, en la cabecera, «⚙ Categorías», «↓ Plantilla», «↑ Importar
+    Excel», «📊 Resumen», «⚠ Sin costo», «🗄 PRODUCTOS DESHABILITADOS» y
+    «↓ Exportar». `/app/inventario?trazabilidad={id}` abre la trazabilidad de
+    ese artículo (a eso redirige la ficha vieja).
   - El stock sigue siendo la suma del libro (`v_existencias`). La fila es un
     artículo del catálogo con su stock sumado en el ámbito elegido (almacén y
     dueño), igual que los «productos virtuales» de MGG en una sede.
@@ -140,8 +148,8 @@ export function InventarioPrincipal() {
   const hoy = hoyEnCaracas()
   const movimientosHoy = useMovimientos({ desde: hoy, hasta: hoy, tope: 1000 })
   const porRecibir = usePorRecibir()
-  const { data: empresa } = useEmpresa()
-  const { nombre: yo } = useSesion()
+  const columnasDePlantilla = useColumnasDeArticulos()
+  const [parametros, setParametros] = useSearchParams()
 
   // ------------------------------------------------------------- permisos
   /*
@@ -163,11 +171,12 @@ export function InventarioPrincipal() {
   const [dueno, setDueno] = useState('')
   const [clase, setClase] = useState<'' | AbcClass>('')
   const [filtroStock, setFiltroStock] = useState<FiltroStock>('')
-  const [soloSinCosto, setSoloSinCosto] = useState(false)
   const [limite, setLimite] = useState(TANDA)
 
   // ------------------------------------------------------------- modales
   const [movimiento, setMovimiento] = useState<Producto | null>(null)
+  const [moviendo, setMoviendo] = useState<Producto | null>(null)
+  const [trazabilidadDe, setTrazabilidadDe] = useState<number | null>(null)
   const [masAcciones, setMasAcciones] = useState<Producto | null>(null)
   const [eligiendo, setEligiendo] = useState<{
     producto: Producto
@@ -175,17 +184,16 @@ export function InventarioPrincipal() {
     opciones: Existencia[]
   } | null>(null)
   const [editando, setEditando] = useState<Articulo | null>(null)
-  const [desactivando, setDesactivando] = useState<Articulo | null>(null)
+  const [borrando, setBorrando] = useState<Articulo | null>(null)
   const [duplicando, setDuplicando] = useState<Articulo | null>(null)
   const [desgloseDe, setDesgloseDe] = useState<number | null>(null)
   const [costo, setCosto] = useState<Existencia | null>(null)
   const [alTaller, setAlTaller] = useState<Existencia | null>(null)
   const [cambiandoDueno, setCambiandoDueno] = useState<Existencia | null>(null)
   const [trasvase, setTrasvase] = useState<Existencia | null>(null)
-  const [trasladoDesde, setTrasladoDesde] = useState<string | null>(null)
   const [categoriasAbiertas, setCategoriasAbiertas] = useState(false)
-  const [acta, setActa] = useState<ArchivoArmado | null>(null)
-  const notaDeTraslado = useNotaDeTraslado()
+  // Los modales de la cabecera de MGG (fase 4).
+  const [cabecera, setCabecera] = useState<'' | 'resumen' | 'exportar' | 'importar' | 'sinCosto' | 'deshabilitados'>('')
 
   // «Ver dónde está» usa el modal de Existencias, que pide la fila total.
   const totales = useExistenciasTotales(desgloseDe !== null)
@@ -341,7 +349,6 @@ export function InventarioPrincipal() {
       if (filtroStock === 'restock' && !(p._needsRestock && !p._critical)) return false
       if (filtroStock === 'ok' && p._needsRestock) return false
       if (filtroStock === 'sin_mov' && p.stock > 0) return false
-      if (soloSinCosto && p.sinValorar <= 0) return false
       if (tokens.length > 0) {
         /*
           Búsqueda POR PALABRAS, como MGG: cada palabra tiene que aparecer en
@@ -369,12 +376,12 @@ export function InventarioPrincipal() {
       return true
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productosScope, texto, cats, clase, filtroStock, soloSinCosto, categorias])
+  }, [productosScope, texto, cats, clase, filtroStock, categorias])
 
   // Volver a la primera tanda cuando cambia lo que se busca.
   useEffect(() => {
     setLimite(TANDA)
-  }, [texto, cats, clase, filtroStock, soloSinCosto, almacenSel, dueno])
+  }, [texto, cats, clase, filtroStock, almacenSel, dueno])
 
   // ---------------------------------------------------------------- KPIs
   const kpis = useMemo(
@@ -396,7 +403,23 @@ export function InventarioPrincipal() {
   }`
 
   // ------------------------------------------------------------ acciones
-  const verFicha = (id: number) => void navegar(`/app/inventario/articulos/${id}`)
+  /*
+    «📋» ABRE LA TRAZABILIDAD DE MGG (fase 3). `?trazabilidad={id}` la abre al
+    entrar: es a donde redirige la ficha vieja `/app/inventario/articulos/:id`.
+  */
+  const idDelEnlace = Number(parametros.get('trazabilidad')) || null
+  const verFicha = (id: number) => setTrazabilidadDe(id)
+  const cerrarTrazabilidad = () => {
+    setTrazabilidadDe(null)
+    if (parametros.has('trazabilidad')) {
+      const siguen = new URLSearchParams(parametros)
+      siguen.delete('trazabilidad')
+      setParametros(siguen, { replace: true })
+    }
+  }
+  const idEnTrazabilidad = trazabilidadDe ?? idDelEnlace
+  const articuloEnTrazabilidad =
+    idEnTrazabilidad === null ? null : ((articulosQ.data ?? []).find((a) => a.id === idEnTrazabilidad) ?? null)
 
   const ejecutar = (accion: AccionConAlmacen, fila: Existencia) => {
     setEligiendo(null)
@@ -424,58 +447,7 @@ export function InventarioPrincipal() {
 
   const conExistencia = (p: Producto) => p.filas.filter((f) => Number(f.existencia) > 0)
 
-  const unicoAlmacen = (p: Producto) => {
-    const con = conExistencia(p)
-    if (almacenSel) return almacenSel
-    return con.length === 1 ? String(con[0].almacen_id) : null
-  }
-
-  /*
-    «↓ EXPORTAR» = EL ACTA DE EXISTENCIAS DE LO FILTRADO.
-
-    Hasta que llegue el «Exportar inventario» de MGG (fase 4), exporta lo que
-    ya exportaba Existencias: el acta en PDF, armada con lo que se está viendo
-    y diciendo qué filtro se aplicó.
-  */
-  const exportar = async () => {
-    const filtros = [
-      texto.trim() ? `Búsqueda: «${texto.trim()}»` : null,
-      cats.length > 0 ? `Categorías: ${cats.map(etiquetaDeCategoria).join(', ')}` : null,
-      clase ? `Clase ${clase}` : null,
-      filtroStock === 'critico'
-        ? 'Crítico'
-        : filtroStock === 'restock'
-          ? 'Reabastecer (no crítico)'
-          : filtroStock === 'ok'
-            ? 'Stock óptimo'
-            : filtroStock === 'sin_mov'
-              ? 'Sin existencias'
-              : null,
-      soloSinCosto ? 'Solo lo que tiene existencia sin costo' : null,
-      dueno ? `Solo lo de ${nombreDeDueno(dueno) ?? dueno}` : null,
-    ].filter(Boolean)
-    setActa(
-      await armarActaExistencias({
-        almacen: nombreAlmacenSel ?? null,
-        filtro: filtros.length > 0 ? filtros.join(' · ') : null,
-        renglones: filtrados.map((p) => ({
-          codigo: p.sku,
-          articulo: p.nombre,
-          unidad: p.unidad,
-          existencia: p.stock,
-          densidad: p.articulo.densidad_ton_m3,
-          costoUsd: veValor ? (p.precio ?? 0) : null,
-          valorUsd: veValor ? (p.valor ?? 0) : null,
-        })),
-        empresa: { razonSocial: empresa?.razon_social ?? '', rif: empresa?.rif ?? '' },
-        emitidoPor: yo ?? '',
-        momento: new Date(),
-      }),
-    )
-  }
-
-  const hayFiltros =
-    !!texto.trim() || cats.length > 0 || !!clase || !!filtroStock || soloSinCosto
+  const hayFiltros = !!texto.trim() || cats.length > 0 || !!clase || !!filtroStock
 
   const cargando = articulosQ.isPending || existenciasQ.isPending
   const error = articulosQ.error ?? existenciasQ.error
@@ -512,58 +484,63 @@ export function InventarioPrincipal() {
             <Button
               variant="ghost"
               size="sm"
-              title="Gestionar categorías (crear, depurar, eliminar)"
+              title="Gestionar categorías y medidas (crear, depurar, eliminar)"
               onClick={() => setCategoriasAbiertas(true)}
             >
               ⚙ Categorías
             </Button>
           ) : null}
-          <Link to="/app/inventario/articulos/carga" title="Descargar plantilla de carga masiva">
-            <Button variant="ghost" size="sm">↓ Plantilla</Button>
-          </Link>
-          {escribe ? (
-            <Link to="/app/inventario/articulos/carga" title="Importar productos desde un Excel">
-              <Button variant="ghost" size="sm">↑ Importar Excel</Button>
-            </Link>
-          ) : null}
-          {/* Hasta el «📊 Resumen de Inventario» de MGG (fase 4), el libro de
-              movimientos con su agrupado es lo que resume aquí. */}
-          <Link
-            to="/app/inventario/movimientos"
-            title="Resumen de inventario: entradas, salidas y traslados, agrupados"
+          {/* La plantilla de «Cargar artículos por planilla»: la misma que lee
+              «↑ Importar Excel». */}
+          <Button
+            variant="ghost"
+            size="sm"
+            title="Descargar plantilla de carga masiva"
+            onClick={() => descargarPlantilla('plantilla-articulos.xlsx', 'artículos', columnasDePlantilla)}
           >
-            <Button variant="ghost" size="sm">📊 Resumen</Button>
-          </Link>
+            ↓ Plantilla
+          </Button>
+          {escribe ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              title="Importar productos desde un Excel"
+              onClick={() => setCabecera('importar')}
+            >
+              ↑ Importar Excel
+            </Button>
+          ) : null}
+          <Button
+            variant="ghost"
+            size="sm"
+            title="Resumen de inventario: valor por almacén, productos nuevos, salidas y traslados"
+            onClick={() => setCabecera('resumen')}
+          >
+            📊 Resumen
+          </Button>
           {/* Solo aparece si hay algo pendiente, como en MGG. Aquí «sin costo»
-              es lo que entró «sin valorar»; se corrige con «⋯ › Corregir el
-              costo» de cada fila. */}
+              es lo que entró «sin valorar» y sigue en un almacén. */}
           {sinCosto > 0 ? (
             <Button
-              variant={soloSinCosto ? 'soft' : 'ghost'}
+              variant="ghost"
               size="sm"
               title="Existencias con stock pero sin valorar: cargales el costo unitario"
-              onClick={() => setSoloSinCosto((v) => !v)}
+              onClick={() => setCabecera('sinCosto')}
             >
               ⚠ Sin costo <Chip tone="warning">{sinCosto}</Chip>
             </Button>
           ) : null}
           {deshabilitados > 0 ? (
-            <Link
-              to="/app/inventario/articulos?desactivados=1"
+            <Button
+              variant="ghost"
+              size="sm"
               title="Productos deshabilitados: mientras no se reactiven, no existen para el sistema"
+              onClick={() => setCabecera('deshabilitados')}
             >
-              <Button variant="ghost" size="sm">
-                🗄 PRODUCTOS DESHABILITADOS <Chip tone="neutral">{deshabilitados}</Chip>
-              </Button>
-            </Link>
+              🗄 PRODUCTOS DESHABILITADOS <Chip tone="neutral">{deshabilitados}</Chip>
+            </Button>
           ) : null}
-          <Button
-            variant="ghost"
-            size="sm"
-            title="Exportar inventario filtrado"
-            disabled={filtrados.length === 0}
-            onClick={() => void exportar()}
-          >
+          <Button variant="ghost" size="sm" title="Exportar inventario filtrado" onClick={() => setCabecera('exportar')}>
             ↓ Exportar
           </Button>
           {escribe ? (
@@ -682,18 +659,6 @@ export function InventarioPrincipal() {
                 ]}
               />
             </div>
-            {soloSinCosto ? (
-              <p className="text-ink/70 mt-3 text-sm">
-                Mostrando solo lo que tiene existencia sin costo.{' '}
-                <button
-                  type="button"
-                  onClick={() => setSoloSinCosto(false)}
-                  className="text-royal-600 dark:text-royal-300 font-medium underline"
-                >
-                  Ver todo
-                </button>
-              </p>
-            ) : null}
           </Card>
 
           {/* --------------------------------------------------- tabla */}
@@ -753,12 +718,14 @@ export function InventarioPrincipal() {
                         key={p.id}
                         p={p}
                         categoria={etiquetaDeCategoria(p.categoria)}
+                        puedeMovimiento={almacenista || alcanza('SALIDAS', 'LECTURA')}
                         puedeMover={almacenista}
                         escribe={escribe}
                         onVer={() => verFicha(p.id)}
                         onMovimiento={() => setMovimiento(p)}
+                        onMover={() => setMoviendo(p)}
                         onEditar={() => setEditando(p.articulo)}
-                        onDesactivar={() => setDesactivando(p.articulo)}
+                        onDesactivar={() => setBorrando(p.articulo)}
                         onMas={() => setMasAcciones(p)}
                       />
                     ))}
@@ -789,60 +756,23 @@ export function InventarioPrincipal() {
         </>
       ) : null}
 
-      {/* ------------------------------------------- ↕ Movimiento · SKU */}
+      {/* --------------------------------- ↕ Movimiento · SKU (fase 3) */}
       {movimiento ? (
-        <Modal
-          abierto
-          ancho="sm"
+        <Movimiento
+          articulo={movimiento.articulo}
+          almacenInicial={almacenSel ? Number(almacenSel) : null}
+          tipoInicial={almacenista ? 'entrada' : 'salida'}
           onCerrar={() => setMovimiento(null)}
-          titulo={`Movimiento · ${movimiento.sku}`}
-          descripcion={`${movimiento.nombre}. Elegí el tipo de movimiento: cada uno abre el formulario de siempre.`}
-          acciones={
-            <Button variant="ghost" onClick={() => setMovimiento(null)}>
-              Cancelar
-            </Button>
-          }
-        >
-          <div className="grid gap-2">
-            <OpcionDeMenu
-              titulo="Entrada (suma stock)"
-              detalle="Lo que entra sin una compra de por medio, con su costo."
-              onClick={() => {
-                const alm = unicoAlmacen(movimiento)
-                setMovimiento(null)
-                void navegar(
-                  `/app/inventario/existencias?${alm ? `almacen=${alm}&` : ''}accion=entrada&articulo=${movimiento.id}`,
-                )
-              }}
-            />
-            <OpcionDeMenu
-              titulo="Salida (resta stock)"
-              detalle="Se solicita, y sale cuando la aprueba quien responde por el almacén."
-              onClick={() => {
-                const alm = unicoAlmacen(movimiento)
-                setMovimiento(null)
-                void navegar(
-                  `/app/salidas/solicitudes?solicitar=1&articulo=${movimiento.id}${alm ? `&almacen=${alm}` : ''}`,
-                )
-              }}
-            />
-            <OpcionDeMenu
-              titulo="Transferencia a otro almacén"
-              detalle="No cambia cuánto hay, cambia dónde está."
-              onClick={() => {
-                setTrasladoDesde(unicoAlmacen(movimiento) ?? '')
-                setMovimiento(null)
-              }}
-            />
-            {movimiento.filas.length > 0 ? (
-              <OpcionDeMenu
-                titulo="Ajuste manual (cualquier signo)"
-                detalle="Conteo físico: la diferencia queda como ajuste, con su motivo."
-                onClick={() => conAlmacen(movimiento, 'contar', movimiento.filas)}
-              />
-            ) : null}
-          </div>
-        </Modal>
+        />
+      ) : null}
+
+      {/* ------------------------------------- ⇄ Mover · nombre (fase 3) */}
+      {moviendo ? (
+        <Mover
+          articulo={moviendo.articulo}
+          almacenInicial={almacenSel ? Number(almacenSel) : null}
+          onCerrar={() => setMoviendo(null)}
+        />
       ) : null}
 
       {/* ------------------------------------- ⋯ lo propio de La Cantera */}
@@ -941,9 +871,7 @@ export function InventarioPrincipal() {
       ) : null}
 
       {/* ----------------------------------------- ✕ Desactivar */}
-      {desactivando ? (
-        <ModalDesactivar articulo={desactivando} onCerrar={() => setDesactivando(null)} />
-      ) : null}
+      {borrando ? <BorrarProducto articulo={borrando} onCerrar={() => setBorrando(null)} /> : null}
 
       {/* -------------------------------------- Eliminar duplicado */}
       {duplicando ? (
@@ -958,15 +886,6 @@ export function InventarioPrincipal() {
       ) : null}
       <ModalAlTaller fila={alTaller} onCerrar={() => setAlTaller(null)} />
       <ModalTrasvase fila={trasvase} onCerrar={() => setTrasvase(null)} />
-      <ModalTraslado
-        abierto={trasladoDesde !== null}
-        onCerrar={() => setTrasladoDesde(null)}
-        origen={trasladoDesde || undefined}
-        onTrasladado={(t) => {
-          if (t.forma !== 'PEDIR') void notaDeTraslado.abrirTraslado(t.id)
-        }}
-      />
-      {notaDeTraslado.visor}
       <ModalDesglose
         articulo={totalDelDesglose}
         onCerrar={() => setDesgloseDe(null)}
@@ -991,14 +910,34 @@ export function InventarioPrincipal() {
           ejecutar('contar', f)
         }}
       />
-      {categoriasAbiertas ? <Categorias onCerrar={() => setCategoriasAbiertas(false)} /> : null}
-      <Visor
-        abierto={acta !== null}
-        onCerrar={() => setActa(null)}
-        blob={acta?.blob ?? null}
-        nombreArchivo={acta?.nombre ?? ''}
-        titulo="Exportar inventario"
-      />
+      {categoriasAbiertas ? <CategoriasYMedidas onCerrar={() => setCategoriasAbiertas(false)} /> : null}
+
+      {/* ------------------------------- los modales de la cabecera (fase 4) */}
+      {cabecera === 'resumen' ? (
+        <ResumenInventario onCerrar={() => setCabecera('')} onVerProducto={verFicha} />
+      ) : null}
+      {cabecera === 'exportar' ? (
+        <ExportarInventario
+          onCerrar={() => setCabecera('')}
+          inicial={{ texto, categorias: cats, almacen: almacenSel }}
+        />
+      ) : null}
+      {cabecera === 'importar' ? <ImportarExcel onCerrar={() => setCabecera('')} /> : null}
+      {cabecera === 'sinCosto' ? <SinCosto onCerrar={() => setCabecera('')} /> : null}
+      {cabecera === 'deshabilitados' ? (
+        <Deshabilitados onCerrar={() => setCabecera('')} onVerProducto={verFicha} />
+      ) : null}
+
+      {/* 📋 Trazabilidad va la última: se abre también encima del resumen y
+          de los deshabilitados. */}
+      {articuloEnTrazabilidad ? (
+        <Trazabilidad
+          key={articuloEnTrazabilidad.id}
+          articulo={articuloEnTrazabilidad}
+          almacenOrigen={almacenSel ? Number(almacenSel) : null}
+          onCerrar={cerrarTrazabilidad}
+        />
+      ) : null}
     </>
   )
 }
@@ -1038,8 +977,8 @@ function Kpi({
   «⚠ STOCK CRÍTICO» / «PRODUCTOS A REABASTECER» (`AlertasStock.tsx` de MGG).
 
   Solo si hay algo. Borde rojo si hay críticos, ámbar si no. Ocho botones de
-  cada grupo como mucho; el resto se cuenta. Tocar uno abre la ficha del
-  artículo (la trazabilidad de MGG llega en la fase 3).
+  cada grupo como mucho; el resto se cuenta. Tocar uno abre su «📋
+  Trazabilidad» de MGG (fase 3, 08/11/2026).
 */
 function AlertasStock({
   productos,
@@ -1107,20 +1046,24 @@ function AlertasStock({
 function FilaProducto({
   p,
   categoria,
+  puedeMovimiento,
   puedeMover,
   escribe,
   onVer,
   onMovimiento,
+  onMover,
   onEditar,
   onDesactivar,
   onMas,
 }: {
   p: Producto
   categoria: string
+  puedeMovimiento: boolean
   puedeMover: boolean
   escribe: boolean
   onVer: () => void
   onMovimiento: () => void
+  onMover: () => void
   onEditar: () => void
   onDesactivar: () => void
   onMas: () => void
@@ -1192,7 +1135,7 @@ function FilaProducto({
           <Button size="sm" variant="ghost" title="Ver detalle y kardex" aria-label={`Ver ${p.nombre}`} onClick={onVer}>
             📋
           </Button>
-          {puedeMover ? (
+          {puedeMovimiento ? (
             <Button
               size="sm"
               variant="ghost"
@@ -1201,6 +1144,19 @@ function FilaProducto({
               onClick={onMovimiento}
             >
               ↕
+            </Button>
+          ) : null}
+          {/* ⇄ Mover: en MGG solo en el detalle de un almacén; aquí también en
+              la lista, porque la lista puede mirar un almacén (fase 3). */}
+          {puedeMover && p.stock > 0 ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              title="Mover a otro almacén"
+              aria-label={`Mover ${p.nombre}`}
+              onClick={onMover}
+            >
+              ⇄
             </Button>
           ) : null}
           {escribe ? (
@@ -1212,8 +1168,8 @@ function FilaProducto({
                 size="sm"
                 variant="ghost"
                 className="text-danger"
-                title="Desactivar"
-                aria-label={`Desactivar ${p.nombre}`}
+                title="Borrar producto"
+                aria-label={`Borrar ${p.nombre}`}
                 onClick={onDesactivar}
               >
                 ✕
@@ -1252,136 +1208,6 @@ function OpcionDeMenu({
       </span>
       {detalle ? <span className="text-ink/50 mt-0.5 block text-xs">{detalle}</span> : null}
     </button>
-  )
-}
-
-/*
-  CATEGORÍAS CON CASILLAS (el `MultiCheckFiltro` de MGG).
-
-  Varias a la vez; vacío = todas. El panel se abre debajo del botón y se cierra
-  al tocar fuera.
-*/
-function CategoriasConCasillas({
-  opciones,
-  seleccionadas,
-  onCambio,
-}: {
-  opciones: { valor: string; etiqueta: string }[]
-  seleccionadas: string[]
-  onCambio: (v: string[]) => void
-}) {
-  const [abierto, setAbierto] = useState(false)
-  const caja = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!abierto) return
-    const fuera = (e: MouseEvent) => {
-      if (caja.current && !caja.current.contains(e.target as Node)) setAbierto(false)
-    }
-    document.addEventListener('mousedown', fuera)
-    return () => document.removeEventListener('mousedown', fuera)
-  }, [abierto])
-
-  const rotulo =
-    seleccionadas.length === 0
-      ? 'Todas las categorías'
-      : seleccionadas.length === 1
-        ? (opciones.find((o) => o.valor === seleccionadas[0])?.etiqueta ?? seleccionadas[0])
-        : `${seleccionadas.length} categorías`
-
-  return (
-    <div ref={caja} className="relative w-full min-w-0">
-      <p className="text-ink/75 mb-1.5 block text-sm font-medium">Categoría</p>
-      <button
-        type="button"
-        title="Marcá una o varias categorías"
-        aria-expanded={abierto}
-        onClick={() => setAbierto((v) => !v)}
-        className="rounded-control bg-surface text-ink/90 border-ink/20 hover:border-ink/32 relative h-10 w-full truncate border pr-9 pl-3.5 text-left text-base"
-      >
-        {rotulo}
-        <ChevronDown className="text-ink/40 pointer-events-none absolute inset-y-0 right-3 my-auto size-[18px]" />
-      </button>
-      {abierto ? (
-        <div className="bg-surface shadow-card border-ink/12 rounded-control absolute left-0 z-20 mt-1 max-h-72 w-full min-w-[14rem] overflow-y-auto border p-2">
-          <p className="text-ink/50 px-2 pb-1 text-xs">Marcá una o varias categorías</p>
-          {opciones.map((o) => (
-            <label
-              key={o.valor}
-              className="hover:bg-ink/4 flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm"
-            >
-              <input
-                type="checkbox"
-                checked={seleccionadas.includes(o.valor)}
-                onChange={(e) =>
-                  onCambio(
-                    e.target.checked
-                      ? [...seleccionadas, o.valor]
-                      : seleccionadas.filter((v) => v !== o.valor),
-                  )
-                }
-              />
-              <span className="text-ink/85">{o.etiqueta}</span>
-            </label>
-          ))}
-          {seleccionadas.length > 0 ? (
-            <button
-              type="button"
-              onClick={() => onCambio([])}
-              className="text-royal-600 dark:text-royal-300 mt-1 px-2 text-xs font-medium underline"
-            >
-              Todas las categorías
-            </button>
-          ) : null}
-        </div>
-      ) : null}
-    </div>
-  )
-}
-
-/*
-  ✕ DESACTIVAR, con el motivo que exige `cambiar_estado_articulo` (el mismo
-  modal del Catálogo). Reactivar se hace desde «🗄 PRODUCTOS DESHABILITADOS»:
-  aquí no hay filas inactivas, como en MGG.
-*/
-function ModalDesactivar({ articulo, onCerrar }: { articulo: Articulo; onCerrar: () => void }) {
-  const cambiarEstado = useCambiarEstadoArticulo()
-  const [motivo, setMotivo] = useState('')
-  return (
-    <Modal
-      abierto
-      onCerrar={onCerrar}
-      titulo={`Desactivar ${articulo.nombre}`}
-      descripcion="Deja de verse en el catálogo y en los formularios. Su historia no cambia, y se puede volver a activar desde «🗄 PRODUCTOS DESHABILITADOS»."
-      acciones={
-        <>
-          <Button variant="ghost" onClick={onCerrar}>
-            Cancelar
-          </Button>
-          <Button
-            variant="danger"
-            disabled={cambiarEstado.isPending || motivo.trim().length < 10}
-            onClick={async () => {
-              await cambiarEstado.mutateAsync({ id: articulo.id, activo: false, motivo })
-              onCerrar()
-            }}
-          >
-            {cambiarEstado.isPending ? 'Guardando…' : 'Desactivar'}
-          </Button>
-        </>
-      }
-    >
-      <Textarea
-        label="Motivo"
-        rows={3}
-        value={motivo}
-        onChange={(e) => setMotivo(e.target.value)}
-        hint="Queda guardado con tu nombre y la fecha. Al menos diez letras."
-      />
-      {/* Con existencia, o dentro de una cotización enviada o de un traslado,
-          la base lo niega y dice por qué. */}
-      {cambiarEstado.error ? <ErrorDeCarga error={cambiarEstado.error} className="mt-3" /> : null}
-    </Modal>
   )
 }
 
