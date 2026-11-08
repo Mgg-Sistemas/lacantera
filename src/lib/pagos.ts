@@ -9,13 +9,17 @@
       «antes»): monto a pagar = total − descuento en el pago − Σ retenciones.
     - Bases del %: IVA sobre el IVA de la OC; ISLR e ISAE sobre la base
       imponible (subtotal − descuento, sin IVA); IGTF sobre el total.
+    - 08/11/2026: si la OC no trae IVA y el soporte es factura, se indica el
+      «IVA de la factura»: se suma al total y es la base de la retención de
+      IVA. Cada retención se paga en $ o en Bs a la tasa BCV; el monto a
+      pagar sigue en $.
 
   La base (`private.compras_calcular_retenciones`, `compras_monto_a_pagar`)
   hace las mismas cuentas al guardar: aquí se repiten para enseñarlas antes.
   Si las dos dijeran cosas distintas, manda la base.
 */
 import { urlArchivoPago, urlArchivoRecepcion, type Orden } from '@/lib/api/pedidos'
-import { r2, subtotalItems } from '@/lib/ofertas'
+import { moneyBs, r2, subtotalItems } from '@/lib/ofertas'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
 
 const num = (v: unknown): number => {
@@ -122,34 +126,76 @@ export interface Retencion {
   /** La base del %, tal como la calculó la base al guardar. */
   base?: number
   monto: number
+  /** En qué se paga (08/11/2026). Sin dato, en $. */
+  moneda?: 'USD' | 'Bs'
+  tasa?: number
+  monto_bs?: number
 }
 
 /** Lo que se escribe en el formulario, renglón por renglón. */
-export type RetencionesForm = Record<TipoRetencion, { modo: 'porcentaje' | 'monto'; valor: string }>
+export type RetencionesForm = Record<
+  TipoRetencion,
+  { modo: 'porcentaje' | 'monto'; valor: string; moneda: 'USD' | 'Bs' }
+>
 
 export const retencionesVacias = (): RetencionesForm => ({
-  IVA: { modo: 'porcentaje', valor: '' },
-  ISLR: { modo: 'porcentaje', valor: '' },
-  IGTF: { modo: 'porcentaje', valor: '' },
-  ISAE: { modo: 'porcentaje', valor: '' },
+  IVA: { modo: 'porcentaje', valor: '', moneda: 'USD' },
+  ISLR: { modo: 'porcentaje', valor: '', moneda: 'USD' },
+  IGTF: { modo: 'porcentaje', valor: '', moneda: 'USD' },
+  ISAE: { modo: 'porcentaje', valor: '', moneda: 'USD' },
 })
 
 export function retencionesAForm(lista: Retencion[] | null | undefined): RetencionesForm {
   const f = retencionesVacias()
   for (const r of lista ?? []) {
-    if (TIPOS_RETENCION.includes(r.tipo)) f[r.tipo] = { modo: r.modo === 'monto' ? 'monto' : 'porcentaje', valor: String(r.valor ?? '') }
+    if (TIPOS_RETENCION.includes(r.tipo))
+      f[r.tipo] = {
+        modo: r.modo === 'monto' ? 'monto' : 'porcentaje',
+        valor: String(r.valor ?? ''),
+        moneda: r.moneda === 'Bs' ? 'Bs' : 'USD',
+      }
   }
   return f
 }
 
-/** Total, IVA y base imponible de lo que se paga (`private.compras_bases_pago`). */
-export function basesPago(o: Orden): { total: number; iva: number; base: number } {
+/**
+ * Total, IVA y base imponible de lo que se paga (`private.compras_bases_pago`).
+ * `ivaFactura` es el IVA de la factura que se suma cuando la OC no traía IVA.
+ */
+export function basesPago(o: Orden): { total: number; iva: number; base: number; ivaFactura: number } {
   const t = num(o.total)
   const bt = o.condiciones_pago === 'contra_entrega' && o.recibido_total != null ? num(o.recibido_total) : t
   const f = t > 0 ? bt / t : 1
-  const iva = Math.max(0, num(o.iva))
-  const base = Math.max(0, subtotalItems(o.items ?? []) - Math.max(0, num(o.descuento_obtenido)) - (o.iva_incluido ? iva : 0))
-  return { total: r2(bt), iva: r2(iva * f), base: r2(base * f) }
+  const ivaOc = Math.max(0, num(o.iva))
+  const ivaFac = ivaOc > 0 ? 0 : Math.max(0, num(o.iva_factura))
+  const base = Math.max(0, subtotalItems(o.items ?? []) - Math.max(0, num(o.descuento_obtenido)) - (o.iva_incluido ? ivaOc : 0))
+  return { total: r2(bt + ivaFac * f), iva: r2((ivaOc + ivaFac) * f), base: r2(base * f), ivaFactura: r2(ivaFac * f) }
+}
+
+/** El IVA de la factura y la tasa BCV, tal como se escriben en el formulario. */
+export interface DatosFiscales {
+  ivaFactura: string
+  tasa: string
+}
+
+export const ocSinIva = (o: Pick<Orden, 'iva'>): boolean => num(o.iva) <= 0
+
+export const datosFiscalesDe = (o: Orden): DatosFiscales => ({
+  ivaFactura: num(o.iva_factura) > 0 ? String(o.iva_factura) : '',
+  tasa: num(o.retenciones_tasa) > 0 ? String(o.retenciones_tasa) : '',
+})
+
+/** La orden con el IVA de la factura y la tasa del formulario, para hacer las cuentas antes de guardar. */
+export function conDatosFiscales(o: Orden, doc: 'factura' | 'nota_entrega', f: DatosFiscales): Orden {
+  const iva = doc === 'factura' && ocSinIva(o) ? (aNumero(f.ivaFactura) ?? 0) : 0
+  const tasa = aNumero(f.tasa) ?? 0
+  return { ...o, iva_factura: iva > 0 ? r2(iva) : null, retenciones_tasa: tasa > 0 ? tasa : null }
+}
+
+/** Lo que se manda a `compras_datos_fiscales_pago`. */
+export function datosFiscalesParaEnviar(o: Orden, doc: 'factura' | 'nota_entrega', f: DatosFiscales) {
+  const c = conDatosFiscales(o, doc, f)
+  return { iva_factura: c.iva_factura ? num(c.iva_factura) : null, tasa: c.retenciones_tasa ? num(c.retenciones_tasa) : null }
 }
 
 const aNumero = (s: string): number | null => {
@@ -169,7 +215,17 @@ export function calcularRetenciones(o: Orden, form: RetencionesForm): Retencion[
     if (v == null || v <= 0) continue
     const base = tipo === 'IVA' ? b.iva : tipo === 'IGTF' ? b.total : b.base
     const monto = modo === 'porcentaje' ? r2((base * Math.min(v, 100)) / 100) : r2(v)
-    out.push({ tipo, modo, valor: v, ...(modo === 'porcentaje' ? { base } : {}), monto })
+    const moneda = form[tipo].moneda === 'Bs' ? 'Bs' : 'USD'
+    const tasa = num(o.retenciones_tasa)
+    out.push({
+      tipo,
+      modo,
+      valor: v,
+      ...(modo === 'porcentaje' ? { base } : {}),
+      monto,
+      moneda,
+      ...(moneda === 'Bs' && tasa > 0 ? { tasa, monto_bs: r2(monto * tasa) } : {}),
+    })
   }
   return out
 }
@@ -180,6 +236,7 @@ export const retencionesParaEnviar = (form: RetencionesForm) =>
     tipo: t,
     modo: form[t].modo,
     valor: aNumero(form[t].valor),
+    moneda: form[t].moneda === 'Bs' ? ('Bs' as const) : ('USD' as const),
   }))
 
 /** El error del formulario de retenciones, o null. */
@@ -191,7 +248,9 @@ export function errorRetenciones(o: Orden, form: RetencionesForm, descuento = 0)
     if (v == null || v < 0) return `La retención de ${t} no se entiende.`
     if (form[t].modo === 'porcentaje' && v > 100) return `El porcentaje de la retención de ${t} no puede pasar de 100.`
     if (t === 'IVA' && form[t].modo === 'porcentaje' && v > 0 && basesPago(o).iva <= 0)
-      return 'La OC no tiene IVA: la retención de IVA va en monto o se deja en blanco.'
+      return 'La OC no tiene IVA: indicá el IVA de la factura, o pon la retención de IVA en monto.'
+    if (v > 0 && form[t].moneda === 'Bs' && !(num(o.retenciones_tasa) > 0))
+      return `Indicá la tasa BCV: la retención de ${t} se paga en Bs.`
   }
   if (totalRetenciones(calcularRetenciones(o, form)) > r2(basesPago(o).total - descuento))
     return 'Las retenciones no pueden superar el monto a pagar.'
@@ -203,6 +262,11 @@ export const totalRetenciones = (l: Retencion[] | null | undefined): number => r
 /** «IVA 75 %» o «ISLR (monto)» (MGG `etiquetaRetencion`). */
 export const labelRetencion = (r: Pick<Retencion, 'tipo' | 'modo' | 'valor'>): string =>
   r.modo === 'porcentaje' ? `${r.tipo} ${num(r.valor).toLocaleString('es-VE', { maximumFractionDigits: 4 })} %` : `${r.tipo} (monto)`
+
+/** «$ 12,00» o, si se paga en Bs, «Bs 1.234,56 ($ 12,00)». */
+export function montoRetencionTxt(r: Pick<Retencion, 'monto' | 'moneda' | 'monto_bs'>, dolar: (n: number) => string): string {
+  return r.moneda === 'Bs' && num(r.monto_bs) > 0 ? `${moneyBs(r.monto_bs)} (${dolar(num(r.monto))})` : dolar(num(r.monto))
+}
 
 /** Monto a pagar = total − descuento en el pago − Σ retenciones. */
 export function montoAPagar(o: Orden, retenciones?: Retencion[], descuento?: number): number {

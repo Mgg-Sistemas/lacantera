@@ -520,11 +520,17 @@ export async function armarOrdenCompraPdf(o: Orden, empresa: EmpresaPapel, d: Da
     filasPago.push([`Método · ${labelMetodoPago(m.metodo)}`, [monto, datos].filter(Boolean).join(' · ') || String(m.moneda)])
   }
   if (o.numero_administracion) filasPago.push(['Tel. administración del proveedor', o.numero_administracion])
+  if (Number(o.iva_factura) > 0) filasPago.push(['IVA de la factura', `+${money2(o.iva_factura)}`])
   if (Number(o.descuento_pago) > 0) filasPago.push(['Descuento en el pago', `-${money2(o.descuento_pago)}`])
   for (const r of rets) {
+    const enBsRet = r.moneda === 'Bs' && Number(r.monto_bs) > 0
     filasPago.push([
       `Retención ${labelRetencion(r)}`,
-      `-${money2(r.monto)}${r.modo === 'porcentaje' && r.base != null ? ` (sobre ${money2(r.base)})` : ''}`,
+      `-${money2(r.monto)}${r.modo === 'porcentaje' && r.base != null ? ` (sobre ${money2(r.base)})` : ''}${
+        enBsRet
+          ? ` · se paga en Bs ${Number(r.monto_bs).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (tasa ${Number(r.tasa ?? o.retenciones_tasa).toLocaleString('es-VE', { maximumFractionDigits: 4 })})`
+          : ''
+      }`,
     ])
   }
   if (rets.length || Number(o.descuento_pago) > 0 || o.metodo_pago?.length) {

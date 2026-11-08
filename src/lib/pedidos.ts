@@ -142,6 +142,8 @@ const EVENTOS: Record<string, string> = {
   metodo_pago: 'Método de pago indicado · enviada a pagar',
   // Sin Tesorería: MGG dice «(sigue en Tesorería)» y «Pago registrado (Tesorería)».
   metodo_pago_corregido: 'Método de pago corregido',
+  // 08/11/2026: el IVA de la factura y la tasa BCV de las retenciones en Bs.
+  datos_fiscales: 'IVA de la factura / tasa de las retenciones',
   oc_aprobada: 'Confirmada pagar',
   anticipo: 'Pago anticipado',
   abono: 'Abono registrado (crédito)',
@@ -302,6 +304,10 @@ function extraPago(h: EventoHistorial): string {
       partes.push(retencionesTxt(h.retenciones) ? `Ret.: ${retencionesTxt(h.retenciones)}` : 'sin retenciones')
       if (h.monto_a_pagar != null) partes.push(`a pagar ${usd(h.monto_a_pagar)}`)
       if (h.saldo != null) partes.push(`saldo ${usd(h.saldo)}`)
+      break
+    case 'datos_fiscales':
+      partes.push(Number(h.iva_factura) > 0 ? `IVA de la factura ${usd(h.iva_factura)}` : 'sin IVA de la factura')
+      if (Number(h.tasa) > 0) partes.push(`tasa BCV ${Number(h.tasa).toLocaleString('es-VE')}`)
       break
     case 'pagada':
       partes.push(usd(h.monto_usd ?? h.monto))
