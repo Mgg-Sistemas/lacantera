@@ -1,10 +1,11 @@
 import { useState, type ReactNode } from 'react'
 import { Navigate, useNavigate } from 'react-router'
-import { History, LayoutGrid, PackageCheck, PackagePlus, Search, Undo2 } from 'lucide-react'
+import { ClipboardList, History, LayoutGrid, PackageCheck, PackagePlus, Search, Undo2 } from 'lucide-react'
 import { Cargando } from '@/components/ui/Estado'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { useMisRoles, type Rol } from '@/lib/api/catalogo'
 import { useAsignaciones } from '@/lib/api/asignaciones'
+import { usePermisosPedidos, usePorRecibir, useSolicitudesEnRevision } from '@/lib/api/pedidos'
 import { cn } from '@/lib/cn'
 
 /*
@@ -23,6 +24,11 @@ import { cn } from '@/lib/cn'
   escritorio. Entregar a un trabajador por primera vez se mudó ahí dentro: es
   la misma puerta de siempre, solo que ahora cuelga de la cola de préstamos en
   vez de tener su propia tarjeta en esta portada.
+
+  08/11/2026: arriba de todo, «Solicitudes de pedido» —revisar qué tiene el
+  almacén general de cada solicitud y recibir las órdenes de compra—, como
+  la vista «solicitudes» del teléfono del almacenista en MGG. Antes solo se
+  llegaba por la casilla propia de esa pantalla, que nadie tenía marcada.
 */
 
 const ETIQUETA_ROL: Record<Rol, string> = {
@@ -69,12 +75,21 @@ export function Almacen() {
   const puedePrestamo = tieneRol('ALMACEN', 'RRHH', 'ADMIN') || puede('ASIGNACIONES', 'ESCRITURA')
   const puedeVerInventario = puede('INVENTARIO', 'LECTURA')
 
+  const permisosPedidos = usePermisosPedidos()
+  const revisa = permisosPedidos.data?.revisa_almacen === true
+  const recibe = permisosPedidos.data?.recibe_almacen === true
+  const porRevisar = useSolicitudesEnRevision()
+  const porRecibir = usePorRecibir(recibe)
+  const cantidadPorRevisar = (porRevisar.data ?? []).length
+  const cantidadPorRecibir = (porRecibir.data ?? []).length
+
   const porRetornar = useAsignaciones({ estado: 'ASIGNADA' })
   const cantidadPorRetornar = (porRetornar.data ?? []).filter((a) => a.clase === 'ASIGNACION').length
 
-  if (!resuelto || !rolesListos) return <Cargando />
+  if (!resuelto || !rolesListos || permisosPedidos.isPending) return <Cargando />
 
   const tareas = [
+    { puede: revisa || recibe, ruta: '/app/solicitudes-pedido/telefono' },
     { puede: puedeEntrada, ruta: '/app/inventario/almacen/entrada' },
     { puede: puedeSalida, ruta: '/app/inventario/almacen/salida' },
     { puede: puedePrestamo, ruta: '/app/inventario/almacen/retornar' },
@@ -121,6 +136,21 @@ export function Almacen() {
       </div>
 
       <div className="mt-6 space-y-3">
+        {revisa || recibe ? (
+          <Tarjeta
+            tono={cantidadPorRevisar + cantidadPorRecibir > 0 ? 'warning' : 'info'}
+            icono={<ClipboardList />}
+            titulo="Solicitudes de pedido"
+            subtitulo={[
+              revisa ? `${cantidadPorRevisar} por revisar` : null,
+              recibe ? `${cantidadPorRecibir} por recibir` : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+            onClick={() => void navegar('/app/solicitudes-pedido/telefono')}
+          />
+        ) : null}
+
         {puedeEntrada ? (
           <Tarjeta
             tono="warning"

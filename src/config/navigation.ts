@@ -438,9 +438,25 @@ export const PANTALLAS_DE_TELEFONO: PantallaDeTelefono[] = [
  */
 export function rutaPermitidaSoloTelefono(ruta: string, puedeAccion: (accion: string) => boolean): boolean {
   if (ruta === '/app' || esRutaPropia(ruta)) return true
-  return PANTALLAS_DE_TELEFONO.some(
-    (p) => puedeAccion(p.accion) && (ruta === p.ruta || ruta.startsWith(p.ruta + '/')),
+  const dentro = (base: string) => ruta === base || ruta.startsWith(base + '/')
+  return (
+    PANTALLAS_DE_TELEFONO.some((p) => puedeAccion(p.accion) && dentro(p.ruta)) ||
+    Object.entries(PANTALLAS_DE_TELEFONO_EXTRA).some(
+      ([accion, rutas]) => puedeAccion(accion) && rutas.some(dentro),
+    )
   )
+}
+
+/**
+ * Pantallas de teléfono que se abren desde otra, sin casilla propia.
+ *
+ * El almacén del teléfono lleva a «Solicitudes de pedido» (revisar y
+ * recibir, 08/11/2026): quien tiene la casilla del almacén no necesita
+ * además la de esa pantalla. No van en `PANTALLAS_DE_TELEFONO` porque esa
+ * lista también pinta las casillas en Usuarios.
+ */
+const PANTALLAS_DE_TELEFONO_EXTRA: Record<string, string[]> = {
+  'INVENTARIO.ALMACEN_TELEFONO': ['/app/solicitudes-pedido/telefono'],
 }
 
 export interface NavSection {
