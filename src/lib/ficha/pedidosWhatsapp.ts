@@ -263,10 +263,28 @@ export function textoOrdenPago(o: Orden, d: DatosMensajePago): string {
   if (o.oc_aprobada_en) L.push(`📅 *Fecha de aprobación:* ${fechaHoraVE(o.oc_aprobada_en)}`)
   if (d.condicion) L.push(`📋 *Condición:* ${d.condicion}`)
   L.push(...lineasCotizaciones(d.cotizaciones ?? [], d.tasaBs))
-  L.push(`💵 *Total:* ${montoTxt(basesPago(o).total, '$')}`)
+  // 08/11/2026 (la dueña): el total de la orden con impuestos, y cada
+  // retención con su monto; la que se paga en Bs, en Bs a la tasa BCV.
+  const bases = basesPago(o)
+  if (bases.ivaFactura > 0) {
+    L.push(`💵 *Total sin IVA:* ${montoTxt(bases.total - bases.ivaFactura, '$')}`)
+    L.push(`➕ *IVA de la factura:* ${montoTxt(bases.ivaFactura, '$')}`)
+  }
+  L.push(`💵 *Total${bases.iva > 0 ? ' con impuestos' : ''}:* ${montoTxt(bases.total, '$')}`)
   if (o.comprobante_tipo) L.push(`🧾 *Documento:* ${etiquetaDocumento(o.comprobante_tipo)}`)
   if (Number(o.descuento_pago) > 0) L.push(`🏷 *Descuento en el pago:* −${montoTxt(o.descuento_pago, '$')}`)
-  for (const r of rets) L.push(`🧾 *Retención ${labelRetencion(r)}:* −${montoTxt(r.monto, '$')}`)
+  for (const r of rets) {
+    const enBsRet = r.moneda === 'Bs' && Number(r.monto_bs) > 0
+    L.push(
+      `🧾 *Retención ${labelRetencion(r)}:* −${
+        enBsRet ? `${montoTxt(r.monto_bs, 'Bs')} (${montoTxt(r.monto, '$')}, se paga en Bs)` : montoTxt(r.monto, '$')
+      }`,
+    )
+  }
+  if (rets.some((r) => r.moneda === 'Bs') && Number(o.retenciones_tasa) > 0)
+    L.push(
+      `💱 *Tasa BCV de las retenciones:* ${Number(o.retenciones_tasa).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}`,
+    )
   if (rets.length || Number(o.descuento_pago) > 0) L.push(`✅ *Monto a pagar:* ${montoTxt(aPagar, '$')}`)
   if (abonado > 0) {
     L.push(`✅ *Abonado:* ${montoTxt(abonado, '$')}`)

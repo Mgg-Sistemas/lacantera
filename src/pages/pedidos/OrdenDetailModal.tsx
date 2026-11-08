@@ -63,6 +63,7 @@ import {
   itemsPendientes,
   labelCondicionPago,
   montoFinalOferta,
+  moneyBs,
   type ScoredOferta,
 } from '@/lib/ofertas'
 import {
@@ -998,8 +999,16 @@ export function OrdenDetailModal({
                   {labelRetencion(r)}
                   {r.modo === 'porcentaje' && r.base != null ? <span className="text-ink/50"> sobre {money(r.base)}</span> : null}{' '}
                   <strong className="text-danger font-mono">− {money(r.monto)}</strong>
+                  {r.moneda === 'Bs' && Number(r.monto_bs) > 0 ? (
+                    <span className="text-ink/60 text-xs"> · se paga en {moneyBs(r.monto_bs)}</span>
+                  ) : null}
                 </div>
               ))}
+            </Fila>
+          ) : null}
+          {Number(o.iva_factura) > 0 ? (
+            <Fila k="IVA de la factura">
+              + {money(o.iva_factura)} · <span className="text-ink/50">total con IVA {money(basesPago(o).total)}</span>
             </Fila>
           ) : null}
           {Number(o.descuento_pago) > 0 ? (

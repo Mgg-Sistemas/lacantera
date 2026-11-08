@@ -204,6 +204,10 @@ export interface Orden {
   numero_administracion: string | null
   comprobante_tipo: 'factura' | 'nota_entrega' | null
   retenciones: Retencion[]
+  /** IVA de la factura cuando la OC se cotizó sin IVA (08/11/2026): se suma al total. */
+  iva_factura?: number | string | null
+  /** Tasa BCV de las retenciones que se pagan en Bs (08/11/2026). */
+  retenciones_tasa?: number | string | null
   pagada_por: string | null
   pagada_por_nombre: string | null
   pagada_en: string | null
@@ -882,7 +886,7 @@ export interface DatosMetodoPago {
   metodos: Array<{ metodo: string; monto: number; datos?: DatosPago }>
   numero_administracion: string
   comprobante_tipo: 'factura' | 'nota_entrega'
-  retenciones: Array<{ tipo: string; modo: string; valor: number | null }>
+  retenciones: Array<{ tipo: string; modo: string; valor: number | null; moneda: 'USD' | 'Bs' }>
   descuento_pago?: number | null
   qr?: ArchivoSubido | null
   confirmo_recepcion?: boolean
@@ -909,6 +913,22 @@ export function useCorregirMetodoPago() {
         p_datos: d.datos,
       }),
     onSuccess: invalidar,
+  })
+}
+
+/**
+ * El IVA de la factura y la tasa BCV de las retenciones en Bs (08/11/2026).
+ * Se guarda justo antes de indicar o corregir el pago, o el documento de un
+ * crédito, para que la base ya calcule con ellos.
+ */
+export function useDatosFiscalesPago() {
+  return useMutation({
+    mutationFn: (d: { id: number; iva_factura: number | null; tasa: number | null }) =>
+      rpc<{ id: number; iva_factura: number | null; retenciones_tasa: number | null }>('compras_datos_fiscales_pago', {
+        p_id: d.id,
+        p_iva_factura: d.iva_factura,
+        p_tasa: d.tasa,
+      }),
   })
 }
 
