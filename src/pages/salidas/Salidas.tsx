@@ -3,8 +3,6 @@ import { Link, useNavigate, useSearchParams } from 'react-router'
 import { FileText, PackageMinus, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { PageHeader } from '@/components/PageHeader'
-import { Pestanas } from '@/components/Pestanas'
-import { PESTANAS_SALIDAS } from '@/components/pestanasDeModulos'
 import { RangoDeFechas } from '@/components/RangoDeFechas'
 import { SIN_RANGO } from '@/components/rango'
 import type { Rango } from '@/components/rango'
@@ -33,6 +31,7 @@ import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { armarReporteSalidas } from '@/lib/ficha/historialSalidasPdf'
 import { useNotaDeSalida } from './NotaDeSalida'
 import { useNotaDeTraslado } from './NotaDeTraslado'
+import { CabeceraSalidas } from './CabeceraSalidas'
 
 /*
   LO QUE SALIÓ Y LO QUE SE MOVIÓ, EN UNA SOLA PANTALLA
@@ -74,7 +73,26 @@ const numeroLegible = (v: string | number): string =>
   Number(v).toLocaleString('es-VE', { maximumFractionDigits: 2 })
 
 export function Salidas() {
-  const [vista, setVista] = useState('TODO')
+  /*
+    «📜 HISTORIAL» DE LA CABECERA COMO MGG (FASE 5), 08/11/2026. Desde
+    «↘ Salidas» llega con `?ver=SALIDAS` y desde «↔ Traslados» con
+    `?ver=TRASLADOS`; el menú («Historial») llega sin nada y enseña las dos
+    cosas juntas, como siempre. «Ver» cambia la dirección, así la cabecera
+    marca lo mismo que el filtro.
+  */
+  const [parametros, setParametros] = useSearchParams()
+  const verPedido = parametros.get('ver') ?? ''
+  const vista = verPedido === 'SALIDAS' || verPedido === 'TRASLADOS' ? verPedido : 'TODO'
+  const setVista = (v: string) =>
+    setParametros(
+      (prev) => {
+        const q = new URLSearchParams(prev)
+        if (v === 'TODO') q.delete('ver')
+        else q.set('ver', v)
+        return q
+      },
+      { replace: true },
+    )
   const [almacenId, setAlmacenId] = useState('')
   const [articuloId, setArticuloId] = useState('')
   const [quien, setQuien] = useState('')
@@ -113,7 +131,6 @@ export function Salidas() {
     pestañas— sigue abriendo el formulario en «Salidas», que es donde vive. Desde
     el 16/09/2026 abre la solicitud: la salida directa está apagada.
   */
-  const [parametros] = useSearchParams()
   const navegar = useNavigate()
   useEffect(() => {
     if (parametros.has('sacar')) {
@@ -264,7 +281,10 @@ export function Salidas() {
         }
       />
 
-      <Pestanas pestanas={PESTANAS_SALIDAS} />
+      <CabeceraSalidas
+        alcance={vista === 'SALIDAS' ? 'salidas' : vista === 'TRASLADOS' ? 'traslados' : null}
+        vista="historial"
+      />
 
       <Card className="mb-4">
         {/*
