@@ -69,6 +69,21 @@ export interface PagoMetodo {
 export const METODOS_CON_DATOS = ['pago_movil', 'transferencia', 'zelle', 'binance_usdt'] as const
 export const requiereDatos = (metodo: string): boolean => (METODOS_CON_DATOS as readonly string[]).includes(metodo)
 
+/**
+ * Qué se deja teclear en la referencia de un pago (la dueña, 08/11/2026:
+ * «si es solo de números, permite poner solo números»). La de una
+ * transferencia o un pago móvil son cifras; la de Zelle, Binance o un hash
+ * traen letras, y un hash llega a 64 caracteres. Con varios métodos (una
+ * tanda), solo cifras si todos son de banco; sin método, se admiten letras.
+ */
+export function limiteReferencia(
+  metodo: string | null | undefined | (string | null | undefined)[],
+): { solo: 'numeros' | 'alfanumerico'; maxLength: number } {
+  const lista = Array.isArray(metodo) ? metodo : [metodo]
+  const deBanco = lista.length > 0 && lista.every((m) => ['TRANSFERENCIA', 'PAGO_MOVIL'].includes((m ?? '').toUpperCase()))
+  return deBanco ? { solo: 'numeros', maxLength: 20 } : { solo: 'alfanumerico', maxLength: 80 }
+}
+
 const RE_CI = /^[VEJPGC]-?\d{5,9}(-?\d)?$/i
 
 /** MGG `validarDatosPago`: el error del primer dato que falta, o null. */

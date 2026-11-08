@@ -34,6 +34,7 @@ import {
 } from '@/lib/pedidos'
 import { leerMonto } from '@/lib/pagos'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
+import { comoNumero } from '@/lib/formato'
 
 /*
   RECIBIR UNA OC EN EL ALMACÉN GENERAL (fase 4)
@@ -304,6 +305,7 @@ export function FormularioRecepcion({
           <div className={cn('grid gap-2', !tel && 'sm:grid-cols-3')}>
             <Input
               label="Nombre de la ficha"
+              maxLength={150}
               value={f.nuevoNombre}
               onChange={(e) => setFila(it.sku, { nuevoNombre: e.target.value })}
             />
@@ -347,6 +349,7 @@ export function FormularioRecepcion({
           )}
           placeholder={it.marca ? it.marca : 'Marca'}
           aria-label={`Marca recibida de ${it.nombre}`}
+          maxLength={60}
           value={f.marca}
           onChange={(e) => setFila(it.sku, { marca: e.target.value })}
         />
@@ -357,6 +360,7 @@ export function FormularioRecepcion({
               className="border-warning bg-surface h-8 w-full min-w-0 rounded-[6px] border px-2 text-sm"
               placeholder="Ej.: el proveedor no tenía, mandó esta"
               aria-label={`Por qué llegó otra marca de ${it.nombre}`}
+              maxLength={200}
               value={f.notaMarca}
               onChange={(e) => setFila(it.sku, { notaMarca: e.target.value })}
             />
@@ -414,7 +418,7 @@ export function FormularioRecepcion({
                   inputMode="decimal"
                   aria-label={`Recibido de ${it.nombre}`}
                   value={f.recibido}
-                  onChange={(e) => setFila(it.sku, { recibido: e.target.value })}
+                  onChange={(e) => setFila(it.sku, { recibido: comoNumero(e.target.value, { maxDecimales: 4, sinNegativos: true }) })}
                 />
                 {rec !== faltaDe(it) ? (
                   <small className="text-warning">
@@ -481,7 +485,7 @@ export function FormularioRecepcion({
                         inputMode="decimal"
                         aria-label={`Recibido de ${it.nombre}`}
                         value={f.recibido}
-                        onChange={(e) => setFila(it.sku, { recibido: e.target.value })}
+                        onChange={(e) => setFila(it.sku, { recibido: comoNumero(e.target.value, { maxDecimales: 4, sinNegativos: true }) })}
                       />
                       {it.unidad_compra && it.factor_compra ? (
                         <div className="text-ink/50 mt-0.5 text-[11px]">{unidadTxt(it)}</div>

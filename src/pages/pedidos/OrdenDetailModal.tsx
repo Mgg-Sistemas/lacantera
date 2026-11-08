@@ -95,6 +95,7 @@ import {
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { armarOrdenCompraPdf, armarSolicitudCotizacionPdf, armarSolicitudPedidoPdf } from '@/lib/ficha/pedidosPdf'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
+import { comoNumero } from '@/lib/formato'
 import { ModalWhatsappCompra } from '@/pages/compras/ModalWhatsappCompra'
 import { ConfirmDialog, MotivoModal } from './Dialogos'
 import { OfertasComparativa } from './OfertasComparativa'
@@ -1362,7 +1363,7 @@ export function OrdenDetailModal({
                             className="border-ink/20 w-20 rounded border px-1.5 py-0.5 text-right font-mono"
                             value={cantDraft[it.sku] ?? ''}
                             disabled={editarCantidades.isPending}
-                            onChange={(e) => setCantDraft((d) => ({ ...d, [it.sku]: e.target.value }))}
+                            onChange={(e) => setCantDraft((d) => ({ ...d, [it.sku]: comoNumero(e.target.value, { maxDecimales: 4, sinNegativos: true }) }))}
                           />
                           {it.unidad ? <span className="text-ink/50 text-xs">{it.unidad}</span> : null}
                         </span>

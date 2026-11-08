@@ -10,6 +10,7 @@ import { useEditarOc, useUnidadesSolicitantes, type Orden } from '@/lib/api/pedi
 import { money } from '@/lib/pedidos'
 import { CONDICIONES_PAGO, parseMontoEs, r2, r4, totalDesdePartes } from '@/lib/ofertas'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
+import { comoNumero } from '@/lib/formato'
 
 /*
   «✎ EDITAR OC (TODO)» / «✎ MODIFICAR OC» (MGG `EditarOcModal`, `actualizarOc`)
@@ -204,16 +205,16 @@ export function EditarOcModal({
           <div className="border-hairline grid gap-3 rounded-[8px] border p-3 sm:grid-cols-2">
             <div className="text-ink/85 font-semibold sm:col-span-2">Solicitud</div>
             <div>
-              <Input label="Unidad solicitante" list="unidades-oc" value={unidad} onChange={(e) => setUnidad(e.target.value)} />
+              <Input maxLength={60} label="Unidad solicitante" list="unidades-oc" value={unidad} onChange={(e) => setUnidad(e.target.value)} />
               <datalist id="unidades-oc">
                 {(unidades ?? []).map((u) => (
                   <option key={u.id} value={u.nombre} />
                 ))}
               </datalist>
             </div>
-            <Input label="Persona que solicita" value={persona} onChange={(e) => setPersona(e.target.value)} />
-            <Input label="Motivo" value={motivo} onChange={(e) => setMotivo(e.target.value)} />
-            <Input label="Finalidad" value={finalidad} onChange={(e) => setFinalidad(e.target.value)} />
+            <Input solo="letras" maxLength={80} label="Persona que solicita" value={persona} onChange={(e) => setPersona(e.target.value)} />
+            <Input maxLength={200} label="Motivo" value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+            <Input maxLength={200} label="Finalidad" value={finalidad} onChange={(e) => setFinalidad(e.target.value)} />
             <label className={cn('inline-flex items-center gap-2 font-semibold sm:col-span-2', urgente && 'text-danger')}>
               <input type="checkbox" className="accent-danger size-4" checked={urgente} onChange={(e) => setUrgente(e.target.checked)} />
               🚨 ORDEN: URGENTE
@@ -252,6 +253,7 @@ export function EditarOcModal({
                   <td className="px-2 py-1">
                     <input
                       className={CAMPO}
+                      maxLength={150}
                       value={f.nombre}
                       onChange={(e) => setFila(f.sku, { nombre: e.target.value.toUpperCase() })}
                       aria-label="Producto"
@@ -260,14 +262,15 @@ export function EditarOcModal({
                   {todo ? (
                     <>
                       <td className="w-28 px-2 py-1">
-                        <input className={CAMPO} value={f.marca} onChange={(e) => setFila(f.sku, { marca: e.target.value.toUpperCase() })} aria-label="Marca" />
+                        <input maxLength={60} className={CAMPO} value={f.marca} onChange={(e) => setFila(f.sku, { marca: e.target.value.toUpperCase() })} aria-label="Marca" />
                       </td>
                       <td className="w-28 px-2 py-1">
-                        <input className={CAMPO} value={f.modelo} onChange={(e) => setFila(f.sku, { modelo: e.target.value.toUpperCase() })} aria-label="Modelo" />
+                        <input maxLength={60} className={CAMPO} value={f.modelo} onChange={(e) => setFila(f.sku, { modelo: e.target.value.toUpperCase() })} aria-label="Modelo" />
                       </td>
                       <td className="w-36 px-2 py-1">
                         <input
                           className={CAMPO}
+                          maxLength={200}
                           value={f.finalidad}
                           onChange={(e) => setFila(f.sku, { finalidad: e.target.value.toUpperCase() })}
                           aria-label="Finalidad"
@@ -281,7 +284,7 @@ export function EditarOcModal({
                         className={cn(CAMPO, 'text-right')}
                         inputMode="decimal"
                         value={f.cantidad}
-                        onChange={(e) => setFila(f.sku, { cantidad: e.target.value })}
+                        onChange={(e) => setFila(f.sku, { cantidad: comoNumero(e.target.value, { maxDecimales: 4, sinNegativos: true }) })}
                         aria-label="Cantidad"
                       />
                       <span className="text-ink/45">{f.unidad}</span>
@@ -292,7 +295,7 @@ export function EditarOcModal({
                       className={cn(CAMPO, 'text-right')}
                       inputMode="decimal"
                       value={f.precio}
-                      onChange={(e) => setFila(f.sku, { precio: e.target.value })}
+                      onChange={(e) => setFila(f.sku, { precio: comoNumero(e.target.value, { maxDecimales: 4, sinNegativos: true }) })}
                       aria-label="Precio unitario"
                     />
                   </td>
@@ -353,11 +356,11 @@ export function EditarOcModal({
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3">
-          <Input label="Descuento obtenido (opcional)" type="number" placeholder="0,00" value={descuento} onChange={(e) => setDescuento(e.target.value)} />
+          <Input limite={{ maxDecimales: 2, sinNegativos: true }} label="Descuento obtenido (opcional)" type="number" placeholder="0,00" value={descuento} onChange={(e) => setDescuento(e.target.value)} />
           {todo ? (
             <>
               <div>
-                <Input label="IVA (monto)" type="number" placeholder="0,00" value={iva} onChange={(e) => setIva(e.target.value)} />
+                <Input limite={{ maxDecimales: 2, sinNegativos: true }} label="IVA (monto)" type="number" placeholder="0,00" value={iva} onChange={(e) => setIva(e.target.value)} />
                 <div className="mt-1 flex gap-1">
                   <Button
                     size="sm"
@@ -376,7 +379,7 @@ export function EditarOcModal({
                 </label>
               </div>
               <div>
-                <Input label="IGTF (monto)" type="number" placeholder="0,00" value={igtf} onChange={(e) => setIgtf(e.target.value)} />
+                <Input limite={{ maxDecimales: 2, sinNegativos: true }} label="IGTF (monto)" type="number" placeholder="0,00" value={igtf} onChange={(e) => setIgtf(e.target.value)} />
                 <div className="mt-1 flex gap-1">
                   <Button size="sm" variant="ghost" onClick={() => setIgtf(String(r2((Math.max(0, subtotal - desc) * 3) / 100)))}>
                     3 %
@@ -394,7 +397,7 @@ export function EditarOcModal({
           <div>
             <div className="text-ink/75 font-medium">Ajuste frente a la factura (opcional, ± con signo)</div>
             <div className="mt-1 flex flex-wrap gap-2">
-              <input className={cn(CAMPO, 'w-28')} inputMode="decimal" placeholder="0,00" value={ajuste} onChange={(e) => setAjuste(e.target.value)} aria-label="Ajuste" />
+              <input className={cn(CAMPO, 'w-28')} inputMode="decimal" placeholder="0,00" value={ajuste} onChange={(e) => setAjuste(comoNumero(e.target.value, { maxDecimales: 2 }))} aria-label="Ajuste" />
               <input
                 className={cn(CAMPO, 'min-w-[16rem] flex-1')}
                 maxLength={120}

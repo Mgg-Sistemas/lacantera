@@ -232,6 +232,7 @@ export function ModalRevisionAlmacen({
                     min={0}
                     step="any"
                     disabled={!base.articulo}
+                    limite={{ maxDecimales: 4, sinNegativos: true }}
                     value={base.cantidad}
                     error={errorDe(x)}
                     hint={e ? `Hay ${bonito(e.hay)}` : undefined}
