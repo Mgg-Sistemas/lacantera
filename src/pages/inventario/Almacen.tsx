@@ -482,10 +482,14 @@ export function Almacen() {
                 compras), así que el botón solo sale con ése elegido. */}
             {esGeneral && recibe ? (
               <BotonGrande
-                tono="success"
+                tono={cantidadPorRecibir > 0 ? 'warning' : 'success'}
                 className="col-span-2"
-                titulo="📥 Recepciones"
-                sub={`Las OC por recibir: entran a ${nombreAlm}`}
+                titulo={`📥 Recepciones (${cantidadPorRecibir})`}
+                sub={
+                  cantidadPorRecibir > 0
+                    ? `${cantidadPorRecibir === 1 ? 'Hay 1 OC' : `Hay ${cantidadPorRecibir} OC`} por recibir: entran a ${nombreAlm}`
+                    : `Sin OC por recibir · entran a ${nombreAlm}`
+                }
                 onClick={() => abrir('recepciones')}
               />
             ) : null}
