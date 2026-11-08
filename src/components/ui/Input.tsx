@@ -3,7 +3,7 @@ import type { InputHTMLAttributes, ReactNode } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { enMayuscula } from '@/lib/texto'
-import { comoNumero, vestido } from '@/lib/formato'
+import { comoNumero, vestido, type LimiteNumero } from '@/lib/formato'
 
 interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
   label: string
@@ -29,6 +29,24 @@ interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'>
    * distinguir mayúsculas antes de la arroba.
    */
   sinNormalizar?: boolean
+  /**
+   * Qué teclas entran (la dueña, 08/11/2026: «si es solo de números, permite
+   * poner solo números, o solo letras»). Lo demás no llega a escribirse.
+   *   numeros ...... solo cifras (referencias, cuentas, códigos numéricos)
+   *   letras ....... letras con tilde y ñ, espacios, punto, apóstrofo y guion (nombres)
+   *   alfanumerico . letras, cifras, espacios y guion (placas, seriales)
+   * El largo se limita con `maxLength`, como siempre.
+   */
+  solo?: 'numeros' | 'letras' | 'alfanumerico'
+  /** En un campo de número: cuántas cifras enteras y decimales admite. */
+  limite?: LimiteNumero
+}
+
+/** Lo que deja pasar cada `solo`. */
+const FILTRO_SOLO: Record<NonNullable<InputProps['solo']>, RegExp> = {
+  numeros: /[^0-9]/g,
+  letras: /[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ .'-]/g,
+  alfanumerico: /[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9 -]/g,
 }
 
 export function Input({
@@ -39,6 +57,8 @@ export function Input({
   icon,
   revealable = false,
   sinNormalizar = false,
+  solo,
+  limite,
   className,
   type = 'text',
   id,
@@ -134,7 +154,7 @@ export function Input({
   const alEscribir = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (esNumero) {
       const bruto = e.target.value
-      const limpio = comoNumero(bruto)
+      const limpio = comoNumero(bruto, limite)
 
       if (limpio !== bruto) {
         /*
@@ -153,6 +173,19 @@ export function Input({
 
       onChange?.(e)
       return
+    }
+
+    if (solo) {
+      const bruto = e.target.value
+      let limpio = bruto.replace(FILTRO_SOLO[solo], '')
+      const max = rest.maxLength
+      if (typeof max === 'number' && max > 0 && limpio.length > max) limpio = limpio.slice(0, max)
+      if (limpio !== bruto) {
+        const cursor = e.target.selectionStart ?? bruto.length
+        e.target.value = limpio
+        const sitio = Math.max(0, cursor - (bruto.length - limpio.length))
+        e.target.setSelectionRange(sitio, sitio)
+      }
     }
 
     if (normaliza) {
@@ -189,7 +222,7 @@ export function Input({
           // El teclado del teléfono sigue abriéndose en cifras aunque el campo
           // ya sea de texto. Va antes de `...rest` para que quien lo declare a
           // mano —la mayoría lo hace— siga mandando.
-          inputMode={esNumero ? 'decimal' : undefined}
+          inputMode={esNumero ? (limite?.maxDecimales === 0 ? 'numeric' : 'decimal') : solo === 'numeros' ? 'numeric' : undefined}
           value={valorVestido}
           onChange={alEscribir}
           onFocus={(e) => {

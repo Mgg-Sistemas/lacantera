@@ -324,6 +324,7 @@ export function PrestamosDelTrabajador({
               label="Monto"
               type="number"
               inputMode="decimal"
+              limite={{ maxDecimales: 2, sinNegativos: true }}
               value={nuevo.capital}
               onChange={(e) => setNuevo({ ...nuevo, capital: e.target.value })}
             />
@@ -340,6 +341,7 @@ export function PrestamosDelTrabajador({
               label="Cuotas"
               type="number"
               hint="Una sola quincena es 1."
+              limite={{ maxEnteros: 3, maxDecimales: 0, sinNegativos: true }}
               value={nuevo.cuotas}
               onChange={(e) => setNuevo({ ...nuevo, cuotas: e.target.value })}
             />
@@ -404,11 +406,13 @@ export function PrestamosDelTrabajador({
               type="number"
               inputMode="decimal"
               hint={`Máximo ${dinero(pagando.prestamo.moneda, pagando.prestamo.saldo)}`}
+              limite={{ maxDecimales: 2, sinNegativos: true }}
               value={pagando.monto}
               onChange={(e) => setPagando({ ...pagando, monto: e.target.value })}
             />
             <Input
               label="Nota"
+              maxLength={120}
               value={pagando.nota}
               onChange={(e) => setPagando({ ...pagando, nota: e.target.value })}
             />

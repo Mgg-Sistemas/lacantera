@@ -318,6 +318,7 @@ export function Articulos() {
       <Card className="mb-4">
         <div className="grid gap-3 sm:grid-cols-[1fr_220px]">
           <Input
+            maxLength={100}
             label="Buscar"
             icon={<Search />}
             placeholder="Nombre o código"
@@ -549,6 +550,7 @@ export function Articulos() {
             </p>
           ) : null}
           <Textarea
+            maxLength={500}
             label="Motivo"
             rows={3}
             value={motivoEstado}
@@ -639,6 +641,8 @@ export function Articulos() {
                 Sigue pudiendose escribir: quien tiene una nomenclatura la usa.
                 Lo que cambia es que dejarlo vacio ya no es un error. */}
             <Input
+              // Sin `solo`: hay códigos con guion bajo (INS_HOJA_01) (08/11/2026).
+              maxLength={30}
               label="Código"
               placeholder="Se pone solo"
               disabled={Boolean(form.id)}
@@ -652,6 +656,7 @@ export function Articulos() {
             />
             <div>
               <Input
+                maxLength={120}
                 label="Nombre"
                 value={form.nombre}
                 onChange={(e) =>
@@ -767,6 +772,7 @@ export function Articulos() {
             {pideDensidad ? (
               <div>
                 <Input
+                  limite={{ maxEnteros: 2, maxDecimales: 4, sinNegativos: true }}
                   label="Densidad, en toneladas por metro cúbico"
                   type="number"
                   min="0"
@@ -791,6 +797,7 @@ export function Articulos() {
             {cambiaDensidad ? (
               <div className="sm:col-span-2">
                 <Textarea
+                  maxLength={500}
                   label="Motivo"
                   rows={2}
                   value={form.motivo_densidad}
@@ -809,6 +816,7 @@ export function Articulos() {
             ) : null}
             <div>
               <Input
+                limite={{ maxDecimales: 4, sinNegativos: true }}
                 label="Existencia mínima"
                 type="number"
                 min="0"
@@ -884,6 +892,7 @@ export function Articulos() {
                 }))}
               />
               <Input
+                limite={{ maxDecimales: 4, sinNegativos: true }}
                 label="Unidades por presentación"
                 type="number"
                 min="0"
@@ -953,6 +962,7 @@ export function Articulos() {
             */}
             <div className="grid gap-4 sm:col-span-2 sm:grid-cols-2">
               <Input
+                maxLength={60}
                 label="Marca"
                 list="marcas-usadas"
                 placeholder="Motul, Komatsu…"
@@ -966,6 +976,8 @@ export function Articulos() {
                 ))}
               </datalist>
               <Input
+                // Sin `solo`: las referencias de fábrica llevan puntos y barras (08/11/2026).
+                maxLength={40}
                 label="N° de parte o serial"
                 placeholder="La referencia del fabricante"
                 value={form.numero_parte}
@@ -987,6 +999,7 @@ export function Articulos() {
           </div>
 
           <Textarea
+            maxLength={500}
             label="Descripción"
             className="mt-4"
             rows={2}
@@ -1165,12 +1178,16 @@ export function GestionDeCategorias() {
     <div className="space-y-4">
       <div className="grid gap-2 sm:grid-cols-[1fr_8rem_auto]">
         <Input
+          maxLength={60}
           label="Nueva categoría"
           placeholder="Material médico"
           value={etiqueta}
           onChange={(e) => setEtiqueta(e.target.value)}
         />
         <Input
+          // La base exige de dos a cuatro letras (08/11/2026).
+          solo="letras"
+          maxLength={4}
           label="Prefijo"
           placeholder={prefijoPropuesto || 'VIV'}
           hint="Con él empiezan sus códigos."

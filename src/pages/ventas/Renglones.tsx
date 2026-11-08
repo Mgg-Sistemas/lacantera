@@ -275,6 +275,7 @@ export function Renglones({
                 min="0"
                 step="0.01"
                 inputMode="decimal"
+                limite={{ maxDecimales: 3, sinNegativos: true }}
                 value={cantidad}
                 disabled={deRomana}
                 onChange={(e) => cambiar(fila.clave, { cantidad: e.target.value })}
@@ -353,6 +354,11 @@ export function Renglones({
                     min="0"
                     step="0.01"
                     inputMode="decimal"
+                    limite={{
+                      maxEnteros: fila.descuentoEn === 'PORCENTAJE' ? 3 : undefined,
+                      maxDecimales: 2,
+                      sinNegativos: true,
+                    }}
                     value={fila.descuento}
                     onChange={(e) => cambiar(fila.clave, { descuento: e.target.value })}
                   />
@@ -392,6 +398,7 @@ export function Renglones({
               <div className="sm:col-span-12">
                 <Input
                   label="Motivo"
+                  maxLength={200}
                   value={fila.motivo}
                   onChange={(e) => cambiar(fila.clave, { motivo: e.target.value })}
                   hint="Queda escrito en el renglón y en el papel."
@@ -407,6 +414,7 @@ export function Renglones({
                   min="0"
                   step="0.01"
                   inputMode="decimal"
+                  limite={{ maxDecimales: 2, sinNegativos: true }}
                   value={fila.precio}
                   onChange={(e) => cambiar(fila.clave, { precio: e.target.value })}
                 />
@@ -417,6 +425,7 @@ export function Renglones({
               <div className="sm:col-span-8">
                 <Input
                   label="Motivo"
+                  maxLength={200}
                   value={fila.motivo}
                   onChange={(e) => cambiar(fila.clave, { motivo: e.target.value })}
                   hint="Por qué se pisa el precio de lista. Queda escrito en el renglón y en el papel."

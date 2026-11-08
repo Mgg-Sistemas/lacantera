@@ -68,6 +68,7 @@ export function BorrarProducto({ articulo, onCerrar }: { articulo: Articulo; onC
       </p>
       <div className="mt-4 space-y-3">
         <Textarea
+          maxLength={500}
           label="¿Por qué se da de baja? *"
           rows={2}
           placeholder="Ej. Unificado en otro código · ya no se compra · ficha repetida"
@@ -76,6 +77,7 @@ export function BorrarProducto({ articulo, onCerrar }: { articulo: Articulo; onC
           error={motivoCorto ? 'Escribí un motivo un poco más claro.' : undefined}
         />
         <Input
+          maxLength={120}
           label={`Para confirmar, escribí el nombre del producto: ${articulo.nombre}`}
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}

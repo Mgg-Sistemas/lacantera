@@ -286,6 +286,8 @@ export function Tickets() {
               <Input
                 label="Placa"
                 placeholder="A12BC34"
+                solo="alfanumerico"
+                maxLength={8}
                 value={nuevo.vehiculo}
                 onChange={(e) => setNuevo({ ...nuevo, vehiculo: e.target.value })}
                 required
@@ -293,11 +295,14 @@ export function Tickets() {
             ) : null}
             <Input
               label="Transportista"
+              maxLength={120}
               value={nuevo.transportista}
               onChange={(e) => setNuevo({ ...nuevo, transportista: e.target.value })}
             />
             <Input
               label="Chofer"
+              solo="letras"
+              maxLength={60}
               value={nuevo.chofer}
               onChange={(e) => setNuevo({ ...nuevo, chofer: e.target.value })}
             />
@@ -351,6 +356,7 @@ export function Tickets() {
               min="0"
               step="1"
               inputMode="decimal"
+              limite={{ maxEnteros: 6, maxDecimales: 2, sinNegativos: true }}
               value={nuevo.bruto}
               onChange={(e) => setNuevo({ ...nuevo, bruto: e.target.value })}
               required
@@ -361,6 +367,7 @@ export function Tickets() {
               min="0"
               step="1"
               inputMode="decimal"
+              limite={{ maxEnteros: 6, maxDecimales: 2, sinNegativos: true }}
               value={nuevo.tara}
               onChange={(e) => setNuevo({ ...nuevo, tara: e.target.value })}
               error={
@@ -391,12 +398,15 @@ export function Tickets() {
             <Input
               label="Romana"
               placeholder="Romana 1"
+              maxLength={40}
               value={nuevo.romana}
               onChange={(e) => setNuevo({ ...nuevo, romana: e.target.value })}
             />
             <Input
               label="Operador"
               placeholder="Quién pesó"
+              solo="letras"
+              maxLength={60}
               value={nuevo.operador}
               onChange={(e) => setNuevo({ ...nuevo, operador: e.target.value })}
               className="sm:col-span-3"
@@ -407,6 +417,7 @@ export function Tickets() {
             label="Nota"
             rows={2}
             className="mt-4"
+            maxLength={500}
             value={nuevo.nota}
             onChange={(e) => setNuevo({ ...nuevo, nota: e.target.value })}
           />
@@ -442,6 +453,7 @@ export function Tickets() {
           <Textarea
             label="Motivo"
             rows={3}
+            maxLength={500}
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
             required

@@ -187,7 +187,7 @@ export function ModalEditarOrden({
             etiqueta: `${p.nombre} · ${p.rif}`,
           }))}
         />
-        <Input label="Título de la compra" value={titulo} onChange={(e) => setTitulo(e.target.value)} />
+        <Input maxLength={120} label="Título de la compra" value={titulo} onChange={(e) => setTitulo(e.target.value)} />
         <Select
           label="Moneda"
           value={moneda}
@@ -219,6 +219,7 @@ export function ModalEditarOrden({
               <div className="sm:col-span-2">
                 <Input
                   label="Descripción"
+                  maxLength={150}
                   value={f.descripcion}
                   onChange={(e) => cambiar(f.clave, { descripcion: e.target.value })}
                 />
@@ -251,6 +252,7 @@ export function ModalEditarOrden({
                 min="0"
                 step="0.01"
                 inputMode="decimal"
+                limite={{ maxDecimales: 4, sinNegativos: true }}
                 value={f.cantidad}
                 onChange={(e) => cambiar(f.clave, { cantidad: e.target.value })}
               />
@@ -266,6 +268,7 @@ export function ModalEditarOrden({
                 min="0"
                 step="0.0001"
                 inputMode="decimal"
+                limite={{ maxDecimales: 6, sinNegativos: true }}
                 value={f.precio}
                 onChange={(e) => cambiar(f.clave, { precio: e.target.value })}
                 hint={
@@ -292,6 +295,7 @@ export function ModalEditarOrden({
                 <Input
                   label="Marca"
                   className="max-w-[220px]"
+                  maxLength={60}
                   value={f.marca}
                   onChange={(e) => cambiar(f.clave, { marca: e.target.value })}
                 />
@@ -317,6 +321,7 @@ export function ModalEditarOrden({
           min="0"
           step="0.01"
           inputMode="decimal"
+          limite={{ maxDecimales: 2, sinNegativos: true }}
           value={descuento}
           onChange={(e) => setDescuento(e.target.value)}
         />
@@ -326,6 +331,7 @@ export function ModalEditarOrden({
           min="0"
           step="0.01"
           inputMode="decimal"
+          limite={{ maxDecimales: 2, sinNegativos: true }}
           value={flete}
           onChange={(e) => setFlete(e.target.value)}
         />

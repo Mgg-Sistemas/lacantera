@@ -101,6 +101,7 @@ export function Conversor({ compacto = false }: { compacto?: boolean }) {
       </p>
 
       <input
+        maxLength={200}
         value={texto}
         onChange={(e) => setTexto(e.target.value)}
         placeholder="(300 $ + 120 €) / 3"

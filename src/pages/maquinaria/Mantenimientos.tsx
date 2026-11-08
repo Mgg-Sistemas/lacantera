@@ -761,19 +761,23 @@ export function Mantenimientos() {
           </div>
 
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <Input label="Valida" value={valida} onChange={(e) => setValida(e.target.value)} />
+            <Input label="Valida" solo="letras" maxLength={120} value={valida} onChange={(e) => setValida(e.target.value)} />
             <Input
               label="Cargo de quien valida"
+              maxLength={80}
               value={cargoValida}
               onChange={(e) => setCargoValida(e.target.value)}
             />
             <Input
               label="Recibe conforme"
+              solo="letras"
+              maxLength={120}
               value={recibe}
               onChange={(e) => setRecibe(e.target.value)}
             />
             <Input
               label="Cargo de quien recibe"
+              maxLength={80}
               value={cargoRecibe}
               onChange={(e) => setCargoRecibe(e.target.value)}
             />

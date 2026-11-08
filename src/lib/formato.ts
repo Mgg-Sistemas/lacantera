@@ -208,19 +208,41 @@ export function enPlural(unidad: string | null | undefined): string {
  * tecla a tecla. «1.500» a secas es ambiguo y se toma como uno y medio, que es
  * lo que se lee tal cual.
  */
-export function comoNumero(bruto: string): string {
+export function comoNumero(bruto: string, limite: LimiteNumero = {}): string {
   let s = bruto.replace(/[^0-9.,-]/g, '')
 
-  const negativo = s.startsWith('-')
+  const negativo = s.startsWith('-') && !limite.sinNegativos
   s = s.replace(/-/g, '')
 
   const ultimo = Math.max(s.lastIndexOf('.'), s.lastIndexOf(','))
-  if (ultimo !== -1) {
-    s = s.slice(0, ultimo).replace(/[.,]/g, '') + '.' + s.slice(ultimo + 1).replace(/[.,]/g, '')
+  let enteros = ultimo === -1 ? s : s.slice(0, ultimo).replace(/[.,]/g, '')
+  let decimales = ultimo === -1 ? null : s.slice(ultimo + 1).replace(/[.,]/g, '')
+
+  /*
+    LOS LÍMITES (la dueña, 08/11/2026: «limita los campos»). Las cifras de más
+    no entran: doce enteras por defecto —un billón menos uno, más de lo que
+    vale nada en esta empresa— y los decimales que diga el campo. Sin
+    decimales, el separador tampoco entra.
+  */
+  const maxEnteros = limite.maxEnteros ?? MAX_ENTEROS
+  if (enteros.length > maxEnteros) enteros = enteros.slice(0, maxEnteros)
+  if (decimales !== null && limite.maxDecimales != null) {
+    decimales = limite.maxDecimales <= 0 ? null : decimales.slice(0, limite.maxDecimales)
   }
 
-  return (negativo ? '-' : '') + s
+  return (negativo ? '-' : '') + enteros + (decimales === null ? '' : '.' + decimales)
 }
+
+/** Cuántas cifras enteras y decimales admite un campo de número. */
+export interface LimiteNumero {
+  maxEnteros?: number
+  /** 0 = solo enteros. Sin dato, los que se escriban. */
+  maxDecimales?: number
+  sinNegativos?: boolean
+}
+
+/** Las cifras enteras que admite cualquier campo de número si no dice otra cosa. */
+export const MAX_ENTEROS = 12
 
 /**
  * El mismo número, vestido para el ojo: `1209012.48` se lee `1.209.012,48`.
@@ -383,7 +405,25 @@ export function documento(valor: string | null | undefined): string {
 export function comoTelefono(bruto: string): string {
   const mas = bruto.trimStart().startsWith('+')
   const resto = bruto.replace(/[^0-9-]/g, '')
-  return (mas ? '+' : '') + resto
+  /*
+    Y LAS CIFRAS DE MÁS NO ENTRAN (la dueña, 08/11/2026): once las de aquí
+    (0412-5551234) y quince con el + de un país, que es el máximo del mundo.
+  */
+  return (mas ? '+' : '') + hastaCifras(resto, mas ? 15 : 11)
+}
+
+/** Corta un texto en cuanto lleva `max` cifras; lo que no es cifra se queda. */
+export function hastaCifras(texto: string, max: number): string {
+  let n = 0
+  let out = ''
+  for (const c of texto) {
+    if (c >= '0' && c <= '9') {
+      if (n >= max) break
+      n++
+    }
+    out += c
+  }
+  return out
 }
 
 /**
@@ -428,6 +468,17 @@ export function telefono(valor: string | null | undefined): string {
  * el mismo documento, y verlo en mayúscula desde la primera tecla dice que el
  * sistema ya lo sabe.
  */
-export function soloDocumento(bruto: string): string {
-  return bruto.toUpperCase().replace(/[^VEJGP0-9.\- ]/g, '')
+export function soloDocumento(bruto: string, maxCifras = 9): string {
+  const limpio = bruto.toUpperCase().replace(/[^VEJGP0-9.\- ]/g, '')
+  /*
+    UNA SOLA LETRA, DELANTE, Y LAS CIFRAS QUE CABEN (la dueña, 08/11/2026:
+    «si la cédula es de tantos dígitos, solo permite ingresar esos»). Una
+    cédula lleva hasta ocho cifras; un RIF, nueve con el dígito del final.
+  */
+  const letra = /^[ .-]*([VEJGP])/.exec(limpio)?.[1] ?? ''
+  const resto = (letra ? limpio.slice(limpio.indexOf(letra) + 1) : limpio).replace(/[VEJGP]/g, '')
+  return letra + hastaCifras(resto, maxCifras)
 }
+
+/** Cifras que lleva cada documento: cédula 8; RIF (con su dígito) 9. */
+export const CIFRAS_DOCUMENTO = { cedula: 8, rif: 9, identificacion: 9 } as const

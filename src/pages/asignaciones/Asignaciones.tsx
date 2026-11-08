@@ -625,6 +625,7 @@ function ModalEntrega({
           type="number"
           min="1"
           step="1"
+          limite={{ maxDecimales: 2, sinNegativos: true }}
           value={cuantas}
           onChange={(e) => setCuantas(e.target.value)}
           error={excede ? `Solo quedan ${cantidad(bien.disponibles)}` : undefined}

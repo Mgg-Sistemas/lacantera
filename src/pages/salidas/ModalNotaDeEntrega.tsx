@@ -14,6 +14,7 @@ import {
   faltaEnLosCamiones,
   type CamionEnEdicion,
 } from '@/pages/facturacion/camiones'
+import { comoNumero } from '@/lib/formato'
 
 /*
   LO QUE SE LE PREGUNTA A UNA NOTA DE ENTREGA QUE NACE DE UNA SALIDA.
@@ -208,7 +209,12 @@ export function ModalNotaDeEntrega({
                     inputMode="decimal"
                     placeholder="Sin precio"
                     value={precios[l.id] ?? ''}
-                    onChange={(e) => setPrecios((p) => ({ ...p, [l.id]: e.target.value }))}
+                    onChange={(e) =>
+                      setPrecios((p) => ({
+                        ...p,
+                        [l.id]: comoNumero(e.target.value, { maxDecimales: 2, sinNegativos: true }),
+                      }))
+                    }
                   />
                 </div>
               </li>

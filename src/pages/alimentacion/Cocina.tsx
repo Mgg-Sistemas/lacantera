@@ -168,6 +168,7 @@ export function Cocina() {
           min="1"
           step="1"
           inputMode="numeric"
+          limite={{ maxEnteros: 5, maxDecimales: 0, sinNegativos: true }}
           value={platos}
           onChange={(e) => setPlatos(e.target.value)}
         />

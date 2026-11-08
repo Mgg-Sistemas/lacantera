@@ -43,7 +43,7 @@ import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { bajarArchivo, escribirXlsx, leerHoja } from '@/lib/xlsx'
 import { moduloDeRuta } from '@/config/navigation'
 import { hojaDeLaPlanilla, interpretarCarga, plantillaDeCarga, type CargaInterpretada } from './hojas'
-import { fecha as fmtFecha } from '@/lib/formato'
+import { CIFRAS_DOCUMENTO, comoNumero, fecha as fmtFecha, soloDocumento } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
 /*
@@ -271,6 +271,7 @@ export function ControlDespacho() {
               label="Buscar"
               icon={<Search />}
               placeholder="Nota, cliente, RIF, material u observación"
+              maxLength={100}
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
@@ -584,7 +585,7 @@ function EditarFila({
           <Input
             label="RIF o cédula"
             value={rif}
-            onChange={(e) => setRif(e.target.value)}
+            onChange={(e) => setRif(soloDocumento(e.target.value, CIFRAS_DOCUMENTO.identificacion))}
             placeholder={fila.rif_del_cliente ? String(fila.rif) : 'V-12345678'}
             hint={
               fila.rif_del_cliente
@@ -598,7 +599,7 @@ function EditarFila({
             label="Precio US$"
             inputMode="decimal"
             value={precio}
-            onChange={(e) => setPrecio(e.target.value)}
+            onChange={(e) => setPrecio(comoNumero(e.target.value, { maxDecimales: 2, sinNegativos: true }))}
             placeholder={fila.precio_de_la_nota ? n2(fila.precio) : 'Sin precio'}
             error={precioMalo ? 'No es un precio válido.' : undefined}
             hint={
@@ -626,8 +627,8 @@ function EditarFila({
             .filter((e) => e.activo || e.codigo === fila.estado_control)
             .map((e) => ({ valor: e.codigo, etiqueta: e.nombre }))}
         />
-        <Textarea label="Observaciones" rows={2} value={observacion} onChange={(e) => setObservacion(e.target.value)} />
-        <Input label={columnaLibre} value={extra} onChange={(e) => setExtra(e.target.value)} />
+        <Textarea label="Observaciones" rows={2} maxLength={500} value={observacion} onChange={(e) => setObservacion(e.target.value)} />
+        <Input label={columnaLibre} maxLength={200} value={extra} onChange={(e) => setExtra(e.target.value)} />
 
         {error ? <ErrorDeCarga error={error} /> : null}
       </div>
@@ -850,7 +851,7 @@ function Ajustes({ columnaLibre, onCerrar }: { columnaLibre: string; onCerrar: (
 
         <div className="flex items-end gap-2">
           <div className="flex-1">
-            <Input label="Status nuevo" value={nuevo} onChange={(e) => setNuevo(e.target.value)} placeholder="POR COBRAR" />
+            <Input label="Status nuevo" maxLength={40} value={nuevo} onChange={(e) => setNuevo(e.target.value)} placeholder="POR COBRAR" />
           </div>
           <Button
             variant="outline"
@@ -870,6 +871,7 @@ function Ajustes({ columnaLibre, onCerrar }: { columnaLibre: string; onCerrar: (
           <div className="flex-1">
             <Input
               label="Nombre de la columna libre"
+              maxLength={40}
               value={columna}
               onChange={(e) => setColumna(e.target.value)}
             />

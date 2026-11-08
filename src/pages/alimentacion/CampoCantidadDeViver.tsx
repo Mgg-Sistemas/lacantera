@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Input } from '@/components/ui/Input'
 import { cn } from '@/lib/cn'
+import { comoNumero } from '@/lib/formato'
 import { subunidadDe } from '@/lib/subunidad'
 
 /*
@@ -18,6 +19,9 @@ import { subunidadDe } from '@/lib/subunidad'
   Un víver sin subdivisión posible —UND, TON, GAL…— no enseña selector: es
   el campo de siempre.
 */
+
+/** Hasta milésimas, como el paso del campo, y sin negativos (08/11/2026). */
+const LIMITE = { maxDecimales: 3, sinNegativos: true }
 
 interface Props {
   /** La unidad del víver, tal cual la trae el catálogo: 'KG', 'L', 'UND'… */
@@ -69,21 +73,24 @@ export function CampoCantidadDeViver({
         min="0.001"
         step="0.001"
         inputMode="decimal"
+        limite={LIMITE}
         disabled={disabled}
         value={enSub ? tecleado : valor}
         onChange={(e) => (enSub ? escribirSub(e.target.value) : onCambiar(e.target.value))}
         error={error}
       />
     ) : (
+      // Como texto y con `comoNumero`, igual que `Input`: admite la coma y corta lo que sobra.
       <input
-        type="number"
-        min="0"
-        step="0.001"
+        type="text"
         inputMode="decimal"
         placeholder="0"
         disabled={disabled}
         value={enSub ? tecleado : valor}
-        onChange={(e) => (enSub ? escribirSub(e.target.value) : onCambiar(e.target.value))}
+        onChange={(e) => {
+          const v = comoNumero(e.target.value, LIMITE)
+          return enSub ? escribirSub(v) : onCambiar(v)
+        }}
         className={cn(
           'border-hairline bg-surface tabular h-10 w-full rounded-[8px] border px-2 text-right text-sm',
           resaltar && 'border-danger',

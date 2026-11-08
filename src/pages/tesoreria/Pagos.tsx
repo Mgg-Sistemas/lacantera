@@ -16,6 +16,7 @@ import type { PorPagar } from '@/lib/api/tesoreria'
 import { useMetodosPago, nombreDe } from '@/lib/api/metodosPago'
 import { useMisRoles } from '@/lib/api/catalogo'
 import { dinero, dolares, hace } from '@/lib/formato'
+import { limiteReferencia } from '@/lib/pagos'
 import { ModalRegistrarPago } from './ModalRegistrarPago'
 import { PorPagarAClientes } from './PorPagarAClientes'
 
@@ -234,6 +235,7 @@ function ModalTanda({
         <div className="sm:col-span-2">
           <Input
             label={todoEfectivo ? 'Referencia' : 'Número de referencia'}
+            {...limiteReferencia(pagos.map((p) => p.metodo))}
             value={referencia}
             onChange={(e) => setReferencia(e.target.value)}
             hint="La misma para todos: es la tanda que devolvió el banco."

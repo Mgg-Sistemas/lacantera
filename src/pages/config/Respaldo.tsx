@@ -550,6 +550,7 @@ export function Respaldo() {
                   autoComplete="off"
                   spellCheck={false}
                   placeholder="nombre@dominio.com"
+                  maxLength={120}
                   value={c}
                   error={malo ? 'Ese correo no se entiende.' : undefined}
                   onChange={(e) => cambiarCorreo(i, e.target.value)}
@@ -830,11 +831,13 @@ function ModalDestinatario({ onCerrar, hay }: { onCerrar: () => void; hay: boole
           label="Correo"
           type="email"
           placeholder="administracion@mineriainternacionalts.com"
+          maxLength={120}
           value={correo}
           onChange={(e) => setCorreo(e.target.value)}
         />
         <Input
           label="De quién es"
+          maxLength={120}
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
         />
@@ -1212,10 +1215,11 @@ function ModalCorregir({
         <Input
           label="Correo"
           type="email"
+          maxLength={120}
           value={correo}
           onChange={(e) => setCorreo(e.target.value)}
         />
-        <Input label="De quién es" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+        <Input label="De quién es" maxLength={120} value={nombre} onChange={(e) => setNombre(e.target.value)} />
       </div>
       <div className="mt-4">
         <Textarea

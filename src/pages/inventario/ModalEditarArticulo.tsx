@@ -153,6 +153,7 @@ export function ModalEditarArticulo({
         <Input label="Código" disabled hint="No se cambia." value={form.codigo} />
         <div>
           <Input
+            maxLength={120}
             label="Nombre"
             value={form.nombre}
             onChange={(e) => setForm({ ...form, nombre: e.target.value, confirmado: false })}
@@ -209,6 +210,7 @@ export function ModalEditarArticulo({
         {pideDensidad ? (
           <div>
             <Input
+              limite={{ maxEnteros: 2, maxDecimales: 4, sinNegativos: true }}
               label="Densidad, en toneladas por metro cúbico"
               type="number"
               min="0"
@@ -233,6 +235,7 @@ export function ModalEditarArticulo({
         {cambiaDensidad ? (
           <div className="sm:col-span-2">
             <Textarea
+              maxLength={500}
               label="Motivo"
               rows={2}
               value={form.motivo_densidad}
@@ -251,6 +254,7 @@ export function ModalEditarArticulo({
         ) : null}
         <div>
           <Input
+            limite={{ maxDecimales: 4, sinNegativos: true }}
             label="Existencia mínima"
             type="number"
             min="0"
@@ -283,6 +287,7 @@ export function ModalEditarArticulo({
             opciones={(presentaciones ?? []).map((p) => ({ valor: p.codigo, etiqueta: p.nombre }))}
           />
           <Input
+            limite={{ maxDecimales: 4, sinNegativos: true }}
             label="Unidades por presentación"
             type="number"
             min="0"
@@ -301,6 +306,7 @@ export function ModalEditarArticulo({
 
         <div className="grid gap-4 sm:col-span-2 sm:grid-cols-2">
           <Input
+            maxLength={60}
             label="Marca"
             list="marcas-usadas-editar"
             placeholder="Motul, Komatsu…"
@@ -314,6 +320,8 @@ export function ModalEditarArticulo({
             ))}
           </datalist>
           <Input
+            // Sin `solo`: las referencias de fábrica llevan puntos y barras (08/11/2026).
+            maxLength={40}
             label="N° de parte o serial"
             placeholder="La referencia del fabricante"
             value={form.numero_parte}
@@ -332,6 +340,7 @@ export function ModalEditarArticulo({
       </div>
 
       <Textarea
+        maxLength={500}
         label="Descripción"
         className="mt-4"
         rows={2}

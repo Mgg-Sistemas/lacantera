@@ -1,4 +1,6 @@
 import { Input } from '@/components/ui/Input'
+import { CampoDocumento } from '@/components/CampoDocumento'
+import { CampoTelefono } from '@/components/CampoTelefono'
 import { Select } from '@/components/ui/Select'
 import { BANCOS } from '@/lib/bancos'
 import type { DatosPago } from '@/lib/api/compras'
@@ -32,25 +34,32 @@ interface Campo {
   opciones?: string[]
   marcador?: string
   modo?: 'tel' | 'numeric' | 'email'
+  /** Qué teclas entran y cuántas (la dueña, 08/11/2026: «limita los campos»). */
+  solo?: 'numeros' | 'letras' | 'alfanumerico'
+  largo?: number
 }
 
 const CAMPOS: Record<string, Campo> = {
   banco: { etiqueta: 'Banco', opciones: BANCOS },
   numero_cuenta: {
     etiqueta: 'Número de cuenta',
-    marcador: '0102 0000 00 0000000000',
+    marcador: '01020000000000000000',
     modo: 'numeric',
+    // Una cuenta venezolana son veinte cifras, sin más.
+    solo: 'numeros',
+    largo: 20,
   },
-  titular: { etiqueta: 'Titular de la cuenta' },
+  titular: { etiqueta: 'Titular de la cuenta', largo: 120 },
   documento: { etiqueta: 'Cédula o RIF del titular', marcador: 'J-12345678-9' },
   telefono: { etiqueta: 'Teléfono', marcador: '0414 1234567', modo: 'tel' },
   correo_binance: {
     etiqueta: 'Correo o usuario',
     marcador: 'correo@ejemplo.com',
     modo: 'email',
+    largo: 120,
   },
-  red_cripto: { etiqueta: 'Red', marcador: 'TRON (TRC20)' },
-  receptor: { etiqueta: 'Receptor' },
+  red_cripto: { etiqueta: 'Red', marcador: 'TRON (TRC20)', largo: 40 },
+  receptor: { etiqueta: 'Receptor', solo: 'letras', largo: 80 },
 }
 
 export function CamposDePago({
@@ -94,12 +103,36 @@ export function CamposDePago({
               key={clave}
               label={clave}
               value={(datos as Record<string, string | undefined>)[clave] ?? ''}
+              maxLength={120}
               onChange={(e) => onCambiar({ [clave]: e.target.value } as DatosPago)}
             />
           )
         }
 
         const valor = (datos as Record<string, string | undefined>)[clave] ?? ''
+
+        // La cédula o el RIF y el teléfono tienen su campo, que ya limita las cifras.
+        if (clave === 'documento') {
+          return (
+            <CampoDocumento
+              key={clave}
+              tipo="identificacion"
+              label={campo.etiqueta}
+              valor={valor}
+              onCambiar={(v) => onCambiar({ [clave]: v } as DatosPago)}
+            />
+          )
+        }
+        if (clave === 'telefono') {
+          return (
+            <CampoTelefono
+              key={clave}
+              label={campo.etiqueta}
+              valor={valor}
+              onCambiar={(v) => onCambiar({ [clave]: v } as DatosPago)}
+            />
+          )
+        }
 
         return campo.opciones ? (
           <Select
@@ -117,6 +150,8 @@ export function CamposDePago({
             placeholder={campo.marcador}
             inputMode={campo.modo === 'email' ? undefined : campo.modo}
             type={campo.modo === 'email' ? 'email' : 'text'}
+            solo={campo.solo}
+            maxLength={campo.largo}
             value={valor}
             onChange={(e) => onCambiar({ [clave]: e.target.value } as DatosPago)}
           />

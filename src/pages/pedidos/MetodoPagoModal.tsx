@@ -53,6 +53,8 @@ import {
   type RetencionesForm,
 } from '@/lib/pagos'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
+import { comoNumero } from '@/lib/formato'
+import { CampoDocumento } from '@/components/CampoDocumento'
 
 /*
   «💳 INDICAR MÉTODO DE PAGO / ENVIAR PARA PAGAR» (MGG `MetodoPagoModal`)
@@ -116,7 +118,7 @@ export function CamposDatosPago({
   if (metodo === 'pago_movil') {
     return (
       <div className="grid gap-2 sm:grid-cols-3">
-        <Input label="CI o RIF *" placeholder="V-12345678 / J-..." value={value.ci_rif ?? ''} onChange={(e) => set('ci_rif', e.target.value)} />
+        <CampoDocumento tipo="identificacion" label="CI o RIF *" valor={value.ci_rif ?? ''} onCambiar={(v) => set('ci_rif', v)} />
         {banco}
         <Input
           label="Teléfono *"
@@ -134,8 +136,8 @@ export function CamposDatosPago({
     const cta = value.cuenta ?? ''
     return (
       <div className="grid gap-2 sm:grid-cols-2">
-        <Input label="Nombre / Razón social *" value={value.nombre ?? ''} onChange={(e) => set('nombre', e.target.value)} />
-        <Input label="CI / RIF *" placeholder="V-12345678 / J-..." value={value.ci ?? ''} onChange={(e) => set('ci', e.target.value)} />
+        <Input label="Nombre / Razón social *" maxLength={150} value={value.nombre ?? ''} onChange={(e) => set('nombre', e.target.value)} />
+        <CampoDocumento tipo="identificacion" label="CI / RIF *" valor={value.ci ?? ''} onCambiar={(v) => set('ci', v)} />
         {banco}
         <Input
           label="Número de cuenta *"
@@ -152,12 +154,13 @@ export function CamposDatosPago({
   if (metodo === 'zelle') {
     return (
       <div className="grid gap-2 sm:grid-cols-2">
-        <Input label="Nombre *" value={value.nombre ?? ''} onChange={(e) => set('nombre', e.target.value)} />
+        <Input label="Nombre *" maxLength={150} value={value.nombre ?? ''} onChange={(e) => set('nombre', e.target.value)} />
         <Input
           label="Correo *"
           type="email"
           sinNormalizar
           placeholder="correo@dominio.com"
+          maxLength={120}
           value={value.email ?? ''}
           onChange={(e) => set('email', e.target.value)}
         />
@@ -170,6 +173,7 @@ export function CamposDatosPago({
         label="Correo o ID de Binance *"
         sinNormalizar
         placeholder="correo@dominio.com o 123456789"
+        maxLength={120}
         value={value.email_o_id ?? ''}
         onChange={(e) => set('email_o_id', e.target.value)}
       />
@@ -258,7 +262,7 @@ export function DocumentoYRetenciones({
               aria-label="IVA de la factura en dólares"
               placeholder="0,00"
               value={fiscal.ivaFactura}
-              onChange={(e) => onFiscal({ ...fiscal, ivaFactura: e.target.value })}
+              onChange={(e) => onFiscal({ ...fiscal, ivaFactura: comoNumero(e.target.value, { maxDecimales: 2, sinNegativos: true }) })}
             />
             {baseImponible > 0 ? (
               <Button
@@ -302,7 +306,13 @@ export function DocumentoYRetenciones({
                     aria-label={`Retención de ${tipo}`}
                     placeholder={r.modo === 'porcentaje' ? 'ej. 75' : '0,00'}
                     value={r.valor}
-                    onChange={(e) => onForm({ ...form, [tipo]: { ...r, valor: e.target.value } })}
+                    onChange={(e) => {
+                      const limite =
+                        r.modo === 'porcentaje'
+                          ? { maxEnteros: 3, maxDecimales: 2, sinNegativos: true }
+                          : { maxDecimales: 2, sinNegativos: true }
+                      onForm({ ...form, [tipo]: { ...r, valor: comoNumero(e.target.value, limite) } })
+                    }}
                   />
                   {fiscal ? (
                     <select
@@ -342,7 +352,8 @@ export function DocumentoYRetenciones({
                 aria-label="Tasa BCV en bolívares por dólar"
                 placeholder="Bs por $"
                 value={fiscal.tasa}
-                onChange={(e) => onFiscal({ ...fiscal, tasa: e.target.value })}
+                // Ocho decimales: los que publica el BCV (08/11/2026).
+                onChange={(e) => onFiscal({ ...fiscal, tasa: comoNumero(e.target.value, { maxDecimales: 8, sinNegativos: true }) })}
               />
               <span className="text-ink/45 text-xs">Bs por $ · con ella se calculan las retenciones que se pagan en Bs.</span>
             </div>
@@ -746,6 +757,7 @@ export function MetodoPagoModal({
                       className="max-w-[180px]"
                       label={descModo === 'pct' ? 'Descuento (%)' : 'Descuento ($)'}
                       type="number"
+                      limite={descModo === 'pct' ? { maxEnteros: 3, maxDecimales: 2, sinNegativos: true } : { maxDecimales: 2, sinNegativos: true }}
                       value={descStr}
                       onChange={(e) => setDescStr(e.target.value)}
                       placeholder={descModo === 'pct' ? '0' : '0,00'}
@@ -780,6 +792,7 @@ export function MetodoPagoModal({
                         label={`Monto (${monedaPorMetodo(p.metodo)}) *`}
                         type="number"
                         placeholder="0,00"
+                        limite={{ maxDecimales: 2, sinNegativos: true }}
                         value={p.monto}
                         onChange={(e) => setPata(i, { monto: e.target.value })}
                       />

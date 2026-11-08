@@ -583,6 +583,7 @@ export function Prestaciones() {
               min="0"
               step="1"
               inputMode="decimal"
+              limite={{ maxEnteros: 8, maxDecimales: 2, sinNegativos: true }}
               value={fCorte.dias}
               onChange={(e) => setFCorte({ ...fCorte, dias: e.target.value })}
             />
@@ -592,6 +593,7 @@ export function Prestaciones() {
               min="0"
               step="0.01"
               inputMode="decimal"
+              limite={{ maxDecimales: 2, sinNegativos: true }}
               value={fCorte.garantia}
               onChange={(e) => setFCorte({ ...fCorte, garantia: e.target.value })}
             />
@@ -601,6 +603,7 @@ export function Prestaciones() {
               min="0"
               step="0.01"
               inputMode="decimal"
+              limite={{ maxDecimales: 2, sinNegativos: true }}
               value={fCorte.intereses}
               onChange={(e) => setFCorte({ ...fCorte, intereses: e.target.value })}
             />
@@ -610,6 +613,7 @@ export function Prestaciones() {
               min="0"
               step="0.01"
               inputMode="decimal"
+              limite={{ maxDecimales: 2, sinNegativos: true }}
               value={fCorte.anticipos}
               onChange={(e) => setFCorte({ ...fCorte, anticipos: e.target.value })}
               className="sm:col-span-2"
@@ -667,6 +671,7 @@ export function Prestaciones() {
               type="number"
               min="2020"
               inputMode="numeric"
+              limite={{ maxEnteros: 4, maxDecimales: 0, sinNegativos: true }}
               value={fTri.anio}
               onChange={(e) => setFTri({ ...fTri, anio: e.target.value })}
             />
@@ -735,6 +740,7 @@ export function Prestaciones() {
               type="number"
               min="2020"
               inputMode="numeric"
+              limite={{ maxEnteros: 4, maxDecimales: 0, sinNegativos: true }}
               value={fInt.anio}
               onChange={(e) => setFInt({ ...fInt, anio: e.target.value })}
             />
@@ -744,6 +750,7 @@ export function Prestaciones() {
               min="1"
               max="12"
               inputMode="numeric"
+              limite={{ maxEnteros: 2, maxDecimales: 0, sinNegativos: true }}
               value={fInt.mes}
               onChange={(e) => setFInt({ ...fInt, mes: e.target.value })}
             />
@@ -753,6 +760,7 @@ export function Prestaciones() {
               min="0"
               step="0.01"
               inputMode="decimal"
+              limite={{ maxEnteros: 3, maxDecimales: 2, sinNegativos: true }}
               value={fInt.tasa}
               onChange={(e) => setFInt({ ...fInt, tasa: e.target.value })}
               required
@@ -808,6 +816,7 @@ export function Prestaciones() {
               min="0"
               step="0.01"
               inputMode="decimal"
+              limite={{ maxDecimales: 2, sinNegativos: true }}
               value={fAnt.monto}
               onChange={(e) => setFAnt({ ...fAnt, monto: e.target.value })}
               error={
@@ -835,6 +844,7 @@ export function Prestaciones() {
             />
             <Input
               label="Referencia"
+              maxLength={40}
               value={fAnt.referencia}
               onChange={(e) => setFAnt({ ...fAnt, referencia: e.target.value })}
             />
@@ -911,6 +921,7 @@ export function Prestaciones() {
               min="0"
               step="0.01"
               inputMode="decimal"
+              limite={{ maxDecimales: 2, sinNegativos: true }}
               value={fLiq.otras}
               onChange={(e) => setFLiq({ ...fLiq, otras: e.target.value })}
             />
@@ -920,6 +931,7 @@ export function Prestaciones() {
               min="0"
               step="0.01"
               inputMode="decimal"
+              limite={{ maxDecimales: 2, sinNegativos: true }}
               value={fLiq.deducciones}
               onChange={(e) => setFLiq({ ...fLiq, deducciones: e.target.value })}
             />

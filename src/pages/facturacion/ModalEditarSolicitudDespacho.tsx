@@ -246,16 +246,21 @@ export function ModalEditarSolicitudDespacho({
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Input
             label="Vehículo (placa)"
+            solo="alfanumerico"
+            maxLength={8}
             value={vehiculo}
             onChange={(e) => setVehiculo(e.target.value)}
           />
           <Input
             label="Vehículo (marca/modelo)"
+            maxLength={60}
             value={vehiculoDescripcion}
             onChange={(e) => setVehiculoDescripcion(e.target.value)}
           />
           <Input
             label="Chofer"
+            solo="letras"
+            maxLength={60}
             value={chofer}
             onChange={(e) => setChofer(e.target.value)}
           />
@@ -265,6 +270,8 @@ export function ModalEditarSolicitudDespacho({
         <div className="mt-3 grid gap-4 sm:grid-cols-3">
           <Input
             label="Ticket de romana"
+            solo="alfanumerico"
+            maxLength={20}
             value={ticket}
             onChange={(e) => setTicket(e.target.value)}
           />
@@ -273,6 +280,7 @@ export function ModalEditarSolicitudDespacho({
             type="number"
             min="0"
             inputMode="decimal"
+            limite={{ maxEnteros: 6, maxDecimales: 2, sinNegativos: true }}
             value={pesoBruto}
             onChange={(e) => setPesoBruto(e.target.value)}
           />
@@ -281,6 +289,7 @@ export function ModalEditarSolicitudDespacho({
             type="number"
             min="0"
             inputMode="decimal"
+            limite={{ maxEnteros: 6, maxDecimales: 2, sinNegativos: true }}
             hint={
               Number(pesoBruto) > Number(pesoTara)
                 ? `Neto: ${enteros(Number(pesoBruto) - Number(pesoTara))} kg`
@@ -299,12 +308,14 @@ export function ModalEditarSolicitudDespacho({
           min="0"
           step="0.01"
           inputMode="decimal"
+          limite={{ maxDecimales: 2, sinNegativos: true }}
           value={flete}
           onChange={(e) => setFlete(e.target.value)}
         />
         <Textarea
           label="Observación"
           rows={2}
+          maxLength={500}
           value={observacion}
           onChange={(e) => setObservacion(e.target.value)}
         />
@@ -348,6 +359,7 @@ export function ModalEditarSolicitudDespacho({
               <Input
                 label="Monto en $"
                 type="number"
+                limite={{ maxDecimales: 2, sinNegativos: true }}
                 value={montoUsdCombinado}
                 onChange={(e) => setMontoUsdCombinado(e.target.value)}
                 placeholder="0,00"
@@ -355,6 +367,7 @@ export function ModalEditarSolicitudDespacho({
               <Input
                 label="Monto en Bs"
                 type="number"
+                limite={{ maxDecimales: 2, sinNegativos: true }}
                 value={montoBsCombinado}
                 onChange={(e) => setMontoBsCombinado(e.target.value)}
                 placeholder="0,00"

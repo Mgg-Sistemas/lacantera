@@ -7,6 +7,7 @@ import { ErrorDeCarga } from '@/components/ui/Estado'
 import { useCuentas, useRegistrarPago } from '@/lib/api/tesoreria'
 import { useMetodosPago, nombreDe } from '@/lib/api/metodosPago'
 import { dinero } from '@/lib/formato'
+import { limiteReferencia } from '@/lib/pagos'
 
 /**
  * Lo que hace falta saber para pagar, venga de la compra o de la cola de
@@ -141,6 +142,7 @@ export function ModalRegistrarPago({
               ? 'Referencia'
               : 'Número de referencia'
           }
+          {...limiteReferencia(instruccion.metodo)}
           autoFocus
           value={referencia}
           onChange={(e) => setReferencia(e.target.value)}

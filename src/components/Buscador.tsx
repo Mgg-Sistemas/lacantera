@@ -241,6 +241,7 @@ export function Buscador() {
                   <Search className="text-ink/35 size-[18px] shrink-0" />
                   <input
                     ref={campo}
+                    maxLength={100}
                     value={texto}
                     onChange={(e) => setTexto(e.target.value)}
                     onKeyDown={(e) => {

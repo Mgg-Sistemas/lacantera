@@ -731,6 +731,7 @@ export function Solicitudes() {
             label="Motivo"
             rows={3}
             autoFocus
+            maxLength={500}
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
           />

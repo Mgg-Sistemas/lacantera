@@ -113,6 +113,7 @@ export function ConteoDeEnvases({
               min="0"
               step="1"
               inputMode="numeric"
+              limite={{ maxDecimales: 0, sinNegativos: true }}
               value={l.cantidad}
               onChange={(e) => cambiarLinea(i, { cantidad: e.target.value })}
             />
@@ -160,6 +161,7 @@ export function ConteoDeEnvases({
           min="0"
           step="0.0001"
           inputMode="decimal"
+          limite={{ maxDecimales: 4, sinNegativos: true }}
           value={sueltos}
           onChange={(e) => avisar(lineas, e.target.value)}
           hint={`Lo que quede dentro del envase empezado. Déjelo vacío si están todos llenos.`}

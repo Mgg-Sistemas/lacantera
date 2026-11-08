@@ -231,7 +231,7 @@ function ConMotivo({
         </>
       }
     >
-      <Textarea label={etiqueta} rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+      <Textarea label={etiqueta} rows={2} maxLength={500} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
       {accion.error ? <ErrorDeCarga error={accion.error} className="mt-3" /> : null}
     </Modal>
   )

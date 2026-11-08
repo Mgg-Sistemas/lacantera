@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import type { DetalleServicioItem } from '@/lib/api/pedidos'
+import { comoNumero, type LimiteNumero } from '@/lib/formato'
 import { sumaDetallePrecios } from '@/lib/servicios'
 
 /*
@@ -31,7 +32,10 @@ export function DetalleItemsEditor({
     onChange([...items, { descripcion: '', cantidad: null }])
     setAbierto(true)
   }
-  const numeroONulo = (v: string): number | null => (v === '' ? null : Number(v.replace(',', '.')))
+  const numeroONulo = (v: string, limite: LimiteNumero): number | null => {
+    const n = comoNumero(v, limite)
+    return n === '' ? null : Number(n)
+  }
 
   return (
     <div className="mt-2">
@@ -55,6 +59,7 @@ export function DetalleItemsEditor({
                 className={CAMPO}
                 placeholder="Pieza / reparación / trabajo"
                 aria-label="Pieza / reparación / trabajo"
+                maxLength={150}
                 value={it.descripcion}
                 onChange={(e) => setItem(i, { descripcion: e.target.value })}
               />
@@ -66,7 +71,7 @@ export function DetalleItemsEditor({
                 placeholder="Cant."
                 aria-label="Cantidad"
                 value={it.cantidad ?? ''}
-                onChange={(e) => setItem(i, { cantidad: numeroONulo(e.target.value) })}
+                onChange={(e) => setItem(i, { cantidad: numeroONulo(e.target.value, { maxDecimales: 4, sinNegativos: true }) })}
               />
               <input
                 className={`${CAMPO} text-right font-mono`}
@@ -77,7 +82,7 @@ export function DetalleItemsEditor({
                 aria-label="Precio"
                 title="Precio de esta pieza / trabajo (opcional). La suma alimenta el precio de la línea."
                 value={it.precio ?? ''}
-                onChange={(e) => setItem(i, { precio: numeroONulo(e.target.value) })}
+                onChange={(e) => setItem(i, { precio: numeroONulo(e.target.value, { maxDecimales: 2, sinNegativos: true }) })}
               />
               <button
                 type="button"

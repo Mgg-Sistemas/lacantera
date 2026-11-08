@@ -205,6 +205,7 @@ export function Duenos() {
               anterior, así que al corregir se enseña pero no se toca.
             */}
             <Input
+              maxLength={30}
               label="Código"
               placeholder="GOBERNACION"
               value={edicion.codigo}
@@ -223,6 +224,7 @@ export function Duenos() {
               }
             />
             <Input
+              maxLength={120}
               label="Nombre"
               placeholder="Gobernación del estado Bolívar"
               value={edicion.nombre}

@@ -419,6 +419,8 @@ export function Movimiento({
             />
           ) : null}
           <Input
+            type="number"
+            limite={{ maxDecimales: 4, sinNegativos: true }}
             label={`Cantidad (${u})`}
             inputMode="decimal"
             value={cantidadTxt}
@@ -428,6 +430,8 @@ export function Movimiento({
           {tipo === 'entrada' && !sinValor ? (
             <>
               <Input
+                type="number"
+                limite={{ maxDecimales: 4, sinNegativos: true }}
                 label="Costo unitario del proveedor"
                 inputMode="decimal"
                 value={costoTxt}
@@ -533,6 +537,7 @@ export function Movimiento({
         {/* -------------------------------------------------- motivo */}
         <div>
           <Textarea
+            maxLength={500}
             label="Motivo del movimiento *"
             rows={2}
             placeholder={`${MOTIVOS_SUGERIDOS[tipo][0]}…`}

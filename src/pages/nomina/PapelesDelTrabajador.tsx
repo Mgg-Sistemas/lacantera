@@ -295,6 +295,7 @@ function AgregarPapel({ empleadoId, onCerrar }: { empleadoId: number; onCerrar: 
           />
           <Input
             label="Nombre"
+            maxLength={120}
             value={nombreFinal}
             onChange={(e) => {
               setTocado(true)

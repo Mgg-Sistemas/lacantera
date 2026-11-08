@@ -50,6 +50,8 @@ import {
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { armarServicioDirectoPdf, montoAPagarDirecto, textoServicioDirectoPagado, textoServicioDirectoPago } from '@/lib/ficha/servicioDirecto'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
+import { comoNumero } from '@/lib/formato'
+import { CampoDocumento } from '@/components/CampoDocumento'
 import { enMayuscula } from '@/lib/texto'
 import { ModalWhatsappCompra } from '@/pages/compras/ModalWhatsappCompra'
 import { ConfirmDialog } from './Dialogos'
@@ -734,14 +736,8 @@ function CrearServicioDirectoModal({ onClose, onCreado }: { onClose: () => void;
             />
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
-              <Input label="Razón social" placeholder="Taller / razón social" value={provNombre} onChange={(e) => setProvNombre(e.target.value)} />
-              <Input
-                label="RIF"
-                sinNormalizar
-                placeholder="J-12345678-9"
-                value={provRif}
-                onChange={(e) => setProvRif(e.target.value.toUpperCase())}
-              />
+              <Input label="Razón social" placeholder="Taller / razón social" maxLength={150} value={provNombre} onChange={(e) => setProvNombre(e.target.value)} />
+              <CampoDocumento tipo="rif" label="RIF" valor={provRif} onCambiar={setProvRif} />
             </div>
           )}
         </div>
@@ -778,7 +774,7 @@ function CrearServicioDirectoModal({ onClose, onCreado }: { onClose: () => void;
             </div>
             <p className="text-ink/50 mt-1.5 text-xs">La unidad nueva queda guardada en el catálogo (Categorías → Unidad solicitante).</p>
           </div>
-          <Input label="Quién lo solicita" placeholder="Nombre de la persona" value={quien} onChange={(e) => setQuien(e.target.value)} />
+          <Input solo="letras" maxLength={80} label="Quién lo solicita" placeholder="Nombre de la persona" value={quien} onChange={(e) => setQuien(e.target.value)} />
         </div>
 
         <div>
@@ -829,6 +825,7 @@ function CrearServicioDirectoModal({ onClose, onCreado }: { onClose: () => void;
                   label={`Categoría del servicio #${idx + 1} *`}
                   list="sd-categorias"
                   placeholder="🔎 Buscá o escribí (mantenimiento de vehículos…)"
+                  maxLength={80}
                   value={l.categoria}
                   onChange={(e) => set(l.id, { categoria: e.target.value })}
                 />
@@ -839,6 +836,7 @@ function CrearServicioDirectoModal({ onClose, onCreado }: { onClose: () => void;
                     min={0}
                     step="any"
                     placeholder={agua ? 'N° de botellones/cisternas (1 = cisterna)' : 'N° de bombonas'}
+                    limite={{ maxDecimales: 0, sinNegativos: true }}
                     value={l.bombonas}
                     onChange={(e) => set(l.id, { bombonas: e.target.value })}
                   />
@@ -847,6 +845,7 @@ function CrearServicioDirectoModal({ onClose, onCreado }: { onClose: () => void;
                     label="Tipo de servicio"
                     list="sd-tipos"
                     placeholder="🔎 Elegí el tipo (caucho, aceite, pintura…)"
+                    maxLength={80}
                     value={l.tipo}
                     onChange={(e) => set(l.id, { tipo: e.target.value })}
                   />
@@ -860,6 +859,7 @@ function CrearServicioDirectoModal({ onClose, onCreado }: { onClose: () => void;
                     min={0}
                     step="any"
                     placeholder={agua ? 'Litros de cada uno' : 'Kg de cada una'}
+                    limite={{ maxDecimales: 2, sinNegativos: true }}
                     value={l.kg}
                     onChange={(e) => set(l.id, { kg: e.target.value })}
                   />
@@ -880,6 +880,7 @@ function CrearServicioDirectoModal({ onClose, onCreado }: { onClose: () => void;
                       list="sd-electro"
                       placeholder="🔎 Elegí (cocina, nevera, lavadora, microondas…)"
                       hint="Artículo electrodoméstico al que se le hace el mantenimiento."
+                      maxLength={60}
                       value={l.electro}
                       onChange={(e) => set(l.id, { electro: e.target.value })}
                     />
@@ -911,6 +912,7 @@ function CrearServicioDirectoModal({ onClose, onCreado }: { onClose: () => void;
                     type="number"
                     min={1}
                     step="any"
+                    limite={{ maxDecimales: 4, sinNegativos: true }}
                     value={l.cantidad}
                     onChange={(e) => set(l.id, { cantidad: e.target.value })}
                   />
@@ -1047,7 +1049,7 @@ function MontarServicioModal({
                         placeholder="0,00"
                         aria-label={`Monto de ${it.descripcion}`}
                         value={gastos[i]}
-                        onChange={(e) => setGastos((p) => p.map((x, k) => (k === i ? e.target.value : x)))}
+                        onChange={(e) => setGastos((p) => p.map((x, k) => (k === i ? comoNumero(e.target.value, { maxDecimales: 2, sinNegativos: true }) : x)))}
                       />
                     </td>
                     <td className="px-3 py-2 text-right font-mono">{money(cu)}</td>

@@ -155,6 +155,7 @@ export function HistoricoSolicitudes({
           sinNormalizar
           type="search"
           placeholder="Número, nota, material, destino…"
+          maxLength={100}
           value={texto}
           onChange={(e) => {
             setTexto(e.target.value)
@@ -350,6 +351,7 @@ export function HistoricoTraslados({
           sinNormalizar
           type="search"
           placeholder="Número, artículo, origen, destino…"
+          maxLength={100}
           value={texto}
           onChange={(e) => {
             setTexto(e.target.value)

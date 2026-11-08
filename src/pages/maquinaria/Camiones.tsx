@@ -528,8 +528,10 @@ export function ModalCamion({
         <Input
           label="Placa"
           placeholder="A12BC3D"
+          solo="alfanumerico"
+          maxLength={8}
           value={f.placa}
-          onChange={(e) => cambiar('placa', e.target.value)}
+          onChange={(e) => cambiar('placa', e.target.value.replace(/\s/g, ''))}
         />
         <Select
           label="Tipo"
@@ -541,6 +543,7 @@ export function ModalCamion({
           <Input
             label="Descripción"
             placeholder="Volteo Toronto del patio"
+            maxLength={80}
             value={f.descripcion}
             onChange={(e) => cambiar('descripcion', e.target.value)}
           />
@@ -585,6 +588,7 @@ export function ModalCamion({
           <Input
             label="Nombre de la empresa nueva"
             placeholder="Nombre de la empresa o del dueño"
+            maxLength={120}
             value={f.transportista}
             onChange={(e) => cambiar('transportista', e.target.value)}
             error={yaExiste ? `Ya está cargada como «${yaExiste}»: selecciónela de la lista.` : undefined}
@@ -624,6 +628,7 @@ export function ModalCamion({
           step="0.01"
           inputMode="decimal"
           placeholder="18"
+          limite={{ maxEnteros: 4, maxDecimales: 2, sinNegativos: true }}
           value={f.capacidad_m3}
           disabled={duenoBloqueado}
           onChange={(e) => cambiar('capacidad_m3', e.target.value)}
@@ -637,6 +642,7 @@ export function ModalCamion({
           step="0.01"
           inputMode="decimal"
           placeholder="Si se pesó"
+          limite={{ maxEnteros: 4, maxDecimales: 2, sinNegativos: true }}
           value={f.capacidad_ton}
           onChange={(e) => cambiar('capacidad_ton', e.target.value)}
         />
@@ -648,6 +654,7 @@ export function ModalCamion({
             min="0.01"
             step="0.01"
             inputMode="decimal"
+            limite={{ maxEnteros: 4, maxDecimales: 2, sinNegativos: true }}
             value={f.carga_util_m3}
             disabled={!permisos.cargaUtil}
             onChange={(e) => cambiar('carga_util_m3', e.target.value)}

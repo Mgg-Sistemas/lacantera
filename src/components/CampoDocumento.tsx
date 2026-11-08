@@ -5,6 +5,7 @@ import {
   documentoCanonico,
   esCedula,
   identificacionCanonica,
+  CIFRAS_DOCUMENTO,
   NATURALEZA_DEL_DOCUMENTO,
   soloDocumento,
 } from '@/lib/formato'
@@ -122,7 +123,7 @@ export function CampoDocumento({
         signifique algo, asi que dejarlas entrar solo sirve para que el error se
         descubra al guardar. La letra sube a mayuscula segun se escribe.
       */
-      onChange={(e) => onCambiar(soloDocumento(e.target.value))}
+      onChange={(e) => onCambiar(soloDocumento(e.target.value, CIFRAS_DOCUMENTO[tipo]))}
       error={error}
       hint={
         hint ??

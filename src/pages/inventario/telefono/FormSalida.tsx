@@ -253,6 +253,7 @@ export function FormSalida({
       <LineasMateriales lineas={lineas} productos={productos} onCambiar={setLineas} />
 
       <Textarea
+        maxLength={500}
         label="Motivo"
         rows={2}
         placeholder="Para qué sale, a quién, a qué equipo…"
