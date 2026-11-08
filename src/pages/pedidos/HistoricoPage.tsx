@@ -204,7 +204,6 @@ function HistoricoPedidos() {
   const chips: { value: ChipEstado; label: string }[] = [
     ...(extra ? [{ value: extra as ChipEstado, label: `${ESTADOS[extra].label} (en curso)` }] : []),
     ...CERRADOS.map((e) => ({ value: e as ChipEstado, label: ESTADOS[e].label })),
-    { value: 'servicio_directo', label: '🔧 Servicio directo' },
   ]
 
   const [texto, setTexto] = useState('')

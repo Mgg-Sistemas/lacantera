@@ -702,13 +702,8 @@ export const navigation: NavSection[] = [
             «Compras anteriores», y `/app/compras` lleva aquí.
           */
           { label: 'Pedidos / Compras', to: '/app/pedidos' },
-          /*
-            La compra directa es entrada propia y no un boton dentro del
-            tablero, porque no es un paso del camino de un pedido: es otro
-            camino. Quien llega aqui viene con una factura en la mano, no con
-            una necesidad que plantear.
-          */
-          { label: 'Compra directa', to: '/app/compras/directa' },
+          // «Compra directa» salió del menú el 08/11/2026: estaba dos veces.
+          // Se entra por la pestaña «🛒 Compra Directa» de Pedidos / Compras.
           // El historial de lo comprado así. Entra el 24/09/2026: la pantalla
           // de al lado solo registraba, y cuarenta y cinco compras no tenían
           // dónde repasarse.
