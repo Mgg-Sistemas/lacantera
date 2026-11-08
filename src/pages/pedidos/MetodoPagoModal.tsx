@@ -14,6 +14,7 @@ import {
   subirArchivoPago,
   useCorregirMetodoPago,
   useCuentasProveedor,
+  useDatosFiscalesPago,
   useDocumentoRetenciones,
   useIndicarMetodoPago,
   useMetodoPagoServicioDirecto,
@@ -24,24 +25,30 @@ import {
   type ServicioDirecto,
 } from '@/lib/api/pedidos'
 import { money } from '@/lib/pedidos'
-import { infoModalidad, r2 } from '@/lib/ofertas'
+import { infoModalidad, moneyBs, r2 } from '@/lib/ofertas'
+import { useTasaVigente } from '@/lib/api/tasas'
 import {
   BASE_RETENCION,
   METODOS_PAGO,
   TIPOS_RETENCION,
   basesPago,
   calcularRetenciones,
+  conDatosFiscales,
+  datosFiscalesDe,
+  datosFiscalesParaEnviar,
   errorRetenciones,
   labelMetodoPago,
   leerMonto,
   monedaPorMetodo,
   montoAPagar,
+  ocSinIva,
   requiereDatos,
   resumenDatosPago,
   retencionesAForm,
   retencionesParaEnviar,
   totalRetenciones,
   validarDatosPago,
+  type DatosFiscales,
   type DatosPago,
   type RetencionesForm,
 } from '@/lib/pagos'
@@ -175,6 +182,10 @@ export function CamposDatosPago({
  * El documento y las retenciones: Factura o Nota de entrega; con Factura,
  * IVA, ISLR, IGTF e ISAE, cada una en % o en monto, y el resumen con el monto
  * a pagar. Lo usan el método de pago y «🧾 Documento y retenciones».
+ *
+ * 08/11/2026 (la dueña): si la OC no trae IVA se pide el «IVA de la factura»
+ * (se suma al total y es la base de la retención de IVA), y cada retención se
+ * paga en $ o en Bs a la tasa BCV. El monto a pagar sigue en $.
  */
 export function DocumentoYRetenciones({
   orden: o,
@@ -182,6 +193,8 @@ export function DocumentoYRetenciones({
   onDoc,
   form,
   onForm,
+  fiscal,
+  onFiscal,
   descuento = 0,
   deQue = 'la OC',
 }: {
@@ -190,13 +203,21 @@ export function DocumentoYRetenciones({
   onDoc: (d: 'factura' | 'nota_entrega') => void
   form: RetencionesForm
   onForm: (f: RetencionesForm) => void
+  /** El IVA de la factura y la tasa BCV. Sin esto (servicio directo) no se piden. */
+  fiscal?: DatosFiscales
+  onFiscal?: (f: DatosFiscales) => void
   descuento?: number
   /** «la OC» o «el servicio»: de qué es el total. */
   deQue?: string
 }) {
-  const rets = useMemo(() => (doc === 'factura' ? calcularRetenciones(o, form) : []), [o, form, doc])
-  const b = basesPago(o)
+  const oc = useMemo(() => (fiscal ? conDatosFiscales(o, doc, fiscal) : o), [o, doc, fiscal])
+  const rets = useMemo(() => (doc === 'factura' ? calcularRetenciones(oc, form) : []), [oc, form, doc])
+  const b = basesPago(oc)
   const totalRet = totalRetenciones(rets)
+  const pideIva = !!fiscal && !!onFiscal && doc === 'factura' && ocSinIva(o)
+  const hayBs = TIPOS_RETENCION.some((t) => form[t].moneda === 'Bs' && form[t].valor.trim() !== '')
+  const tasa = Number(oc.retenciones_tasa) || 0
+  const baseImponible = basesPago(o).base
   return (
     <>
       <div className="border-hairline mb-3 rounded-[8px] border px-3 py-2.5">
@@ -222,11 +243,42 @@ export function DocumentoYRetenciones({
         </div>
       </div>
 
+      {pideIva && fiscal && onFiscal ? (
+        <div className="border-warning/60 mb-3 rounded-[8px] border px-3 py-2.5">
+          <div className="text-ink/85 text-sm font-semibold">IVA de la factura</div>
+          <p className="text-ink/55 mb-2 text-xs">
+            {deQue === 'la OC' ? 'La OC' : 'El servicio'} se cotizó sin IVA. Indicá el IVA que trae la factura: se suma al total y
+            la retención de IVA se calcula sobre él.
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-ink/55 text-sm">$</span>
+            <input
+              className={cn(CAMPO, 'w-32 text-right font-mono')}
+              inputMode="decimal"
+              aria-label="IVA de la factura en dólares"
+              placeholder="0,00"
+              value={fiscal.ivaFactura}
+              onChange={(e) => onFiscal({ ...fiscal, ivaFactura: e.target.value })}
+            />
+            {baseImponible > 0 ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onFiscal({ ...fiscal, ivaFactura: String(r2(baseImponible * 0.16)) })}
+              >
+                16 % de la base ({money(r2(baseImponible * 0.16))})
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
       {doc === 'factura' ? (
         <div className="border-hairline mb-3 rounded-[8px] border px-3 py-2.5">
           <div className="text-ink/85 text-sm font-semibold">Retenciones</div>
           <p className="text-ink/55 mb-2 text-xs">
-            Indicá cada retención en % o en monto; las que no retienen se dejan en blanco. Se restan del total de {deQue}.
+            Indicá cada retención en % o en monto, y si se paga en $ o en Bs; las que no retienen se dejan en blanco. Se restan
+            del total de {deQue}.
           </p>
           <div className="space-y-2">
             {TIPOS_RETENCION.map((tipo) => {
@@ -252,22 +304,70 @@ export function DocumentoYRetenciones({
                     value={r.valor}
                     onChange={(e) => onForm({ ...form, [tipo]: { ...r, valor: e.target.value } })}
                   />
+                  {fiscal ? (
+                    <select
+                      className={CAMPO}
+                      aria-label={`Retención de ${tipo}: se paga en dólares o en bolívares`}
+                      value={r.moneda}
+                      onChange={(e) => onForm({ ...form, [tipo]: { ...r, moneda: e.target.value as 'USD' | 'Bs' } })}
+                    >
+                      <option value="USD">Paga en $</option>
+                      <option value="Bs">Paga en Bs</option>
+                    </select>
+                  ) : null}
                   <span className="text-ink/45 text-xs">
                     {r.modo === 'porcentaje'
                       ? `${BASE_RETENCION[tipo]} (${money(tipo === 'IVA' ? b.iva : tipo === 'IGTF' ? b.total : b.base)})`
                       : ''}
                   </span>
-                  {calc ? <span className="text-danger ml-auto font-mono text-sm">− {money(calc.monto)}</span> : null}
+                  {calc ? (
+                    <span className="text-danger ml-auto text-right font-mono text-sm">
+                      − {money(calc.monto)}
+                      {calc.moneda === 'Bs' && calc.monto_bs ? (
+                        <span className="text-ink/60 block text-xs">{moneyBs(calc.monto_bs)}</span>
+                      ) : null}
+                    </span>
+                  ) : null}
                 </div>
               )
             })}
           </div>
+
+          {fiscal && onFiscal && hayBs ? (
+            <div className="border-hairline mt-3 flex flex-wrap items-center gap-2 border-t pt-2">
+              <span className="text-sm font-semibold">Tasa BCV</span>
+              <input
+                className={cn(CAMPO, 'w-32 text-right font-mono')}
+                inputMode="decimal"
+                aria-label="Tasa BCV en bolívares por dólar"
+                placeholder="Bs por $"
+                value={fiscal.tasa}
+                onChange={(e) => onFiscal({ ...fiscal, tasa: e.target.value })}
+              />
+              <span className="text-ink/45 text-xs">Bs por $ · con ella se calculan las retenciones que se pagan en Bs.</span>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
       <div className="border-royal-600/40 bg-royal-600/5 mb-3 rounded-[8px] border px-3 py-2 text-sm">
+        {b.ivaFactura > 0 ? (
+          <>
+            <div className="flex justify-between">
+              <span>{deQue === 'la OC' ? 'Total OC (sin IVA)' : 'Total del servicio (sin IVA)'}</span>
+              <strong className="font-mono">{money(r2(b.total - b.ivaFactura))}</strong>
+            </div>
+            <div className="flex justify-between">
+              <span>+ IVA de la factura</span>
+              <strong className="font-mono">+ {money(b.ivaFactura)}</strong>
+            </div>
+          </>
+        ) : null}
         <div className="flex justify-between">
-          <span>{deQue === 'la OC' ? 'Total OC' : 'Total del servicio'}</span>
+          <span>
+            {deQue === 'la OC' ? 'Total OC' : 'Total del servicio'}
+            {b.ivaFactura > 0 || b.iva > 0 ? ' con impuestos' : ''}
+          </span>
           <strong className="font-mono">{money(b.total)}</strong>
         </div>
         {descuento > 0 ? (
@@ -277,15 +377,24 @@ export function DocumentoYRetenciones({
           </div>
         ) : null}
         {rets.map((r) => (
-          <div key={r.tipo} className="flex justify-between">
-            <span>− Retención {r.tipo}</span>
-            <strong className="text-danger font-mono">− {money(r.monto)}</strong>
+          <div key={r.tipo} className="flex justify-between gap-2">
+            <span>
+              − Retención {r.tipo}
+              {r.moneda === 'Bs' ? ' (se paga en Bs)' : ''}
+            </span>
+            <strong className="text-danger text-right font-mono">
+              − {money(r.monto)}
+              {r.moneda === 'Bs' && r.monto_bs ? <span className="text-ink/60 block text-xs">{moneyBs(r.monto_bs)}</span> : null}
+            </strong>
           </div>
         ))}
         <div className="border-hairline mt-1 flex justify-between border-t pt-1 text-base">
           <span className="font-semibold">Monto a pagar</span>
           <strong className="text-success font-mono">{money(r2(Math.max(0, b.total - descuento - totalRet)))}</strong>
         </div>
+        {rets.some((r) => r.moneda === 'Bs') && tasa > 0 ? (
+          <p className="text-ink/50 mt-1 text-xs">Retenciones en Bs a la tasa BCV {tasa.toLocaleString('es-VE')} Bs/$.</p>
+        ) : null}
       </div>
     </>
   )
@@ -337,6 +446,10 @@ export function MetodoPagoModal({
   )
   const [doc, setDoc] = useState<'factura' | 'nota_entrega'>(o.comprobante_tipo ?? (directo ? 'factura' : 'nota_entrega'))
   const [retForm, setRetForm] = useState<RetencionesForm>(() => retencionesAForm(o.retenciones))
+  // El IVA de la factura y la tasa BCV (08/11/2026). El servicio directo no los lleva.
+  const [fiscal, setFiscal] = useTasaInicial(o, !directo)
+  const datosFiscales = useDatosFiscalesPago()
+  const oc = directo ? o : conDatosFiscales(o, doc, fiscal)
   const [qr, setQr] = useState<File | null>(null)
   const [incluyeDesc, setIncluyeDesc] = useState(false)
   const [descModo, setDescModo] = useState<'monto' | 'pct'>('monto')
@@ -358,7 +471,7 @@ export function MetodoPagoModal({
 
   const esContraEntrega = o.condiciones_pago === 'contra_entrega'
   const puedeCambiarProveedor = !directo && !corrigiendo && o.estado === 'confirmada_metodo' && !!onReabrir
-  const b = basesPago(o)
+  const b = basesPago(oc)
   const descPct = incluyeDesc && descModo === 'pct' ? Math.max(0, Math.min(100, leerMonto(descStr))) : 0
   const descNum = !incluyeDesc ? 0 : descModo === 'pct' ? r2((b.total * descPct) / 100) : Math.max(0, r2(leerMonto(descStr)))
   const descuentoActual = corrigiendo ? Number(o.descuento_pago) || 0 : descNum
@@ -388,7 +501,7 @@ export function MetodoPagoModal({
     if (esContraEntrega && !corrigiendo && !notaEntrega)
       return setError('Confirmá la Nota de entrega (verificaste lo recibido) antes de enviar a pagar.')
     if (doc === 'factura') {
-      const e = errorRetenciones(o, retForm, descuentoActual)
+      const e = errorRetenciones(oc, retForm, descuentoActual)
       if (e) return setError(e)
     }
     if (incluyeDesc && !corrigiendo) {
@@ -426,6 +539,9 @@ export function MetodoPagoModal({
               qr: subido,
               confirmo_recepcion: esContraEntrega ? notaEntrega : undefined,
             }),
+      }
+      if (!directo) {
+        await datosFiscales.mutateAsync({ id: o.id, ...datosFiscalesParaEnviar(o, doc, fiscal) })
       }
       const r = directo
         ? await metodoDirecto.mutateAsync({ id: directo.id, datos })
@@ -570,6 +686,8 @@ export function MetodoPagoModal({
         <>
           <DocumentoYRetenciones
             orden={o}
+            fiscal={directo ? undefined : fiscal}
+            onFiscal={directo ? undefined : setFiscal}
             doc={doc}
             onDoc={setDoc}
             form={retForm}
@@ -748,7 +866,7 @@ export function MetodoPagoModal({
             </label>
           ) : null}
           <p className="text-ink/50 mt-2 text-xs">
-            Monto a pagar: <strong className="font-mono">{money(montoAPagar(o, doc === 'factura' ? calcularRetenciones(o, retForm) : [], descuentoActual))}</strong>.
+            Monto a pagar: <strong className="font-mono">{money(montoAPagar(oc, doc === 'factura' ? calcularRetenciones(oc, retForm) : [], descuentoActual))}</strong>.
             Si el método es <strong>en efectivo</strong> (divisas o Bs), al marcarla pagada no se pide referencia.
           </p>
         </>
@@ -762,16 +880,19 @@ export function DocumentoRetencionesModal({ orden: o, onClose, onListo }: { orde
   const guardar = useDocumentoRetenciones()
   const [doc, setDoc] = useState<'factura' | 'nota_entrega'>(o.comprobante_tipo ?? 'factura')
   const [form, setForm] = useState<RetencionesForm>(() => retencionesAForm(o.retenciones))
+  const [fiscal, setFiscal] = useTasaInicial(o, true)
+  const datosFiscales = useDatosFiscalesPago()
   const [error, setError] = useState<string | null>(null)
   const abonado = Number(o.abonado_total) || 0
 
   async function onGuardar() {
     setError(null)
     if (doc === 'factura') {
-      const e = errorRetenciones(o, form)
+      const e = errorRetenciones(conDatosFiscales(o, doc, fiscal), form)
       if (e) return setError(e)
     }
     try {
+      await datosFiscales.mutateAsync({ id: o.id, ...datosFiscalesParaEnviar(o, doc, fiscal) })
       const r = await guardar.mutateAsync({
         id: o.id,
         comprobante_tipo: doc,
@@ -817,8 +938,37 @@ export function DocumentoRetencionesModal({ orden: o, onClose, onListo }: { orde
           <strong>Error:</strong> {error}
         </div>
       ) : null}
-      <DocumentoYRetenciones orden={o} doc={doc} onDoc={setDoc} form={form} onForm={setForm} />
+      <DocumentoYRetenciones
+        orden={o}
+        doc={doc}
+        onDoc={setDoc}
+        form={form}
+        onForm={setForm}
+        fiscal={fiscal}
+        onFiscal={setFiscal}
+      />
     </Modal>
   )
 }
 
+/**
+ * El IVA de la factura y la tasa BCV del formulario. La tasa arranca con la
+ * de la orden o, si no tiene, con la BCV vigente de hoy (se puede cambiar).
+ */
+function useTasaInicial(o: Orden, activo: boolean): [DatosFiscales, (f: DatosFiscales) => void] {
+  const [fiscal, setFiscal] = useState<DatosFiscales>(() => datosFiscalesDe(o))
+  const [tocado, setTocado] = useState(false)
+  const { data: vigente } = useTasaVigente()
+  useEffect(() => {
+    if (!activo || tocado || fiscal.tasa || !vigente) return
+    const t = Number(vigente.tasa)
+    if (t > 0) setFiscal((f) => (f.tasa ? f : { ...f, tasa: String(t) }))
+  }, [activo, tocado, fiscal.tasa, vigente])
+  return [
+    fiscal,
+    (f: DatosFiscales) => {
+      setTocado(true)
+      setFiscal(f)
+    },
+  ]
+}
