@@ -1452,6 +1452,7 @@ export function FichaTrabajador() {
             <Input
               label="Lugar"
               placeholder="Planta 01"
+              maxLength={80}
               value={inc.lugar}
               onChange={(ev) => setInc({ ...inc, lugar: ev.target.value.toUpperCase() })}
             />
@@ -1476,6 +1477,7 @@ export function FichaTrabajador() {
                     ? 'Obligatorio si duró varios días.'
                     : 'Vacío si no hubo reposo.'
                 }
+                limite={{ maxEnteros: 3, maxDecimales: 1, sinNegativos: true }}
                 value={inc.dias_reposo}
                 onChange={(ev) => setInc({ ...inc, dias_reposo: ev.target.value })}
               />

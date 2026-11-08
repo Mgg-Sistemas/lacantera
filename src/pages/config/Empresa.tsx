@@ -13,7 +13,7 @@ import {
   useGuardarEmpresa,
   type Empresa as Datos,
 } from '@/lib/api/empresa'
-import { fecha } from '@/lib/formato'
+import { CIFRAS_DOCUMENTO, comoTelefono, fecha, soloDocumento } from '@/lib/formato'
 import { enCastellano } from '@/lib/castellano'
 
 /**
@@ -85,13 +85,25 @@ export function Empresa() {
   const campo = (
     etiqueta: string,
     clave: keyof Datos,
-    extra: { tipo?: string; hint?: string; error?: string } = {},
+    extra: {
+      tipo?: string
+      hint?: string
+      error?: string
+      maxLength?: number
+      solo?: 'numeros' | 'letras' | 'alfanumerico'
+      /** Lo que se deja teclear: cédula/RIF o teléfono (08/11/2026). */
+      filtro?: (bruto: string) => string
+    } = {},
   ) => (
     <Input
       label={etiqueta}
       type={extra.tipo}
+      maxLength={extra.maxLength}
+      solo={extra.solo}
       value={(form[clave] as string | null) ?? ''}
-      onChange={(e) => cambiar({ [clave]: e.target.value } as Partial<Datos>)}
+      onChange={(e) =>
+        cambiar({ [clave]: extra.filtro ? extra.filtro(e.target.value) : e.target.value } as Partial<Datos>)
+      }
       disabled={!puedeEditarFicha}
       hint={extra.hint}
       error={extra.error}
@@ -140,24 +152,25 @@ export function Empresa() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           {campo('RIF', 'rif', {
+            filtro: (v) => soloDocumento(v, CIFRAS_DOCUMENTO.rif),
             error: form.rif && !rifValido ? 'Debe ser como J-50209170-0.' : undefined,
           })}
-          {campo('Razón social', 'razon_social')}
+          {campo('Razón social', 'razon_social', { maxLength: 120 })}
         </div>
 
         <div className="mt-4 grid gap-4">
-          {campo('Domicilio fiscal', 'domicilio_fiscal')}
+          {campo('Domicilio fiscal', 'domicilio_fiscal', { maxLength: 250 })}
         </div>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
-          {campo('Ciudad', 'ciudad')}
-          {campo('Estado', 'estado')}
-          {campo('Zona postal', 'zona_postal')}
+          {campo('Ciudad', 'ciudad', { solo: 'letras', maxLength: 60 })}
+          {campo('Estado', 'estado', { solo: 'letras', maxLength: 60 })}
+          {campo('Zona postal', 'zona_postal', { solo: 'numeros', maxLength: 4 })}
         </div>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          {campo('Teléfono', 'telefono')}
-          {campo('Correo', 'correo', { tipo: 'email' })}
+          {campo('Teléfono', 'telefono', { tipo: 'tel', filtro: comoTelefono })}
+          {campo('Correo', 'correo', { tipo: 'email', maxLength: 120 })}
         </div>
       </Card>
 
@@ -174,12 +187,12 @@ export function Empresa() {
         </div>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          {campo('N° de comprobante', 'comprobante_rif')}
-          {campo('Gerencia regional', 'gerencia_seniat')}
+          {campo('N° de comprobante', 'comprobante_rif', { solo: 'alfanumerico', maxLength: 30 })}
+          {campo('Gerencia regional', 'gerencia_seniat', { maxLength: 80 })}
         </div>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          {campo('Condición ante el IVA', 'condicion_iva')}
+          {campo('Condición ante el IVA', 'condicion_iva', { maxLength: 60 })}
           {/*
             `type="number"` no es decoracion: es lo que hace que el campo pase
             por el traductor de la casa. Sin el, teclear «16,5» daba
@@ -191,6 +204,7 @@ export function Empresa() {
             label="Retención de IVA"
             type="number"
             inputMode="decimal"
+            limite={{ maxEnteros: 3, maxDecimales: 2, sinNegativos: true }}
             value={form.retencion_iva_pct == null ? '' : String(form.retencion_iva_pct)}
             onChange={(e) => {
               const n = Number(e.target.value)
@@ -230,6 +244,7 @@ export function Empresa() {
             label="Alícuota general del IVA"
             type="number"
             inputMode="decimal"
+            limite={{ maxEnteros: 3, maxDecimales: 2, sinNegativos: true }}
             value={form.alicuota_iva_pct == null ? '' : String(form.alicuota_iva_pct)}
             onChange={(e) => {
               const n = Number(e.target.value)
@@ -266,9 +281,9 @@ export function Empresa() {
         </p>
 
         <div className="grid gap-4 sm:grid-cols-3">
-          {campo('Nombre de la imprenta', 'imprenta_nombre')}
-          {campo('RIF de la imprenta', 'imprenta_rif')}
-          {campo('N° de autorización', 'imprenta_autorizacion')}
+          {campo('Nombre de la imprenta', 'imprenta_nombre', { maxLength: 120 })}
+          {campo('RIF de la imprenta', 'imprenta_rif', { filtro: (v) => soloDocumento(v, CIFRAS_DOCUMENTO.rif) })}
+          {campo('N° de autorización', 'imprenta_autorizacion', { maxLength: 60 })}
         </div>
       </Card>
 

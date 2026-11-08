@@ -305,6 +305,7 @@ export function Tabulador() {
                 label="Cargo"
                 placeholder="Operador de trituradora"
                 hint="Es el nombre con el que las fichas se enganchan a este nivel."
+                maxLength={80}
                 value={edicion.cargo}
                 onChange={(e) => cambiar({ cargo: e.target.value })}
               />
@@ -316,6 +317,7 @@ export function Tabulador() {
                 type="number"
                 step="0.01"
                 inputMode="decimal"
+                limite={{ maxDecimales: 2, sinNegativos: true }}
                 value={edicion.sueldo_mensual}
                 onChange={(e) => cambiar({ sueldo_mensual: e.target.value })}
               />
@@ -349,6 +351,7 @@ export function Tabulador() {
               label="Orden en la lista"
               type="number"
               hint="Menor sale primero. El tabulador se lee como una escala, no en alfabético."
+              limite={{ maxEnteros: 3, maxDecimales: 0, sinNegativos: true }}
               value={edicion.orden}
               onChange={(e) => cambiar({ orden: e.target.value })}
             />

@@ -35,7 +35,7 @@ import {
   type Visitante,
 } from '@/lib/api/asistencia'
 import { bajarArchivo, escribirXlsx } from '@/lib/xlsx'
-import { fecha as fmtFecha } from '@/lib/formato'
+import { comoTelefono, fecha as fmtFecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
 /*
@@ -311,10 +311,11 @@ function CamposDeVisitante({ d, onCambio }: { d: DatosVisitante; onCambio: (d: D
         />
       ) : null}
       <div className="grid gap-4 sm:grid-cols-2">
-        <Input label="Nombre" value={d.nombre} onChange={pon('nombre')} placeholder="Nombre y apellido" />
-        <Input label="Cédula o pasaporte" value={d.documento} onChange={pon('documento')} placeholder="V-12345678" />
-        <Input label="Empresa" value={d.empresa} onChange={pon('empresa')} placeholder="De dónde viene" />
-        <Input label="Teléfono" value={d.telefono} onChange={pon('telefono')} placeholder="0414-1234567" />
+        <Input label="Nombre" solo="letras" maxLength={120} value={d.nombre} onChange={pon('nombre')} placeholder="Nombre y apellido" />
+        {/* Alfanumérico y no CampoDocumento: un pasaporte de fuera lleva letras (08/11/2026). */}
+        <Input label="Cédula o pasaporte" solo="alfanumerico" maxLength={20} value={d.documento} onChange={pon('documento')} placeholder="V-12345678" />
+        <Input label="Empresa" maxLength={120} value={d.empresa} onChange={pon('empresa')} placeholder="De dónde viene" />
+        <Input label="Teléfono" type="tel" inputMode="tel" sinNormalizar value={d.telefono} onChange={(e) => onCambio({ ...d, telefono: comoTelefono(e.target.value) })} placeholder="0414-1234567" />
       </div>
     </>
   )
@@ -422,8 +423,8 @@ function MarcarEntrada({ onCerrar }: { onCerrar: () => void }) {
           opciones={(empleados ?? []).map((e) => ({ valor: String(e.id), etiqueta: `${e.nombres} ${e.apellidos}`, detalle: e.cargo }))}
         />
         <div className="grid gap-4 sm:grid-cols-2">
-          <Input label="Motivo" value={v.motivo} onChange={pon('motivo')} placeholder="Entrega, inspección, reunión…" />
-          <Input label="Placa del vehículo" value={v.placa} onChange={pon('placa')} placeholder="Si entró con vehículo" />
+          <Input label="Motivo" maxLength={120} value={v.motivo} onChange={pon('motivo')} placeholder="Entrega, inspección, reunión…" />
+          <Input label="Placa del vehículo" solo="alfanumerico" maxLength={8} value={v.placa} onChange={pon('placa')} placeholder="Si entró con vehículo" />
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <Input label="Entrada" type="datetime-local" value={entrada} onChange={(e) => setEntrada(e.target.value)} hint="Vacía: ahora mismo, con la hora del sistema." />
@@ -496,8 +497,8 @@ function CorregirVisita({ visita, onCerrar }: { visita: Visita; onCerrar: () => 
           opciones={(empleados ?? []).map((e) => ({ valor: String(e.id), etiqueta: `${e.nombres} ${e.apellidos}`, detalle: e.cargo }))}
         />
         <div className="grid gap-4 sm:grid-cols-2">
-          <Input label="Motivo" value={v.motivo} onChange={pon('motivo')} />
-          <Input label="Placa del vehículo" value={v.placa} onChange={pon('placa')} />
+          <Input label="Motivo" maxLength={120} value={v.motivo} onChange={pon('motivo')} />
+          <Input label="Placa del vehículo" solo="alfanumerico" maxLength={8} value={v.placa} onChange={pon('placa')} />
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <Input label="Entrada" type="datetime-local" value={entrada} onChange={(e) => setEntrada(e.target.value)} />

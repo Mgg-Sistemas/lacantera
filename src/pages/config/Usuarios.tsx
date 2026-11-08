@@ -914,9 +914,11 @@ function PestanaRoles({ editable }: { editable: boolean }) {
               label="Código"
               value={edicion.codigo}
               disabled={!edicion.nuevo}
+              maxLength={40}
               onChange={(e) =>
                 cambiarRol({
-                  codigo: e.target.value.toUpperCase().replace(/\s/g, '_'),
+                  // Lo que admite la base: ^[A-Z][A-Z0-9_]{2,}$ (08/11/2026).
+                  codigo: e.target.value.toUpperCase().replace(/\s/g, '_').replace(/[^A-Z0-9_]/g, ''),
                 })
               }
               hint="Mayúsculas y guion bajo. Es el nombre interno y no se puede cambiar después."
@@ -924,6 +926,7 @@ function PestanaRoles({ editable }: { editable: boolean }) {
             />
             <Input
               label="Nombre"
+              maxLength={60}
               value={edicion.nombre}
               onChange={(e) => cambiarRol({ nombre: e.target.value })}
               placeholder="Supervisor de patio"
@@ -1500,14 +1503,18 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
                 disabled={!edicion.nuevo}
                 autoCapitalize="none"
                 spellCheck={false}
+                maxLength={32}
                 onChange={(e) =>
-                  cambiar({ usuario: e.target.value.toLowerCase().trim() })
+                  // Solo lo que acepta la base: ^[a-z0-9._-]{3,32}$ (08/11/2026).
+                  cambiar({ usuario: e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, '') })
                 }
                 hint={edicion.nuevo ? 'De 3 a 32 caracteres: letras, números, punto y guion.' : undefined}
                 placeholder="p.ramirez"
               />
               <Input
                 label="Nombre y apellido"
+                solo="letras"
+                maxLength={120}
                 value={edicion.nombre}
                 onChange={(e) => cambiar({ nombre: e.target.value })}
                 placeholder="Pedro Ramírez"
@@ -1519,6 +1526,7 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
                 label="Clave inicial"
                 value={edicion.clave}
                 revealable
+                maxLength={72}
                 onChange={(e) => cambiar({ clave: e.target.value })}
                 hint="Mínimo 8 caracteres. Désela en persona y que la cambie."
               />
@@ -1527,6 +1535,7 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
             <div className="grid gap-4 sm:grid-cols-3">
               <Input
                 label="Cargo"
+                maxLength={80}
                 value={edicion.cargo}
                 onChange={(e) => cambiar({ cargo: e.target.value })}
                 placeholder="Jefe de taller"
@@ -1620,6 +1629,7 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
               label="Clave nueva"
               value={clave.valor}
               revealable
+              maxLength={72}
               onChange={(e) => setClave((v) => (v ? { ...v, valor: e.target.value } : v))}
               hint="Mínimo 8 caracteres."
             />

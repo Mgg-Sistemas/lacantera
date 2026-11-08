@@ -401,6 +401,7 @@ export function Entregar() {
                           max={a.disponibles}
                           inputMode="decimal"
                           className="w-28"
+                          limite={{ maxDecimales: 2, sinNegativos: true }}
                           value={cuantas[a.articulo_id] ?? ''}
                           onChange={(e) =>
                             setCuantas((c) => ({ ...c, [a.articulo_id]: e.target.value }))

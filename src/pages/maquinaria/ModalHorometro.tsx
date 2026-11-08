@@ -129,6 +129,7 @@ export function ModalHorometro({
           min="0"
           step="0.01"
           inputMode="decimal"
+          limite={{ maxEnteros: 7, maxDecimales: 2, sinNegativos: true }}
           value={inicial}
           onChange={(e) => setInicial(e.target.value)}
         />
@@ -138,6 +139,7 @@ export function ModalHorometro({
           min="0"
           step="0.01"
           inputMode="decimal"
+          limite={{ maxEnteros: 7, maxDecimales: 2, sinNegativos: true }}
           value={final}
           onChange={(e) => setFinal(e.target.value)}
         />
