@@ -94,8 +94,15 @@ const Auditoria = pagina(() =>
 const Respaldo = pagina(() =>
   import('@/pages/config/Respaldo').then((m) => ({ default: m.Respaldo })),
 )
-const TableroInventario = pagina(() =>
-  import('@/pages/inventario/Tablero').then((m) => ({ default: m.TableroInventario })),
+/*
+  08/11/2026 · `/app/inventario` es la pantalla de inventario de MGG (fase 2 de
+  «Almacén e Inventario como MGG»). El Tablero de antes no se borra: su «Qué
+  hacer» y «Primera vez» quedan plegados al final de la pantalla nueva.
+*/
+const InventarioPrincipal = pagina(() =>
+  import('@/pages/inventario/InventarioPrincipal').then((m) => ({
+    default: m.InventarioPrincipal,
+  })),
 )
 const Combustible = pagina(() =>
   import('@/pages/combustible/Combustible').then((m) => ({ default: m.Combustible })),
@@ -434,7 +441,7 @@ const paginas: Record<string, ReactNode> = {
   '/app/maquinaria': <Maquinaria />,
   '/app/maquinaria/nueva': <FichaMaquina />,
   '/app/maquinaria/mantenimientos': <Mantenimientos />,
-  '/app/inventario': <TableroInventario />,
+  '/app/inventario': <InventarioPrincipal />,
   '/app/inventario/existencias': <Existencias />,
   '/app/inventario/movimientos': <Movimientos />,
   '/app/inventario/talleres': <Talleres />,
