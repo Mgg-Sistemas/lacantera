@@ -136,6 +136,8 @@ export function ModalChofer({
           <Input
             label="Nombre del chofer"
             placeholder="José Rondón"
+            solo="letras"
+            maxLength={120}
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
           />
@@ -158,6 +160,7 @@ export function ModalChofer({
         <Input
           label="Motivo"
           placeholder={esTraspaso ? 'Vacaciones, reposo, cambio de ruta' : undefined}
+          maxLength={120}
           value={motivo}
           onChange={(e) => setMotivo(e.target.value)}
         />

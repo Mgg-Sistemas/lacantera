@@ -247,6 +247,7 @@ function Entrada({
           type="number"
           min="1"
           step="1"
+          limite={{ maxEnteros: 3, maxDecimales: 0, sinNegativos: true }}
           value={dias}
           onChange={(e) => setDias(e.target.value)}
         />
@@ -489,6 +490,7 @@ function Salida({
               min="0"
               step="0.01"
               inputMode="decimal"
+              limite={{ maxDecimales: 2, sinNegativos: true }}
               value={costo}
               onChange={(e) => setCosto(e.target.value)}
               hint="Los repuestos se suman aparte, a su costo promedio."
@@ -513,6 +515,7 @@ function Salida({
             />
             <Input
               label={origenTecnico === 'INTERNO' ? 'Técnico' : 'Proveedor o taller externo'}
+              maxLength={80}
               value={tecnico}
               onChange={(e) => setTecnico(e.target.value)}
             />
@@ -532,6 +535,7 @@ function Salida({
                 min="0"
                 step="1"
                 inputMode="decimal"
+                limite={{ maxEnteros: 6, maxDecimales: 2, sinNegativos: true }}
                 value={intervaloHoras}
                 onChange={(e) => setIntervaloHoras(e.target.value)}
                 placeholder={maquina.tope_horas}
@@ -632,6 +636,7 @@ function Salida({
                       step="0.01"
                       inputMode="decimal"
                       placeholder="Cantidad"
+                      limite={{ maxDecimales: 2, sinNegativos: true }}
                       value={f.cantidad}
                       onChange={(e) =>
                         setFilas((v) =>

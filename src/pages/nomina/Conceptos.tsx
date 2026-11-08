@@ -254,6 +254,7 @@ export function Conceptos() {
               label="Nombre"
               placeholder="Bono de transporte"
               hint="Es lo que va impreso en el recibo del trabajador."
+              maxLength={60}
               value={edicion.nombre}
               onChange={(e) =>
                 setEdicion((x) =>
@@ -288,8 +289,9 @@ export function Conceptos() {
                   : 'No se cambia: los montos ya cargados lo llevan.'
               }
               disabled={!edicion.esNuevo}
+              maxLength={30}
               value={edicion.codigo}
-              onChange={(e) => setEdicion((x) => (x ? { ...x, codigo: e.target.value } : x))}
+              onChange={(e) => setEdicion((x) => (x ? { ...x, codigo: e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, '') } : x))}
             />
 
             <Select
@@ -356,6 +358,7 @@ export function Conceptos() {
                 type="number"
                 min="1"
                 hint="Más bajo, más arriba."
+                limite={{ maxEnteros: 3, maxDecimales: 0, sinNegativos: true }}
                 value={edicion.orden}
                 onChange={(e) => setEdicion((x) => (x ? { ...x, orden: e.target.value } : x))}
               />
@@ -363,6 +366,7 @@ export function Conceptos() {
                 label="Base legal"
                 placeholder="LOTTT art. 104"
                 hint="Si viene de la ley, de dónde."
+                maxLength={80}
                 value={edicion.base_legal}
                 onChange={(e) => setEdicion((x) => (x ? { ...x, base_legal: e.target.value } : x))}
               />

@@ -275,6 +275,7 @@ function EditorDeRequisitos({
                 <Input
                   label="Nombre del apartado"
                   className="flex-1"
+                  maxLength={80}
                   value={texto}
                   autoFocus
                   onChange={(e) => setTexto(e.target.value)}
@@ -335,6 +336,7 @@ function EditorDeRequisitos({
                   <Input
                     label="Nombre del documento"
                     className="flex-1"
+                    maxLength={80}
                     value={texto}
                     autoFocus
                     onChange={(e) => setTexto(e.target.value)}
@@ -416,6 +418,7 @@ function EditorDeRequisitos({
                 label="Documento nuevo"
                 className="flex-1"
                 placeholder="Partida de nacimiento"
+                maxLength={80}
                 value={nuevoEn === g.titulo.id ? nuevoNombre : ''}
                 onChange={(e) => {
                   setNuevoEn(g.titulo.id)
@@ -450,6 +453,7 @@ function EditorDeRequisitos({
             label="Apartado nuevo"
             className="flex-1"
             placeholder="Documentos del vehículo"
+            maxLength={80}
             value={nuevoTitulo}
             onChange={(e) => setNuevoTitulo(e.target.value)}
           />

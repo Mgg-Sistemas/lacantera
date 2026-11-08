@@ -476,12 +476,15 @@ export function FichaMaquina() {
               <Input
                 label="Código"
                 placeholder="EXC-01"
+                solo="alfanumerico"
+                maxLength={20}
                 value={f.codigo}
                 onChange={(e) => cambiar('codigo', e.target.value)}
               />
               <Input
                 label="Nombre"
                 placeholder="Excavadora del frente norte"
+                maxLength={80}
                 value={f.nombre}
                 onChange={(e) => cambiar('nombre', e.target.value)}
               />
@@ -576,16 +579,20 @@ export function FichaMaquina() {
               ) : null}
               <Input
                 label="Marca"
+                maxLength={40}
                 value={f.marca}
                 onChange={(e) => cambiar('marca', e.target.value)}
               />
               <Input
                 label="Modelo"
+                maxLength={40}
                 value={f.modelo}
                 onChange={(e) => cambiar('modelo', e.target.value)}
               />
               <Input
                 label="Serial"
+                solo="alfanumerico"
+                maxLength={30}
                 value={f.serial}
                 onChange={(e) => cambiar('serial', e.target.value)}
               />
@@ -594,6 +601,7 @@ export function FichaMaquina() {
                 type="number"
                 min="1950"
                 max="2100"
+                limite={{ maxEnteros: 4, maxDecimales: 0, sinNegativos: true }}
                 value={f.anio}
                 onChange={(e) => cambiar('anio', e.target.value)}
               />
@@ -679,6 +687,7 @@ export function FichaMaquina() {
                 step="0.01"
                 inputMode="decimal"
                 placeholder="Litros"
+                limite={{ maxEnteros: 6, maxDecimales: 2, sinNegativos: true }}
                 value={f.capacidad_combustible}
                 onChange={(e) => cambiar('capacidad_combustible', e.target.value)}
                 hint="No se podrán despachar más litros de los que caben."
@@ -699,6 +708,7 @@ export function FichaMaquina() {
                 type="number"
                 min="1"
                 step="1"
+                limite={{ maxEnteros: 6, maxDecimales: 0, sinNegativos: true }}
                 value={f.aviso_horas}
                 onChange={(e) => cambiar('aviso_horas', e.target.value)}
               />
@@ -707,6 +717,7 @@ export function FichaMaquina() {
                 type="number"
                 min="1"
                 step="1"
+                limite={{ maxEnteros: 6, maxDecimales: 0, sinNegativos: true }}
                 value={f.alarma_horas}
                 onChange={(e) => cambiar('alarma_horas', e.target.value)}
               />
@@ -715,6 +726,7 @@ export function FichaMaquina() {
                 type="number"
                 min="1"
                 step="1"
+                limite={{ maxEnteros: 6, maxDecimales: 0, sinNegativos: true }}
                 value={f.tope_horas}
                 onChange={(e) => cambiar('tope_horas', e.target.value)}
               />
@@ -733,6 +745,7 @@ export function FichaMaquina() {
                 type="number"
                 min="1"
                 step="1"
+                limite={{ maxEnteros: 3, maxDecimales: 0, sinNegativos: true }}
                 value={f.dias_mantenimiento}
                 onChange={(e) => cambiar('dias_mantenimiento', e.target.value)}
                 hint="Se avisa cuando la máquina pasa en el taller más días de los previstos."

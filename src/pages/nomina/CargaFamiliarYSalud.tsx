@@ -21,7 +21,7 @@ import {
   type CondicionDeSalud,
   type FamiliarDeEmpleado,
 } from '@/lib/api/nomina'
-import { fecha as fmtFecha } from '@/lib/formato'
+import { CIFRAS_DOCUMENTO, fecha as fmtFecha, soloDocumento } from '@/lib/formato'
 
 /*
   LA CARGA FAMILIAR Y LA SALUD DEL TRABAJADOR
@@ -280,11 +280,15 @@ function LaCargaFamiliar({
           <div className="grid gap-4 sm:grid-cols-2">
             <Input
               label="Nombres"
+              solo="letras"
+              maxLength={60}
               value={editando.nombres}
               onChange={(e) => setEditando({ ...editando, nombres: e.target.value })}
             />
             <Input
               label="Apellidos"
+              solo="letras"
+              maxLength={60}
               value={editando.apellidos}
               onChange={(e) => setEditando({ ...editando, apellidos: e.target.value })}
             />
@@ -308,7 +312,7 @@ function LaCargaFamiliar({
               label="Cédula"
               placeholder="V-12345678"
               value={editando.cedula}
-              onChange={(e) => setEditando({ ...editando, cedula: e.target.value.toUpperCase() })}
+              onChange={(e) => setEditando({ ...editando, cedula: soloDocumento(e.target.value, CIFRAS_DOCUMENTO.cedula) })}
             />
             <label className="text-ink/70 flex cursor-pointer items-center gap-2 pb-2 text-sm select-none sm:pt-7">
               <input
@@ -512,6 +516,7 @@ function LaSalud({ empleadoId, puedeEditar }: { empleadoId: number; puedeEditar:
               <Input
                 label="Descripción"
                 placeholder="Penicilina · Asma · Hipoacusia del oído derecho"
+                maxLength={120}
                 value={editando.descripcion}
                 onChange={(e) => setEditando({ ...editando, descripcion: e.target.value })}
               />

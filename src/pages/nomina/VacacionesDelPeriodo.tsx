@@ -86,6 +86,7 @@ export function VacacionesDelPeriodo({
             label="Días"
             type="number"
             className="w-28"
+            limite={{ maxEnteros: 3, maxDecimales: 0, sinNegativos: true }}
             value={dias}
             onChange={(e) => setDias(e.target.value)}
           />

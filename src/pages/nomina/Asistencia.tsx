@@ -42,6 +42,9 @@ const CAMPOS = [
   { clave: 'descansos', columna: 'dias_descanso_trabajados', etiqueta: 'Descansos trab.' },
 ] as const
 
+/** Horas y días de la rejilla: la base los guarda en numeric(6,2), sin negativos (08/11/2026). */
+const LIMITE_NOVEDAD = { maxEnteros: 4, maxDecimales: 2, sinNegativos: true }
+
 /*
   Las dos casillas de faltas salieron de esta rejilla.
 
@@ -343,6 +346,7 @@ function DiasDelPeriodo({
                         </span>
                         <input
                           className="border-hairline text-ink/80 placeholder:text-ink/30 min-w-0 flex-1 rounded-[6px] border bg-transparent px-2.5 py-1 text-sm"
+                          maxLength={120}
                           placeholder="Por qué faltó"
                           defaultValue={f.motivo ?? ''}
                           disabled={!editable}
@@ -672,7 +676,7 @@ export function Asistencia() {
                             inputMode="decimal"
                             disabled={!abierto || !puedeRRHH}
                             value={deNovedad(e.id, c.clave)}
-                            onChange={(ev) => cambiar(e.id, c.clave, comoNumero(ev.target.value))}
+                            onChange={(ev) => cambiar(e.id, c.clave, comoNumero(ev.target.value, LIMITE_NOVEDAD))}
                             placeholder="0"
                             className="border-hairline bg-canvas text-ink/85 tabular focus:border-royal-500 w-16 rounded-[4px] border px-2 py-1 text-center text-sm outline-none disabled:opacity-50"
                           />
@@ -784,6 +788,7 @@ export function Asistencia() {
                 type="number"
                 step="0.01"
                 inputMode="decimal"
+                limite={{ maxDecimales: 2, sinNegativos: true }}
                 value={nuevoMonto.monto}
                 onChange={(e) => setNuevoMonto((n) => ({ ...n, monto: e.target.value }))}
               />
@@ -825,6 +830,7 @@ export function Asistencia() {
             <Input
               label="Nota"
               placeholder="Aparece en el recibo"
+              maxLength={120}
               value={nuevoMonto.nota}
               onChange={(e) => setNuevoMonto((n) => ({ ...n, nota: e.target.value }))}
             />

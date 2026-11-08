@@ -106,6 +106,8 @@ function Choferes({ filtro, puedeEditar }: { filtro: string; puedeEditar: boolea
         <div className="border-hairline rounded-card mb-4 grid gap-3 border border-dashed p-3 sm:grid-cols-[2fr_1fr_auto]">
           <Input
             label="Nombre del chofer"
+            solo="letras"
+            maxLength={120}
             value={editando.nombre ?? ''}
             onChange={(e) => setEditando({ ...editando, nombre: e.target.value })}
           />
@@ -201,13 +203,16 @@ function Vehiculos({ filtro, puedeEditar }: { filtro: string; puedeEditar: boole
         <div className="border-hairline rounded-card mb-4 grid gap-3 border border-dashed p-3 sm:grid-cols-[2fr_1fr_auto]">
           <Input
             label="Vehículo (marca/modelo)"
+            maxLength={80}
             value={editando.descripcion ?? ''}
             onChange={(e) => setEditando({ ...editando, descripcion: e.target.value })}
           />
           <Input
             label="Placa"
+            solo="alfanumerico"
+            maxLength={8}
             value={editando.placa ?? ''}
-            onChange={(e) => setEditando({ ...editando, placa: e.target.value })}
+            onChange={(e) => setEditando({ ...editando, placa: e.target.value.replace(/[\s-]/g, '') })}
           />
           <div className="flex items-end gap-2">
             <Button variant="ghost" size="sm" onClick={() => setEditando(null)}>

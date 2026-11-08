@@ -255,11 +255,15 @@ export function FormularioTrabajador() {
                   />
                   <Input
                     label="Nombres"
+                    solo="letras"
+                    maxLength={60}
                     value={f.nombres}
                     onChange={(e) => cambiar({ nombres: e.target.value })}
                   />
                   <Input
                     label="Apellidos"
+                    solo="letras"
+                    maxLength={60}
                     value={f.apellidos}
                     onChange={(e) => cambiar({ apellidos: e.target.value })}
                   />
@@ -286,6 +290,8 @@ export function FormularioTrabajador() {
                   <Input
                     label="Nacionalidad"
                     placeholder="Venezolana"
+                    solo="letras"
+                    maxLength={40}
                     value={f.nacionalidad}
                     onChange={(e) => cambiar({ nacionalidad: e.target.value.toUpperCase() })}
                   />
@@ -307,13 +313,14 @@ export function FormularioTrabajador() {
                   <Input
                     label="Contacto de emergencia"
                     placeholder="Marta Arias, esposa"
+                    maxLength={120}
                     value={f.contacto_emergencia}
                     onChange={(e) => cambiar({ contacto_emergencia: e.target.value })}
                   />
-                  <Input
+                  <CampoTelefono
                     label="Teléfono de emergencia"
-                    value={f.telefono_emergencia}
-                    onChange={(e) => cambiar({ telefono_emergencia: e.target.value })}
+                    valor={f.telefono_emergencia}
+                    onCambiar={(v) => cambiar({ telefono_emergencia: v })}
                   />
                 </div>
 
@@ -378,6 +385,7 @@ export function FormularioTrabajador() {
                       placeholder="Operador de trituradora"
                       hint={f.tabulador_id ? 'Lo pone el tabulador.' : undefined}
                       disabled={Boolean(f.tabulador_id)}
+                      maxLength={80}
                       value={f.cargo}
                       onChange={(e) => cambiar({ cargo: e.target.value })}
                     />
@@ -428,6 +436,7 @@ export function FormularioTrabajador() {
                   <Input
                     label="Departamento o frente"
                     placeholder="Planta"
+                    maxLength={60}
                     value={f.departamento}
                     onChange={(e) => cambiar({ departamento: e.target.value })}
                   />
@@ -454,6 +463,7 @@ export function FormularioTrabajador() {
                     type="number"
                     placeholder="30"
                     hint="Vacío usa el mínimo legal de 30 días."
+                    limite={{ maxEnteros: 3, maxDecimales: 0, sinNegativos: true }}
                     value={f.dias_utilidades}
                     onChange={(e) => cambiar({ dias_utilidades: e.target.value })}
                   />
@@ -482,11 +492,13 @@ export function FormularioTrabajador() {
                     />
                     <Input
                       label="Última empresa donde trabajó"
+                      maxLength={120}
                       value={f.experiencia_empresa}
                       onChange={(e) => cambiar({ experiencia_empresa: e.target.value })}
                     />
                     <Input
                       label="Cargo desempeñado"
+                      maxLength={80}
                       value={f.experiencia_cargo}
                       onChange={(e) => cambiar({ experiencia_cargo: e.target.value })}
                     />
@@ -495,11 +507,13 @@ export function FormularioTrabajador() {
                     <Input
                       label="Tiempo en el cargo"
                       placeholder="2 años"
+                      maxLength={40}
                       value={f.experiencia_tiempo}
                       onChange={(e) => cambiar({ experiencia_tiempo: e.target.value })}
                     />
                     <Input
                       label="Motivo de retiro"
+                      maxLength={120}
                       value={f.experiencia_motivo_retiro}
                       onChange={(e) => cambiar({ experiencia_motivo_retiro: e.target.value })}
                     />
@@ -528,6 +542,7 @@ export function FormularioTrabajador() {
                       type="number"
                       step="0.01"
                       inputMode="decimal"
+                      limite={{ maxDecimales: 2, sinNegativos: true }}
                       /*
                         Este renglón es el que provocó el reclamo de los 267,17 $: se
                         escribía 500 creyendo que la quincena daría 250, y daba 267
@@ -575,6 +590,8 @@ export function FormularioTrabajador() {
                       />
                       <Input
                         label="Número de cuenta"
+                        solo="numeros"
+                        maxLength={20}
                         value={f.numero_cuenta}
                         onChange={(e) => cambiar({ numero_cuenta: e.target.value })}
                       />
@@ -600,10 +617,10 @@ export function FormularioTrabajador() {
                         onChange={(e) => cambiar({ banco: e.target.value })}
                         opciones={BANCOS.map((b) => ({ valor: b, etiqueta: b }))}
                       />
-                      <Input
+                      <CampoTelefono
                         label="Teléfono del pago móvil"
-                        value={f.telefono_pago}
-                        onChange={(e) => cambiar({ telefono_pago: e.target.value })}
+                        valor={f.telefono_pago}
+                        onCambiar={(v) => cambiar({ telefono_pago: v })}
                       />
                     </>
                   ) : null}

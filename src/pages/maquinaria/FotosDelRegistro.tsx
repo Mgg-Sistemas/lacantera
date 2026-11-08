@@ -285,6 +285,7 @@ export function FotosDelRegistro({
             <Input
               label="Descripción"
               placeholder="El golpe del guardafango derecho"
+              maxLength={120}
               value={nota}
               onChange={(e) => setNota(e.target.value)}
             />
