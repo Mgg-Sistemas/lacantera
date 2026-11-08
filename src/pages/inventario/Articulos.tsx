@@ -1114,6 +1114,28 @@ export function Articulos() {
 // Exportada el 08/11/2026: «⚙ Categorías» de la pantalla de inventario nueva
 // abre esta misma ventana, sin salir de allí.
 export function Categorias({ onCerrar }: { onCerrar: () => void }) {
+  return (
+    <Modal
+      abierto
+      onCerrar={onCerrar}
+      ancho="lg"
+      titulo="Categorías del catálogo"
+      descripcion="Clasifican los artículos y deciden con qué letras empiezan sus códigos. Las del sistema no se eliminan."
+      acciones={<Button onClick={onCerrar}>Listo</Button>}
+    >
+      <GestionDeCategorias />
+    </Modal>
+  )
+}
+
+/*
+  EL CONTENIDO DE «CATEGORÍAS», SIN SU VENTANA (08/11/2026).
+
+  Lo usa también «⚙ Categorías y medidas» de la pantalla principal de
+  inventario (fase 4 de «Almacén e Inventario como MGG»), dentro de su pestaña
+  «Categorías».
+*/
+export function GestionDeCategorias() {
   const categorias = useCategoriasDeInventario()
   const crearCategoria = useCrearCategoriaDeArticulo()
   const eliminarCategoria = useEliminarCategoriaDeArticulo()
@@ -1140,90 +1162,81 @@ export function Categorias({ onCerrar }: { onCerrar: () => void }) {
   }
 
   return (
-    <Modal
-      abierto
-      onCerrar={onCerrar}
-      ancho="lg"
-      titulo="Categorías del catálogo"
-      descripcion="Clasifican los artículos y deciden con qué letras empiezan sus códigos. Las del sistema no se eliminan."
-      acciones={<Button onClick={onCerrar}>Listo</Button>}
-    >
-      <div className="space-y-4">
-        <div className="grid gap-2 sm:grid-cols-[1fr_8rem_auto]">
-          <Input
-            label="Nueva categoría"
-            placeholder="Material médico"
-            value={etiqueta}
-            onChange={(e) => setEtiqueta(e.target.value)}
-          />
-          <Input
-            label="Prefijo"
-            placeholder={prefijoPropuesto || 'VIV'}
-            hint="Con él empiezan sus códigos."
-            value={prefijo}
-            onChange={(e) => setPrefijo(e.target.value.toUpperCase())}
-          />
-          <div className="flex items-start pt-6">
-            <Button
-              icon={<Plus />}
-              disabled={etiqueta.trim().length < 3 || crearCategoria.isPending}
-              onClick={() => void crear()}
-            >
-              {crearCategoria.isPending ? 'Creando…' : 'Crear'}
-            </Button>
-          </div>
+    <div className="space-y-4">
+      <div className="grid gap-2 sm:grid-cols-[1fr_8rem_auto]">
+        <Input
+          label="Nueva categoría"
+          placeholder="Material médico"
+          value={etiqueta}
+          onChange={(e) => setEtiqueta(e.target.value)}
+        />
+        <Input
+          label="Prefijo"
+          placeholder={prefijoPropuesto || 'VIV'}
+          hint="Con él empiezan sus códigos."
+          value={prefijo}
+          onChange={(e) => setPrefijo(e.target.value.toUpperCase())}
+        />
+        <div className="flex items-start pt-6">
+          <Button
+            icon={<Plus />}
+            disabled={etiqueta.trim().length < 3 || crearCategoria.isPending}
+            onClick={() => void crear()}
+          >
+            {crearCategoria.isPending ? 'Creando…' : 'Crear'}
+          </Button>
         </div>
-
-        {crearCategoria.error ? <ErrorDeCarga error={crearCategoria.error} /> : null}
-        {eliminarCategoria.error ? <ErrorDeCarga error={eliminarCategoria.error} /> : null}
-        {marcarCocina.error ? <ErrorDeCarga error={marcarCocina.error} /> : null}
-
-        {categorias.isPending ? <Cargando /> : null}
-        {categorias.error ? <ErrorDeCarga error={categorias.error} /> : null}
-
-        <ul className="divide-hairline border-hairline divide-y rounded-card border">
-          {(categorias.data ?? []).map((c) => (
-            <li key={c.codigo} className="flex items-center gap-3 px-3 py-2">
-              <div className="min-w-0 flex-1">
-                <p className="text-ink/85 text-sm">{c.etiqueta}</p>
-                <p className="text-ink/40 font-mono text-xs">{c.codigo}</p>
-              </div>
-              <span className="tabular text-ink/60 font-mono text-xs">{c.prefijo}-…</span>
-              {/*
-                La casilla que decide qué puede consumir la cocina: con ella
-                marcada, los artículos de la categoría entran a Servir comida y
-                a la lista del mercado, y la base los acepta (17/10/2026).
-              */}
-              <Interruptor
-                encendido={c.de_cocina}
-                deshabilitado={marcarCocina.isPending}
-                onCambio={(v) => marcarCocina.mutate({ codigo: c.codigo, de_cocina: v })}
-                etiqueta="Cocina"
-              />
-              {c.de_sistema ? (
-                <Chip tone="neutral">Del sistema</Chip>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-danger"
-                  disabled={eliminarCategoria.isPending}
-                  onClick={() => eliminarCategoria.mutate(c.codigo)}
-                >
-                  Eliminar
-                </Button>
-              )}
-            </li>
-          ))}
-        </ul>
-
-        <p className="text-ink/45 text-xs">
-          La categoría nueva aparece de inmediato en los formularios y en la planilla de carga. Solo se
-          elimina la que ningún artículo usa. El interruptor «Cocina» decide si sus artículos se
-          pueden servir en comidas y entran a la lista del mercado.
-        </p>
       </div>
-    </Modal>
+
+      {crearCategoria.error ? <ErrorDeCarga error={crearCategoria.error} /> : null}
+      {eliminarCategoria.error ? <ErrorDeCarga error={eliminarCategoria.error} /> : null}
+      {marcarCocina.error ? <ErrorDeCarga error={marcarCocina.error} /> : null}
+
+      {categorias.isPending ? <Cargando /> : null}
+      {categorias.error ? <ErrorDeCarga error={categorias.error} /> : null}
+
+      <ul className="divide-hairline border-hairline divide-y rounded-card border">
+        {(categorias.data ?? []).map((c) => (
+          <li key={c.codigo} className="flex items-center gap-3 px-3 py-2">
+            <div className="min-w-0 flex-1">
+              <p className="text-ink/85 text-sm">{c.etiqueta}</p>
+              <p className="text-ink/40 font-mono text-xs">{c.codigo}</p>
+            </div>
+            <span className="tabular text-ink/60 font-mono text-xs">{c.prefijo}-…</span>
+            {/*
+              La casilla que decide qué puede consumir la cocina: con ella
+              marcada, los artículos de la categoría entran a Servir comida y
+              a la lista del mercado, y la base los acepta (17/10/2026).
+            */}
+            <Interruptor
+              encendido={c.de_cocina}
+              deshabilitado={marcarCocina.isPending}
+              onCambio={(v) => marcarCocina.mutate({ codigo: c.codigo, de_cocina: v })}
+              etiqueta="Cocina"
+            />
+            {c.de_sistema ? (
+              <Chip tone="neutral">Del sistema</Chip>
+            ) : (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-danger"
+                disabled={eliminarCategoria.isPending}
+                onClick={() => eliminarCategoria.mutate(c.codigo)}
+              >
+                Eliminar
+              </Button>
+            )}
+          </li>
+        ))}
+      </ul>
+
+      <p className="text-ink/45 text-xs">
+        La categoría nueva aparece de inmediato en los formularios y en la planilla de carga. Solo se
+        elimina la que ningún artículo usa. El interruptor «Cocina» decide si sus artículos se
+        pueden servir en comidas y entran a la lista del mercado.
+      </p>
+    </div>
   )
 }
 
