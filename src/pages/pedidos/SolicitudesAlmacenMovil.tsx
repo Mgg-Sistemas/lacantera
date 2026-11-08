@@ -6,7 +6,7 @@ import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Vacio } from '@/components/ui/Estado'
 import { cn } from '@/lib/cn'
-import { useMiPerfil, useSoloTelefono } from '@/lib/api/usuarios'
+import { useMiPerfil, useMisAcciones, useSoloTelefono } from '@/lib/api/usuarios'
 import { useMisRoles } from '@/lib/api/catalogo'
 import {
   usePermisosPedidos,
@@ -54,6 +54,9 @@ export function SolicitudesAlmacenMovil() {
   const { data: yo } = useMiPerfil()
   const { roles } = useMisRoles()
   const { soloTelefono } = useSoloTelefono()
+  // Quien llega desde el almacén del teléfono vuelve a él.
+  const acciones = useMisAcciones()
+  const vieneDelAlmacen = acciones.puede('INVENTARIO.ALMACEN_TELEFONO')
   const { ver, armando, visor } = usePdfSolicitud()
 
   const [filtro, setFiltro] = useState<Filtro>('pendientes')
@@ -128,6 +131,13 @@ export function SolicitudesAlmacenMovil() {
             <Button variant="outline" onClick={() => setSelId(null)}>
               ← Lista
             </Button>
+          ) : null}
+          {!sel && !enRecepciones && vieneDelAlmacen ? (
+            <Link to="/app/inventario/almacen">
+              <Button variant="outline" size="sm">
+                ← Almacén
+              </Button>
+            </Link>
           ) : null}
           {!soloTelefono ? (
             <Link to="/app/solicitudes-pedido">
