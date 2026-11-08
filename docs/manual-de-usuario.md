@@ -2094,7 +2094,7 @@ Hay dos puertas distintas, y conviene no confundirlas.
 | --- | --- |
 | Crear una solicitud de pedido, un servicio o una Solicitud de Mercado | Cualquier usuario la solicitud; el servicio y el Mercado, ver Compras (lectura) |
 | Revisar la solicitud en el almacén general | Inventario en escritura, o el rol de almacén |
-| Aprobar la Orden de Pedido (OP), cotizar, elegir la oferta, editar la OC, indicar el método de pago, finalizar, el servicio directo | **Compras en control total**, o ser administración |
+| Aprobar la Orden de Pedido (OP), cotizar, elegir la oferta, editar la OC, indicar el método de pago, finalizar | **Compras en control total**, o ser administración |
 | **Aprobar la OC** (una por una o por lote) y **registrar el pago** | **Compras en control total**, administración, o estar en **Usuarios autorizados para aprobar** con **Aprobar órdenes de compra** (13.1) |
 | Recibir la mercancía | Inventario en escritura, o el rol de almacén |
 | Ver el Histórico, el reporte por renglón y el cierre diario | Ver Compras (lectura) |
@@ -2152,7 +2152,6 @@ En este orden, como en MGG:
 | **📋 OC por lote** | La lista para aprobar varias OC juntas (9.9) |
 | **🛒 Compra Directa** | El acceso a la Compra Directa de La Cantera (9.5) |
 | **🛠 Servicios** | Las solicitudes de servicio (SV-…) con sus columnas (9.14) |
-| **🔧 Servicio Directo** | Los servicios ya contratados o prestados, sin solicitud (9.14) |
 
 La pantalla recuerda la última pestaña y la vista que usó cada quien.
 
@@ -2200,7 +2199,7 @@ Se crea con **+ Nueva solicitud** (quien no lleva Compras) o **+ Nueva orden** (
 
 ### 9.5 La compra directa
 
-**Administración › Compras › Compra directa**, o la pestaña **🛒 Compra Directa** de **Pedidos / Compras**.
+La pestaña **🛒 Compra Directa** de **Pedidos / Compras**.
 
 **La Compra Directa de La Cantera sigue como estaba**: no es la de MGG ni pasa por Pedidos / Compras. Para **lo que ya se compró**, con su factura en la mano. No pasa por cotizaciones ni por el gerente. La pantalla tiene dos pestañas: **Registrar** e **Historial**.
 
@@ -2604,7 +2603,7 @@ En **Recibida** (o **Pagada**, si se pagó después de recibir), Compras pulsa *
 
 **Solo se finaliza lo recibido y pagado**: una OC a crédito, cuando el saldo llegó a cero (9.10); una contra entrega, cuando se pagó lo recibido.
 
-### 9.14 Servicios, servicio directo y Solicitud de Mercado
+### 9.14 Servicios y Solicitud de Mercado
 
 #### 🛠 Servicios
 
@@ -2613,17 +2612,6 @@ La pestaña **🛠 Servicios** es el mismo camino que una OC, con nombres de ser
 **+ Nuevo servicio** pide la unidad solicitante, quién lo solicita y una línea por servicio: la **categoría** (recarga de gas o de agua, mantenimiento de maquinaria, de vehículos, de motos, de electrodomésticos…), el **equipo** de Maquinaria cuando aplica, el **tipo de servicio**, la cantidad —en una recarga, las bombonas o botellones y los kilos o litros— y el precio estimado. **▸ Detalle** agrega las piezas y trabajos de la línea. El código es **SV-2026-0001**.
 
 Diferencias con una OC: **un servicio no pasa por el almacén** ni entra al inventario, y **conserva su código SV** (no recibe OC, salvo que se reparta entre proveedores). En lugar de recibirlo, Compras deja constancia de que se prestó con **🔧 Servicio realizado**: por línea, cuánto se prestó, y una nota si fue menos. Pagado, pasa a **Pagado**; realizado, a **Servicio realizado**; y se finaliza con la evaluación del proveedor.
-
-#### 🔧 Servicio Directo
-
-Para un servicio **ya contratado o ya prestado**, sin solicitud ni cotización. Lo registra quien lleva Compras en control total. Sus columnas: **En proceso** → **Por pagar** → **Confirmado pagar** → **Finalizada**.
-
-1. **+ Nuevo servicio directo**: las líneas de servicio (como en un servicio), el **proveedor o taller** —o uno nuevo allí mismo— y la unidad solicitante. Nace como **SVD-2026-0001**, **En proceso**.
-2. **Cargar factura y monto del servicio**: la factura (PDF o imagen) y el monto de cada línea, en dólares. Pasa a **Por pagar**.
-3. **💳 Indicar método de pago**: el mismo de una OC (9.10), con documento, retenciones y método. Pasa a **Confirmado pagar**.
-4. **💵 Marcar pagado** (quien aprueba), con el comprobante de pago. Pasa a **Finalizada**.
-
-Mientras no se haya pagado se corrigen la factura y los montos (**✎ Factura/monto**, **✎ Editar montos**) y se cargan más facturas.
 
 #### 🛒 Solicitud de Mercado
 
@@ -2637,7 +2625,7 @@ Los tres botones de la barra de **Pedidos / Compras**, para quien lleva Compras.
 
 #### 📊 Reporte por renglón
 
-**Reporte de compras por renglón**: todo lo que está pendiente de pago, **una fila por compra**, con su **código**, su **tipo** (OC, Servicio o Servicio directo), su **motivo** y su **monto a pagar** (total − descuento − retenciones), agrupado en cuatro renglones de color:
+**Reporte de compras por renglón**: todo lo que está pendiente de pago, **una fila por compra**, con su **código**, su **tipo** (OC o Servicio), su **motivo** y su **monto a pagar** (total − descuento − retenciones), agrupado en cuatro renglones de color:
 
 | Renglón | Qué entra |
 | --- | --- |
@@ -2659,7 +2647,7 @@ El resumen de un período: **Día**, **Semana** (de lunes a domingo), **Mes** o 
 | 💰 **Total órdenes por pagar** | OC confirmadas en el período que siguen sin pagarse |
 | ✅ **Total órdenes pagadas** | OC pagadas en el período |
 
-Debajo, **💵 Detalle de órdenes pendientes por pagar** (orden, proveedor y monto, con su total); **🧾 Pagos del período**, cada pago registrado en Compras —OC pagada, abono de un crédito, servicio directo pagado— con su método, el total, **las retenciones** y **el monto pagado**, y los totales de lo pagado y de lo retenido; y **👥 Rendimiento por analista**, las cotizaciones que cargó y las órdenes que finalizó cada uno. Salidas: **📊 Excel**, **💬 WhatsApp** y **📄 Ver PDF (vista previa)**; cada una anota la hora exacta en que se imprime.
+Debajo, **💵 Detalle de órdenes pendientes por pagar** (orden, proveedor y monto, con su total); **🧾 Pagos del período**, cada pago registrado en Compras —OC pagada, abono de un crédito— con su método, el total, **las retenciones** y **el monto pagado**, y los totales de lo pagado y de lo retenido; y **👥 Rendimiento por analista**, las cotizaciones que cargó y las órdenes que finalizó cada uno. Salidas: **📊 Excel**, **💬 WhatsApp** y **📄 Ver PDF (vista previa)**; cada una anota la hora exacta en que se imprime.
 
 #### ⌕ Histórico
 
@@ -2672,7 +2660,7 @@ Debajo, **💵 Detalle de órdenes pendientes por pagar** (orden, proveedor y mo
 - Los **chips de estado** filtran (se pueden marcar varios); **⌚ Filtrar por fecha** abre el panel con el **Tipo de fecha** (**Creación**, **Aprobación**, **OC emitida** o **Finalización**) y **Desde** / **Hasta**; **↓ Más reciente primero** cambia el orden; **✕ Limpiar filtros** lo deshace todo. A la derecha, cuántos resultados hay.
 - La tabla: **OP**, **OC**, **Solicitante**, **Proveedor**, **Total**, **Estado**, **Fecha solicitud** y **OC emitida**.
 
-**Pulsar una fila abre el detalle**, de solo lectura: estado y total, solicitante, proveedor, condición y método de pago, las fechas de cada paso, los ítems con su total, el motivo y las notas. Sus botones: **📂 Abrir la orden** (la ficha completa, con el PDF de la OC y el historial), **🧾 Comprobante de pago**, **📎 Ver factura / soporte**, **📎 QR de pago**, **📎 Abono 1 · $ …** por cada abono con comprobante, y **🖨 Imprimir PDF** con el detalle del pedido. Un servicio directo se abre en su pestaña.
+**Pulsar una fila abre el detalle**, de solo lectura: estado y total, solicitante, proveedor, condición y método de pago, las fechas de cada paso, los ítems con su total, el motivo y las notas. Sus botones: **📂 Abrir la orden** (la ficha completa, con el PDF de la OC y el historial), **🧾 Comprobante de pago**, **📎 Ver factura / soporte**, **📎 QR de pago**, **📎 Abono 1 · $ …** por cada abono con comprobante, y **🖨 Imprimir PDF** con el detalle del pedido.
 
 **📊 Materiales con más demanda** ordena lo que más se pide, por **Cantidad** o por **Monto ($)**, en todo el histórico o en un día, mes o rango: las doce primeras en barras y la tabla completa, con **↓ Exportar PDF**.
 
@@ -2725,7 +2713,7 @@ Cada paso tiene su mensaje, con sus emojis, al estilo de MGG. **Ninguno sale sol
 | --- | --- | --- |
 | **Quien pide** | **Solicitud de pedido** | **+ Nueva solicitud**: qué necesita con su nombre general, cuánto y para qué. Sigue en qué fase va |
 | **Almacenista** | **Inventario › Solicitudes de pedido** | **🕒 Por revisar**: dice qué tiene ALM-GEN y confirma; entrega por la solicitud de salida. **📥 Recepciones por recibir**: **📦 Confirmar recepción** con el papel del proveedor |
-| **Compras** | **Pedidos / Compras** | **Aprobar Orden de Pedido**, cargar ofertas, **Aceptar esta oferta**; **💳 Indicar método de pago** con documento y retenciones; abonos de los créditos; **✓ Finalizar orden** con la evaluación; servicios y servicio directo; reportes |
+| **Compras** | **Pedidos / Compras** | **Aprobar Orden de Pedido**, cargar ofertas, **Aceptar esta oferta**; **💳 Indicar método de pago** con documento y retenciones; abonos de los créditos; **✓ Finalizar orden** con la evaluación; servicios; reportes |
 | **Quien aprueba** | **🧾 Órdenes de Compra** y **📋 OC por lote** | **✔ Aprobar OC** o **✔ Aprobar en lote**; **💵 Marcar pagada** con el comprobante |
 | **La cocina** | **Alimentación › Pedir el mercado** | Arma la lista y la manda como Solicitud de Mercado |
 
