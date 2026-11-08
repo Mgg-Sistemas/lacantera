@@ -40,7 +40,6 @@ import {
   resumenDatosPago,
   retencionesAForm,
   retencionesParaEnviar,
-  telefonoAdministracionValido,
   totalRetenciones,
   validarDatosPago,
   type DatosPago,
@@ -53,7 +52,7 @@ import { mensajeDe, toast } from '@/lib/avisosFlotantes'
 
   Las tarjetas de MGG, en su orden: la opción de pago elegida por el
   analista, el proveedor (con «🔁 Cambiar de proveedor (volver a cotizar)»),
-  el teléfono de administración del proveedor, el documento (Nota de entrega
+  el documento (Nota de entrega
   o Factura), las retenciones, la imagen / QR de pago, el descuento en el pago,
   los métodos (multipago) con los datos del proveedor y, en contra entrega, la
   confirmación de lo recibido.
@@ -63,6 +62,8 @@ import { mensajeDe, toast } from '@/lib/avisosFlotantes'
       IGTF e ISAE, cada una en % o en monto, y se restan del total. El resumen
       dice el «Monto a pagar».
     - Sin «🛵 Delivery · ¿quién entrega?».
+    - Sin «📞 Teléfono de administración del proveedor» (la dueña,
+      08/11/2026): va el de la OC o el de la ficha, si ya había uno.
     - Los datos del proveedor se eligen entre sus cuentas guardadas o se carga
       otra; al enviar quedan en su ficha (MGG guarda una por método).
     - En modo «corregir» (OC ya en «Confirmada pagar») también se corrigen el
@@ -71,8 +72,7 @@ import { mensajeDe, toast } from '@/lib/avisosFlotantes'
   El SERVICIO DIRECTO (fase 5a) usa esta misma pantalla con `directo`: en MGG
   lo paga Tesorería; aquí se indica el método, el documento y las
   retenciones igual que una OC. Sin «Opción de pago elegida» ni «🔁 Cambiar
-  de proveedor» (no se cotizó), y el teléfono de administración solo se pide
-  si hay proveedor (va a su ficha).
+  de proveedor» (no se cotizó).
 */
 
 const CAMPO = 'rounded-control border-ink/20 bg-surface h-9 min-w-0 border px-2 text-sm'
@@ -321,8 +321,6 @@ export function MetodoPagoModal({
   const indicar = useIndicarMetodoPago()
   const corregir = useCorregirMetodoPago()
   const metodoDirecto = useMetodoPagoServicioDirecto()
-  // Sin proveedor (servicio directo) no hay ficha donde guardar el teléfono.
-  const pideTel = !directo || !!o.proveedor_id
   const deQue = directo ? 'el servicio' : 'la OC'
   const { data: cuentas = [] } = useCuentasProveedor(o.proveedor_id)
   const { data: telFicha } = useTelefonoAdministracion(o.proveedor_id)
@@ -337,8 +335,6 @@ export function MetodoPagoModal({
         }))
       : [{ metodo: 'divisas_efectivo', monto: '', datos: {}, cuenta: 'nueva' }],
   )
-  const [tel, setTel] = useState(o.numero_administracion ?? '')
-  const [telTocado, setTelTocado] = useState(false)
   const [doc, setDoc] = useState<'factura' | 'nota_entrega'>(o.comprobante_tipo ?? (directo ? 'factura' : 'nota_entrega'))
   const [retForm, setRetForm] = useState<RetencionesForm>(() => retencionesAForm(o.retenciones))
   const [qr, setQr] = useState<File | null>(null)
@@ -351,10 +347,6 @@ export function MetodoPagoModal({
   const [error, setError] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
 
-  // El teléfono de la ficha, si la OC no trae uno y no se ha tocado.
-  useEffect(() => {
-    if (!telTocado && !o.numero_administracion && telFicha) setTel(telFicha)
-  }, [telFicha, telTocado, o.numero_administracion])
 
   // La primera vez que llegan las cuentas, la pata de partida toma la suya.
   const [cuentasPuestas, setCuentasPuestas] = useState(false)
@@ -391,12 +383,6 @@ export function MetodoPagoModal({
       }
       return
     }
-    if (pideTel && !tel.trim())
-      return setError('Indicá el teléfono de administración del proveedor: se carga una sola vez y queda en su ficha.')
-    if (pideTel && !telefonoAdministracionValido(tel))
-      return setError(
-        'El teléfono de administración no parece un teléfono (mínimo 7 dígitos; se admiten +, espacios, guiones y paréntesis).',
-      )
     if (!patas.length) return setError('Indicá al menos un método de pago.')
     if (esMultipago && patas.some((p) => !(leerMonto(p.monto) > 0))) return setError('En multipago, indicá el monto por cada método/moneda.')
     if (esContraEntrega && !corrigiendo && !notaEntrega)
@@ -429,7 +415,8 @@ export function MetodoPagoModal({
           monto: leerMonto(p.monto),
           ...(requiereDatos(p.metodo) ? { datos: p.datos } : {}),
         })),
-        numero_administracion: tel.trim(),
+        // Ya no se pide (08/11/2026): va el de la OC o el de la ficha, si hay.
+        numero_administracion: (o.numero_administracion ?? telFicha ?? '').trim(),
         comprobante_tipo: doc,
         retenciones: doc === 'factura' ? retencionesParaEnviar(retForm) : [],
         ...(corrigiendo
@@ -581,28 +568,6 @@ export function MetodoPagoModal({
         </div>
       ) : (
         <>
-          <div
-            className={cn('mb-3 rounded-[8px] border px-3 py-2.5', tel.trim() ? 'border-hairline' : 'border-warning', !pideTel && 'hidden')}
-          >
-            <Input
-              label="📞 Teléfono de administración del proveedor (obligatorio)"
-              type="tel"
-              sinNormalizar
-              maxLength={40}
-              placeholder="Ej. 0414-1234567 o +58 412 1234567"
-              value={tel}
-              onChange={(e) => {
-                setTelTocado(true)
-                setTel(e.target.value)
-              }}
-              hint={
-                telFicha
-                  ? 'Ya está en la ficha del proveedor; solo se cambia si estaba mal (se actualiza la ficha).'
-                  : 'Se carga una sola vez y queda en la ficha del proveedor; las próximas OC lo traen precargado.'
-              }
-            />
-          </div>
-
           <DocumentoYRetenciones
             orden={o}
             doc={doc}

@@ -100,10 +100,6 @@ export function resumenDatosPago(metodo: string, d: DatosPago | null | undefined
   return ''
 }
 
-/** MGG `telefonoAdministracionValido`: 7 dígitos o más; solo +, ( ), ., - y espacios. */
-export const telefonoAdministracionValido = (t: string): boolean =>
-  /^[\d+().\s-]+$/.test(t.trim()) && t.replace(/\D/g, '').length >= 7 && t.trim().length <= 40
-
 // ---------------------------------------------------------------------------
 // Retenciones y monto a pagar
 // ---------------------------------------------------------------------------
