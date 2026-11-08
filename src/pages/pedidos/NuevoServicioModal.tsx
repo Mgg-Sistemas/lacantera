@@ -346,6 +346,8 @@ export function NuevoServicioModal({
           <Input
             label="Quién lo solicita"
             placeholder="Nombre de la persona que pide el servicio…"
+            solo="letras"
+            maxLength={80}
             value={persona}
             disabled={!permisos.pide_por_otro}
             onChange={(e) => setPersona(e.target.value)}
@@ -421,6 +423,7 @@ export function NuevoServicioModal({
                         label="Electrodoméstico"
                         list="sv-electrodomesticos"
                         placeholder="🔎 Elegí (cocina, nevera, lavadora, microondas…)"
+                        maxLength={60}
                         value={l.electro}
                         onChange={(e) => setLinea(l.id, { electro: e.target.value })}
                       />
@@ -430,6 +433,7 @@ export function NuevoServicioModal({
                         list="sv-tipos"
                         placeholder="Elegí o escribí uno nuevo…"
                         disabled={!l.categoria}
+                        maxLength={80}
                         value={l.tipo}
                         onChange={(e) => setLinea(l.id, { tipo: e.target.value })}
                       />
@@ -442,6 +446,7 @@ export function NuevoServicioModal({
                         label="Tipo de servicio"
                         list="sv-tipos-mant"
                         placeholder="🔎 Elegí el tipo (caucho, repuesto, aceite, pintura…)"
+                        maxLength={80}
                         value={l.tipo}
                         onChange={(e) => setLinea(l.id, { tipo: e.target.value })}
                       />
@@ -457,6 +462,7 @@ export function NuevoServicioModal({
                         inputMode="decimal"
                         min={0}
                         placeholder={agua ? 'N° de botellones/cisternas (1 = cisterna)' : 'N° de bombonas'}
+                        limite={{ maxDecimales: 0, sinNegativos: true }}
                         value={l.bombonas}
                         onChange={(e) => setLinea(l.id, { bombonas: e.target.value })}
                       />
@@ -466,6 +472,7 @@ export function NuevoServicioModal({
                         inputMode="decimal"
                         min={0}
                         placeholder={agua ? 'Litros de cada uno' : 'Kg de cada una'}
+                        limite={{ maxDecimales: 2, sinNegativos: true }}
                         value={l.kg}
                         onChange={(e) => setLinea(l.id, { kg: e.target.value })}
                       />
@@ -485,6 +492,7 @@ export function NuevoServicioModal({
                         placeholder="0,00"
                         disabled={sumDet > 0}
                         title={sumDet > 0 ? 'Tomado de la suma del detalle' : undefined}
+                        limite={{ maxDecimales: 2, sinNegativos: true }}
                         value={sumDet > 0 ? String(sumDet) : l.precio}
                         onChange={(e) => setLinea(l.id, { precio: e.target.value })}
                         hint={sumDet > 0 ? `Precio tomado del detalle: ${money(sumDet)}.` : undefined}
@@ -497,6 +505,7 @@ export function NuevoServicioModal({
                         type="number"
                         inputMode="decimal"
                         min={0}
+                        limite={{ maxDecimales: 4, sinNegativos: true }}
                         value={l.cantidad}
                         onChange={(e) => setLinea(l.id, { cantidad: e.target.value })}
                       />
@@ -508,6 +517,7 @@ export function NuevoServicioModal({
                         placeholder="0,00"
                         disabled={sumDet > 0}
                         title={sumDet > 0 ? 'Tomado de la suma del detalle' : undefined}
+                        limite={{ maxDecimales: 2, sinNegativos: true }}
                         value={sumDet > 0 ? String(sumDet) : l.precio}
                         onChange={(e) => setLinea(l.id, { precio: e.target.value })}
                         hint={sumDet > 0 ? `Precio tomado del detalle: ${money(sumDet)}.` : undefined}

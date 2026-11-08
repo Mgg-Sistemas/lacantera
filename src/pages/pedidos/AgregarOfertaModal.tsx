@@ -33,6 +33,8 @@ import {
   totalesRepresentativos,
 } from '@/lib/ofertas'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
+import { comoNumero } from '@/lib/formato'
+import { CampoTelefono } from '@/components/CampoTelefono'
 
 /*
   REGISTRAR O EDITAR UNA COTIZACIÓN (MGG `AgregarOfertaModal`)
@@ -547,6 +549,7 @@ export function AgregarOfertaModal({
                 <div className="text-ink/80 font-semibold sm:col-span-2">Datos del nuevo proveedor</div>
                 <Input
                   label="Razón social *"
+                  maxLength={150}
                   value={nuevo.razon}
                   onChange={(e) => setNuevo((n) => ({ ...n, razon: e.target.value }))}
                 />
@@ -568,7 +571,8 @@ export function AgregarOfertaModal({
                     <input
                       className={cn(CAMPO, 'h-10')}
                       inputMode="numeric"
-                      maxLength={10}
+                      // El RIF lleva nueve cifras: ocho y el dígito del final.
+                      maxLength={9}
                       placeholder="407784420"
                       value={nuevo.numero}
                       onChange={(e) => setNuevo((n) => ({ ...n, numero: e.target.value.replace(/\D/g, '') }))}
@@ -577,25 +581,24 @@ export function AgregarOfertaModal({
                   </div>
                   <p className="text-ink/50 mt-1 text-xs">Los 8 dígitos y el verificador (J-40778442-0).</p>
                 </div>
-                <Input
+                <CampoTelefono
                   label="Teléfono"
-                  inputMode="numeric"
-                  maxLength={15}
-                  placeholder="Solo dígitos"
-                  value={nuevo.telefono}
-                  onChange={(e) => setNuevo((n) => ({ ...n, telefono: e.target.value.replace(/\D/g, '') }))}
+                  valor={nuevo.telefono}
+                  onCambiar={(v) => setNuevo((n) => ({ ...n, telefono: v }))}
                 />
                 <Input
                   label="Email"
                   type="email"
                   sinNormalizar
                   placeholder="correo@dominio.com"
+                  maxLength={120}
                   value={nuevo.correo}
                   onChange={(e) => setNuevo((n) => ({ ...n, correo: e.target.value }))}
                 />
                 <Input
                   label="Dirección"
                   className="sm:col-span-2"
+                  maxLength={200}
                   value={nuevo.direccion}
                   onChange={(e) => setNuevo((n) => ({ ...n, direccion: e.target.value }))}
                 />
@@ -612,7 +615,12 @@ export function AgregarOfertaModal({
           <div className="border-royal-600/40 grid gap-2 rounded-[8px] border p-3 sm:grid-cols-4">
             <label className="text-ink/55 text-[11px] font-semibold uppercase">
               Conversor · Monto
-              <input className={CAMPO} inputMode="decimal" value={convMonto} onChange={(e) => setConvMonto(e.target.value)} />
+              <input
+                className={CAMPO}
+                inputMode="decimal"
+                value={convMonto}
+                onChange={(e) => setConvMonto(comoNumero(e.target.value, { maxDecimales: 2, sinNegativos: true }))}
+              />
             </label>
             <label className="text-ink/55 text-[11px] font-semibold uppercase">
               Dirección
@@ -628,7 +636,7 @@ export function AgregarOfertaModal({
                 inputMode="decimal"
                 placeholder={tasaVigente ? cifra2(tasaVigente.tasa) : ''}
                 value={convTasa}
-                onChange={(e) => setConvTasa(e.target.value)}
+                onChange={(e) => setConvTasa(comoNumero(e.target.value, { maxDecimales: 8, sinNegativos: true }))}
               />
             </label>
             <div className="text-ink/80 self-end pb-1.5 text-sm">
@@ -788,12 +796,14 @@ export function AgregarOfertaModal({
                         <input
                           className={CAMPO}
                           placeholder="Marca"
+                          maxLength={60}
                           value={f.marca}
                           onChange={(e) => setFila(f.key, { marca: e.target.value.toUpperCase() })}
                         />
                         <input
                           className={cn(CAMPO, 'mt-1')}
                           placeholder="Modelo (opcional)"
+                          maxLength={60}
                           value={f.modelo}
                           onChange={(e) => setFila(f.key, { modelo: e.target.value.toUpperCase() })}
                         />
@@ -803,6 +813,7 @@ export function AgregarOfertaModal({
                           className={CAMPO}
                           list="unidades-compra"
                           placeholder={f.unidad || 'UND'}
+                          maxLength={20}
                           value={f.unidad_compra}
                           onChange={(e) => setFila(f.key, { unidad_compra: e.target.value.toUpperCase() })}
                         />
@@ -814,7 +825,7 @@ export function AgregarOfertaModal({
                               inputMode="decimal"
                               title={`¿Cuántas ${f.unidad} trae cada ${uc}?`}
                               value={f.factor_compra}
-                              onChange={(e) => setFila(f.key, { factor_compra: e.target.value })}
+                              onChange={(e) => setFila(f.key, { factor_compra: comoNumero(e.target.value, { maxDecimales: 4, sinNegativos: true }) })}
                             />
                           </div>
                         ) : null}
@@ -829,7 +840,7 @@ export function AgregarOfertaModal({
                           className={cn(CAMPO, 'text-right')}
                           inputMode="decimal"
                           value={f.cantidad}
-                          onChange={(e) => setFila(f.key, { cantidad: e.target.value })}
+                          onChange={(e) => setFila(f.key, { cantidad: comoNumero(e.target.value, { maxDecimales: 4, sinNegativos: true }) })}
                         />
                       </td>
                       <td className="w-24 bg-[rgba(80,140,255,.05)] px-2 py-1.5">
@@ -838,7 +849,7 @@ export function AgregarOfertaModal({
                           inputMode="decimal"
                           placeholder="0,00"
                           value={f.precio}
-                          onChange={(e) => setFila(f.key, { precio: e.target.value })}
+                          onChange={(e) => setFila(f.key, { precio: comoNumero(e.target.value, { maxDecimales: 4, sinNegativos: true }) })}
                         />
                       </td>
                       <td className="bg-[rgba(80,140,255,.05)] px-2 py-1.5 text-right font-mono">{tb ? money(tb) : '—'}</td>
@@ -848,7 +859,7 @@ export function AgregarOfertaModal({
                           inputMode="decimal"
                           placeholder="—"
                           value={f.precio_usd}
-                          onChange={(e) => setFila(f.key, { precio_usd: e.target.value })}
+                          onChange={(e) => setFila(f.key, { precio_usd: comoNumero(e.target.value, { maxDecimales: 4, sinNegativos: true }) })}
                         />
                       </td>
                       <td className="bg-[rgba(255,120,120,.05)] px-2 py-1.5 text-right font-mono">{tu ? money(tu) : '—'}</td>
@@ -949,6 +960,7 @@ export function AgregarOfertaModal({
             <Input
               label="Descuento obtenido (opcional)"
               type="number"
+              limite={{ maxDecimales: 2, sinNegativos: true }}
               placeholder="0,00"
               value={descuentoStr}
               onChange={(e) => setDescuentoStr(e.target.value)}
@@ -984,7 +996,7 @@ export function AgregarOfertaModal({
                   value={ivaModo === 'pct' ? ivaPct : ''}
                   onChange={(e) => {
                     setIvaModo('pct')
-                    setIvaPct(e.target.value)
+                    setIvaPct(comoNumero(e.target.value, { maxEnteros: 3, maxDecimales: 2, sinNegativos: true }))
                   }}
                 />
                 <span className="text-ink/60">Monto</span>
@@ -995,7 +1007,7 @@ export function AgregarOfertaModal({
                   value={ivaModo === 'monto' ? ivaMonto : cifra2(ivaCalc)}
                   onChange={(e) => {
                     setIvaModo('monto')
-                    setIvaMonto(e.target.value)
+                    setIvaMonto(comoNumero(e.target.value, { maxDecimales: 2, sinNegativos: true }))
                   }}
                 />
                 <span>
@@ -1034,7 +1046,7 @@ export function AgregarOfertaModal({
                 value={igtfModo === 'pct' ? igtfPct : ''}
                 onChange={(e) => {
                   setIgtfModo('pct')
-                  setIgtfPct(e.target.value)
+                  setIgtfPct(comoNumero(e.target.value, { maxEnteros: 3, maxDecimales: 2, sinNegativos: true }))
                 }}
               />
               <span className="text-ink/60">Monto</span>
@@ -1045,7 +1057,7 @@ export function AgregarOfertaModal({
                 value={igtfModo === 'monto' ? igtfMonto : cifra2(igtfCalc)}
                 onChange={(e) => {
                   setIgtfModo('monto')
-                  setIgtfMonto(e.target.value)
+                  setIgtfMonto(comoNumero(e.target.value, { maxDecimales: 2, sinNegativos: true }))
                 }}
               />
               <span>
@@ -1061,7 +1073,7 @@ export function AgregarOfertaModal({
                 inputMode="decimal"
                 placeholder="0,00"
                 value={ajusteStr}
-                onChange={(e) => setAjusteStr(e.target.value)}
+                onChange={(e) => setAjusteStr(comoNumero(e.target.value, { maxDecimales: 2 }))}
                 aria-label="Ajuste"
               />
               <input
@@ -1124,6 +1136,7 @@ export function AgregarOfertaModal({
                 key={t.clave}
                 label={t.label}
                 placeholder={t.placeholder}
+                maxLength={120}
                 value={detalle[t.clave] ?? ''}
                 onChange={(e) => setDetalle((d) => ({ ...d, [t.clave]: e.target.value }))}
               />

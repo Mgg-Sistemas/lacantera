@@ -501,6 +501,8 @@ export function CompraDirecta() {
               label="N° de la factura"
               placeholder="El que trae el papel"
               hint="Se guarda para el libro de compras."
+              solo="alfanumerico"
+              maxLength={20}
               value={numeroFactura}
               onChange={(e) => setNumeroFactura(e.target.value)}
             />
@@ -510,6 +512,7 @@ export function CompraDirecta() {
             label="Concepto"
             placeholder="Guantes y botas para el frente"
             hint="Es lo que se lee en el tablero."
+            maxLength={120}
             value={titulo}
             onChange={(e) => setTitulo(e.target.value)}
             required
@@ -643,6 +646,7 @@ export function CompraDirecta() {
                     <div className="sm:col-span-8">
                       <Input
                         label="Nombre"
+                        maxLength={150}
                         placeholder="POLLO ENTERO"
                         value={f.descripcion}
                         onChange={(e) => cambiar(f.clave, { descripcion: e.target.value })}
@@ -686,6 +690,7 @@ export function CompraDirecta() {
                           min="0"
                           step="0.0001"
                           inputMode="decimal"
+                          limite={{ maxDecimales: 4, sinNegativos: true }}
                           value={f.nuevas_por_presentacion}
                           onChange={(e) => cambiar(f.clave, { nuevas_por_presentacion: e.target.value })}
                           hint={
@@ -732,6 +737,7 @@ export function CompraDirecta() {
                   <div className="mt-3">
                     <Input
                       label="Servicio"
+                      maxLength={150}
                       placeholder="Flete desde Ciudad Bolívar"
                       value={f.descripcion}
                       onChange={(e) => cambiar(f.clave, { descripcion: e.target.value })}
@@ -758,6 +764,7 @@ export function CompraDirecta() {
                           min="0"
                           step="0.0001"
                           inputMode="decimal"
+                          limite={{ maxDecimales: 4, sinNegativos: true }}
                           value={f.cantidad}
                           onChange={(e) => cambiar(f.clave, { cantidad: e.target.value, capturada: null })}
                         />
@@ -787,6 +794,7 @@ export function CompraDirecta() {
                         min="0"
                         step="0.000001"
                         inputMode="decimal"
+                        limite={{ maxDecimales: 6, sinNegativos: true }}
                         value={f.precio}
                         onChange={(e) => cambiar(f.clave, { precio: e.target.value })}
                         hint={
@@ -800,6 +808,7 @@ export function CompraDirecta() {
                     <div className="mt-3 grid gap-3 sm:grid-cols-3">
                       <Input
                         label="Marca"
+                        maxLength={60}
                         value={f.marca}
                         onChange={(e) => cambiar(f.clave, { marca: e.target.value })}
                       />
@@ -832,6 +841,7 @@ export function CompraDirecta() {
               type="number"
               min="0"
               step="0.01"
+              limite={{ maxDecimales: 2, sinNegativos: true }}
               value={descuento}
               onChange={(e) => setDescuento(e.target.value)}
             />
@@ -840,6 +850,7 @@ export function CompraDirecta() {
               type="number"
               min="0"
               step="0.01"
+              limite={{ maxDecimales: 2, sinNegativos: true }}
               value={flete}
               onChange={(e) => setFlete(e.target.value)}
             />
@@ -849,6 +860,7 @@ export function CompraDirecta() {
               min="0"
               max="100"
               step="0.01"
+              limite={{ maxEnteros: 3, maxDecimales: 2, sinNegativos: true }}
               value={alicuota}
               onChange={(e) => setAlicuota(e.target.value)}
             />

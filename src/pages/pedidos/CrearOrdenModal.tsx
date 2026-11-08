@@ -387,6 +387,8 @@ export function CrearOrdenModal({
             <Input
               label="Persona que solicita"
               placeholder="Quién pide el material (no quien carga la solicitud)"
+              solo="letras"
+              maxLength={80}
               value={persona}
               disabled={!permisos.pide_por_otro}
               onChange={(e) => setPersona(e.target.value)}
@@ -461,6 +463,7 @@ export function CrearOrdenModal({
                       <Input
                         label="Producto"
                         ocultarEtiqueta
+                        maxLength={150}
                         value={f.nombre}
                         onChange={(e) => cambiar(f.clave, { nombre: e.target.value })}
                       />
@@ -483,6 +486,7 @@ export function CrearOrdenModal({
                         type="number"
                         inputMode="decimal"
                         className="[&_input]:text-center [&_input]:text-lg [&_input]:font-semibold"
+                        limite={{ maxDecimales: 4, sinNegativos: true }}
                         value={f.cantidad}
                         onChange={(e) => cambiar(f.clave, { cantidad: e.target.value })}
                       />
@@ -490,6 +494,7 @@ export function CrearOrdenModal({
                         label="Unidad"
                         ocultarEtiqueta
                         list="pedidos-medidas"
+                        maxLength={20}
                         value={f.unidad}
                         onChange={(e) => cambiar(f.clave, { unidad: e.target.value })}
                       />
@@ -509,6 +514,7 @@ export function CrearOrdenModal({
                       label="Finalidad"
                       ocultarEtiqueta
                       placeholder="Finalidad de este producto (¿para qué se compra?)"
+                      maxLength={200}
                       value={f.finalidad}
                       onChange={(e) => cambiar(f.clave, { finalidad: e.target.value })}
                     />
@@ -537,6 +543,7 @@ export function CrearOrdenModal({
               </p>
               <Input
                 label="Nombre general de lo que se pide *"
+                maxLength={150}
                 value={nuevoNombre}
                 onChange={(e) => setNuevoNombre(e.target.value)}
               />
@@ -545,6 +552,7 @@ export function CrearOrdenModal({
                   label="Cantidad *"
                   type="number"
                   inputMode="decimal"
+                  limite={{ maxDecimales: 4, sinNegativos: true }}
                   value={generalCant}
                   onChange={(e) => setGeneralCant(e.target.value)}
                 />

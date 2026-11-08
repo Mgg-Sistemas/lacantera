@@ -17,6 +17,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { dinero, documento, dolares, fecha, fechaHora } from '@/lib/formato'
 import { hoyEnCaracas } from '@/lib/api/tasas'
+import { limiteReferencia } from '@/lib/pagos'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { useHistoricoCompras, useTablero } from '@/lib/api/compras'
 import { useProveedores } from '@/lib/api/catalogo'
@@ -487,6 +488,8 @@ export function FacturasProveedor() {
 
             <Input
               label="Número de factura"
+              solo="alfanumerico"
+              maxLength={20}
               value={nueva.numero_factura}
               onChange={(e) => setNueva({ ...nueva, numero_factura: e.target.value })}
               required
@@ -494,6 +497,8 @@ export function FacturasProveedor() {
             <Input
               label="Número de control"
               placeholder="00-12345678"
+              solo="alfanumerico"
+              maxLength={20}
               value={nueva.numero_control}
               onChange={(e) => setNueva({ ...nueva, numero_control: e.target.value })}
             />
@@ -523,6 +528,7 @@ export function FacturasProveedor() {
               min="0"
               step="0.01"
               inputMode="decimal"
+              limite={{ maxDecimales: 2, sinNegativos: true }}
               value={nueva.exento}
               onChange={(e) => setNueva({ ...nueva, exento: e.target.value })}
               hint="Lo que no lleva IVA"
@@ -533,6 +539,7 @@ export function FacturasProveedor() {
               min="0"
               step="0.01"
               inputMode="decimal"
+              limite={{ maxDecimales: 2, sinNegativos: true }}
               value={nueva.base}
               onChange={(e) =>
                 setNueva(
@@ -554,6 +561,7 @@ export function FacturasProveedor() {
               min="0"
               step="0.5"
               inputMode="decimal"
+              limite={{ maxEnteros: 3, maxDecimales: 2, sinNegativos: true }}
               value={nueva.alicuota}
               onChange={(e) => setNueva({ ...nueva, alicuota: e.target.value })}
             />
@@ -563,6 +571,7 @@ export function FacturasProveedor() {
               min="0"
               step="0.01"
               inputMode="decimal"
+              limite={{ maxDecimales: 2, sinNegativos: true }}
               value={nueva.iva}
               onChange={(e) => setNueva(conRetencionPropuesta({ ...nueva, iva: e.target.value }))}
               hint={
@@ -577,6 +586,7 @@ export function FacturasProveedor() {
               min="0"
               step="0.01"
               inputMode="decimal"
+              limite={{ maxDecimales: 2, sinNegativos: true }}
               value={nueva.total_papel}
               onChange={(e) => setNueva({ ...nueva, total_papel: e.target.value })}
               error={descuadre ? `Lo tecleado suma ${totalCalculado.toFixed(2)}` : undefined}
@@ -588,6 +598,7 @@ export function FacturasProveedor() {
               min="0"
               step="0.01"
               inputMode="decimal"
+              limite={{ maxDecimales: 2, sinNegativos: true }}
               value={nueva.retencion_iva}
               onChange={(e) => setNueva({ ...nueva, retencion_iva: e.target.value })}
               error={
@@ -611,6 +622,7 @@ export function FacturasProveedor() {
               min="0"
               step="0.01"
               inputMode="decimal"
+              limite={{ maxDecimales: 2, sinNegativos: true }}
               value={nueva.retencion_islr}
               onChange={(e) => setNueva({ ...nueva, retencion_islr: e.target.value })}
               hint="Solo si al proveedor le aplica por su actividad"
@@ -1045,6 +1057,7 @@ export function FacturasProveedor() {
               min="0"
               step="0.01"
               inputMode="decimal"
+              limite={{ maxDecimales: 2, sinNegativos: true }}
               value={monto}
               onChange={(e) => setMonto(e.target.value)}
               required
@@ -1064,6 +1077,7 @@ export function FacturasProveedor() {
             <Input
               label="Referencia"
               placeholder="Número de la transferencia"
+              {...limiteReferencia(metodo)}
               value={referencia}
               onChange={(e) => setReferencia(e.target.value)}
             />

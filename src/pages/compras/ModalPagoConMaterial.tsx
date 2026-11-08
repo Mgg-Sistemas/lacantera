@@ -246,6 +246,7 @@ export function ModalPagoConMaterial({ orden, onCerrar }: { orden: Orden; onCerr
             min="0"
             step="0.01"
             inputMode="decimal"
+            limite={{ maxDecimales: 4, sinNegativos: true }}
             value={cantidad}
             onChange={(e) => setCantidad(e.target.value)}
             error={noAlcanza ? `En ese patio hay ${cant(patio!.existencia_propia)} ${patio!.unidad}.` : undefined}
@@ -295,6 +296,7 @@ export function ModalPagoConMaterial({ orden, onCerrar }: { orden: Orden; onCerr
               min="0"
               step="0.01"
               inputMode="decimal"
+              limite={{ maxDecimales: 2, sinNegativos: true }}
               value={descuento}
               onChange={(e) => setDescuento(e.target.value)}
             />
@@ -318,6 +320,7 @@ export function ModalPagoConMaterial({ orden, onCerrar }: { orden: Orden; onCerr
             min="0"
             step="0.01"
             inputMode="decimal"
+            limite={{ maxDecimales: 6, sinNegativos: true }}
             value={acordado}
             onChange={(e) => setAcordado(e.target.value)}
           />
@@ -474,6 +477,8 @@ export function ModalRegistrarPagoConMaterial({
       <Input
         label="Receptor por el proveedor"
         hint="Su nombre va en la nota de salida, en «Para quién» y en quién responde."
+        solo="letras"
+        maxLength={80}
         value={recibe}
         onChange={(e) => setRecibe(e.target.value)}
         required
@@ -585,6 +590,7 @@ export function ModalUsarSaldo({
         min="0"
         step="0.01"
         inputMode="decimal"
+        limite={{ maxDecimales: 2, sinNegativos: true }}
         value={monto}
         onChange={(e) => setMonto(e.target.value)}
       />

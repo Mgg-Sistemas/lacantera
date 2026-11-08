@@ -282,17 +282,21 @@ export function Proveedores() {
             />
             <Input
               label="Razón social"
+              maxLength={150}
               value={edicion.nombre}
               onChange={(e) => cambiar({ nombre: e.target.value })}
               required
             />
             <Input
               label="Nombre comercial"
+              maxLength={150}
               value={edicion.nombre_comercial}
               onChange={(e) => cambiar({ nombre_comercial: e.target.value })}
             />
             <Input
               label="Persona de contacto"
+              solo="letras"
+              maxLength={80}
               value={edicion.contacto}
               onChange={(e) => cambiar({ contacto: e.target.value })}
             />
@@ -303,6 +307,7 @@ export function Proveedores() {
             <Input
               label="Correo"
               type="email"
+              maxLength={120}
               value={edicion.correo}
               onChange={(e) => cambiar({ correo: e.target.value })}
             />
@@ -337,6 +342,7 @@ export function Proveedores() {
           <Input
             label="Dirección"
             className="mt-4"
+            maxLength={200}
             value={edicion.direccion}
             onChange={(e) => cambiar({ direccion: e.target.value })}
           />

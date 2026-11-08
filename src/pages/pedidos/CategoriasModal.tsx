@@ -115,6 +115,7 @@ export function CategoriasModal({ onClose }: { onClose: () => void }) {
               ocultarEtiqueta
               className="flex-1"
               placeholder={meta.placeholder}
+              maxLength={80}
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
               onKeyDown={(e) => {
@@ -212,6 +213,7 @@ export function CategoriasModal({ onClose }: { onClose: () => void }) {
         >
           <Input
             label="Nombre"
+            maxLength={80}
             value={edit.nombre}
             onChange={(e) => setEdit({ ...edit, nombre: e.target.value })}
             onKeyDown={(e) => {

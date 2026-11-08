@@ -1,5 +1,6 @@
 import { Input } from '@/components/ui/Input'
 import { cn } from '@/lib/cn'
+import { limiteReferencia } from '@/lib/pagos'
 
 /*
   «¿SE PAGARÁ ESTA ORDEN?»
@@ -75,6 +76,7 @@ export function SePagara({
             label="Referencia del pago (opcional)"
             className="mt-2"
             placeholder="Número de la transferencia o del pago móvil"
+            {...limiteReferencia(null)}
             value={valor.referencia}
             disabled={deshabilitado}
             onChange={(e) => cambiar({ referencia: e.target.value })}
@@ -101,6 +103,7 @@ export function SePagara({
           {valor.motivo === 'OTRO' ? (
             <Input
               label="Escriba el motivo"
+              maxLength={200}
               value={valor.otro}
               disabled={deshabilitado}
               onChange={(e) => cambiar({ otro: e.target.value })}

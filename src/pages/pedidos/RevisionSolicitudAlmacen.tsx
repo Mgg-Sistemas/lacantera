@@ -27,6 +27,7 @@ import {
 } from '@/lib/pedidos'
 import { mensajeSolicitudPedido } from '@/lib/ficha/pedidosWhatsapp'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
+import { comoNumero } from '@/lib/formato'
 import { ModalWhatsappCompra } from '@/pages/compras/ModalWhatsappCompra'
 import { ConfirmDialog } from './Dialogos'
 
@@ -702,7 +703,7 @@ function Renglon({
               )}
               value={texto ?? (marca.revisado ? fmtCant(disp) : '')}
               onFocus={() => setTexto(marca.revisado ? String(disp) : '')}
-              onChange={(e) => setTexto(e.target.value)}
+              onChange={(e) => setTexto(comoNumero(e.target.value, { maxDecimales: 4, sinNegativos: true }))}
               onBlur={() => {
                 const t = texto
                 setTexto(null)

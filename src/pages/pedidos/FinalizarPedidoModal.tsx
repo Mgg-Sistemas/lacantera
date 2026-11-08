@@ -171,6 +171,7 @@ export function FinalizarPedidoModal({
               type="number"
               min={0}
               step={1}
+              limite={{ maxEnteros: 4, maxDecimales: 0, sinNegativos: true }}
               value={dias}
               onChange={(e) => setDias(e.target.value)}
             />
