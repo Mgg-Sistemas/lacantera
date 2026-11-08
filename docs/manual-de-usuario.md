@@ -16,7 +16,7 @@ Tres convenciones que se repiten en todo el documento:
 
 - Lo que aparece **en negrita** es texto que va a ver escrito en la pantalla: un botón, el nombre de un campo, el título de una columna.
 - Lo que aparece «entre comillas angulares» es un mensaje que muestra el sistema, copiado tal cual.
-- Las rutas se escriben como se recorre el menú: **Operación › Inventario › Existencias**.
+- Las rutas se escriben como se recorre el menú: **Operación › Inventario › Almacenes y talleres**.
 
 **Este manual describe el sistema tal como funciona hoy.** El capítulo 15 reúne lo que el sistema no hace, para que nadie planifique su trabajo contando con ello.
 
@@ -134,7 +134,7 @@ Conviene tener este recorrido en la cabeza antes de leer los capítulos, porque 
 6. El camión se pesa en la **romana** y sale con esa nota. Si hay **guía de movilización** vigente, se le engancha.
 7. Se **factura** y se **cobra**. Facturar es opcional: la nota de entrega vale por sí sola (10).
 
-**El parte de producción no es la única entrada al patio.** **Registrar entrada**, en Inventario › Existencias, admite también los productos de cantera (6.6).
+**El parte de producción no es la única entrada al patio.** **Registrar entrada**, en Inventario › Inventario › Existencias, admite también los productos de cantera (6.6).
 
 **El frente, la voladura y el parte de turno no están hoy en el menú** (1.5).
 
@@ -347,8 +347,8 @@ Esto es todo lo que ofrece el menú hoy. Cada persona ve solo la parte sobre la 
 | --- | --- |
 | **Explotación** | **Tablero**, **Viajes de camiones**, **Plantas y rutas**, **Salidas de planta** |
 | **Maquinaria** | **Equipos**, **Historial de taller** |
-| **Inventario** | **Tablero**, **Existencias**, **Almacenes y talleres** |
-| **Salidas y traslados** | **Historial**, **Salidas**, **Traslados** |
+| **Inventario** | **Inventario**, **Almacenes y talleres**, **Solicitudes de pedido** |
+| **Salidas y traslados** | Enlace directo |
 | **Combustible** | Enlace directo |
 | **Asignaciones** | **Bienes asignados**, **Dotación por cargo**, **Incidencias** |
 
@@ -380,7 +380,8 @@ Esto es todo lo que ofrece el menú hoy. Cada persona ve solo la parte sobre la 
 
 | Si busca | Está en |
 | --- | --- |
-| **Catálogo de artículos**, **Movimientos** | Pestañas de **Inventario › Existencias**. La del catálogo dice **Catálogo** |
+| **Existencias**, **Catálogo de artículos**, **Movimientos** | Pestañas de **Inventario › Inventario**, al lado de la primera, que se llama **Inventario**. La del catálogo dice **Catálogo** |
+| **Historial**, **Salidas** y **Traslados** de Salidas y traslados | La cabecera de la pantalla: **↘ Salidas** / **↔ Traslados** arriba y **🗂 Solicitudes** / **📚 Histórico** / **📜 Historial** / **📊 Resumen** debajo (capítulo 26) |
 | **Talleres**, **Dueños del material** | Pestañas de **Inventario › Almacenes y talleres**, cuya primera pestaña se llama **Almacenes y patios** |
 | **Facturas de proveedor** | **Compras › Proveedores**, segunda pestaña. Ahí se llama **Facturas recibidas** |
 | **Cuentas por pagar** | **Compras › Pagos por hacer**, segunda pestaña. Ahí se llama **Por proveedor** |
@@ -389,7 +390,7 @@ Esto es todo lo que ofrece el menú hoy. Cada persona ve solo la parte sobre la 
 | **Prestaciones sociales**, **Parámetros de nómina**, **Bonos y descuentos** | Pestañas de **Nómina › Prestaciones y parámetros** |
 | El libro de compras y el de ventas | Las pestañas **Compras** y **Ventas** de **Tesorería › Libro Mayor** |
 | **Cargar por planilla** —artículos, personal o proveedores— | No es pestaña: es un botón, **Cargar por planilla**, dentro del catálogo de artículos, de **Personal** y de **Proveedores**. El **Panel** tiene además atajos para cargar el catálogo y el personal, y el **Tablero** de Compras uno para cargar los proveedores |
-| La vista de teléfono del surtidor de **Combustible**, de la cocina de **Alimentación** y del almacén de **Inventario** | El botón **Vista de teléfono** de cada módulo. Quien tiene la casilla de usar el surtidor, la cocina o el almacén desde el teléfono, y no es administrador, entra directamente ahí al abrir el sistema |
+| La vista de teléfono del surtidor de **Combustible**, de la cocina de **Alimentación** y del almacén de **Inventario** | El botón **Vista de teléfono** de cada módulo; en Inventario se llama **📱 Vista teléfono**. Quien tiene la casilla de usar el surtidor, la cocina o el almacén desde el teléfono, y no es administrador, entra directamente ahí al abrir el sistema |
 
 **La lupa (Ctrl+K) encuentra casi todas por su nombre corriente**, aunque no estén en el menú: escribir *cargar artículo* lleva a la carga de artículos. Las que no encuentra son **Carnets**, **Por proveedor**, **Dueños del material**, **Bonos y descuentos** y el libro de ventas: a esas se llega solo por su pestaña.
 
@@ -584,6 +585,17 @@ Si no hay nada, el panel dice **Sin movimientos todavía** y **Aquí entran los 
 
 La lista se refresca sola cada cinco minutos y cada vez que se vuelve a la pestaña, además del enlace en vivo que trae los avisos en el momento.
 
+#### Los avisos de stock
+
+**Estos avisos no los provoca nadie: los deja el sistema solo.** Cada media hora repasa el inventario con la misma regla de la pantalla de Inventario —la política ABC, el umbral y el mínimo de cada artículo (7.3)— y, por cada artículo que cayó en alerta, deja un aviso a **almacén** y a **compras**:
+
+- **⚠ Stock crítico**, en rojo, cuando el artículo está por debajo de su mínimo: **REP-0012 · BOMBA DE AGUA: stock 3 UND POR DEBAJO del mínimo (10 UND)**.
+- **Reabastecimiento requerido**, en amarillo, cuando está en su umbral o por debajo sin llegar a crítico: **REP-0012 · BOMBA DE AGUA: stock 11 UND ≤ umbral 12 UND (clase A)**.
+
+**Un aviso por artículo y por estado.** Mientras el artículo siga igual, no se repite. Si pasa de reabastecer a crítico, avisa otra vez; si se repone y después vuelve a caer, también. Pulsarlo abre la trazabilidad del artículo (7.9), con su kardex.
+
+No avisa lo que no tiene mínimo, ni lo que es solo de otros dueños, ni el combustible, ni lo que va de camino.
+
 ### 3.4 El tema claro y oscuro
 
 En el menú del usuario, el bloque **Apariencia** tiene tres botones: **Claro**, **Oscuro** y **Sistema**, con un sol, una luna y una pantalla. El activo se ve resaltado.
@@ -761,7 +773,7 @@ Si hay algo, aparece una lista, **lo rojo arriba**, y cada aviso lleva a la pant
 | Naranja | **Un pago lleva** tantos **días autorizado sin salir** | Sale a partir de los tres días | **Pagos por hacer** |
 | Naranja | Cuántas **compras esperando al gerente** | | **Compras** |
 | Naranja | Cuántos **artículos bajo el mínimo** | | **Existencias** |
-| Naranja | Cuántas **salidas esperando aprobación** | | **Salidas y traslados › Salidas** (26.2) |
+| Naranja | Cuántas **salidas esperando aprobación** | | **Salidas y traslados › ↘ Salidas** (26.2) |
 | Naranja | Cuántos **despachos pedidos sin aprobar** | **Se aprueban desde la nota de entrega.** | **Notas de entrega** (10.6) |
 | Naranja | Cuántas **notas de entrega sin facturar** | Solo las que se pueden facturar | **Notas de entrega** |
 | Naranja | Cuántas **máquinas fuera de servicio** | **No incluye las que están en el taller.** | **Maquinaria** |
@@ -1117,7 +1129,7 @@ El botón **Tarifas** solo sale a quien ve el dinero. Para ponerle tarifa a una 
 
 #### Por dónde entra el material al patio
 
-- **Registrar entrada**, en **Inventario › Existencias**, admite cualquier artículo que lleve existencias, también los productos de cantera. Lo registra como una entrada sin compra, con su procedencia y su costo (7.4).
+- **Registrar entrada**, en **Inventario › Inventario › Existencias**, admite cualquier artículo que lleve existencias, también los productos de cantera. Lo registra como una entrada sin compra, con su procedencia y su costo (7.4).
 - **Salidas de planta** y **Viajes de camiones** no mueven el inventario.
 - **Producción por turno** también escribe entradas, pero no está en el menú (6.7).
 
@@ -1169,7 +1181,9 @@ Hay una idea que conviene entender antes de tocar nada, porque explica casi todo
 
 De ahí se desprende la consecuencia práctica: **para cambiar una existencia hay que escribir un movimiento**. No hay otra forma. No se puede corregir el número directamente, ni siquiera siendo administrador.
 
-En el menú, **Operación › Inventario** tiene tres entradas: **Tablero**, **Existencias** y **Almacenes y talleres**. Existencias lleva las pestañas **Existencias · Catálogo · Movimientos**, y Almacenes y talleres las pestañas **Almacenes y patios · Talleres · Dueños del material**. Lo que sale del almacén —las salidas y los traslados— se pide y se sigue en su propio módulo, **Salidas y traslados** (capítulo 26).
+En el menú, **Operación › Inventario** tiene tres entradas: **Inventario**, **Almacenes y talleres** y **Solicitudes de pedido** (9.6). **Inventario** es la pantalla principal, la de MGG (7.3), y lleva las pestañas **Inventario · Existencias · Catálogo · Movimientos**; Almacenes y talleres, las pestañas **Almacenes y patios · Talleres · Dueños del material**. El almacenista trabaja desde el teléfono, en **📦 Inventario y Almacenes** (7.14). Lo que sale del almacén —las salidas y los traslados— se pide y se sigue en su propio módulo, **Salidas y traslados** (capítulo 26).
+
+**Cuando un artículo baja de su mínimo, el sistema avisa solo** en la campana, a almacén y a compras (3.3).
 
 ### 7.1 Quién entra y quién puede registrar
 
@@ -1182,9 +1196,11 @@ La segunda es **poder registrar**, y no la decide una sola cosa:
 | Qué se ve | Qué hace falta |
 | --- | --- |
 | En **Existencias**, la cabecera —**Acta de conteo físico**, **Registrar entrada**, **Solicitar salida**, **Trasladar** y **Mandar al taller**— y en cada fila **Solicitar salida**, **Contar** y **Al taller** | El rol **Almacén**, o ser administración |
-| **Deshacer**, en **Movimientos**, y **Llegó**, en el tablero | El rol **Almacén**, o ser administración |
+| **Deshacer**, en **Movimientos** y en la trazabilidad, y **Llegó**, en **Material de clientes por recibir** | El rol **Almacén**, o ser administración |
+| En la pantalla de inventario, **↕** y **⇄** en cada fila | **↕**: el rol **Almacén**, o lectura sobre Salidas y traslados. **⇄**: el rol **Almacén** |
+| **↑ Importar Excel**, **+ Nuevo producto**, **Editar** y **✕** en la pantalla de inventario | Escritura sobre Inventario |
 | **Cambiar de dueño**, en la fila de un almacén | Las dos cosas a la vez: el rol **Almacén** (o administración) y **control total** sobre Inventario |
-| **Categorías**, en el catálogo | **Control total** sobre Inventario |
+| **Categorías**, en el catálogo, y **⚙ Categorías**, en la pantalla de inventario | **Control total** sobre Inventario |
 | **Corregir el costo** | Una casilla propia de la matriz de permisos (13.1), aparte del rol y del nivel |
 | **Eliminar duplicado** | Solo administración |
 | **Editar**, en cada fila de Existencias | Solo administración |
@@ -1199,26 +1215,138 @@ Si ve las pantallas pero no ve ningún botón de acción, su usuario consulta y 
 
 **Lo que registra otra persona aparece sin recargar la pantalla.** Si almacén registra una entrada mientras usted mira las existencias en la oficina, la cifra cambia sola.
 
-### 7.3 El tablero
+### 7.3 La pantalla de inventario
 
-**Operación › Inventario › Tablero**
+**Operación › Inventario › Inventario**
 
-Es la pantalla por la que se empieza. No se registra nada aquí: se lee cómo está el patio y se sale hacia donde toca. Su descripción lo resume: **Estado actual del patio y las entradas y salidas de material.** Arriba a la derecha, **Ver existencias**.
+Es la pantalla por la que se empieza, y es la de MGG con el aspecto de este sistema. Arriba dice **⬢ Inventario** y, debajo, **Catálogo de productos.** seguido de la regla con la que se encienden las alertas: **Política ABC · A 120% · B 100% · C 80% del stock mínimo** (se explica más abajo).
 
-**Material de clientes por recibir.** Cuando un cliente paga una factura con material (21.2), el tablero enseña arriba una tarjeta con lo que está por llegar: cuánto, de qué, de quién, a qué almacén y cuánto vale. Su subtítulo lo dice: **Pagos con material de facturas de venta. La factura no baja hasta que aquí se confirme que el material llegó al patio.** El botón **Llegó** lo ve el rol Almacén; los demás ven **Lo confirma almacén**. Al confirmar, el material entra con el costo acordado y la factura baja lo que el material vale. La ventana lo advierte: **Esto no se deshace: el material queda en el patio y el cobro registrado. Si no llegó completo, no lo confirme; que Facturación anule este cobro y lo registre con la cantidad real.**
+Debajo de la barra de botones van las pestañas **Inventario · Existencias · Catálogo · Movimientos**. Las otras tres son las de siempre (7.4, 7.8 y 7.6).
 
-Debajo hay cuatro tarjetas:
+#### La barra de botones
 
-| Rótulo | Qué mide | La línea de abajo |
+| Botón | Qué hace | Quién lo ve |
 | --- | --- | --- |
-| **Artículos con existencia** | Cuántos artículos tienen algo, no cuántos hay en el catálogo | **de 28 en el catálogo** |
-| **Valor del inventario** | Lo que vale todo lo que hay | **A costo promedio, no a precio de venta**. Si hay material de más de un dueño, el rótulo es **Valor del inventario, todo** y debajo va una línea por dueño |
-| **Bajo el mínimo** | Cuántos artículos de los almacenes propios están por debajo de su mínimo | **Sin artículos por reponer**, o **En el mínimo o por debajo** |
-| **Movimientos de hoy** | Cuántas líneas se escribieron hoy en el libro | **Entradas, salidas y traslados** |
+| **📱 Vista teléfono** | Abre la pantalla del almacenista, **📦 Inventario y Almacenes** (7.14) | Todos |
+| **Recepciones** | Lleva a **Solicitudes de pedido › 📥 Recepciones por recibir** (9.13). Si hay órdenes esperando mercancía, lleva el número | Todos |
+| **⚙ Categorías** | Abre **Categorías y medidas de inventario**: crear, depurar y eliminar categorías y unidades | **Control total** sobre Inventario |
+| **↓ Plantilla** | Baja `plantilla-articulos.xlsx`, la misma de **Cargar artículos por planilla** (7.10) | Todos |
+| **↑ Importar Excel** | Abre **Importar inventario desde Excel** | Escritura sobre Inventario |
+| **📊 Resumen** | Abre **📊 Resumen de Inventario** | Todos |
+| **⚠ Sin costo** | Abre **Productos sin costo**. Sale solo si hay algo que entró sin valorar y sigue en un almacén, con cuántos | Todos; cargar el costo pide la casilla de corregir costos |
+| **🗄 PRODUCTOS DESHABILITADOS** | Abre **Productos deshabilitados**. Sale solo si hay alguno, con cuántos | Todos |
+| **↓ Exportar** | Abre **Exportar inventario** | Todos |
+| **+ Nuevo producto** | Abre la ficha de un artículo nuevo, en el catálogo (7.8) | Escritura sobre Inventario |
 
-**Bajo el mínimo es la única tarjeta que se enciende**, con un filo ámbar arriba y el triángulo de aviso, y solo cuando hay algo que atender. Un artículo sin mínimo puesto no cuenta: no está bajo mínimo, está sin configurar.
+#### Las cuatro cifras
 
-Debajo, los atajos, agrupados por el orden en que hacen falta:
+| Rótulo | La línea de abajo |
+| --- | --- |
+| **Productos activos** | **SKUs en catálogo** |
+| **Valor del inventario** | **stock × precio**. Sin permiso para ver el valor, la cifra es un guion y debajo dice **Sin permiso para ver el valor** |
+| **En estado crítico** | **requieren atención**, en rojo, o **todo en orden** |
+| **Movimientos de hoy** | **Entradas, salidas y traslados** |
+
+Las tres primeras siguen a los filtros de almacén y de dueño: mirando un almacén, cuentan lo de ese almacén.
+
+#### ⚠ Stock crítico y productos a reabastecer
+
+Debajo de las cifras, y solo si hay algo, una tarjeta con borde rojo si hay críticos o amarillo si no. Se titula **⚠ Stock crítico** o **Productos a reabastecer**, y a la derecha dice cuántos: **3 críticos · 5 a reponer**.
+
+- Los críticos son botones rojos con **código · stock/mínimo unidad**: **REP-0012 · 3/10 UND**. Al pasar el ratón: **Stock 3 < mínimo 10**.
+- Los que hay que reponer son botones grises con su letra ABC delante y **código · stock unidad**. Al pasar el ratón: **Stock 11 ≤ umbral 12 (clase A)**.
+- Salen ocho de cada grupo. Si hay más de dieciséis, al final dice **…y 4 más**: el filtro **Stock** los enseña todos.
+
+**Pulsar un botón abre la trazabilidad del artículo** (7.9).
+
+Al lado va la tarjeta **Material de clientes por recibir**, cuando la hay. Cuando un cliente paga una factura con material (21.2), aquí se ve lo que está por llegar: cuánto, de qué, de quién, a qué almacén y cuánto vale. Su subtítulo lo dice: **Pagos con material de facturas de venta. La factura no baja hasta que aquí se confirme que el material llegó al patio.** El botón **Llegó** lo ve el rol Almacén; los demás ven **Lo confirma almacén**. Al confirmar, el material entra con el costo acordado y la factura baja lo que el material vale. La ventana lo advierte: **Esto no se deshace: el material queda en el patio y el cobro registrado. Si no llegó completo, no lo confirme; que Facturación anule este cobro y lo registre con la cantidad real.**
+
+#### La regla de las alertas
+
+Es la de MGG, y es la misma que usan los avisos de la campana (3.3):
+
+1. **Cada artículo tiene una clase, A, B o C, según lo que vale lo que hay.** Se ordenan de más a menos valor: los que suman el primer 80 % del valor del inventario son **A**, los que llevan hasta el 95 % son **B** y el resto, con lo que no tiene valor, **C**. Lo caro se vigila antes.
+2. **El umbral es el mínimo multiplicado por el porcentaje de su clase**, redondeado hacia arriba: A 120 %, B 100 %, C 80 %. Un artículo A con mínimo 10 avisa al llegar a 12.
+3. **Crítico** es estar por debajo del mínimo. **Reabastecer** es estar en el umbral o por debajo, sin llegar a crítico.
+
+Tres cosas que conviene saber:
+
+- **Un artículo con mínimo cero no avisa.** No está bajo mínimo: está sin configurar. El mínimo se pone en su ficha (7.8) o con la planilla (7.10).
+- **La alerta cuenta solo lo propio.** «Bajo el mínimo» es una señal de compra, y solo se compra lo de la empresa: lo de la gobernación ni enciende ni apaga la alerta.
+- **Sin permiso para ver el valor, todo es C**, porque la clase sale del valor.
+
+#### Los filtros
+
+- **Buscar**: **Buscar: nombre, código, medida, marca… (ej. clavo media pulgada)**. Busca por palabras, en cualquier orden.
+- **Categoría**, con casillas: **Marcá una o varias categorías**. Sin ninguna marcada dice **Todas las categorías**.
+- **Almacén**, que empieza en **Todos los almacenes**. Los talleres llevan **· taller** detrás. Mirando un almacén, solo salen los artículos que han pasado por él.
+- **Dueño**, que empieza en **De todos**. Solo aparece si hay más de un dueño.
+- **Clase ABC**: **Todas las clases**, **Clase A**, **Clase B** o **Clase C**.
+- **Stock**: **Todo el stock**, **Crítico**, **Reabastecer (no crítico)**, **Stock óptimo** o **Sin existencias**.
+
+**Los tanques de combustible y lo que va de camino no salen en esta pantalla**, ni en sus cifras: el combustible se lleva en su módulo (capítulo 20).
+
+#### La tabla
+
+| Columna | Qué muestra |
+| --- | --- |
+| **SKU** | El código del artículo |
+| **Producto** | El nombre y, debajo, una barra que se llena hasta el umbral: verde, amarilla cuando baja de tres cuartos y roja en crítico |
+| **Categoría** | |
+| **ABC** | La clase |
+| **Stock en todos los almacenes** | Cambia con los filtros: **Stock en ALMACÉN GENERAL**, **Stock en todos los almacenes · de GOBERNACIÓN**. Lleva **⚠ crítico** o **reabastecer** cuando toca, y **4 de otros dueños** si hay material ajeno |
+| **Umbral** | **≤ 12**, o un guion si no tiene mínimo. Al pasar el ratón: **10 mín × 120%** |
+| **Precio UND** | El costo promedio por unidad, en dólares |
+| **Valor** | Stock por precio |
+| **Estado** | **Activo**. Los deshabilitados no salen aquí: están en **🗄 PRODUCTOS DESHABILITADOS** |
+
+La lista va en orden alfabético y se pinta de doscientos en doscientos, con el botón **Ver 200 más de 640** al pie.
+
+#### Lo que se hace con cada fila
+
+| Botón | Qué hace | Quién lo ve |
+| --- | --- | --- |
+| **📋** | **Trazabilidad**: el stock por almacén y por dueño y el kardex (7.9) | Todos |
+| **↕** | **Movimiento**: entrada, salida, transferencia o ajuste de ese artículo | El rol Almacén, o lectura sobre Salidas y traslados |
+| **⇄** | **Mover**: pasarlo de un almacén a otro, directo | El rol Almacén, si hay stock |
+| **Editar** | La ficha de corrección del catálogo (7.8) | Escritura sobre Inventario |
+| **✕** | **Borrar producto** | Escritura sobre Inventario |
+| **⋯** | **Más acciones**, las propias de este sistema | Según cada una |
+
+**↕ Movimiento.** La ventana **Movimiento · REP-0012** pregunta primero el **Tipo de movimiento**:
+
+| Tipo | Qué hace |
+| --- | --- |
+| **Entrada (suma stock)** | Una entrada sin compra, como **Registrar entrada** (7.4): almacén, cantidad, **Costo unitario del proveedor**, **Moneda** y la casilla de lo que no se sabe cuánto costó. Compara el costo con el de siempre y avisa si se sale |
+| **Salida (resta stock)** | Una salida de verdad, con para quién sale. Si usted puede aprobar salidas de ese almacén y entregarlas, el botón dice **Registrar salida** y sale en el acto, con su nota; si no, dice **Pedir salida** y queda **Por aprobar** (26.2). Al terminar, **Ver en Salidas** |
+| **Transferencia a otro almacén** | Un traslado directo, con su **Almacén destino**. El botón dice **Transferir** |
+| **Ajuste manual (cualquier signo)** | Un ajuste por conteo, con **Signo del ajuste**: **+ aumenta stock** o **− disminuye stock** |
+
+El **Motivo del movimiento** es obligatorio en los cuatro, con atajos según el tipo —**Compra sin orden de compra**, **Entrega a personal**, **Reposición del almacén**, **Conteo físico**…—. Antes de guardar, la **Vista previa** dice cómo queda el almacén: **12 → 20 (+8)**, y en una entrada, cómo queda el costo promedio.
+
+**⇄ Mover.** La ventana **Mover · BOMBA DE AGUA** pide **Desde**, **Almacén destino** y la cantidad, y se confirma con **Mover**. Es la misma transferencia directa del movimiento.
+
+**✕ Borrar producto.** No borra la historia: deshabilita el producto. Pide **¿Por qué se da de baja?** y, para confirmar, escribir el nombre del producto. El producto pasa a **🗄 PRODUCTOS DESHABILITADOS**, de donde se reactiva.
+
+**⋯ Más acciones** abre las que este sistema tiene y MGG no: **Contar** (conteo físico, 7.4), **Corregir el costo**, **Al taller**, **Cambiar de dueño**, **Ver dónde está** y, solo para administración, **Eliminar duplicado**. Si el artículo está en más de un almacén, primero pregunta en cuál.
+
+#### Los botones de la cabecera, uno por uno
+
+**📊 Resumen de Inventario.** El período se elige con **Hoy**, **Semana** o **Mes**, o con **Desde** y **Hasta**. Arriba, **VALOR TOTAL INVENTARIO** y las cifras de **PRODUCTOS NUEVOS**, **SALIDAS** y **TRASLADOS** del período; cada una se pulsa para ver su detalle. Debajo, **Total por almacén**: tocar un almacén enseña sus productos, y tocar un producto abre su trazabilidad. **↓ PDF (vista previa)** saca el resumen en papel.
+
+**Exportar inventario.** Filtra por **Texto (SKU o nombre)**, **Almacén**, **Unidad** y **Estado**, y baja lo filtrado con **↓ PDF** o **↓ Excel**.
+
+**Importar inventario desde Excel.** **↓ Plantilla** y **Elegir archivo**. Antes de escribir nada enseña cuatro cifras —**Total filas**, **Válidas**, **Ya existen / duplicadas** y **Con error**—, los **Errores por columna** y el **Detalle de filas**. La casilla **Actualizar precio y stock de los que ya existen** decide qué pasa con lo repetido. Se importa con **↑ Subir archivo**. Para corregir fila por fila está el enlace **Corregir fila por fila en la carga completa**, que lleva a 7.10.
+
+**Productos sin costo.** Lo que entró sin valorar y sigue en algún almacén, con **Buscar** y **Almacén**. En cada fila se escribe el **Costo unitario** y la **Moneda**; si el artículo se compró antes, la fila propone el costo: **sugerido de OC-2026-0012**. **Guardar 3 con costo** les pone costo a todos los que lo tienen escrito. La existencia no cambia: el libro deja la corrección como un ajuste de costo. Lo hace quien tiene la casilla de corregir costos; los demás leen **Cargar el costo lo hace quien tiene permiso para corregir costos.**
+
+**Productos deshabilitados.** Los productos dados de baja, con **Buscar**, **Categoría**, **Unidad**, **Último almacén**, **Dado de baja por** y fechas. **↻ Reactivar** pide **¿Por qué vuelve?** y lo devuelve a la lista.
+
+**Categorías y medidas de inventario.** Las categorías y las unidades del catálogo, en una sola ventana. Las del sistema no se eliminan.
+
+#### Qué hacer en el inventario y primera vez
+
+Al pie, plegado, queda lo que antes era el tablero de inventario: los atajos agrupados por el orden en que hacen falta y una nota para quien empieza.
 
 | Bloque | Atajos |
 | --- | --- |
@@ -1226,17 +1354,13 @@ Debajo, los atajos, agrupados por el orden en que hacen falta:
 | **El día a día** | **Llegó una compra**, **Sacar material** y **Trasladar a otro almacén**. Los dos últimos llevan a **Salidas y traslados** |
 | **Revisar y cuadrar** | **Contar el almacén**; **Reponer lo que falta (3)** cuando hay artículos en el mínimo, o **Ver lo que está por debajo del mínimo** cuando no; y **Ver qué le pasó a un artículo** |
 
-**Cada atajo sale solo a quien tiene permiso sobre el módulo al que lleva.** El de **Cargar el saldo inicial** lo ve quien tiene escritura sobre Inventario, pero el botón que lo hace, **Registrar entrada**, es del rol Almacén (7.1).
-
-Al pie, en **Primeros pasos**, queda esta orientación: *«La existencia es la suma del libro de movimientos: cada cosa que entra, sale o se traslada deja su renglón. Lo que llega con una orden entra al recibir la compra; lo demás, con «Registrar entrada» en Existencias. Las salidas y los traslados están en Salidas y traslados. Si el conteo no cuadra con el sistema, se corrige con un ajuste, que queda anotado con su motivo y con quién lo hizo.»*
-
 **La existencia no se escribe a mano: se deduce del libro.** Registrar una entrada no es escribir *hay cuarenta*: es anotar que entraron cuarenta y cuánto costaron, y la existencia sube como consecuencia. La diferencia importa el día que alguien pregunta de dónde salieron.
 
 ### 7.4 Existencias
 
-**Operación › Inventario › Existencias**
+**Operación › Inventario › Inventario**, pestaña **Existencias**
 
-Cuánto hay de cada cosa, dónde está y cuánto vale. Desde aquí se registra lo que entra sin una compra de por medio, se cuenta, se pide una salida, se traslada y se manda al taller.
+Es la segunda pestaña de la pantalla de inventario, y la mirada de siempre: cuánto hay de cada cosa, dónde está y cuánto vale, almacén por almacén. Desde el detalle de un almacén, **↕ Mover material** lleva aquí con ese almacén elegido (7.11), y el **Contar** de **⋯ Más acciones** también (7.3). Desde aquí se registra lo que entra sin una compra de por medio, se cuenta, se pide una salida, se traslada y se manda al taller.
 
 **Primero todo, después dónde.** La pantalla abre con **el total de la empresa**: una fila por artículo, sumando todos los sitios. Su descripción lo dice: **Existencias totales de la empresa. Seleccione un almacén o taller para consultar y mover su contenido.** Con un almacén elegido, cada fila es lo que hay en ese sitio.
 
@@ -1289,7 +1413,7 @@ El botón **Registrar entrada** abre **Entrada de material**. Es **Para lo que e
 
 #### Solicitar salida
 
-**Desde Existencias no se saca material: se pide.** **Solicitar salida**, en la cabecera o en la fila de un sitio, lleva a **Salidas y traslados › Salidas** con la solicitud abierta, y desde la fila ya con el artículo y el almacén puestos. La salida no descuenta nada hasta que la aprueba quien responde por el almacén y alguien de almacén la entrega. Todo el circuito está en 26.2.
+**Desde Existencias no se saca material: se pide.** **Solicitar salida**, en la cabecera o en la fila de un sitio, lleva a **Salidas y traslados › ↘ Salidas** con la solicitud abierta, y desde la fila ya con el artículo y el almacén puestos. La salida no descuenta nada hasta que la aprueba quien responde por el almacén y alguien de almacén la entrega. Todo el circuito está en 26.2.
 
 #### Contar (conteo físico)
 
@@ -1312,7 +1436,7 @@ Se cuenta **un artículo y un sitio a la vez**. Si el artículo se lleva en vari
 
 #### Trasladar
 
-**Trasladar** abre **Nuevo traslado**, que es el mismo de **Salidas y traslados › Traslados** (26.3), con sus tres formas: **Pedir material de otro almacén**, **Enviar material a otro almacén** y **Traslado directo**. Si hay un almacén elegido, llega como origen.
+**Trasladar** abre **Nuevo traslado**, que es el mismo de **Salidas y traslados › ↔ Traslados** (26.3), con sus tres formas: **Pedir material de otro almacén**, **Enviar material a otro almacén** y **Traslado directo**. Si hay un almacén elegido, llega como origen.
 
 #### Mandar al taller
 
@@ -1376,9 +1500,9 @@ Si no hay ninguno: **Un taller se crea como almacén de tipo Taller. Desde enton
 
 ### 7.6 Movimientos
 
-**Operación › Inventario › Existencias › Movimientos**
+**Operación › Inventario › Inventario**, pestaña **Movimientos**
 
-Es la tercera pestaña de **Existencias**, y es el libro: **Libro de movimientos del inventario. Los registros no se editan ni se eliminan: toda corrección se asienta como un movimiento nuevo.**
+Es la última pestaña de la pantalla de inventario, y es el libro: **Libro de movimientos del inventario. Los registros no se editan ni se eliminan: toda corrección se asienta como un movimiento nuevo.**
 
 Cada línea muestra el número del movimiento —**MOV-2026-0001**, que se reinicia cada año—, el tipo, la fecha y hora, quién lo registró, para quién salió si salió para alguien, y la nota. Si la nota es larga se corta, y **ver más** abre el detalle entero. La cantidad va **en verde con un más** si entró material y **en rojo con un menos** si salió.
 
@@ -1394,7 +1518,7 @@ En las líneas que restan, el botón **Nota** saca su papel: la nota de traslado
 
 #### Deshacer un movimiento
 
-**El botón se llama Deshacer.** Lo ve el rol Almacén.
+**El botón se llama Deshacer.** Lo ve el rol Almacén, aquí y en el kardex de la trazabilidad (7.9).
 
 1. Busque la línea equivocada.
 2. Pulse **Deshacer**: **Se escribe el movimiento contrario a MOV-2026-0007. El original se queda en el libro.**
@@ -1411,19 +1535,19 @@ Tres reglas que conviene saber de antemano:
 
 ### 7.7 Trasladar
 
-Los traslados entre almacenes se hacen desde **Salidas y traslados › Traslados**, y están contados en 26.3. Desde Existencias se llega a la misma ventana con el botón **Trasladar** (7.4).
+Los traslados entre almacenes se hacen desde **Salidas y traslados › ↔ Traslados**, y están contados en 26.3. Desde Existencias se llega a la misma ventana con el botón **Trasladar** (7.4). Un traslado directo de un solo artículo también se hace con **⇄** o con **↕ › Transferencia a otro almacén**, en la pantalla de inventario (7.3), y desde el teléfono con **🔁 Traslado** (7.14).
 
 Un traslado no siempre es inmediato: se puede pedir, enviar y confirmar que llegó, cada paso por quien responde por su almacén. Y no se deshace desde Movimientos: lo pedido o en camino se cancela, y lo recibido se devuelve con un traslado de vuelta.
 
 ### 7.8 Catálogo de artículos
 
-**Operación › Inventario › Existencias › Catálogo**
+**Operación › Inventario › Inventario**, pestaña **Catálogo**
 
-Es la segunda pestaña de **Existencias**: **Catálogo de artículos que se solicitan, se compran y se cuentan.** Un artículo mal definido se convierte más adelante en existencias que no cuadran, así que vale la pena crearlo con calma.
+Es la tercera pestaña de la pantalla de inventario: **Catálogo de artículos que se solicitan, se compran y se cuentan.** Un artículo mal definido se convierte más adelante en existencias que no cuadran, así que vale la pena crearlo con calma.
 
 Se filtra por **Buscar**, que mira también el código anterior de un artículo renumerado, y por **Categoría**, que empieza en **Todas**. Dos botones separan **Activos** y **Desactivados**; se abre en los activos. Las columnas son **Código**, **Artículo**, **Categoría**, **Unidad**, **Al entregarlo** y **Mínimo**.
 
-**Pulsar la fila abre la ficha del artículo**, que es donde está su historia (7.9). Al final de cada renglón van **Desactivar**, el lápiz para corregir y la papelera para borrar.
+**Pulsar la fila abre la trazabilidad del artículo**, que es donde está su historia (7.9). Al final de cada renglón van **Desactivar**, el lápiz para corregir y la papelera para borrar.
 
 En la cabecera, **Cargar por planilla** (7.10), **Categorías** con control total sobre Inventario, y **Nuevo artículo**.
 
@@ -1476,69 +1600,58 @@ En la lista, esta columna se llama **Al entregarlo**.
 
 **Revise el nombre y la unidad antes de guardar.** Un artículo desactivado deja de aparecer en las listas, pero sus movimientos siguen en el libro.
 
-### 7.9 La ficha de un artículo
+### 7.9 La trazabilidad de un artículo
 
-**No está en el menú.** Se llega pulsando la fila del artículo en el **Catálogo de artículos**.
+**No está en el menú.** Se abre con **📋** en la fila del artículo, en la pantalla de inventario (7.3), y también pulsando un botón de **⚠ Stock crítico**, un aviso de stock de la campana (3.3) o un producto del detalle de un almacén (7.11). La dirección de la ficha de antes, la que llevan los enlaces y los papeles viejos, abre esta misma ventana.
 
-Es donde un artículo cuenta su historia: qué es, cuánto hay y **todo lo que le ha pasado desde que se creó**, en orden y sin tener que filtrar el libro a ojo.
+Es donde un artículo cuenta su historia: cuánto hay, dónde, de quién y **todo lo que le ha pasado**, en orden y sin tener que filtrar el libro a ojo. La ventana se titula **Trazabilidad · REP-0012**, y debajo van el nombre y el código, la categoría y la unidad.
 
-Arriba van el **código**, el **nombre** y la **descripción**, y a la derecha el botón **Al catálogo** para volver.
-
-#### De un vistazo
-
-Cuatro tarjetas:
+#### Las cifras de arriba
 
 | Rótulo | Qué muestra |
 | --- | --- |
-| **Existencia** | Cuánto hay en total, con su unidad |
-| **Categoría** | La categoría, y debajo **Lleva existencias** o **No lleva existencias** |
-| **Al entregarlo** | **Vuelve** / **Se gasta** / **No se entrega**, y debajo la explicación: **Queda a nombre de quien lo tiene**, **Sale del almacén y no vuelve** o **No es algo que se le dé a una persona** |
-| **Mínimo** | El número, o un guion. Debajo, **Avisa al bajar de aquí** o **No se controla** |
+| **Stock en ALMACÉN GENERAL** | Solo si se abrió mirando un almacén: lo que hay en él |
+| **Stock total** | Lo que hay en todos los almacenes, con su unidad |
+| **Mínimo** | El número, o un guion si no tiene |
+| **Costo prom.** | El costo promedio por unidad |
+| **Entradas (todos)** / **Salidas (todos)** | Lo que entró y salió en el kardex que se está viendo. Al filtrar el kardex por un almacén, cambian a ese almacén |
 
-Dentro de **Existencia**, y **solo cuando hay unidades en manos de alguien**, aparece una segunda línea: **6 disponible · 4 en manos de alguien**. Si el disponible llega a cero o menos, se pinta en ámbar. Cuando nadie tiene nada prestado esa línea no se dibuja: repetirla siempre enseñaría a no leerla.
+#### Dónde está el stock
 
-Debajo van las equivalencias y el valor por envase, y cómo se compró y a cómo salió.
+Un renglón por almacén con su cantidad y, debajo, **Costo prom.**, cuánto hay **sin valorar** y cuánto está **en manos de alguien**, cuando lo hay. El almacén desde donde se abrió va resaltado, con la marca **vista actual**. Si hay material de más de un dueño, debajo se reparte **por dueño**. Si no hay nada: **Sin stock en ningún almacén.**
 
-#### Su historia
+#### Detalle del producto
 
-Es la tarjeta grande de abajo, **Historial**, y su subtítulo lo resume: **Desde su creación, del más reciente al más antiguo.** Enseña los 200 hechos más recientes.
+Los datos del catálogo que tienen algo escrito: categoría, unidad, marca, número de parte, presentación, equivalencias y lo demás.
 
-No es una tabla, es una lista: un renglón por hecho. Cada uno lleva un icono a la izquierda —**flecha verde hacia abajo** si sumó existencia, **flecha roja hacia arriba** si la restó, **círculo** si no la movió—, el nombre de lo que pasó, la cantidad con su unidad, el almacén, y al pie la fecha y la hora, el documento y **lo registró** seguido del nombre de la persona. Cuando el hecho tiene que ver con alguien —una entrega, una devolución, una pérdida— aparece además el nombre de esa persona en una etiqueta gris.
+#### Kardex
 
-Cuando un movimiento tiene motivo, el título lo lleva detrás de un punto: **Salió para consumo ·** seguido del motivo de la salida.
+Es el libro del artículo, agrupado por día y del más reciente al más antiguo. Arriba, el filtro **Almacén**, que empieza en **Todos (85)** y lleva cuántos movimientos tiene cada almacén.
 
-Los hechos que puede contar son estos:
+Cada renglón lleva:
 
-| Lo que se lee | Qué fue |
-| --- | --- |
-| **Se creó en el catálogo** | El primer renglón de todos. Al lado, su categoría y su unidad |
-| **Entró por una compra** | Una recepción de compras |
-| **Entró sin compra de por medio** | La entrada de 7.4: el saldo inicial, algo comprado por fuera |
-| **Entró por producción** | Un parte de turno de Explotación |
-| **Volvió al almacén** | Material devuelto |
-| **Salió para consumo** | Una salida entregada, con su motivo detrás |
-| **Salió en un despacho** | Una nota de entrega de una venta |
-| **Salió como pago de una compra** | Material que se dio para pagar una orden de compra |
-| **Se perdió en el manejo** | Merma: se rompió, se derramó, se echó a perder moviéndolo |
-| **Salió ·** y su causa | Una baja. No se registran nuevas; las que hay siguen en el libro |
-| **Ajuste: sobraba** / **Ajuste: faltaba** | Un conteo físico, en cada sentido |
-| **Se trasladó a otro almacén** / **Llegó de otro almacén** | Los dos movimientos de un traslado |
-| **Se deshizo un movimiento** | Una corrección |
-| **Se entregó como dotación** | Se le dio a alguien por su rol |
-| **Se asignó para una actividad** | Se le dio a alguien para una faena concreta |
-| **La devolvió** | Volvió a manos de la empresa |
-| **Se dio por perdida** / **Se reportó dañada** / **Incidencia** | En ámbar: no mueven existencia, pero cambian quién responde |
-| **Se saldó con descuento de nómina** / **La repuso** / **Se le exoneró** / **Se saldó** | Cómo se cerró una pérdida (18.5) |
-| **Se mandó al taller ·** y el tipo de trabajo | Con el motivo, el oficio y la urgencia detrás |
-| **Volvió del taller** | Con lo que se le hizo y, si volvió menos de lo que se mandó, cuántos faltaron: **faltaron 2** |
+- A la izquierda, la cantidad: **en verde con un más** si entró, **en rojo con un menos** si salió.
+- El tipo de movimiento, el almacén y, si el material es de otro dueño, **de GOBERNACIÓN**. En un traslado, **Origen:** y **Destino:**. Si salió para alguien, **Para:**, y la nota.
+- **Costo unit.**, la referencia —el número del movimiento, de la nota de salida o de la orden— y la hora con quién lo registró.
+- A la derecha, **saldo en ALMACÉN GENERAL**: lo que quedó en ese almacén después del movimiento.
 
-Si el artículo no ha tenido movimiento, se ve **Sin movimientos todavía**. Si el identificador de la dirección no corresponde a ninguno, **No existe ese artículo.** con el enlace **Volver al catálogo**.
+**Deshacer** sale en los renglones que se pueden deshacer, para el rol Almacén. Escribe el movimiento contrario y deja el original en el libro: **Se escribe el movimiento contrario a MOV-2026-0007. El original se queda en el libro.** Pide un **Motivo**. Un renglón ya deshecho lleva la marca **Deshecho**. Las reglas son las de 7.6.
 
-**La ficha de un artículo desactivado se sigue abriendo.** Su historia no desaparece porque se le apague la etiqueta.
+Si el artículo no se ha movido nunca: **✨ Sin movimientos registrados todavía.**
+
+#### Préstamos y taller
+
+Plegado al final: **Entregas a personas, devoluciones y viajes al taller. Del más reciente al más antiguo.** Es lo que el kardex no cuenta porque no mueve existencia —entregar un casco no lo saca del inventario—: quién tiene qué, lo que se dio por perdido o dañado y cómo se cerró, y cada viaje al taller con lo que se le hizo.
+
+#### El papel
+
+**↓ Trazabilidad PDF** saca todo lo de la ventana —las cifras, dónde está el stock y el kardex— en un PDF con la cabecera de la empresa. **Cerrar** vuelve a la lista.
+
+**La trazabilidad de un artículo deshabilitado se sigue abriendo.** Su historia no desaparece porque se le apague la etiqueta.
 
 ### 7.10 Cargar artículos por planilla
 
-**No está en el menú ni en ninguna pestaña.** Se llega por el botón **Cargar por planilla** del **Catálogo de artículos**, y también por el atajo **Cargar el catálogo** del tablero.
+**No está en el menú ni en ninguna pestaña.** Se llega por el botón **Cargar por planilla** del **Catálogo de artículos**, por el enlace **Corregir fila por fila en la carga completa** de **↑ Importar Excel** (7.3) y por el atajo **Cargar el catálogo** de **Qué hacer en el inventario y primera vez**. La **↓ Plantilla** de la pantalla de inventario es la misma de aquí.
 
 **Para cargar muchos artículos de una vez, o corregir los que ya están.** Es la pantalla que hace falta el día que se monta el catálogo, y la que sirve después para cambiarle el mínimo o el precio a cincuenta artículos de un golpe.
 
@@ -1645,9 +1758,55 @@ Cuando la carga entra, aparece **Cargado.** con el detalle —**12 nuevos y 3 ac
 
 En el menú se llama **Almacenes y talleres**; dentro, las pestañas son **Almacenes y patios**, **Talleres** (7.5) y **Dueños del material**.
 
-**Almacenes, patios y talleres. Las existencias se controlan por almacén.** Por eso hace falta al menos uno para poder recibir material.
+La pantalla se titula **▣ Almacenes y patios** y dice: **Almacenes, patios y talleres, con su valor. Las existencias se controlan por almacén: tocá uno para ver sus productos y su consumo.** Hace falta al menos un almacén para poder recibir material.
 
-La lista lleva **Código**, **Nombre** —con la etiqueta **Recibe compras** en el propuesto y el dueño si es ajeno—, **Tipo**, **Ubicación**, **Responsable** y **Estado**. Para **editar** un almacén se pulsa **en cualquier parte de su fila**. **Nuevo almacén** abre la misma ficha vacía.
+Arriba, **📄 Reporte general (PDF)**, que saca todo el inventario repartido por almacenes, y **Agregar almacén**, para quien tiene escritura sobre Inventario o la casilla de guardar almacenes.
+
+#### ▦ Kanban y ☰ Lista
+
+Los dos botones cambian la forma de verlos, y la pantalla recuerda la última que se eligió.
+
+**▦ Kanban** pone una tarjeta por almacén: el nombre, el código y la ubicación —o **Sin ubicación**—, las marcas de tipo, dueño, **Recibe compras** e **Inactivo**, y, si guarda material, **VALOR TOTAL** con **12 productos · 340 und.** debajo; si no guarda, **No guarda material.** Al pie, **Responsable:** con el nombre, o **Sin asignar**. La tarjeta de un taller lleva una franja de otro color y **Talleres ›**.
+
+**☰ Lista** pone lo mismo en una tabla: **Código**, **Almacén**, **Tipo**, **Ubicación**, **Responsable**, **Productos**, **Unidades**, **Valor total** y **Estado**. Los tanques de combustible solo salen aquí, fuera de los valores: se llevan en su módulo (capítulo 20).
+
+Sin permiso para ver el valor, **VALOR TOTAL** dice un guion, no cero.
+
+Cada almacén lleva sus botones:
+
+| Botón | Qué hace | Quién lo ve |
+| --- | --- | --- |
+| **📄** | **📄 Reporte · ALMACÉN GENERAL**: lo que hay, con **↓ Excel** y **↓ PDF** | Todos |
+| **📊** | **📊 Consumo · ALMACÉN GENERAL** (abajo) | Todos |
+| **✎** | La ficha del almacén, para corregirlo | Escritura sobre Inventario, o la casilla de guardar almacenes |
+| **✕** / **✓** | Desactivar o volver a activar | Igual que **✎** |
+
+**Tocar un almacén abre su detalle. Tocar un taller lleva a Talleres** (7.5), donde viven sus órdenes.
+
+#### Desactivar un almacén
+
+Un almacén **no se borra**: se desactiva. La ventana **Desactivar almacén** pregunta **¿Seguro que querés desactivar el almacén…? Deja de ofrecerse para recibir y mover material. Su historia no se borra y se puede volver a activar con ✓.** Antes revisa qué lo impide y lo dice: en rojo, **No se puede:** —por ejemplo, si todavía tiene material—, y en amarillo, **Ojo:**, lo que conviene saber sin impedirlo.
+
+#### El detalle de un almacén
+
+Arriba, **← Volver a almacenes**, el nombre con su dueño, y el valor con cuántos productos tiene. Los botones:
+
+- **+ Nuevo producto**, que lleva al catálogo (7.8), con escritura sobre Inventario.
+- **↕ Mover material**, que abre la pestaña **Existencias** con ese almacén elegido, para contar, trasladar, sacar o corregir el costo de lo que hay ahí (7.4).
+- **📊 Consumo**, **↓ Excel** y **↓ PDF**.
+
+Debajo, **Buscar** —**Nombre o código del producto**— y **Categoría**, y otra vez **▦ Kanban** y **☰ Lista**:
+
+- En **☰ Lista**, la tabla lleva **SKU**, **Producto**, **Categoría**, **Entradas** y **Salidas** —lo que ha entrado y salido de ese almacén desde siempre—, el stock en el almacén con **⚠** si está por debajo del mínimo, **Precio UND** y el valor.
+- En **▦ Kanban**, una tarjeta por producto con **Stock**, **Precio UND**, **Valor total**, **Total usados** y **Consumo diario**.
+
+Tocar un producto abre su trazabilidad (7.9).
+
+#### 📊 Consumo de un almacén
+
+Lo que se gastó de ese almacén en un período, por producto. Se elige **Desde** y **Hasta** y se puede **Buscar** un producto. Arriba, **Productos consumidos**, **Cantidad total** y **Valor total ($)**; debajo, una barra por producto. Tocar un producto enseña sus **Movimientos** —**Fecha**, **Movimiento**, **Tipo**, **Cantidad** y **Valor ($)**—. Se baja con **↓ Excel** o **↓ PDF**. Si no hubo nada: **Sin consumo en el período seleccionado.**
+
+#### La ficha del almacén
 
 | Campo | ¿Hace falta? | Detalle |
 | --- | --- | --- |
@@ -1661,8 +1820,6 @@ La lista lleva **Código**, **Nombre** —con la etiqueta **Recibe compras** en 
 | **Trabajos simultáneos** | Según el tipo | Solo si el tipo es **Taller**. **Sin este dato no se indica si el taller tiene sitio.** |
 | **Es el almacén propuesto al recibir una compra** | — | |
 | **Activo** | — | Viene marcada |
-
-Un almacén **no se borra**: se desmarca **Activo** y deja de aparecer en las listas.
 
 Sobre la casilla del almacén propuesto: el sistema **no impide marcarla en varios almacenes a la vez**, y si eso pasa, cuál se propone al recibir una compra deja de ser previsible. Márquela en uno solo.
 
@@ -1713,7 +1870,7 @@ Diez cascos en el libro pueden ser diez cascos en diez cabezas.
 
 **Lo que está en manos de una persona sigue contando como existencia** —es de la empresa y vale— **pero no se puede volver a entregar.** Por eso el sistema lleva dos números y los distingue: la **existencia**, que es lo que hay, y lo **disponible**, que es lo que queda sin entregar.
 
-Se ve en tres sitios: en **Existencias**, en la **ficha del artículo** y en la pantalla de Asignaciones. Y **solo cuando difieren**: si nadie tiene nada prestado, la línea no se dibuja.
+Se ve en tres sitios: en **Existencias**, en la **trazabilidad del artículo** (7.9) y en la pantalla de Asignaciones. Y **solo cuando difieren**: si nadie tiene nada prestado, la línea no se dibuja.
 
 **El sistema no deja entregar más de lo disponible**, y lo dice con nombre y cantidad: «Solo quedan 2 de "LLAVE STILSON" sin asignar.» Con lo que se gasta —guantes, mascarillas— el aviso es el de la existencia: «De "GUANTES DE CUERO" solo hay 4 en existencia y se intentan entregar 6.»
 
@@ -1741,7 +1898,7 @@ A eso se suma la salida que escribe **Asignaciones** cuando se reporta perdido o
 
 Cada artículo tiene **una sola unidad**, la que se le puso al crearlo. La tonelada es lo único que mide un instrumento auditable, la romana, y el volumen de una pila siempre es una estimación.
 
-**Pero el sistema sí sabe convertir, si se le dice cómo.** Cada artículo tiene un campo de **densidad** —cuántas toneladas pesa un metro cúbico de ese material—, obligatorio en lo que se mide en metros cúbicos o en toneladas. Con ella, Existencias y la ficha del artículo enseñan la misma cantidad en la otra medida, en gris y precedida de **≈**, para que se lea como lo que es: una equivalencia, no una medición. Cambiar una densidad que ya estaba pide un motivo, porque cambia la conversión de todo lo que se imprima desde entonces.
+**Pero el sistema sí sabe convertir, si se le dice cómo.** Cada artículo tiene un campo de **densidad** —cuántas toneladas pesa un metro cúbico de ese material—, obligatorio en lo que se mide en metros cúbicos o en toneladas. Con ella, Existencias enseña la misma cantidad en la otra medida, en gris y precedida de **≈**, para que se lea como lo que es: una equivalencia, no una medición. Cambiar una densidad que ya estaba pide un motivo, porque cambia la conversión de todo lo que se imprima desde entonces.
 
 **Y ojo con lo que se decide al crear el artículo**, porque la unidad no conviene cambiarla después. Si se cambia en un artículo con movimientos, la ficha avisa: **Atención: ya tiene movimientos anotados en …**, y lo anotado sigue diciendo el número que se escribió.
 
@@ -1751,6 +1908,10 @@ Del módulo salen estos documentos, y **todos llevan la misma cabecera que el re
 
 | Papel | De dónde sale |
 | --- | --- |
+| **Trazabilidad** | Desde la trazabilidad de un artículo, con **↓ Trazabilidad PDF** (7.9) |
+| **Resumen de inventario** | Desde **📊 Resumen**, en la pantalla de inventario, con **↓ PDF (vista previa)** (7.3) |
+| **Inventario exportado** | Desde **↓ Exportar**, en PDF o en Excel, con los filtros elegidos (7.3) |
+| **Reporte de un almacén** y **consumo de un almacén** | Desde **📄** y **📊** de cada almacén, en Excel o PDF; y el **📄 Reporte general (PDF)**, de todos (7.11) |
 | **Acta de existencias** | Desde la cabecera de **Existencias**, con el botón **Acta de conteo físico**, para el rol Almacén. Sale con lo que se está viendo —los filtros puestos— y una columna **Contado** vacía para escribir a mano |
 | **Nota de salida** | Desde **Movimientos**, con el botón **Nota** de una salida. La de una salida pedida sale sola al entregarla (26.5) |
 | **Nota de traslado** | Desde **Movimientos**, con el botón **Nota** de la salida de un traslado (26.5) |
@@ -1761,20 +1922,84 @@ Del módulo salen estos documentos, y **todos llevan la misma cabecera que el re
 
 ### 7.14 El almacén en el teléfono
 
-Con el mismo molde del surtidor de combustible (20.4) y la cocina de Alimentación (25.3): botones grandes, teclado numérico, aviso de mala señal a los doce segundos, y un acuse que se pasa por WhatsApp. Se abre con **Vista de teléfono**, desde **Existencias**, desde **Salidas** o desde **Asignaciones**. Cada pantalla lleva un enlace **← Atrás** para salir sin terminar.
+Es la pantalla del almacenista, la misma de MGG: una sola página, con botones grandes, pensada para usarla de pie en el almacén con el celular en una mano. Se abre con **📱 Vista teléfono**, en la pantalla de inventario (7.3), o con **Vista de teléfono**, en Salidas. Quien tiene la casilla **Entrar directo al almacén del teléfono** (abajo) aterriza en ella al abrir el sistema.
 
-Son cuatro tareas, no una:
+Arriba dice **📦 Inventario y Almacenes** y el nombre de quien la usa. Quien no trabaja solo desde el teléfono tiene a la derecha **🖥 Módulo completo**, que vuelve a la pantalla de inventario. Debajo, para quien revisa o recibe solicitudes de pedido, la fila **Ir a: 📋 Solicitudes de Pedido**, con cuántas hay **por revisar** y **por recibir** (9.6).
 
-- **Registrar entrada** — los mismos campos de siempre: almacén, uno o más artículos con su cantidad y su costo, el aviso si el costo se sale de lo normal, **Referencia** y **Procedencia**. Al guardar, un acuse con lo que entró, para compartir por WhatsApp. Si el artículo todavía no está en el catálogo, el enlace **No está en el catálogo: darlo de alta** abre un formulario corto —nombre, categoría y unidad, el código se pone solo— y lo deja elegido en el renglón sin salir de la entrada.
-- **Entregar material** — una lista de las solicitudes **ya aprobadas**, por entregar. No se teclea nada: destino, responsable, renglones y vehículo ya se decidieron al pedirla y al aprobarla. Se toca una, se confirma, y sale el mismo reporte compartible por WhatsApp que ya existe en Salidas y traslados (26.5).
-- **Entregar a un trabajador** — la misma puerta de Asignaciones (18.3): se elige el trabajador, el almacén, si es **Préstamo** o **Dotación**, y se marca la cantidad de cada cosa que se lleva, de una lista buscable. Lo que vuelve y lo que se gasta lo decide el catálogo, no esta pantalla. Al guardar, un acuse que dice cuánto quedó prestado y cuánto consumido.
-- **Ver inventario** — solo consulta, nada se mueve desde aquí: se busca un artículo, con o sin elegir un almacén, y se ve cuánto hay y en qué unidad. Para mirar antes de registrar, sin salir del teléfono.
+#### Primero, el almacén
 
-**Quién ve cada botón.** Registrar entrada pide escritura en Inventario; Entregar material, escritura en Salidas; Entregar a un trabajador, escritura en Asignaciones o el rol Almacén, Recursos Humanos o administración; Ver inventario, aunque sea solo lectura en Inventario. Quien tiene más de una tarea ve un menú para elegir; quien tiene solo una, aterriza derecho en ella.
+**Todo lo de la pantalla es del almacén elegido arriba**, en **Almacén**: los botones, la lista de productos y cada operación. Empieza en el almacén general y el teléfono recuerda el último que se eligió. **El almacén no se cambia a mitad de un paso**: el selector se apaga y dice **Para cambiar de almacén, vuelve al inicio.** Lo que se está cargando es de ese almacén.
 
-**Entrar directo al abrir el sistema.** En Configuración › Usuarios, entre los permisos extendidos de Inventario, está la casilla **Entrar directo al almacén del teléfono**: quien la tiene abre el sistema y aparece ya en esta pantalla, en vez de en el tablero. No da permiso de nada por sí sola: cada tarea sigue pidiendo el suyo.
+Los tanques de combustible y lo que va de camino no salen en el selector.
 
-**Para quien solo trabaja desde el teléfono.** El rol **Almacén** reparte, además de Inventario y Salidas, otros módulos de escritorio —Alimentación, Combustible, Compras, Configuración, Maquinaria— que nada tienen que ver con estas cuatro tareas. Para alguien que solo las usa a él, el rol a la medida **Almacén (teléfono)** reparte exactamente lo que piden —Inventario, Salidas, Asignaciones y el Panel, todo lo demás en Ninguno— sin tocar el rol Almacén, que comparten otras personas. Se asigna como cualquier otro rol, desde Configuración › Usuarios.
+#### Los botones
+
+| Botón | Qué hace | Quién lo ve |
+| --- | --- | --- |
+| **＋ Producto nuevo** | **Algo que todavía no está en** el almacén: lo da de alta en el catálogo y le da entrada, en un solo paso | Escritura sobre Inventario |
+| **⬇ Entrada** | **Llegó más de un producto que ya está** | Escritura sobre Inventario |
+| **⬆ Salida** | **Sale material del almacén** | Lectura sobre Salidas y traslados, o quien presta herramientas |
+| **🔁 Traslado** | **Directo a otro almacén** | El rol Almacén, o escritura sobre Inventario |
+| **🔄 Por retornar (3)** | **Dar retorno a lo que salió**, o **Sin pendientes por retornar** | Quien presta herramientas |
+| **📲 Reporte de stock (WhatsApp)** | Lo que hay en el almacén, filtrado por fechas | Todos |
+| **📥 Recepciones** | **Las OC por recibir**: entran al almacén general. Solo con el almacén general elegido | Quien recibe en el almacén (9.13) |
+| **🧾 Histórico de salidas** | **PDF y WhatsApp de cada salida** | Todos |
+| **🔁 Histórico de traslados** | **PDF y WhatsApp de cada traslado** | Todos |
+
+Prestar herramientas lo hace el rol Almacén, Recursos humanos o administración, o quien tiene escritura sobre Asignaciones. Quien no tiene ninguno de esos permisos ve el aviso **Tu rol solo puede ver. Para mover inventario hace falta escritura en Inventario.**
+
+Debajo de los botones, tres enlaces: **Varios productos a la vez** (la entrada de muchos renglones de siempre, con referencia y procedencia), **Entregar lo ya aprobado** (las salidas pedidas desde el escritorio y ya aprobadas, que se entregan desde ahí) e **Historial de movimientos**.
+
+#### La lista de productos
+
+Al pie, **Productos de ALMACÉN GENERAL (85)** con su stock, con el buscador **🔍 Buscar producto…**. Sin buscar se ven quince; al buscar, también lo del catálogo que todavía no tiene existencia en ese almacén. **Tocar un producto abre su Entrada.**
+
+#### ＋ Producto nuevo
+
+Un solo formulario: **Nombre**, **Categoría**, **Unidad**, **¿Cuánto hay?** y **Costo c/u (USD)**. Si se escribe una cantidad, el costo es obligatorio; si nadie sabe cuánto costó, se marca **Donación, o no se sabe cuánto costó** y entra sin valorar. Si el nombre se parece a uno del catálogo, lo dice antes de crear otro. Se guarda con **✓ Guardar producto**: el producto queda en el catálogo, con su código, y lo que hay entra a ese almacén.
+
+#### ⬇ Entrada
+
+Se elige el producto —o se toca en la lista— y se escribe **¿Cuánto llegó? (UND)**, **Costo c/u (USD) \*** y una **Nota**: **De dónde vino, quién lo trajo…**. Debajo de la cantidad dice cómo queda: **Queda en 40 UND.** Plegado, **Contar en bultos, otra moneda o donación**, para lo que llega en presentaciones, se pagó en otra moneda o no tiene costo. Como en el escritorio, si el costo se sale mucho del de siempre lo dice antes de guardar, y si es la primera vez que entra a ese almacén también: **Es la primera vez que entra a este almacén**. Se guarda con **✓ Guardar entrada**.
+
+#### ⬆ Salida
+
+Se eligen uno o varios materiales de la lista —solo los que tienen existencia libre ahí— con su cantidad, y **＋ Agregar otro material** para sumar más. Si se pide más de lo que hay: **No alcanza: hay 4 UND.** Después:
+
+1. **Motivo**: **Para qué sale, a quién, a qué equipo…**, y para quién sale, como en toda salida (26.2).
+2. **¿Retorna?**: **🔄 SÍ** —**Vuelve al almacén**— o **❌ NO** —**Se consume / se queda**—. Con **SÍ** es un préstamo, y pide **¿A quién se le presta?**.
+3. Hasta cuatro fotos: **📷 Fotos (2/4)**.
+4. **✓ Guardar salida**.
+
+**Si usted puede aprobar salidas de ese almacén y entregarlas, sale en el acto**, con su nota de salida y su descuento. Si no, la pantalla lo avisa antes de guardar —**⏳ Queda «Por aprobar»: la aprueba quien responde por** el almacén **o un autorizado. No descuenta nada hasta que se entregue.**— y la salida queda en **Salidas y traslados** esperando (26.2). Un préstamo sale siempre en el acto y queda en **🔄 Por retornar** y en Asignaciones.
+
+#### 🔁 Traslado
+
+Directo, como en MGG: sale y llega en el mismo momento. Se eligen los materiales, **¿A qué almacén va?** y el **Motivo** —**Para qué se lleva, quién lo lleva…**—, y **🔁 Revisar traslado** enseña el resumen: **¿Confirmas el traslado?** Se confirma con **✓ Sí, trasladar a** el almacén de destino. En el escritorio siguen los traslados en tres pasos (26.3).
+
+#### 🔄 Por retornar
+
+**Por retornar · ALMACÉN GENERAL (3)**: los préstamos de ese almacén, con **🔍 Buscar salida pendiente…**. Cada uno dice a quién se le prestó y, si ya volvió una parte, **Ya retornó 2 de 5**. Se toca uno y se escribe **¿Cuánto retorna? (UND)** —puede ser menos de lo prestado: lo demás sigue pendiente— y una **Nota**: **En qué estado volvió, quién lo trajo…**. Se guarda con **✓ Dar retorno al inventario**.
+
+#### 📲 Reporte de stock
+
+**Reporte de stock · ALMACÉN GENERAL**: lo que había al cierre y lo que entró (📥) y salió (📤) en el período, por categoría, listo para WhatsApp: **📦 STOCK · ALMACÉN GENERAL**. El período se elige con **Hoy**, **Este mes** o **Mes pasado**, o con **Desde** y **Hasta**. No tiene PDF.
+
+#### 🧾 Histórico de salidas y 🔁 histórico de traslados
+
+Abren con los últimos sesenta días, con los mismos atajos de fechas y un buscador: **🔍 Material, N° SS / NS o motivo…** en las salidas y **🔍 Material, N°, motivo o almacén…** en los traslados. Se pintan de cuarenta en cuarenta. Cada fila tiene **💬 WhatsApp** y, cuando hay papel, **📄 Ver PDF**: la orden de la salida o la nota del traslado. En las salidas salen también las pedidas desde el escritorio y los préstamos; un préstamo no tiene papel, solo WhatsApp.
+
+#### Al terminar
+
+Cada operación termina en la misma pantalla: **✅** con lo que se hizo y el mensaje para WhatsApp ya armado —**🆕 PRODUCTO NUEVO EN INVENTARIO**, **📥 ENTRADA A INVENTARIO**, **📤 SALIDA DE ALMACÉN**, **🔁 TRASLADO ENTRE ALMACENES**—, con **📲 Enviar por WhatsApp**, **📋 Copiar**, **📄 Ver PDF del comprobante** cuando hay papel, y **← Volver al inicio**.
+
+Si la señal está mala y el guardado tarda, el aviso dice **Está tardando por la señal.** y que lo que se envió **ya se está guardando**: no hay que cargarlo otra vez.
+
+#### Entrar directo y el rol de teléfono
+
+**Entrar directo al abrir el sistema.** En Configuración › Usuarios, entre los permisos extendidos de Inventario, está la casilla **Entrar directo al almacén del teléfono**: quien la tiene abre el sistema y aparece ya en esta pantalla, en vez de en el panel. No da permiso de nada por sí sola: cada botón sigue pidiendo el suyo.
+
+**Para quien solo trabaja desde el teléfono.** El rol **Almacén** reparte, además de Inventario y Salidas, otros módulos de escritorio —Alimentación, Combustible, Compras, Configuración, Maquinaria— que nada tienen que ver con esta pantalla. Para alguien que solo la usa a ella, el rol a la medida **Almacén (teléfono)** reparte exactamente lo que pide —Inventario, Salidas, Asignaciones y el Panel, todo lo demás en Ninguno— sin tocar el rol Almacén, que comparten otras personas. Se asigna como cualquier otro rol, desde Configuración › Usuarios.
 
 ### 7.15 Cuando el sistema no le deja
 
@@ -2584,7 +2809,7 @@ Abajo, **la factura o nota de entrega escaneada**, las **fotos** de lo que lleg�
 
 **La recepción puede ser parcial.** Lo que llegó entra al inventario en ese momento, con su costo; la OC sigue en **Pendiente por recepción** con **📦 Recibir lo que falta**, y la tarjeta dice **Recepción parcial · 2/5 completos**. Cada recepción lleva su número (R1, R2…) y queda en **📥 Ver recepción**. Cuando llega todo, la OC pasa a **Recibida** y Compras recibe el aviso. Al guardar se abre el **💬 WhatsApp de la recepción**.
 
-**Si el pedido era para otro sitio**, se traslada desde ALM-GEN por **Salidas y traslados › Traslados** (26.3).
+**Si el pedido era para otro sitio**, se traslada desde ALM-GEN por **Salidas y traslados › ↔ Traslados** (26.3).
 
 #### Finalizar con la evaluación del proveedor
 
@@ -3231,7 +3456,7 @@ Guardar el movimiento exacto es lo que hace que anular funcione bien: al anular,
 
 **O sale el material del patio y queda la nota, o no pasa ninguna de las dos cosas.** Nunca se queda a medias: no existe la nota sin material descontado, ni el material descontado sin nota.
 
-**Qué pasa si no hay material.** El despacho no se aprueba y el sistema dice con nombre y cifras qué falta: «En "PATIO PRINCIPAL" hay … de "GRANZÓN" y se están despachando ….» No deja el patio en negativo, porque una existencia negativa no es un dato: es un error que alguien va a tener que deshacer más adelante, cuando ya nadie recuerde de dónde salió. Si el material sí está en el patio pero el sistema dice que no, lo que falta es la entrada: se carga la producción o se hace el conteo desde **Inventario › Existencias**, y después se vuelve a aprobar.
+**Qué pasa si no hay material.** El despacho no se aprueba y el sistema dice con nombre y cifras qué falta: «En "PATIO PRINCIPAL" hay … de "GRANZÓN" y se están despachando ….» No deja el patio en negativo, porque una existencia negativa no es un dato: es un error que alguien va a tener que deshacer más adelante, cuando ya nadie recuerde de dónde salió. Si el material sí está en el patio pero el sistema dice que no, lo que falta es la entrada: se carga la producción o se hace el conteo desde **Inventario › Inventario › Existencias**, y después se vuelve a aprobar.
 
 **Al anular**, el sistema escribe en el libro el movimiento contrario, con el motivo. El inventario nunca se edita: se le escribe el contrario, y los dos movimientos quedan visibles. **Y el pesaje y la guía vuelven a quedar libres**, listos para la nota que corrija a la anterior: el camión se pesó igual y la guía se emitió igual. Lo que se cayó fue la nota, no el pesaje.
 
@@ -3335,7 +3560,7 @@ Sobre la moneda: cada documento **congela su tasa** al crearse. Sin la tasa del 
 | «Solo quien lo pidió puede cancelarlo.» | El despacho es de otra persona | Pídale a esa persona que lo cancele, o que quien tenga la casilla no lo apruebe |
 | «Escriba por qué no se aprueba.» / «Escriba por qué se cancela.» | Falta el motivo | Escríbalo: lo lee quien lo pidió |
 | «El almacén "PATIO SUR" está cerrado.» | Al aprobar, ese patio ya no estaba activo | Pida que lo activen, o que se pida otra vez desde otro patio |
-| «En "PATIO PRINCIPAL" hay … de "GRANZÓN" y se están despachando ….» | Al aprobar, no había tanto material | Si en el patio sí está, falta registrar su entrada: cargue la producción o haga el conteo en **Inventario › Existencias** |
+| «En "PATIO PRINCIPAL" hay … de "GRANZÓN" y se están despachando ….» | Al aprobar, no había tanto material | Si en el patio sí está, falta registrar su entrada: cargue la producción o haga el conteo en **Inventario › Inventario › Existencias** |
 | «El ticket TCK-2026-0004 es de una entrada a la cantera, no de una salida.» | El pesaje elegido es de algo que llegó, no de algo que sale | Elija un pesaje de salida |
 | «El ticket TCK-2026-0004 está ….» | Ese pesaje ya no está disponible: usado o anulado | Pida otra vez el despacho con un pesaje que siga sin usar |
 | «El ticket TCK-2026-0004 se pesó para otro cliente.» | El pesaje se registró a nombre de otro cliente | Elija el pesaje correcto |
@@ -5955,7 +6180,7 @@ Estos no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las 
 
 **En las incidencias del personal.** Si se elige un tipo que no pide reposo —**Conflicto**, **Llegada tarde** u **Otra**— y a la vez se marca **Varios días**, el campo de los días de reposo no se dibuja y el guardado falla con un mensaje que no dice por qué: «La base no admite ese valor. Revise los datos de la operación; si no escribió nada, avise a soporte.» **Para varios días, use un tipo que pida reposo.** Anotar la duración en el motivo solo sirve si no se marca **Varios días**.
 
-**El combustible que entra sin costo abarata lo que sale de su tanque.** Lo trasladado desde otra empresa del grupo se carga con la casilla **Sin costo** y entra en cero, en un tanque aparte que no admite lo que tiene precio. Mientras esté en cero, **el costo por máquina de lo que salga de ese tanque queda por debajo de lo que de verdad cuesta**. El tanque aparte impide que contamine al resto (20.6), pero no inventa la cifra que falta. Si algún día se sabe lo que se pagó, se puede poner con **Corregir el costo** en **Inventario › Existencias**, que pide un permiso propio; lo que ya salió a cero no cambia.
+**El combustible que entra sin costo abarata lo que sale de su tanque.** Lo trasladado desde otra empresa del grupo se carga con la casilla **Sin costo** y entra en cero, en un tanque aparte que no admite lo que tiene precio. Mientras esté en cero, **el costo por máquina de lo que salga de ese tanque queda por debajo de lo que de verdad cuesta**. El tanque aparte impide que contamine al resto (20.6), pero no inventa la cifra que falta. Si algún día se sabe lo que se pagó, se puede poner con **Corregir el costo** en **Inventario › Inventario › Existencias**, que pide un permiso propio; lo que ya salió a cero no cambia.
 
 **El 3 % de obra social de la alianza se guarda y no se calcula.** El convenio con la Gobernación tiene tres porcentajes: 14 % para la Gobernación, 86 % para la empresa y un 3 % sobre los ingresos netos destinado a obra social. Los dos primeros los calcula la base, pero **ninguna pantalla los enseña todavía**; el tercero está guardado y no lo aplica nadie. Como 14 y 86 ya suman cien, ese 3 % no sale del mismo bruto: o sale de la parte de la empresa, o es una obligación aparte, y eso en el sistema no está resuelto.
 
@@ -5970,11 +6195,12 @@ Estos no son cosas que falten, sino cosas que hoy pueden salir mal si nadie las 
 
 | Lista | Cuántos enseña |
 | --- | --- |
-| **Inventario › Existencias › Movimientos** | Los 1000 más recientes, y avisa si hay más |
-| **Salidas y traslados › Historial** | Los 200 más recientes, y avisa si hay más |
+| **Inventario › Inventario › Movimientos** | Los 1000 más recientes, y avisa si hay más |
+| **Salidas y traslados › 📜 Historial** | Los 200 más recientes, y avisa si hay más |
+| **Salidas y traslados › ↘ Salidas** | Las 1000 solicitudes más recientes; cada columna del tablero enseña diez y el resto está en **📚 Histórico** |
 | **Compras › Recepciones** (flujo anterior) y **Tesorería › Libro de tesorería** | 200 |
-| **Facturación** (facturas, notas de crédito y notas de entrega), **Ventas › Cotizaciones**, **Salidas y traslados › Salidas** y los vales de **Combustible** | 200 |
-| **Salidas y traslados › Traslados**, **Compras › Historial de directas** y **Maquinaria › Historial de taller** | 300 |
+| **Facturación** (facturas, notas de crédito y notas de entrega), **Ventas › Cotizaciones** y los vales de **Combustible** | 200 |
+| **Salidas y traslados › ↔ Traslados**, **Compras › Historial de directas** y **Maquinaria › Historial de taller** | 300 |
 | **Compras › Proveedores › Facturas recibidas** | 400 |
 | El historial de **Tasas de cambio** | 60 por moneda |
 
@@ -6040,10 +6266,10 @@ No. Con el botón **Cargar por planilla** del **Catálogo de artículos**: se ba
 Porque están todos en manos de alguien. Existir y estar disponible no es lo mismo: lo prestado sigue contando como existencia —es de la empresa— pero no se puede volver a entregar. En Existencias se lee **0 disponibles · 10 en manos de alguien**.
 
 **¿Dónde veo todo lo que le ha pasado a un artículo?**
-En su ficha. Se llega pulsando su fila en el **Catálogo de artículos**, y la tarjeta **Historial** lista todo desde que se creó —entradas, salidas, ajustes, traslados, entregas, devoluciones—, con la fecha y el nombre de quien lo registró (7.9).
+En su trazabilidad. Se abre con **📋** en su fila de la pantalla de inventario, o pulsando su fila en el **Catálogo de artículos**: el kardex lista todo lo que movió existencia, con el saldo que quedó en cada almacén, la fecha y el nombre de quien lo registró, y **Préstamos y taller**, al final, las entregas, devoluciones y viajes al taller (7.9).
 
 **El sistema me dice que no hay material, pero yo lo estoy viendo en el patio.**
-Falta registrar su entrada. Regístrela, o haga un conteo físico, desde **Inventario › Existencias** (7.4), y después repita la operación.
+Falta registrar su entrada. Regístrela, o haga un conteo físico, desde **Inventario › Inventario › Existencias** (7.4), y después repita la operación.
 
 **¿Hace falta la guía de movilización para despachar?**
 No en el sistema: es opcional. Si el despacho lleva guía, se elige al pedirlo (10.6).
@@ -7214,16 +7440,21 @@ No asocia la comida a un trabajador concreto: cuenta platos, no nombres. No llev
 
 Es el módulo de lo que sale del almacén y de lo que se mueve entre almacenes: por qué salió, para quién y quién lo entregó. Tiene su propio permiso (26.1).
 
-Tiene tres pantallas, que son también sus tres pestañas: **Historial**, **Salidas** y **Traslados**.
+**En el menú es una sola entrada**, que abre las solicitudes de salida. Lo demás se recorre con la cabecera de la pantalla, como en MGG:
+
+- Arriba, **↘ Salidas** y **↔ Traslados**: qué se está mirando.
+- Debajo, la vista: **🗂 Solicitudes** —el tablero de lo que está en curso—, **📚 Histórico** —todas, con filtros y quién hizo cada cosa—, **📜 Historial** —lo que ya movió existencia— y, solo en Salidas, **📊 Resumen** —el gasto de material por destino o por área—.
+
+Al pasar de Salidas a Traslados la pantalla se queda en la misma vista. Cada vista tiene su dirección propia, así que se puede guardar o compartir, y el botón de atrás del navegador hace lo que se espera.
 
 Hay dos ideas que ordenan todo el módulo:
 
-- **Nada sale sin solicitud, y nada se descuenta hasta entregarlo.** Una salida se pide, la aprueba quien responde por el almacén y la entrega alguien de almacén. Solo al entregarla sale la nota y baja la existencia. Las salidas **directas**, hechas sin solicitud, están en el **Historial**; desde ninguna pantalla se crea una nueva.
+- **Nada sale sin solicitud, y nada se descuenta hasta entregarlo.** Una salida se pide, la aprueba quien responde por el almacén y la entrega alguien de almacén. Solo al entregarla sale la nota y baja la existencia. Las salidas **directas**, hechas sin solicitud, están en el **📜 Historial**; desde ninguna pantalla se crea una nueva. La salida del teléfono y la del **↕ Movimiento** de inventario también pasan por solicitud: si quien la registra puede aprobarla y entregarla, los tres pasos se dan de una vez (7.14).
 - **Las ventas no salen por aquí.** Lo que se le vende a un cliente sale por **Facturación › Notas de entrega**, con su precio y su número; las compras se llevan en Compras.
 
 ### 26.1 Quién entra y quién puede hacer qué
 
-Para entrar a cualquiera de las tres pantallas basta con tener **Salidas y traslados** en lectura. Lo demás depende de cada paso:
+Para entrar a cualquiera de sus vistas basta con tener **Salidas y traslados** en lectura. Lo demás depende de cada paso:
 
 | Para | Hace falta |
 | --- | --- |
@@ -7237,31 +7468,39 @@ Para entrar a cualquiera de las tres pantallas basta con tener **Salidas y trasl
 
 El gerente general y el administrador hacen de respaldo en todos los pasos de los almacenes: aprueban, envían, reciben y cancelan aunque no sean los responsables.
 
-El Historial y los traslados se leen, además, con el permiso de Inventario. Quien tiene uno suele tener el otro; si a alguien le salen esas dos pantallas vacías teniendo Salidas y traslados, es lo primero que hay que mirar.
+El **📜 Historial** y los traslados se leen, además, con el permiso de Inventario. Quien tiene uno suele tener el otro; si a alguien le salen esas dos pantallas vacías teniendo Salidas y traslados, es lo primero que hay que mirar.
 
 ### 26.2 Salidas
 
-**Operación › Salidas y traslados › Salidas**
+**Operación › Salidas y traslados › ↘ Salidas › 🗂 Solicitudes**
 
-La pantalla dice: **Solicitudes de salida de material de un almacén. Ninguna salida descuenta existencias hasta que la aprueba el responsable del almacén y el personal de almacén la entrega. Las ventas salen por Facturación › Notas de entrega; las compras se gestionan en Compras.**
+La pantalla dice: **Solicitudes de salida de material de un almacén. Ninguna salida descuenta existencias hasta que la aprueba el responsable del almacén y el personal de almacén la entrega. Las ventas salen por Facturación › Notas de entrega; las compras se gestionan en Compras.** Arriba a la derecha, **Vista de teléfono** —la entrega de lo ya aprobado, en el teléfono— y **Solicitar salida**.
 
-Arriba hay dos botones: **Esperan**, con cuántas, que enseña las que faltan por aprobar o por entregar, y **Todas**. Se abre en **Esperan**. Salen las doscientas más recientes, y todo el que entra al módulo ve todas, no solo las suyas.
+Las solicitudes se ven de dos maneras, **▦ Kanban** o **☰ Lista**, y la pantalla recuerda la última.
 
-Cada solicitud es una tarjeta con su número —**Orden SS-2026-0001**— y su estado:
+**▦ Kanban** es el tablero de MGG, con cuatro columnas:
 
-| Estado | Qué quiere decir |
+| Columna | Qué quiere decir |
 | --- | --- |
 | **Por aprobar** | Se pidió y espera a quien responde por el almacén |
 | **Por entregar** | Se aprobó y espera a que alguien de almacén la entregue |
 | **Entregada** | Salió: tiene su nota de salida y ya descontó la existencia |
-| **Rechazada** | Quien responde por el almacén no la aprobó |
-| **Cancelada** | Se anuló antes de entregarla |
+| **Rechazada / Cancelada** | Quien responde por el almacén no la aprobó, o se anuló antes de entregarla |
 
-Debajo, la tarjeta dice de qué almacén sale y para quién, el motivo, un renglón por cada material, quién la pidió, quién la aprobó o la rechazó y quién la entregó. Y lo que falta, en otro color: **Falta que la apruebe quien responde por** el almacén **o quien tenga el permiso de aprobar salidas.**, o **Aprobada. Falta que alguien de almacén la entregue: al entregarla sale la nota y se descuenta la existencia.**
+- Arriba, la fila **Mostrar**, con un botón por columna, su color y cuántas tiene. Un clic oculta la columna o la vuelve a enseñar; con alguna oculta aparece **✕ Mostrar todas**. La pantalla lo recuerda.
+- Cada columna enseña las diez más recientes. Si tiene más, al pie dice **📚 Ver las 25 anteriores**, que abre el **📚 Histórico** ya filtrado por esa columna.
+- Dos filtros: **👤 Usuario (quien la hizo)**, quien la pidió en el sistema, y **🏷 Solicitante**, para quién es —la persona, el área o quien sea de fuera—.
+- Cada tarjeta lleva el número de la solicitud y, si ya salió, el de la nota; el material, el almacén, para quién es y el motivo. **Pulsar una tarjeta abre la solicitud**: **Solicitud SS-2026-0001**, con todos sus datos, sus materiales, sus fotos, la historia de cada paso —**Solicitada**, **Aprobada**, **No aprobada**, **Entregada**…— con quién y cuándo, y los botones que le tocan a usted.
+
+**☰ Lista** es la lista de tarjetas de siempre, con sus botones a la vista. Arriba hay dos botones: **Esperan**, con cuántas, que enseña las que faltan por aprobar o por entregar, y **Todas**.
+
+Todo el que entra al módulo ve todas las solicitudes, no solo las suyas.
+
+En la tarjeta, lo que falta va en otro color: **Falta que la apruebe quien responde por** el almacén **o quien tenga el permiso de aprobar salidas.**, o **Aprobada. Falta que alguien de almacén la entregue: al entregarla sale la nota y se descuenta la existencia.**
 
 #### Solicitar una salida
 
-1. Pulse **Solicitar salida**. Se abre **Solicitar salida de material**. También se llega desde **Inventario › Existencias**, con el botón **Solicitar salida** de cada fila, y entonces el material y el almacén ya vienen puestos.
+1. Pulse **Solicitar salida**. Se abre **Solicitar salida de material**. También se llega desde la pestaña **Existencias** de Inventario, con el botón **Solicitar salida** de cada fila, y entonces el material y el almacén ya vienen puestos.
 2. Elija el **Almacén predeterminado**: es el de todos los renglones que no digan otro.
 3. En cada renglón, elija el **Artículo**, el **Almacén** —si solo un sitio lo tiene, se pone solo— y la **Cantidad**. Debajo de la cantidad se ve cuánto hay. Si el artículo tiene presentaciones —tambores, pailas, sacos—, puede contar en ellas y escribir en **Fracción en** la unidad lo que queda del último empezado.
 4. Si en ese almacén hay material de varios dueños, aparece **Dueño**: diga de cuál sale.
@@ -7284,7 +7523,7 @@ El motivo, el destino y el responsable se guardan en mayúsculas.
 
 #### Aprobar o no aprobar
 
-Quien responde por el almacén ve en la tarjeta **Aprobar** y **No aprobar**.
+Quien responde por el almacén ve en la tarjeta —y en la ventana de la solicitud— **Aprobar** y **No aprobar**.
 
 **Aprobar** no mueve nada: deja la salida **Por entregar**. Si tiene su firma guardada, antes le pregunta si la pone en **Autorizado por**; si no, aprueba al instante.
 
@@ -7304,7 +7543,7 @@ Una salida **Por aprobar** o **Por entregar** se cancela con **Cancelar**, y pid
 
 ### 26.3 Traslados
 
-**Operación › Salidas y traslados › Traslados**
+**Operación › Salidas y traslados › ↔ Traslados › 🗂 Solicitudes**
 
 La pantalla dice: **Traslados de material entre almacenes: solicitados, enviados o directos. Cada fila indica lo pendiente y a quién le corresponde.**
 
@@ -7337,18 +7576,24 @@ Mientras va de camino, el material no desaparece: sigue contando en el inventari
 
 **Lo que entró sin costo** —como el combustible trasladado de otra empresa del grupo— solo se traslada con **Traslado directo**, y solo a sitios que también admiten material sin costo. Así no se mezcla con lo que sí costó.
 
-#### La lista
+#### El tablero
 
-Arriba hay dos botones: **Pendientes**, con cuántos, y **Todos**. Se abre en **Pendientes**, que son los pedidos y los que van de camino. Salen los trescientos más recientes.
+Como las salidas, los traslados se ven en **▦ Kanban** o en **☰ Lista**, y la pantalla recuerda la última.
 
-Cada fila dice el número —**TRA-2026-0001**—, su estado, cómo nació (**Pedido**, **Enviado** o **Directo**), el artículo con su motivo, la cantidad, el **Recorrido** de un almacén al otro y el **Seguimiento**: quién dio el último paso y lo que falta.
+**▦ Kanban** tiene cuatro columnas, con la misma fila **Mostrar**, las diez más recientes por columna y **📚 Ver las 25 anteriores** al pie:
 
-| Estado | Qué quiere decir |
+| Columna | Qué quiere decir |
 | --- | --- |
 | **Solicitado** | Pedido. No se ha movido nada |
 | **En tránsito** | Salió del origen y espera a que confirmen la llegada |
 | **Recibido** | Llegó |
 | **Cancelado** | Se anuló. Si ya había salido, volvió al origen |
+
+Los filtros son **👤 Usuario (quien lo pidió)** y **🏬 Almacén destino**. Pulsar una tarjeta abre el traslado, con sus botones.
+
+**☰ Lista** es la tabla de siempre. Arriba hay dos botones: **Pendientes**, con cuántos, y **Todos**. Se abre en **Pendientes**, que son los pedidos y los que van de camino. Cada fila dice el número —**TRA-2026-0001**—, su estado, cómo nació (**Pedido**, **Enviado** o **Directo**), el artículo con su motivo, la cantidad, el **Recorrido** de un almacén al otro y el **Seguimiento**: quién dio el último paso y lo que falta.
+
+Salen los trescientos más recientes.
 
 #### Los pasos de cada traslado
 
@@ -7361,18 +7606,26 @@ Si tiene su firma guardada, al enviar y al recibir le pregunta si la pone en **E
 
 **Un traslado recibido no se cancela ni se deshace.** Si hay que devolver el material, se hace un traslado nuevo en sentido contrario.
 
-El inventario también tiene un botón **Trasladar**, en **Inventario › Existencias**, que abre esta misma ventana con el almacén ya puesto.
+El inventario también tiene un botón **Trasladar**, en la pestaña **Existencias** de Inventario, que abre esta misma ventana con el almacén ya puesto. Los traslados directos de la pantalla de inventario (**⇄**) y del teléfono (**🔁 Traslado**) no pasan por aquí: salen y llegan en el acto, y quedan en el **📜 Historial**.
 
-### 26.4 Historial
+### 26.4 Histórico, Historial y Resumen
 
-**Operación › Salidas y traslados › Historial**
+#### 📚 Histórico
+
+**Todas las solicitudes, con filtros y quién hizo cada cosa.** El tablero enseña las diez últimas de cada columna; lo demás se busca aquí. Se llega con el botón **📚 Histórico** de la cabecera, o con **📚 Ver las 25 anteriores** de una columna, y entonces llega con esa columna y los filtros del tablero ya puestos.
+
+En las salidas, los filtros son **🔎 Buscar** —**Número, nota, material, destino…**—, **🗂 Estado**, **👤 Quien hizo la acción**, **🏷 Solicitante**, **📅 Creada desde** y **📅 Hasta**, y las columnas **Fecha**, **Número**, **Estado**, **Material**, **Origen → Dirigido a** y **Realizado por**. En los traslados, **🔎 Buscar** —**Número, artículo, origen, destino…**—, **🗂 Estado**, **🏬 Almacén destino** y **📅 Creado desde**, con **Artículo** y **Origen → Destino** entre sus columnas.
+
+Se recorre de cincuenta en cincuenta con **↓ Ver 50 más · faltan 120**. Pulsar una fila abre la misma ventana del tablero, con sus botones.
+
+#### 📜 Historial
 
 Es la consulta de todo lo que ya movió existencia: salidas entregadas y traslados. **Aquí no se registra nada.** Lo dice la pantalla: **Solo aparece lo que ya movió existencia. Una solicitud de salida sin entregar o un traslado pedido sin enviar todavía no está aquí: se ven en su pestaña.**
 
 Los filtros:
 
 - **Buscar una nota**: **Trae la nota entera, con todos sus renglones, aunque sea vieja.** Se busca por el número de la nota de salida —**NS-2026-0012**— o por el del movimiento.
-- **Ver**: **Salidas y traslados**, **Solo salidas** o **Solo traslados**.
+- **Ver**: **Salidas y traslados**, **Solo salidas** o **Solo traslados**. Desde **↘ Salidas** llega en **Solo salidas**, y desde **↔ Traslados**, en **Solo traslados**.
 - **Desde** y **Hasta**, con los atajos **Hoy**, **Esta semana**, **Este mes** y **Mes pasado**. Cuentan el día en que pasó el movimiento.
 - **Artículo**, **Almacén**, **Registrado por** y **Destino**.
 
@@ -7386,13 +7639,19 @@ Las columnas son **Movimiento**, **Artículo**, **Almacén**, **Destino** y **Ca
 
 El detalle completo de cada movimiento está en el libro de movimientos (7.6), y la pantalla lleva un enlace al pie.
 
+#### 📊 Resumen
+
+Solo en Salidas: **Gasto de material por destino** o **por área o cargo**, según el botón —**Por destino**, la persona, el área o quien sea de fuera; **Por área o cargo**, el área del organigrama o el cargo en nómina—. **Salidas entregadas, al costo con el que salieron del almacén. Lo que se deshizo después no cuenta.**
+
+Se elige el período con las fechas. Arriba, **Gasto total** y cuántas **Salidas**; debajo, un renglón por destino o por área, que se abre para ver cada salida —**Fecha / hora**, **Nota**, **Artículo**, **Registró**, **Cantidad** y **Valor ($)**—. Si alguna salida tiene renglones sin valorar, lo dice: **\* Tiene renglones sin valorar: su valor no se sumó.** El botón **↓ PDF** lo saca en papel.
+
 ### 26.5 Los papeles
 
 Todos se abren primero en una vista previa, con **Cerrar** y **Descargar**.
 
 **Orden de salida.** Es la solicitud en papel: lo que se pidió y en qué estado está. Se imprime en cualquier estado y no lleva costos. La vista previa lo dice: **Lo solicitado y su estado. Lo que sale consta en la nota de salida, al entregar.** Si la salida se rechazó o se canceló, lleva cruzado el sello **RECHAZADA** o **CANCELADA**.
 
-**Nota de salida.** Es lo que de verdad salió, y es el papel que firma quien recibe: **La firma quien recibe el material.** Compruébela antes de imprimirla. Sale sola al entregar, y se vuelve a sacar con el botón **Nota** de la tarjeta o del Historial.
+**Nota de salida.** Es lo que de verdad salió, y es el papel que firma quien recibe: **La firma quien recibe el material.** Compruébela antes de imprimirla. Sale sola al entregar, y se vuelve a sacar con el botón **Nota** de la tarjeta o del **📜 Historial**.
 
 - Lleva el número de la nota y el de su orden, la fecha, el almacén, para quién es, el vehículo y **Recibido por** con su cédula, si se dijeron al solicitar.
 - Debajo, el motivo y la tabla del material, con **Código**, **Artículo**, **Cantidad** y **Unidad**. Si se contó en presentaciones, el artículo lo dice.
