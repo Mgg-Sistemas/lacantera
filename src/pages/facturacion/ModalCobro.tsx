@@ -328,6 +328,7 @@ export function ModalCobro({
                   min="0"
                   step="0.01"
                   inputMode="decimal"
+                  limite={{ maxDecimales: 2, sinNegativos: true }}
                   value={l.monto}
                   onChange={(e) => cambiarDinero(l.clave, { monto: e.target.value })}
                 />
@@ -341,6 +342,8 @@ export function ModalCobro({
                 <Input
                   label="Referencia"
                   placeholder={l.metodo === 'EFECTIVO' ? 'Se genera sola' : 'Número de la transferencia'}
+                  solo="alfanumerico"
+                  maxLength={30}
                   value={l.referencia}
                   onChange={(e) => cambiarDinero(l.clave, { referencia: e.target.value })}
                 />
@@ -412,6 +415,7 @@ export function ModalCobro({
                 min="0"
                 step="0.01"
                 inputMode="decimal"
+                limite={{ maxDecimales: 2, sinNegativos: true }}
                 value={credito.monto}
                 onChange={(e) => setCredito({ ...credito, monto: e.target.value })}
                 hint={creditoElegido ? `Quedan ${dinero(creditoElegido.moneda, creditoElegido.pendiente)} de ese crédito.` : undefined}
@@ -469,6 +473,7 @@ export function ModalCobro({
                   min="0"
                   step="0.01"
                   inputMode="decimal"
+                  limite={{ maxDecimales: 3, sinNegativos: true }}
                   value={material.cantidad}
                   onChange={(e) => setMaterial({ ...material, cantidad: e.target.value })}
                 />
@@ -511,6 +516,11 @@ export function ModalCobro({
                     min="0"
                     step="0.01"
                     inputMode="decimal"
+                    limite={{
+                      maxEnteros: material.descuentoEn === 'PORCENTAJE' ? 3 : undefined,
+                      maxDecimales: 2,
+                      sinNegativos: true,
+                    }}
                     value={material.descuento}
                     onChange={(e) => setMaterial({ ...material, descuento: e.target.value })}
                   />
@@ -533,6 +543,7 @@ export function ModalCobro({
                   min="0"
                   step="0.01"
                   inputMode="decimal"
+                  limite={{ maxDecimales: 2, sinNegativos: true }}
                   value={material.acordado}
                   onChange={(e) => setMaterial({ ...material, acordado: e.target.value })}
                 />
@@ -540,6 +551,7 @@ export function ModalCobro({
               {material.condicion === 'ACORDADO' || material.condicion === 'DESCUENTO' ? (
                 <Input
                   label="Motivo"
+                  maxLength={200}
                   value={material.motivo}
                   onChange={(e) => setMaterial({ ...material, motivo: e.target.value })}
                 />

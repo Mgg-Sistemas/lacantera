@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
+import { comoTelefono, hastaCifras } from '@/lib/formato'
 import { ErrorDeCarga } from '@/components/ui/Estado'
 import { useUsuarios } from '@/lib/api/usuarios'
 import {
@@ -129,7 +130,15 @@ export function FormularioContacto({
         <Input
           label={esEmpresa ? 'RIF' : 'Cédula o RIF'}
           value={d.documento}
-          onChange={(e) => cambiar({ documento: e.target.value.toUpperCase() })}
+          /*
+            La letra, las cifras y los guiones, nada más (08/11/2026). Va a mano
+            y no con soloDocumento porque la base también admite la C de los
+            consejos comunales: ^[VEJPGC]-[0-9]{6,9}(-[0-9])?$, diez cifras.
+          */
+          onChange={(e) =>
+            cambiar({ documento: hastaCifras(e.target.value.toUpperCase().replace(/[^VEJPGC0-9-]/g, ''), 10) })
+          }
+          maxLength={13}
           placeholder={esEmpresa ? 'J-12345678-9' : 'V-12345678'}
           hint="Con la letra y los guiones, como en clientes."
         />
@@ -139,6 +148,7 @@ export function FormularioContacto({
             label="Razón social"
             value={d.razon_social}
             onChange={(e) => cambiar({ razon_social: e.target.value })}
+            maxLength={120}
             required
           />
         ) : (
@@ -151,10 +161,10 @@ export function FormularioContacto({
               opciones={TRATAMIENTOS.map((t) => ({ valor: t, etiqueta: t }))}
             />
             <span className="hidden sm:block" />
-            <Input label="Nombres" value={d.nombres} onChange={(e) => cambiar({ nombres: e.target.value })} required />
-            <Input label="Apellidos" value={d.apellidos} onChange={(e) => cambiar({ apellidos: e.target.value })} />
+            <Input label="Nombres" solo="letras" maxLength={60} value={d.nombres} onChange={(e) => cambiar({ nombres: e.target.value })} required />
+            <Input label="Apellidos" solo="letras" maxLength={60} value={d.apellidos} onChange={(e) => cambiar({ apellidos: e.target.value })} />
             <EmpresaDeLaPersona d={d} cambiar={cambiar} />
-            <Input label="Cargo" value={d.cargo} onChange={(e) => cambiar({ cargo: e.target.value })} placeholder="Gerente de compras" />
+            <Input label="Cargo" maxLength={60} value={d.cargo} onChange={(e) => cambiar({ cargo: e.target.value })} placeholder="Gerente de compras" />
           </>
         )}
       </Bloque>
@@ -164,13 +174,15 @@ export function FormularioContacto({
         <Input
           label="Celular"
           value={d.celular}
-          onChange={(e) => cambiar({ celular: e.target.value })}
+          inputMode="tel"
+          onChange={(e) => cambiar({ celular: comoTelefono(e.target.value) })}
           placeholder="0414-1234567"
         />
         <Input
           label="WhatsApp"
           value={d.whatsapp}
-          onChange={(e) => cambiar({ whatsapp: e.target.value })}
+          inputMode="tel"
+          onChange={(e) => cambiar({ whatsapp: comoTelefono(e.target.value) })}
           placeholder="Si es el mismo celular, repítalo"
         />
         {enlaceLlamada(d.celular) || enlaceWhatsApp(d.whatsapp) ? (
@@ -188,20 +200,21 @@ export function FormularioContacto({
           </p>
         ) : null}
         <div className="flex gap-2">
-          <Input className="flex-1" label="Teléfono de oficina" value={d.telefono_oficina} onChange={(e) => cambiar({ telefono_oficina: e.target.value })} />
-          <Input className="w-24" label="Ext." value={d.extension} onChange={(e) => cambiar({ extension: e.target.value })} />
+          <Input className="flex-1" label="Teléfono de oficina" inputMode="tel" value={d.telefono_oficina} onChange={(e) => cambiar({ telefono_oficina: comoTelefono(e.target.value) })} />
+          <Input className="w-24" label="Ext." solo="numeros" maxLength={6} value={d.extension} onChange={(e) => cambiar({ extension: e.target.value })} />
         </div>
         <span className="hidden sm:block" />
-        <Input label="Correo" type="email" value={d.correo} onChange={(e) => cambiar({ correo: e.target.value })} />
-        <Input label="Correo secundario" type="email" value={d.correo_secundario} onChange={(e) => cambiar({ correo_secundario: e.target.value })} />
+        <Input label="Correo" type="email" maxLength={120} value={d.correo} onChange={(e) => cambiar({ correo: e.target.value })} />
+        <Input label="Correo secundario" type="email" maxLength={120} value={d.correo_secundario} onChange={(e) => cambiar({ correo_secundario: e.target.value })} />
       </Bloque>
 
       {/* ── Dónde está ───────────────────────────────────────────────── */}
       <Bloque titulo="Ubicación">
-        <Input className="sm:col-span-2" label="Dirección" value={d.direccion} onChange={(e) => cambiar({ direccion: e.target.value })} />
-        <Input label="Ciudad" value={d.ciudad} onChange={(e) => cambiar({ ciudad: e.target.value })} />
+        <Input className="sm:col-span-2" label="Dirección" maxLength={200} value={d.direccion} onChange={(e) => cambiar({ direccion: e.target.value })} />
+        <Input label="Ciudad" maxLength={60} value={d.ciudad} onChange={(e) => cambiar({ ciudad: e.target.value })} />
         <Input
           label="Estado"
+          maxLength={40}
           value={d.estado_region}
           onChange={(e) => cambiar({ estado_region: e.target.value })}
           list="estados-de-venezuela"
@@ -211,8 +224,8 @@ export function FormularioContacto({
             <option key={e} value={e} />
           ))}
         </datalist>
-        <Input label="Código postal" value={d.codigo_postal} onChange={(e) => cambiar({ codigo_postal: e.target.value })} />
-        <Input label="País" value={d.pais} onChange={(e) => cambiar({ pais: e.target.value })} />
+        <Input label="Código postal" solo="alfanumerico" maxLength={10} value={d.codigo_postal} onChange={(e) => cambiar({ codigo_postal: e.target.value })} />
+        <Input label="País" solo="letras" maxLength={60} value={d.pais} onChange={(e) => cambiar({ pais: e.target.value })} />
         {mapa ? (
           <p className="text-xs sm:col-span-2">
             <a className="text-royal-600 inline-flex items-center gap-1 hover:underline" href={mapa} target="_blank" rel="noreferrer">
@@ -224,10 +237,10 @@ export function FormularioContacto({
 
       {/* ── En la web ────────────────────────────────────────────────── */}
       <Bloque titulo="En la web">
-        <Input label="Sitio web" value={d.sitio_web} onChange={(e) => cambiar({ sitio_web: e.target.value })} placeholder="www.ejemplo.com" />
-        <Input label="LinkedIn" value={d.linkedin} onChange={(e) => cambiar({ linkedin: e.target.value })} />
-        <Input label="Instagram" value={d.instagram} onChange={(e) => cambiar({ instagram: e.target.value })} placeholder="@usuario" />
-        <Input label="Facebook" value={d.facebook} onChange={(e) => cambiar({ facebook: e.target.value })} />
+        <Input label="Sitio web" maxLength={200} value={d.sitio_web} onChange={(e) => cambiar({ sitio_web: e.target.value })} placeholder="www.ejemplo.com" />
+        <Input label="LinkedIn" maxLength={200} value={d.linkedin} onChange={(e) => cambiar({ linkedin: e.target.value })} />
+        <Input label="Instagram" maxLength={100} value={d.instagram} onChange={(e) => cambiar({ instagram: e.target.value })} placeholder="@usuario" />
+        <Input label="Facebook" maxLength={200} value={d.facebook} onChange={(e) => cambiar({ facebook: e.target.value })} />
       </Bloque>
 
       {/* ── Cómo se clasifica ────────────────────────────────────────── */}
@@ -258,6 +271,7 @@ export function FormularioContacto({
         </div>
         <Input
           label="Origen"
+          maxLength={60}
           value={d.origen}
           onChange={(e) => cambiar({ origen: e.target.value })}
           list="origenes-de-contacto"
@@ -283,7 +297,7 @@ export function FormularioContacto({
           hint="Bloquear, o desbloquear, pide control total sobre Contactos."
         />
         {d.estado !== 'ACTIVO' ? (
-          <Input label="Motivo" value={d.estado_motivo} onChange={(e) => cambiar({ estado_motivo: e.target.value })} />
+          <Input label="Motivo" maxLength={200} value={d.estado_motivo} onChange={(e) => cambiar({ estado_motivo: e.target.value })} />
         ) : null}
       </Bloque>
 
@@ -314,7 +328,7 @@ export function FormularioContacto({
             detalle: e.cedula,
           }))}
         />
-        <Textarea className="sm:col-span-2" label="Nota" rows={2} value={d.nota} onChange={(e) => cambiar({ nota: e.target.value })} />
+        <Textarea className="sm:col-span-2" label="Nota" rows={2} maxLength={500} value={d.nota} onChange={(e) => cambiar({ nota: e.target.value })} />
       </Bloque>
 
       {guardar.error ? (
@@ -381,6 +395,7 @@ function EmpresaDeLaPersona({ d, cambiar }: { d: DatosContacto; cambiar: (c: Par
       />
       <Input
         label="Empresa no registrada"
+        maxLength={120}
         value={d.empresa_nombre}
         onChange={(e) => cambiar({ empresa_nombre: e.target.value })}
         disabled={!!d.empresa_id}

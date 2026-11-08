@@ -6,7 +6,7 @@ import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
-import { documento, fecha as formatoFecha } from '@/lib/formato'
+import { CIFRAS_DOCUMENTO, documento, fecha as formatoFecha, soloDocumento } from '@/lib/formato'
 import type { PrecioVenta } from '@/lib/api/ventas'
 import { aRenglones, filaVacia, type FilaRenglon } from '@/pages/ventas/filas'
 import { Renglones } from '@/pages/ventas/Renglones'
@@ -164,9 +164,19 @@ export function ModalEditarNotaEntrega({
       </div>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-3">
-        <Input label="Vehículo (placa)" value={vehiculo} onChange={(e) => setVehiculo(e.target.value)} />
-        <Input label="Chofer" value={chofer} onChange={(e) => setChofer(e.target.value)} />
-        <Input label="Cédula del chofer" value={cedula} onChange={(e) => setCedula(e.target.value)} />
+        <Input
+          label="Vehículo (placa)"
+          solo="alfanumerico"
+          maxLength={8}
+          value={vehiculo}
+          onChange={(e) => setVehiculo(e.target.value)}
+        />
+        <Input label="Chofer" solo="letras" maxLength={60} value={chofer} onChange={(e) => setChofer(e.target.value)} />
+        <Input
+          label="Cédula del chofer"
+          value={cedula}
+          onChange={(e) => setCedula(soloDocumento(e.target.value, CIFRAS_DOCUMENTO.cedula))}
+        />
       </div>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -175,6 +185,7 @@ export function ModalEditarNotaEntrega({
           type="number"
           min="0"
           inputMode="decimal"
+          limite={{ maxEnteros: 6, maxDecimales: 2, sinNegativos: true }}
           value={pesoBruto}
           onChange={(e) => setPesoBruto(e.target.value)}
         />
@@ -183,6 +194,7 @@ export function ModalEditarNotaEntrega({
           type="number"
           min="0"
           inputMode="decimal"
+          limite={{ maxEnteros: 6, maxDecimales: 2, sinNegativos: true }}
           value={pesoTara}
           onChange={(e) => setPesoTara(e.target.value)}
         />
@@ -195,6 +207,7 @@ export function ModalEditarNotaEntrega({
           min="0"
           step="0.01"
           inputMode="decimal"
+          limite={{ maxDecimales: 2, sinNegativos: true }}
           value={flete}
           onChange={(e) => setFlete(e.target.value)}
         />
@@ -204,13 +217,14 @@ export function ModalEditarNotaEntrega({
           min="0"
           step="0.01"
           inputMode="decimal"
+          limite={{ maxDecimales: 2, sinNegativos: true }}
           value={descuento}
           onChange={(e) => setDescuento(e.target.value)}
         />
       </div>
 
       <div className="mt-4">
-        <Textarea label="Observación" rows={2} value={observacion} onChange={(e) => setObservacion(e.target.value)} />
+        <Textarea label="Observación" rows={2} maxLength={500} value={observacion} onChange={(e) => setObservacion(e.target.value)} />
       </div>
 
       {/*
@@ -305,6 +319,7 @@ export function ModalEditarNotaEntrega({
           label="Motivo"
           hint="Queda escrito en el registro de auditoría con su nombre."
           rows={2}
+          maxLength={500}
           value={motivo}
           onChange={(e) => setMotivo(e.target.value)}
           required

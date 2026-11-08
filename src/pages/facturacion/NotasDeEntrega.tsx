@@ -990,6 +990,7 @@ export function NotasDeEntrega() {
         <div className="grid gap-3 lg:grid-cols-[1fr_minmax(0,10rem)_minmax(0,10rem)_minmax(0,11rem)]">
           <Input
             label="Buscar una nota"
+            maxLength={100}
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="NE-2026-0042, el cliente, la placa, el NS o la factura"
@@ -1412,6 +1413,8 @@ export function NotasDeEntrega() {
                   <div className="mt-2 grid gap-2 sm:grid-cols-[2fr_1fr_auto]">
                     <Input
                       label="Nombre del chofer"
+                      solo="letras"
+                      maxLength={60}
                       value={nuevoChofer}
                       onChange={(e) => setNuevoChofer(e.target.value)}
                     />
@@ -1468,11 +1471,14 @@ export function NotasDeEntrega() {
                   <div className="mt-2 grid gap-2 sm:grid-cols-[2fr_1fr_auto]">
                     <Input
                       label="Vehículo (marca/modelo)"
+                      maxLength={60}
                       value={nuevoVehiculo}
                       onChange={(e) => setNuevoVehiculo(e.target.value)}
                     />
                     <Input
                       label="Placa"
+                      solo="alfanumerico"
+                      maxLength={8}
                       value={nuevaPlaca}
                       onChange={(e) => setNuevaPlaca(e.target.value)}
                     />
@@ -1507,6 +1513,8 @@ export function NotasDeEntrega() {
             <div className="grid gap-4 sm:grid-cols-3">
               <Input
                 label="Ticket de romana"
+                solo="alfanumerico"
+                maxLength={20}
                 value={ticket}
                 onChange={(e) => setTicket(e.target.value)}
               />
@@ -1515,6 +1523,7 @@ export function NotasDeEntrega() {
                 type="number"
                 min="0"
                 inputMode="decimal"
+                limite={{ maxEnteros: 6, maxDecimales: 2, sinNegativos: true }}
                 value={bruto}
                 onChange={(e) => setBruto(e.target.value)}
               />
@@ -1523,6 +1532,7 @@ export function NotasDeEntrega() {
                 type="number"
                 min="0"
                 inputMode="decimal"
+                limite={{ maxEnteros: 6, maxDecimales: 2, sinNegativos: true }}
                 hint={
                   Number(bruto) > Number(tara)
                     ? `Neto: ${enteros(Number(bruto) - Number(tara))} kg`
@@ -1541,12 +1551,14 @@ export function NotasDeEntrega() {
               min="0"
               step="0.01"
               inputMode="decimal"
+              limite={{ maxDecimales: 2, sinNegativos: true }}
               value={flete}
               onChange={(e) => setFlete(e.target.value)}
             />
             <Textarea
               label="Observación"
               rows={2}
+              maxLength={500}
               value={observacion}
               onChange={(e) => setObservacion(e.target.value)}
             />
@@ -1619,6 +1631,7 @@ export function NotasDeEntrega() {
                   <Input
                     label="Monto en $"
                     type="number"
+                    limite={{ maxDecimales: 2, sinNegativos: true }}
                     value={montoUsdCombinado}
                     onChange={(e) => setMontoUsdCombinado(e.target.value)}
                     placeholder="0,00"
@@ -1626,6 +1639,7 @@ export function NotasDeEntrega() {
                   <Input
                     label="Monto en Bs"
                     type="number"
+                    limite={{ maxDecimales: 2, sinNegativos: true }}
                     value={montoBsCombinado}
                     onChange={(e) => setMontoBsCombinado(e.target.value)}
                     placeholder="0,00"
@@ -2039,6 +2053,7 @@ export function NotasDeEntrega() {
             label="Motivo"
             hint="Queda escrito en el registro de auditoría con su nombre."
             rows={3}
+            maxLength={500}
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
             required
@@ -2123,6 +2138,7 @@ export function NotasDeEntrega() {
             label="Motivo"
             rows={3}
             autoFocus
+            maxLength={500}
             value={motivoCierre}
             onChange={(e) => setMotivoCierre(e.target.value)}
           />

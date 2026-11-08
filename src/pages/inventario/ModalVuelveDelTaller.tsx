@@ -96,6 +96,7 @@ export function ModalVuelveDelTaller({
       }
     >
       <Textarea
+        maxLength={500}
         label="Trabajo realizado"
         rows={2}
         placeholder="Se enderezaron en la prensa"
@@ -105,6 +106,7 @@ export function ModalVuelveDelTaller({
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <Input
+          limite={{ maxDecimales: 4, sinNegativos: true }}
           label={`Cantidad (${orden?.unidad?.toLowerCase() ?? 'unidades'})`}
           type="number"
           min="0"
@@ -134,6 +136,7 @@ export function ModalVuelveDelTaller({
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <Input label="Fecha de salida" type="date" value={dia} onChange={(e) => setDia(e.target.value)} />
         <Input
+          limite={{ maxDecimales: 2, sinNegativos: true }}
           label="Costo del trabajo (USD)"
           type="number"
           min="0"

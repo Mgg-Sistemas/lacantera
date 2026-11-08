@@ -166,6 +166,7 @@ export function Clientes() {
             label="Buscar"
             icon={<Search />}
             placeholder="Nombre, RIF o contacto"
+            maxLength={100}
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             className="w-full sm:w-80"
@@ -333,17 +334,21 @@ export function Clientes() {
             />
             <Input
               label="Razón social"
+              maxLength={120}
               value={edicion.nombre}
               onChange={(e) => cambiar({ nombre: e.target.value })}
               required
             />
             <Input
               label="Nombre comercial"
+              maxLength={120}
               value={edicion.nombre_comercial}
               onChange={(e) => cambiar({ nombre_comercial: e.target.value })}
             />
             <Input
               label="Persona de contacto"
+              solo="letras"
+              maxLength={60}
               value={edicion.contacto}
               onChange={(e) => cambiar({ contacto: e.target.value })}
             />
@@ -354,6 +359,7 @@ export function Clientes() {
             <Input
               label="Correo"
               type="email"
+              maxLength={120}
               value={edicion.correo}
               onChange={(e) => cambiar({ correo: e.target.value })}
             />
@@ -362,6 +368,7 @@ export function Clientes() {
           <Input
             label="Domicilio fiscal"
             className="mt-4"
+            maxLength={200}
             hint="Va impreso en la factura. Una factura sin la dirección del comprador está mal emitida."
             value={edicion.direccion}
             onChange={(e) => cambiar({ direccion: e.target.value })}
@@ -390,6 +397,7 @@ export function Clientes() {
                 min="0"
                 step="1"
                 inputMode="decimal"
+                limite={{ maxDecimales: 2, sinNegativos: true }}
                 hint="Por encima de este monto no se le factura a crédito. En cero, no se le vende a crédito."
                 value={edicion.limite_credito}
                 onChange={(e) => cambiar({ limite_credito: e.target.value })}
@@ -418,6 +426,7 @@ export function Clientes() {
                 min="0"
                 max="100"
                 step="1"
+                limite={{ maxEnteros: 3, maxDecimales: 2, sinNegativos: true }}
                 className="ml-6"
                 hint="Normalmente 75%. Se descuenta de lo que hay que cobrarle, no del total de la factura."
                 value={edicion.retencion_iva}
@@ -450,6 +459,7 @@ export function Clientes() {
             label="Notas"
             className="mt-4"
             rows={2}
+            maxLength={500}
             value={edicion.notas}
             onChange={(e) => cambiar({ notas: e.target.value })}
           />

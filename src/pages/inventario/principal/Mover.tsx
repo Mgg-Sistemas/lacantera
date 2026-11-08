@@ -154,6 +154,8 @@ export function Mover({
         />
 
         <Input
+          type="number"
+          limite={{ maxDecimales: 4, sinNegativos: true }}
           label={`Cantidad (${articulo.unidad})`}
           inputMode="decimal"
           placeholder={origen ? `Máx ${cantidad(disponible)}` : ''}

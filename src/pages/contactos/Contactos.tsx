@@ -202,6 +202,7 @@ export function Contactos() {
             <div className="lg:col-span-2">
               <Input
                 label="Buscar"
+                maxLength={100}
                 value={texto}
                 onChange={(e) => setTexto(e.target.value)}
                 placeholder="Nombre, empresa, correo, teléfono, ciudad…"

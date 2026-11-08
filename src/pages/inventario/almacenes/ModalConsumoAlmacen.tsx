@@ -303,6 +303,7 @@ export function ModalConsumoAlmacen({
 
             <div className="mb-4 sm:max-w-xs">
               <Input
+                maxLength={100}
                 label="Buscar"
                 icon={<Search />}
                 placeholder="Buscar por nombre…"

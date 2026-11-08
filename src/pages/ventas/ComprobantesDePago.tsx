@@ -203,7 +203,7 @@ export function ComprobantesDePago({
             </>
           }
         >
-          <Textarea label="Motivo" rows={2} autoFocus value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+          <Textarea label="Motivo" rows={2} autoFocus maxLength={500} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
           {quitar.error ? <ErrorDeCarga error={quitar.error} className="mt-3" /> : null}
         </Modal>
       ) : null}

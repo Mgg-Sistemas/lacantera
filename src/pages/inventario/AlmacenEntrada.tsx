@@ -388,6 +388,7 @@ export function AlmacenEntrada() {
         </div>
 
         <Input
+          maxLength={60}
           label="Referencia"
           hint="Quién lo trajo, o el número de una factura de fuera."
           value={referencia}
@@ -395,6 +396,7 @@ export function AlmacenEntrada() {
         />
 
         <Textarea
+          maxLength={500}
           label="Procedencia"
           rows={2}
           value={motivo}
@@ -492,7 +494,7 @@ function NuevoArticulo({
       }
     >
       <div className="space-y-4">
-        <Input label="Nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+        <Input label="Nombre" maxLength={120} value={nombre} onChange={(e) => setNombre(e.target.value)} />
         <Select
           label="Categoría"
           vacio="Seleccione"

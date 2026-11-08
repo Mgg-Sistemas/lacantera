@@ -462,6 +462,7 @@ export function Trazabilidad({
           }
         >
           <Textarea
+            maxLength={500}
             label="Motivo"
             rows={3}
             autoFocus

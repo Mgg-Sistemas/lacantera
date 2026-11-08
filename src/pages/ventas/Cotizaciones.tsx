@@ -368,6 +368,7 @@ export function Cotizaciones() {
               label="Válida por (días)"
               type="number"
               min="1"
+              limite={{ maxEnteros: 3, maxDecimales: 0, sinNegativos: true }}
               value={validez}
               onChange={(e) => setValidez(e.target.value)}
             />
@@ -377,6 +378,7 @@ export function Cotizaciones() {
               min="0"
               step="0.01"
               inputMode="decimal"
+              limite={{ maxDecimales: 2, sinNegativos: true }}
               hint="Se le suma a la base imponible."
               value={flete}
               onChange={(e) => setFlete(e.target.value)}
@@ -387,6 +389,7 @@ export function Cotizaciones() {
             label="Observación"
             className="mt-4"
             rows={2}
+            maxLength={500}
             value={observacion}
             onChange={(e) => setObservacion(e.target.value)}
           />

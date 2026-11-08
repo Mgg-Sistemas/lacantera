@@ -845,6 +845,7 @@ export function Movimientos() {
           }
         >
           <Textarea
+            maxLength={500}
             label="Motivo"
             rows={3}
             autoFocus

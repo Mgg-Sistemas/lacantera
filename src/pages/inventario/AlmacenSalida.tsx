@@ -180,6 +180,7 @@ export function AlmacenSalida() {
 
       {porEntregar.length > 3 ? (
         <Input
+          maxLength={100}
           className="mt-3"
           label="Buscar"
           ocultarEtiqueta
