@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import {
   ClipboardList,
   FileText,
@@ -13,12 +13,12 @@ import {
 import { Ayuda } from '@/components/Ayuda'
 import { FotosDeCarga } from '@/components/FotosDeCarga'
 import { PageHeader } from '@/components/PageHeader'
-import { Pestanas } from '@/components/Pestanas'
-import { PESTANAS_SALIDAS } from '@/components/pestanasDeModulos'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Modal } from '@/components/ui/Modal'
+import { Segmento } from '@/components/ui/Segmento'
+import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { usePerfiles } from '@/lib/api/catalogo'
@@ -45,6 +45,18 @@ import { useNotaDeSalida } from './NotaDeSalida'
 import { useEmpresa } from '@/lib/api/empresa'
 import { fechaHora } from '@/lib/formato'
 import { enCastellano } from '@/lib/castellano'
+import { CabeceraSalidas } from './CabeceraSalidas'
+import { Tablero } from './Tablero'
+import { DetalleSolicitud, TarjetaSalida } from './TarjetasSalidas'
+import { HistoricoSolicitudes } from './Historicos'
+import { ResumenSalidas } from './ResumenSalidas'
+import {
+  COLUMNAS_SALIDA,
+  cantidadLegible,
+  guardarModo,
+  leerModo,
+  type ModoTablero,
+} from './tableroSalidas'
 
 /*
   LO QUE SE PIDE ANTES DE ENTREGARLO
@@ -74,10 +86,28 @@ import { enCastellano } from '@/lib/castellano'
   y el sitio puestos.
 */
 
+/*
+  COMO MGG (FASE 5), 08/11/2026.
+
+  Arriba, la cabecera de MGG: «↘ Salidas / ↔ Traslados» y «🗂 Solicitudes /
+  📚 Histórico / 📜 Historial / 📊 Resumen». La sub-vista va en la dirección
+  (`?vista=historico`, `?vista=resumen`), así el menú conserva sus rutas.
+
+  «🗂 Solicitudes» es el tablero de MGG con las cuatro columnas de aquí —«Por
+  aprobar» · «Por entregar» · «Entregada» · «Rechazada / Cancelada»—, 10
+  tarjetas por columna, chips para ocultar columnas y filtros por usuario y
+  solicitante. La lista de tarjetas de antes sigue a un clic («☰ Lista»), con
+  todo lo que tenía. La tarjeta abre «Solicitud {numero}» con su historial y
+  LOS MISMOS botones de la lista: `botonesDe` es uno solo para las dos vistas,
+  así que aprobar, no aprobar, entregar, cancelar y el reporte siguen siendo
+  exactamente lo de antes. No cambia la máquina de estados.
+*/
+
 const ESPERAN = ['PEDIDA', 'APROBADA']
 
-const cantidadLegible = (v: string | number): string =>
-  Number(v).toLocaleString('es-VE', { maximumFractionDigits: 2 })
+/** Cuántas solicitudes trae el tablero para poder contar «las N anteriores». */
+const TOPE_TABLERO = 1000
+const CLAVE_MODO = 'salidas.solicitudes.modo'
 
 export function Solicitudes() {
   const [verTodas, setVerTodas] = useState(false)
@@ -99,7 +129,7 @@ export function Solicitudes() {
   const [aprobando, setAprobando] = useState<SolicitudDeSalida | null>(null)
   const [conMiFirma, setConMiFirma] = useState(true)
 
-  const { data: solicitudes, isPending, error } = useSolicitudesDeSalida()
+  const { data: solicitudes, isPending, error } = useSolicitudesDeSalida(TOPE_TABLERO)
   const { data: perfiles } = usePerfiles()
   const { session } = useSesion()
   const { puede: alcanza } = useMisPermisos()
@@ -153,6 +183,14 @@ export function Solicitudes() {
     setParametros(new URLSearchParams(), { replace: true })
   }, [parametros, setParametros])
 
+  const navegar = useNavigate()
+  const vistaPedida = parametros.get('vista')
+  const vista = vistaPedida === 'historico' || vistaPedida === 'resumen' ? vistaPedida : 'solicitudes'
+  const [modo, setModo] = useState<ModoTablero>(() => leerModo(CLAVE_MODO))
+  const [fUsuario, setFUsuario] = useState('')
+  const [fSolicitante, setFSolicitante] = useState('')
+  const [detalleId, setDetalleId] = useState<number | null>(null)
+
   const nombreDe = (uid: string | null) =>
     (uid && perfiles?.find((p) => p.id === uid)?.nombre) || '—'
 
@@ -163,9 +201,33 @@ export function Solicitudes() {
       ? `${s.destino_externo}, de fuera de la empresa${s.responsable_externo ? ` · responde ${s.responsable_externo}` : ''}`
       : '—')
 
-  const todas = solicitudes ?? []
+  /*
+    LOS FILTROS DEL TABLERO (MGG): «👤 Usuario (quien la hizo)» es quien la
+    pidió en el sistema; «🏷 Solicitante» es para quién es —la persona, el área
+    o quien sea de fuera—, que es lo que aquí hace de «solicitante» de MGG.
+  */
+  const cargadas = useMemo(() => solicitudes ?? [], [solicitudes])
+  const usuariosOpc = useMemo(() => {
+    const ids = [...new Set(cargadas.map((s) => s.pedida_por).filter((u): u is string => Boolean(u)))]
+    return ids
+      .map((id) => ({ valor: id, etiqueta: perfiles?.find((p) => p.id === id)?.nombre || '—' }))
+      .sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, 'es'))
+  }, [cargadas, perfiles])
+  const solicitantesOpc = [...new Set(cargadas.map(paraQuien))].sort((a, b) => a.localeCompare(b, 'es'))
+
+  const todas = cargadas.filter(
+    (s) => (!fUsuario || s.pedida_por === fUsuario) && (!fSolicitante || paraQuien(s) === fSolicitante),
+  )
   const esperando = todas.filter((s) => ESPERAN.includes(s.estado))
   const alaVista = verTodas ? todas : esperando
+  const detalle = detalleId !== null ? (cargadas.find((s) => s.id === detalleId) ?? null) : null
+
+  const faltaDe = (s: SolicitudDeSalida) =>
+    s.estado === 'PEDIDA'
+      ? `Falta que la apruebe quien responde por ${s.almacen?.nombre ?? 'el almacén'} o quien tenga el permiso de aprobar salidas.`
+      : s.estado === 'APROBADA'
+        ? 'Aprobada. Falta que alguien de almacén la entregue: al entregarla sale la nota y se descuenta la existencia.'
+        : null
 
   const cerrar = async () => {
     if (!cerrando) return
@@ -180,6 +242,134 @@ export function Solicitudes() {
     } catch (e) {
       setFallo(enCastellano(e))
     }
+  }
+
+  /*
+    LOS BOTONES DE UNA SOLICITUD, LOS DE SIEMPRE. Los usan la lista y el
+    detalle del tablero; la lógica no se toca.
+  */
+  const botonesDe = (s: SolicitudDeSalida) => {
+    const puedo = quePuedoHacerConLaSolicitud(s, comoApruebo, puedoSacar)
+    return (
+      <>
+        {puedo.aprobar ? (
+          <Button
+            size="sm"
+            icon={<PackageCheck />}
+            disabled={aprobar.isPending}
+            onClick={() => {
+              setFallo(null)
+              if (tengoFirma) {
+                setConMiFirma(true)
+                setAprobando(s)
+                return
+              }
+              aprobar.mutate(
+                { id: s.id, con_firma: false },
+                { onError: (e) => setFallo(enCastellano(e)) },
+              )
+            }}
+          >
+            Aprobar
+          </Button>
+        ) : null}
+
+        {/* La orden se imprime en cualquier estado, con el suyo a la vista. */}
+        <Button
+          size="sm"
+          variant="ghost"
+          icon={<FileText />}
+          onClick={() => {
+            setFallo(null)
+            void nota.abrirOrden(s)
+          }}
+        >
+          Orden {s.numero}
+        </Button>
+
+        {s.nota_salida ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            icon={<FileText />}
+            onClick={() => {
+              setFallo(null)
+              void nota.abrir(s.nota_salida!, s.motivo)
+            }}
+          >
+            Nota {s.nota_salida}
+          </Button>
+        ) : null}
+
+        {s.nota_salida ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            icon={<MessageCircle />}
+            onClick={() => setVerReporteSalida({ s, notaSalida: s.nota_salida! })}
+          >
+            Reporte
+          </Button>
+        ) : null}
+
+        {puedo.rechazar ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            icon={<X />}
+            onClick={() => {
+              setMotivo('')
+              setCerrando({ s, como: 'RECHAZAR' })
+            }}
+          >
+            No aprobar
+          </Button>
+        ) : null}
+
+        {puedo.entregar ? (
+          <Button
+            size="sm"
+            icon={<PackageMinus />}
+            disabled={entregar.isPending}
+            onClick={() => {
+              setFallo(null)
+              entregar.mutate(s.id, {
+                onSuccess: (numero) => {
+                  void nota.abrir(numero as string, s.motivo)
+                  /*
+                    `s` es la solicitud de antes de entregar, así que
+                    su `entregada_por` todavía está en null — la base
+                    recién lo escribió en esta misma llamada. Quien
+                    entregó es, con certeza, quien tiene la sesión
+                    abierta ahora mismo.
+                  */
+                  setAvisoEntrega({
+                    s: { ...s, entregada_por: session?.user.id ?? s.entregada_por },
+                    notaSalida: numero as string,
+                  })
+                },
+                onError: (e) => setFallo(enCastellano(e)),
+              })
+            }}
+          >
+            Entregar material
+          </Button>
+        ) : null}
+
+        {puedo.cancelar ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setMotivo('')
+              setCerrando({ s, como: 'CANCELAR' })
+            }}
+          >
+            Cancelar
+          </Button>
+        ) : null}
+      </>
+    )
   }
 
   return (
@@ -201,7 +391,7 @@ export function Solicitudes() {
         }
       />
 
-      <Pestanas pestanas={PESTANAS_SALIDAS} />
+      <CabeceraSalidas alcance="salidas" vista={vista} />
 
       {avisoEntrega ? (
         <div className="border-success/30 bg-success-soft mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[6px] border p-3.5">
@@ -235,247 +425,261 @@ export function Solicitudes() {
         </div>
       ) : null}
 
-      <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-ink/85 font-titular text-lg">Solicitudes de salida</h2>
-        <Ayuda>
-          <p className="text-ink/45 text-xs">
-            Toda salida pasa por solicitud. Las salidas directas están en «Historial».
-          </p>
-        </Ayuda>
-      </div>
-
-      {/* Se dice, en vez de dejar que lo descubra buscando un botón que no está. */}
-      {comoApruebo?.restringida ? (
-        <p className="text-ink/60 mb-3 text-sm">
-          Aprobar salidas se le restringió: puede solicitarlas y cancelar las suyas, y las aprueba
-          quien tenga ese permiso.
-        </p>
-      ) : null}
-
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <Button size="sm" variant={verTodas ? 'ghost' : 'soft'} onClick={() => setVerTodas(false)}>
-          Esperan{solicitudes ? ` (${esperando.length})` : ''}
-        </Button>
-        <Button size="sm" variant={verTodas ? 'soft' : 'ghost'} onClick={() => setVerTodas(true)}>
-          Todas
-        </Button>
-      </div>
-
       {fallo ? <p className="text-danger mb-3 text-sm">{fallo}</p> : null}
-      {isPending ? <Cargando /> : null}
-      {error ? <ErrorDeCarga error={error} /> : null}
 
-      {solicitudes && alaVista.length === 0 ? (
-        <Card>
-          <Vacio
-            icono={<ClipboardList />}
-            titulo={verTodas ? 'Sin solicitudes' : 'Sin solicitudes pendientes'}
-            descripcion={
-              verTodas
-                ? 'Las solicitudes de salida aparecen aquí antes de su entrega.'
-                : 'Ninguna solicitud está pendiente de aprobación ni de entrega. Las cerradas están en «Todas».'
-            }
-          />
-        </Card>
-      ) : null}
+      {vista === 'resumen' ? (
+        <ResumenSalidas />
+      ) : isPending ? (
+        <Cargando />
+      ) : error ? (
+        <ErrorDeCarga error={error} />
+      ) : vista === 'historico' ? (
+        /*
+          El histórico se lleva lo que ya estaba filtrado en el tablero (MGG):
+          llega por «📚 Ver las N anteriores» con la columna en la dirección.
+        */
+        <HistoricoSolicitudes
+          key={parametros.toString()}
+          sols={cargadas}
+          inicial={{
+            columna: parametros.get('columna') ?? undefined,
+            usuario: parametros.get('usuario') ?? undefined,
+            solicitante: parametros.get('solicitante') ?? undefined,
+          }}
+          nombreDe={nombreDe}
+          paraQuien={paraQuien}
+          onVer={(s) => setDetalleId(s.id)}
+          topeAlcanzado={cargadas.length >= TOPE_TABLERO}
+        />
+      ) : (
+        <>
+          <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-ink/85 font-titular text-lg">Solicitudes de salida</h2>
+            <Ayuda>
+              <p className="text-ink/45 text-xs">
+                Toda salida pasa por solicitud. Las salidas directas están en «Historial».
+              </p>
+            </Ayuda>
+          </div>
 
-      <div className="space-y-3">
-        {alaVista.map((s) => {
-          const estado = ESTADO_DE_SOLICITUD[s.estado]
-          const puedo = quePuedoHacerConLaSolicitud(s, comoApruebo, puedoSacar)
-          const falta =
-            s.estado === 'PEDIDA'
-              ? `Falta que la apruebe quien responde por ${s.almacen?.nombre ?? 'el almacén'} o quien tenga el permiso de aprobar salidas.`
-              : s.estado === 'APROBADA'
-                ? 'Aprobada. Falta que alguien de almacén la entregue: al entregarla sale la nota y se descuenta la existencia.'
-                : null
+          {/* Se dice, en vez de dejar que lo descubra buscando un botón que no está. */}
+          {comoApruebo?.restringida ? (
+            <p className="text-ink/60 mb-3 text-sm">
+              Aprobar salidas se le restringió: puede solicitarlas y cancelar las suyas, y las aprueba
+              quien tenga ese permiso.
+            </p>
+          ) : null}
 
-          return (
-            <Card key={s.id}>
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-ink/70 tabular font-mono text-xs">
-                      Orden {s.numero}
-                    </span>
-                    <Chip tone={estado.tono}>{estado.texto}</Chip>
-                  </div>
+          {/* Filtros encima del tablero (MGG) y el conmutador «▦ Kanban / ☰ Lista». */}
+          <div className="mb-3 flex flex-wrap items-end gap-3">
+            <Select
+              label="👤 Usuario (quien la hizo)"
+              vacio="Todos"
+              className="w-full sm:w-56"
+              value={fUsuario}
+              onChange={(e) => setFUsuario(e.target.value)}
+              opciones={usuariosOpc}
+            />
+            <Select
+              label="🏷 Solicitante"
+              vacio="Todos"
+              className="w-full sm:w-64"
+              value={fSolicitante}
+              onChange={(e) => setFSolicitante(e.target.value)}
+              opciones={solicitantesOpc.map((x) => ({ valor: x, etiqueta: x }))}
+            />
+            {fUsuario || fSolicitante ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setFUsuario('')
+                  setFSolicitante('')
+                }}
+              >
+                ✕ Limpiar
+              </Button>
+            ) : null}
+            <div className="ml-auto flex items-center gap-3">
+              <span className="text-ink/50 text-xs">
+                {todas.length} de {cargadas.length} solicitud(es)
+              </span>
+              <Segmento
+                valor={modo}
+                onCambio={(v) => {
+                  const m = v === 'lista' ? 'lista' : 'kanban'
+                  setModo(m)
+                  guardarModo(CLAVE_MODO, m)
+                }}
+                opciones={[
+                  { valor: 'kanban', etiqueta: '▦ Kanban', pista: 'Tablero por estado' },
+                  { valor: 'lista', etiqueta: '☰ Lista', pista: 'La lista de tarjetas, con sus botones' },
+                ]}
+              />
+            </div>
+          </div>
 
-                  {/*
-                    LA NOTA QUE SALIÓ DE ESTA ORDEN, DICHA ENTERA. Decía «nota
-                    NS-2026-0010» en letra de código al lado del número, y
-                    Christopher: «no se está apreciando su correlación».
-                  */}
-                  {s.nota_salida ? (
-                    <p className="text-ink/60 mt-1 text-xs">
-                      Se entregó con la nota de salida{' '}
-                      <span className="tabular text-ink/80 font-mono">{s.nota_salida}</span>
-                      {s.entregada_en ? ` · ${fechaHora(s.entregada_en)}` : ''}
-                    </p>
-                  ) : null}
-
-                  <p className="text-ink/85 mt-1.5 text-sm font-medium">
-                    De {s.almacen?.nombre ?? '—'} · para {paraQuien(s)}
-                  </p>
-                  <p className="text-ink/55 text-xs">Para: {s.motivo}</p>
-
-                  <ul className="text-ink/75 mt-2 space-y-0.5 text-sm">
-                    {(s.renglones ?? []).map((r) => (
-                      <li key={r.id}>
-                        {cantidadLegible(r.cantidad)} {r.articulo?.unidad ?? ''} ·{' '}
-                        {r.articulo?.nombre ?? '—'}
-                        {r.propietario ? (
-                          <span className="text-ink/45 text-xs"> · de {r.propietario}</span>
-                        ) : null}
-                      </li>
-                    ))}
-                  </ul>
-
-                  <p className="text-ink/40 mt-2 text-xs">
-                    La solicitó {nombreDe(s.pedida_por)} · {fechaHora(s.pedida_en)}
-                    {s.aprobada_en
-                      ? ` · ${s.estado === 'RECHAZADA' ? 'la rechazó' : 'la aprobó'} ${nombreDe(s.aprobada_por)}`
-                      : ''}
-                    {s.aprobada_de_respaldo ? ' (de respaldo)' : ''}
-                    {s.entregada_en ? ` · la entregó ${nombreDe(s.entregada_por)}` : ''}
-                  </p>
-
-                  {s.cierre_motivo ? (
-                    <p className="text-ink/55 mt-1 text-xs italic">{s.cierre_motivo}</p>
-                  ) : null}
-
-                  {falta ? <p className="text-warning mt-1 text-xs">{falta}</p> : null}
-
-                  <FotosDeCarga
-                    origen="SALIDA"
-                    referencia={s.numero}
-                    puedeAnadir={puedoSacar && s.estado !== 'RECHAZADA' && s.estado !== 'CANCELADA'}
-                  />
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  {puedo.aprobar ? (
-                    <Button
-                      size="sm"
-                      icon={<PackageCheck />}
-                      disabled={aprobar.isPending}
-                      onClick={() => {
-                        setFallo(null)
-                        if (tengoFirma) {
-                          setConMiFirma(true)
-                          setAprobando(s)
-                          return
-                        }
-                        aprobar.mutate(
-                          { id: s.id, con_firma: false },
-                          { onError: (e) => setFallo(enCastellano(e)) },
-                        )
-                      }}
-                    >
-                      Aprobar
-                    </Button>
-                  ) : null}
-
-                  {/* La orden se imprime en cualquier estado, con el suyo a la vista. */}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    icon={<FileText />}
-                    onClick={() => {
-                      setFallo(null)
-                      void nota.abrirOrden(s)
-                    }}
-                  >
-                    Orden {s.numero}
-                  </Button>
-
-                  {s.nota_salida ? (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      icon={<FileText />}
-                      onClick={() => {
-                        setFallo(null)
-                        void nota.abrir(s.nota_salida!, s.motivo)
-                      }}
-                    >
-                      Nota {s.nota_salida}
-                    </Button>
-                  ) : null}
-
-                  {s.nota_salida ? (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      icon={<MessageCircle />}
-                      onClick={() => setVerReporteSalida({ s, notaSalida: s.nota_salida! })}
-                    >
-                      Reporte
-                    </Button>
-                  ) : null}
-
-                  {puedo.rechazar ? (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      icon={<X />}
-                      onClick={() => {
-                        setMotivo('')
-                        setCerrando({ s, como: 'RECHAZAR' })
-                      }}
-                    >
-                      No aprobar
-                    </Button>
-                  ) : null}
-
-                  {puedo.entregar ? (
-                    <Button
-                      size="sm"
-                      icon={<PackageMinus />}
-                      disabled={entregar.isPending}
-                      onClick={() => {
-                        setFallo(null)
-                        entregar.mutate(s.id, {
-                          onSuccess: (numero) => {
-                            void nota.abrir(numero as string, s.motivo)
-                            /*
-                              `s` es la solicitud de antes de entregar, así que
-                              su `entregada_por` todavía está en null — la base
-                              recién lo escribió en esta misma llamada. Quien
-                              entregó es, con certeza, quien tiene la sesión
-                              abierta ahora mismo.
-                            */
-                            setAvisoEntrega({
-                              s: { ...s, entregada_por: session?.user.id ?? s.entregada_por },
-                              notaSalida: numero as string,
-                            })
-                          },
-                          onError: (e) => setFallo(enCastellano(e)),
-                        })
-                      }}
-                    >
-                      Entregar material
-                    </Button>
-                  ) : null}
-
-                  {puedo.cancelar ? (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setMotivo('')
-                        setCerrando({ s, como: 'CANCELAR' })
-                      }}
-                    >
-                      Cancelar
-                    </Button>
-                  ) : null}
-                </div>
+          {modo === 'kanban' ? (
+            <Tablero
+              items={todas}
+              columnas={COLUMNAS_SALIDA}
+              claveLocal="salidas.tablero.ocultas"
+              claveDe={(s) => s.id}
+              vacio="No hay solicitudes en esta vista. Creá una con el botón de arriba."
+              onVerAnteriores={(columna) => {
+                const q = new URLSearchParams({ vista: 'historico', columna })
+                if (fUsuario) q.set('usuario', fUsuario)
+                if (fSolicitante) q.set('solicitante', fSolicitante)
+                void navegar(`/app/salidas/solicitudes?${q.toString()}`)
+              }}
+              tarjeta={(s) => (
+                <TarjetaSalida
+                  s={s}
+                  hizo={nombreDe(s.pedida_por)}
+                  paraQuien={paraQuien(s)}
+                  onAbrir={() => setDetalleId(s.id)}
+                />
+              )}
+            />
+          ) : (
+            <>
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <Button size="sm" variant={verTodas ? 'ghost' : 'soft'} onClick={() => setVerTodas(false)}>
+                  Esperan{solicitudes ? ` (${esperando.length})` : ''}
+                </Button>
+                <Button size="sm" variant={verTodas ? 'soft' : 'ghost'} onClick={() => setVerTodas(true)}>
+                  Todas
+                </Button>
               </div>
-            </Card>
-          )
-        })}
-      </div>
+
+              {solicitudes && alaVista.length === 0 ? (
+                <Card>
+                  <Vacio
+                    icono={<ClipboardList />}
+                    titulo={verTodas ? 'Sin solicitudes' : 'Sin solicitudes pendientes'}
+                    descripcion={
+                      verTodas
+                        ? 'Las solicitudes de salida aparecen aquí antes de su entrega.'
+                        : 'Ninguna solicitud está pendiente de aprobación ni de entrega. Las cerradas están en «Todas».'
+                    }
+                  />
+                </Card>
+              ) : null}
+
+              <div className="space-y-3">
+                {alaVista.map((s) => {
+                  const estado = ESTADO_DE_SOLICITUD[s.estado]
+                  const falta = faltaDe(s)
+
+                  return (
+                    <Card key={s.id}>
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-ink/70 tabular font-mono text-xs">
+                              Orden {s.numero}
+                            </span>
+                            <Chip tone={estado.tono}>{estado.texto}</Chip>
+                          </div>
+
+                          {/*
+                            LA NOTA QUE SALIÓ DE ESTA ORDEN, DICHA ENTERA. Decía «nota
+                            NS-2026-0010» en letra de código al lado del número, y
+                            Christopher: «no se está apreciando su correlación».
+                          */}
+                          {s.nota_salida ? (
+                            <p className="text-ink/60 mt-1 text-xs">
+                              Se entregó con la nota de salida{' '}
+                              <span className="tabular text-ink/80 font-mono">{s.nota_salida}</span>
+                              {s.entregada_en ? ` · ${fechaHora(s.entregada_en)}` : ''}
+                            </p>
+                          ) : null}
+
+                          <p className="text-ink/85 mt-1.5 text-sm font-medium">
+                            De {s.almacen?.nombre ?? '—'} · para {paraQuien(s)}
+                          </p>
+                          <p className="text-ink/55 text-xs">Para: {s.motivo}</p>
+
+                          <ul className="text-ink/75 mt-2 space-y-0.5 text-sm">
+                            {(s.renglones ?? []).map((r) => (
+                              <li key={r.id}>
+                                {cantidadLegible(r.cantidad)} {r.articulo?.unidad ?? ''} ·{' '}
+                                {r.articulo?.nombre ?? '—'}
+                                {r.propietario ? (
+                                  <span className="text-ink/45 text-xs"> · de {r.propietario}</span>
+                                ) : null}
+                              </li>
+                            ))}
+                          </ul>
+
+                          <p className="text-ink/40 mt-2 text-xs">
+                            La solicitó {nombreDe(s.pedida_por)} · {fechaHora(s.pedida_en)}
+                            {s.aprobada_en
+                              ? ` · ${s.estado === 'RECHAZADA' ? 'la rechazó' : 'la aprobó'} ${nombreDe(s.aprobada_por)}`
+                              : ''}
+                            {s.aprobada_de_respaldo ? ' (de respaldo)' : ''}
+                            {s.entregada_en ? ` · la entregó ${nombreDe(s.entregada_por)}` : ''}
+                          </p>
+
+                          {s.cierre_motivo ? (
+                            <p className="text-ink/55 mt-1 text-xs italic">{s.cierre_motivo}</p>
+                          ) : null}
+
+                          {falta ? <p className="text-warning mt-1 text-xs">{falta}</p> : null}
+
+                          <FotosDeCarga
+                            origen="SALIDA"
+                            referencia={s.numero}
+                            puedeAnadir={puedoSacar && s.estado !== 'RECHAZADA' && s.estado !== 'CANCELADA'}
+                          />
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2">{botonesDe(s)}</div>
+                      </div>
+                    </Card>
+                  )
+                })}
+              </div>
+            </>
+          )}
+        </>
+      )}
+
+      {/*
+        «Solicitud {numero}» (MGG `SolicitudDetalleModal`): los datos, los
+        materiales y el historial, con los botones de siempre al pie. Un botón
+        que abre otra ventana (aprobar con firma, no aprobar, cancelar, la orden
+        o la nota) cierra esta primero, para no apilar dos ventanas.
+      */}
+      {detalle ? (
+        <Modal
+          abierto
+          onCerrar={() => setDetalleId(null)}
+          titulo={`Solicitud ${detalle.numero}`}
+          ancho="lg"
+          acciones={
+            <div
+              className="flex flex-wrap items-center justify-end gap-2"
+              onClickCapture={(e) => {
+                if ((e.target as HTMLElement).closest('button')) setDetalleId(null)
+              }}
+            >
+              {botonesDe(detalle)}
+              <Button variant="ghost" onClick={() => setDetalleId(null)}>
+                Cerrar
+              </Button>
+            </div>
+          }
+        >
+          <DetalleSolicitud
+            s={detalle}
+            nombreDe={nombreDe}
+            paraQuien={paraQuien(detalle)}
+            aviso={faltaDe(detalle)}
+            puedeAnadirFotos={puedoSacar && detalle.estado !== 'RECHAZADA' && detalle.estado !== 'CANCELADA'}
+          />
+        </Modal>
+      ) : null}
 
       {/*
         SOLICITAR Y SACAR COMPARTEN COMPONENTE por los renglones: lo que se
