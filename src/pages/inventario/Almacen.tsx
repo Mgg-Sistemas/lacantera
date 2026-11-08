@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router'
+import { useMemo, useState } from 'react'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
@@ -24,15 +24,24 @@ import {
   type Articulo,
 } from '@/lib/api/catalogo'
 import { useAlmacenes, useExistencias, useRegistrarEntradas, type Almacen as Sitio } from '@/lib/api/inventario'
-import { useAsignaciones } from '@/lib/api/asignaciones'
+import { useComoAprueboSalidas } from '@/lib/api/salidas'
+import { leerSolicitudPorNumero, usePrestamosPorRetornar } from '@/lib/api/almacenTelefono'
 import { usePermisosPedidos, usePorRecibir, useSolicitudesEnRevision } from '@/lib/api/pedidos'
 import { useEmpresa, empresaDelPapel } from '@/lib/api/empresa'
 import { useMonedasUsables, enSimbolos } from '@/lib/api/tasas'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
-import { copiarAlPortapapeles } from '@/lib/ficha/reporteDiario'
 import { mensajeEntrada, mensajeProductoNuevo, num } from '@/lib/ficha/inventarioWhatsapp'
 import { RecepcionesTelefono } from '@/pages/pedidos/RecepcionesTelefono'
+import { useNotaDeSalida } from '@/pages/salidas/NotaDeSalida'
+import { useNotaDeTraslado } from '@/pages/salidas/NotaDeTraslado'
 import { cn } from '@/lib/cn'
+import { sinAcentos, useTardaPorLaSeñal, type ProductoEnAlmacen } from './telefono/comun'
+import { AvisoDeSeñal, BotonGrande, Listo, TituloDePaso } from './telefono/piezas'
+import { FormSalida } from './telefono/FormSalida'
+import { FormTraslado } from './telefono/FormTraslado'
+import { PorRetornar } from './telefono/PorRetornar'
+import { ReporteStock } from './telefono/ReporteStock'
+import { HistoricoSalidas, HistoricoTraslados } from './telefono/Historicos'
 
 /*
   INVENTARIO, EN EL TELÉFONO.
@@ -55,15 +64,33 @@ import { cn } from '@/lib/cn'
   reemplaza el contenido debajo del selector, y el almacén no se cambia a
   mitad de un paso —lo que se está cargando es de ESE almacén—.
 
-  Lo que todavía no se copia (fase 1b) abre lo de antes: «⬆ Salida» y
-  «🔄 Por retornar» van a sus sub-páginas, y «🔁 Traslado» no se enseña. La
-  entrada de muchos renglones (`AlmacenEntrada`) sigue viva: «Varios
-  productos a la vez».
+  08/11/2026, FASE 1b: el resto del día del almacenista, también aquí y con
+  su WhatsApp al final (las piezas viven en `./telefono/`):
+  · «⬆ Salida»: la de MGG, MIXTA (decisión 0.1 «C»). Quien puede aprobar
+    salidas de este almacén la saca en el acto; si no, queda «Por aprobar».
+    Con «¿Retorna? SÍ», un préstamo a un trabajador.
+  · «🔁 Traslado»: directo, como MGG (decisión 0.2), con
+    `transferir_existencia`. En escritorio siguen los tres pasos.
+  · «🔄 Por retornar»: los préstamos de este almacén, con retorno parcial.
+  · «📲 Reporte de stock» y los históricos de salidas y de traslados.
 
-  Las escrituras son las mismas RPC de siempre (`crear_articulo` y
-  `registrar_entradas`): el stock sigue siendo la suma del libro, el costo
-  sigue moviendo el promedio y la base sigue pidiendo que se compruebe el
-  costo la primera vez.
+  QUÉ PASÓ CON LAS SUB-PÁGINAS DE ANTES:
+  · `/almacen/retornar` redirige aquí (`?paso=retornos`): esta pantalla hace
+    todo lo que hacía y además el retorno parcial.
+  · `/almacen/salida` (entregar una solicitud ya aprobada, p. ej. pedida desde
+    el escritorio) y `/almacen/salida/pedir` (con vehículo, firma o de varios
+    almacenes) siguen vivas: la salida de aquí no las cubre. Se llega con
+    «Entregar lo ya aprobado» y desde la propia salida.
+  · `/almacen/movimientos` (buscar cualquier movimiento por su número y
+    reportarlo) sigue viva: los históricos solo cubren salidas y traslados.
+  · `/almacen/prestamo` sigue viva para la dotación y el préstamo de otro
+    almacén; se llega desde «🔄 Por retornar».
+  · `/almacen/entrada` sigue viva: «Varios productos a la vez».
+
+  Las escrituras son las RPC de siempre (`crear_articulo`,
+  `registrar_entradas`, `transferir_existencia`, `entregar_a_trabajador`) y
+  las de la migración de la fase 1b (`salida_desde_el_telefono`,
+  `devolver_parte_de_prestamo`): el stock sigue siendo la suma del libro.
 */
 
 /** Cuántos productos se listan sin buscar: en el teléfono no se recorre el almacén entero. */
@@ -71,7 +98,6 @@ const SIN_BUSCAR = 15
 const CLAVE_ALMACEN = 'lacantera.inventarioMovil.almacen'
 /** El almacén con el que arranca quien no ha elegido ninguno: el general. */
 const ALMACEN_POR_DEFECTO = 'ALM-GEN'
-const SEGUNDOS_PARA_AVISAR_DE_LA_SEÑAL = 12
 
 /*
   El combustible tiene su propio módulo y su surtidor, y «En tránsito» solo lo
@@ -96,24 +122,26 @@ const guardarAlmacen = (id: string) => {
   }
 }
 
-const sinAcentos = (t: string) =>
-  t
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
+type Paso =
+  | 'inicio'
+  | 'nuevo'
+  | 'entrada'
+  | 'salida'
+  | 'traslado'
+  | 'retornos'
+  | 'reporte'
+  | 'historico'
+  | 'historicoTraslados'
+  | 'recepciones'
+  | 'listo'
 
-type Paso = 'inicio' | 'nuevo' | 'entrada' | 'recepciones' | 'listo'
-
-/** Un producto tal como se ve en la lista: con el stock DE ESTE almacén, no el de la empresa. */
-interface ProductoEnAlmacen {
-  id: number
-  codigo: string
-  nombre: string
-  categoria: string
-  unidad: string
-  stock: number
-  /** Nulo para quien no puede ver la valoración: la vista lo esconde. */
-  costoPromedio: number | null
+/** La pantalla «✅» y, si hay un papel que reutilizar, cuál. */
+interface Hecho {
+  icono?: string
+  titulo: string
+  texto: string
+  aviso?: string
+  pdf?: { clase: 'orden'; numero: string } | { clase: 'traslado'; idSalida: number }
 }
 
 export function Almacen() {
@@ -123,12 +151,13 @@ export function Almacen() {
   const { data: yo } = useMiPerfil()
   const { data: empresa } = useEmpresa()
   const navegar = useNavigate()
+  const [parametros] = useSearchParams()
 
   const puedeEntrada = puede('INVENTARIO', 'ESCRITURA')
-  // Pedir una salida solo exige LECTURA en Salidas; entregarla exige
-  // ESCRITURA. El botón se enseña con cualquiera de las dos, y
-  // AlmacenSalida.tsx decide a cuál de las dos aterriza.
+  // Pedir una salida solo exige LECTURA en Salidas (la regla de `pedir_salida`);
+  // entregarla exige ESCRITURA.
   const puedeSalida = puede('SALIDAS', 'LECTURA')
+  const puedeEntregar = puede('SALIDAS', 'ESCRITURA')
   /*
     LA MISMA REJA QUE EL RPC `entregar_a_trabajador`: por el rol de siempre
     (ALMACEN, RRHH, ADMIN) o por el permiso del módulo Asignaciones — la
@@ -136,6 +165,10 @@ export function Almacen() {
     `ALMACEN_TELEFONO`, sin tener que darle el rol entero.
   */
   const puedePrestamo = tieneRol('ALMACEN', 'RRHH', 'ADMIN') || puede('ASIGNACIONES', 'ESCRITURA')
+  // Devolver pide el permiso del módulo, como `devolver_herramienta`.
+  const puedeRetornar = puede('ASIGNACIONES', 'ESCRITURA')
+  // `transferir_existencia` pide el rol de Almacén, o su equivalente: escritura en Inventario.
+  const puedeTraslado = tieneRol('ALMACEN') || puedeEntrada
   const puedeVerInventario = puede('INVENTARIO', 'LECTURA')
 
   const permisosPedidos = usePermisosPedidos()
@@ -145,9 +178,7 @@ export function Almacen() {
   const porRecibir = usePorRecibir(recibe)
   const cantidadPorRevisar = (porRevisar.data ?? []).length
   const cantidadPorRecibir = (porRecibir.data ?? []).length
-
-  const porRetornar = useAsignaciones({ estado: 'ASIGNADA' })
-  const cantidadPorRetornar = (porRetornar.data ?? []).filter((a) => a.clase === 'ASIGNACION').length
+  const comoApruebo = useComoAprueboSalidas()
 
   const almacenesQ = useAlmacenes()
   const visibles = useMemo(
@@ -167,13 +198,19 @@ export function Almacen() {
     null
 
   const existenciasQ = useExistencias(almacen?.id, !!almacen)
+  const porRetornarQ = usePrestamosPorRetornar(almacen?.id, puedePrestamo)
+  const cantidadPorRetornar = (porRetornarQ.data ?? []).length
   const { data: articulos } = useArticulos()
   const { data: categorias } = useCategoriasDeInventario()
+  const notaDeSalida = useNotaDeSalida()
+  const notaDeTraslado = useNotaDeTraslado()
+  const [armandoOrden, setArmandoOrden] = useState(false)
 
-  const [paso, setPaso] = useState<Paso>('inicio')
+  // `/almacen/retornar` redirige aquí con `?paso=retornos` (fase 1b).
+  const [paso, setPaso] = useState<Paso>(() => (parametros.get('paso') === 'retornos' ? 'retornos' : 'inicio'))
   const [elegido, setElegido] = useState<number | null>(null)
   const [busca, setBusca] = useState('')
-  const [listo, setListo] = useState<{ titulo: string; texto: string } | null>(null)
+  const [listo, setListo] = useState<Hecho | null>(null)
 
   const etiquetaCategoria = useMemo(() => {
     const m = new Map((categorias ?? []).map((c) => [c.codigo, c.etiqueta]))
@@ -191,7 +228,9 @@ export function Almacen() {
           categoria: e.categoria,
           unidad: e.unidad,
           stock: Number(e.existencia) || 0,
+          disponible: Number(e.disponibles ?? e.existencia) || 0,
           costoPromedio: e.costo_promedio_usd == null ? null : Number(e.costo_promedio_usd),
+          duenos: e.duenos ?? [],
         }))
         .sort((a, b) => Number(b.stock > 0) - Number(a.stock > 0) || a.nombre.localeCompare(b.nombre, 'es')),
     [existenciasQ.data],
@@ -212,10 +251,12 @@ export function Almacen() {
     cero. Aquí el catálogo es uno para toda la empresa y la existencia sale del
     libro, así que un artículo que nunca entró a este almacén no aparece en la
     lista —y darlo de alta otra vez choca con el homónimo—. Al buscar se ofrecen
-    también esos, con su cero, para que se les pueda cargar la Entrada.
+    también esos, con su cero, para que se les pueda cargar la Entrada. Solo
+    para la entrada: lo que no está no puede salir ni trasladarse.
   */
+  const conCatalogo = paso === 'inicio' || paso === 'entrada'
   const delCatalogo = useMemo<ProductoEnAlmacen[]>(() => {
-    if (!q || !puedeEntrada) return []
+    if (!q || !puedeEntrada || !conCatalogo) return []
     const aqui = new Set(productos.map((p) => p.id))
     return (articulos ?? [])
       .filter((a) => a.inventariable && !aqui.has(a.id))
@@ -231,9 +272,11 @@ export function Almacen() {
         categoria: a.categoria,
         unidad: a.unidad,
         stock: 0,
+        disponible: 0,
         costoPromedio: null,
+        duenos: [],
       }))
-  }, [articulos, productos, q, puedeEntrada, etiquetaCategoria])
+  }, [articulos, productos, q, puedeEntrada, conCatalogo, etiquetaCategoria])
 
   const prodActual =
     elegido == null ? null : (productos.find((p) => p.id === elegido) ?? delCatalogo.find((p) => p.id === elegido) ?? null)
@@ -256,8 +299,16 @@ export function Almacen() {
   const quien = yo?.nombre ?? ''
   const empresaNombre = empresaDelPapel(empresa).razonSocial
   const esGeneral = almacen?.codigo === ALMACEN_POR_DEFECTO
-  const eligiendo = paso === 'entrada' && prodActual == null
+  const eligiendo = (paso === 'entrada' || paso === 'salida' || paso === 'traslado') && prodActual == null
   const soloVe = !puedeEntrada && !puedeSalida && !puedePrestamo
+  const puedeSacar = puedeSalida || puedePrestamo
+  // La regla de la base para aprobar (`private.como_aprueba_salida`), dicha a la
+  // pantalla: responde por este almacén o es autorizado; y además puede entregar.
+  const aprueba =
+    !!almacen &&
+    puedeEntregar &&
+    (comoApruebo.data?.respaldo === true || (comoApruebo.data?.sitios ?? []).includes(almacen.id))
+  const destinos = visibles.filter((a) => a.id !== almacen?.id)
 
   const elegirAlmacen = (id: string) => {
     setSel(id)
@@ -270,13 +321,38 @@ export function Almacen() {
     setPaso('inicio')
     setElegido(null)
     setListo(null)
+    setBusca('')
   }
-  const hecho = (titulo: string, texto: string) => {
-    setListo({ titulo, texto })
+  const abrir = (p: Paso) => {
+    setElegido(null)
+    setBusca('')
+    setPaso(p)
+  }
+  const hecho = (h: Hecho) => {
+    setListo(h)
     setPaso('listo')
     setElegido(null)
     setBusca('')
   }
+
+  const verPdf = async (pdf: NonNullable<Hecho['pdf']>) => {
+    if (pdf.clase === 'traslado') return notaDeTraslado.abrir(pdf.idSalida)
+    setArmandoOrden(true)
+    try {
+      await notaDeSalida.abrirOrden(await leerSolicitudPorNumero(pdf.numero))
+    } catch (err) {
+      toast(mensajeDe(err, 'No se pudo armar el PDF'), 'error')
+    } finally {
+      setArmandoOrden(false)
+    }
+  }
+
+  const tituloEligiendo =
+    paso === 'salida'
+      ? '⬆ ¿Qué material sale?'
+      : paso === 'traslado'
+        ? '🔁 ¿Qué material se traslada?'
+        : '⬇ ¿A qué producto le llegó?'
 
   return (
     <div className="mx-auto max-w-lg pt-4 pb-10">
@@ -351,42 +427,57 @@ export function Almacen() {
                 icono="＋"
                 titulo="Producto nuevo"
                 sub={`Algo que todavía no está en ${nombreAlm}`}
-                onClick={() => setPaso('nuevo')}
+                onClick={() => abrir('nuevo')}
               />
             ) : null}
             {puedeEntrada ? (
               <BotonGrande
                 tono="success"
-                className={puedeSalida ? undefined : 'col-span-2'}
+                className={puedeSacar ? undefined : 'col-span-2'}
                 icono="⬇"
                 titulo="Entrada"
                 sub="Llegó más de un producto que ya está"
-                onClick={() => {
-                  setElegido(null)
-                  setPaso('entrada')
-                }}
+                onClick={() => abrir('entrada')}
               />
             ) : null}
-            {puedeSalida ? (
+            {puedeSacar ? (
               <BotonGrande
                 tono="warning"
                 className={puedeEntrada ? undefined : 'col-span-2'}
                 icono="⬆"
                 titulo="Salida"
                 sub="Sale material del almacén"
-                onClick={() => void navegar('/app/inventario/almacen/salida')}
+                onClick={() => abrir('salida')}
+              />
+            ) : null}
+            {puedeTraslado ? (
+              <BotonGrande
+                tono="info"
+                className={puedePrestamo ? undefined : 'col-span-2'}
+                icono="🔁"
+                titulo="Traslado"
+                sub="Directo a otro almacén"
+                disabled={destinos.length === 0}
+                onClick={() => abrir('traslado')}
               />
             ) : null}
             {puedePrestamo ? (
               <BotonGrande
                 tono="info"
-                className="col-span-2"
+                className={puedeTraslado ? undefined : 'col-span-2'}
                 icono="🔄"
                 titulo={`Por retornar (${cantidadPorRetornar})`}
                 sub={cantidadPorRetornar > 0 ? 'Dar retorno a lo que salió' : 'Sin pendientes por retornar'}
-                onClick={() => void navegar('/app/inventario/almacen/retornar')}
+                onClick={() => abrir('retornos')}
               />
             ) : null}
+            <BotonGrande
+              tono="success"
+              className="col-span-2 min-h-[84px]"
+              titulo="📲 Reporte de stock (WhatsApp)"
+              sub={`Lo que hay en ${nombreAlm}, filtrado por fechas`}
+              onClick={() => abrir('reporte')}
+            />
             {/* 📥 Recepciones: las OC entran al almacén general (fase 4 de
                 compras), así que el botón solo sale con ése elegido. */}
             {esGeneral && recibe ? (
@@ -395,18 +486,34 @@ export function Almacen() {
                 className="col-span-2"
                 titulo="📥 Recepciones"
                 sub={`Las OC por recibir: entran a ${nombreAlm}`}
-                onClick={() => setPaso('recepciones')}
+                onClick={() => abrir('recepciones')}
               />
             ) : null}
+            <BotonGrande
+              tono="warning"
+              titulo="🧾 Histórico de salidas"
+              sub="PDF y WhatsApp de cada salida"
+              onClick={() => abrir('historico')}
+            />
+            <BotonGrande
+              tono="info"
+              titulo="🔁 Histórico de traslados"
+              sub="PDF y WhatsApp de cada traslado"
+              onClick={() => abrir('historicoTraslados')}
+            />
           </div>
 
           <div className="text-ink/55 mt-3 flex flex-wrap justify-center gap-x-5 gap-y-1 text-sm">
             {puedeEntrada ? (
-              <Link
-                to="/app/inventario/almacen/entrada"
-                className="underline decoration-dotted underline-offset-4"
-              >
+              <Link to="/app/inventario/almacen/entrada" className="underline decoration-dotted underline-offset-4">
                 Varios productos a la vez
+              </Link>
+            ) : null}
+            {/* Lo pedido desde el escritorio y ya aprobado se entrega allí:
+                la salida de aquí no lo cubre (fase 1b). */}
+            {puedeEntregar ? (
+              <Link to="/app/inventario/almacen/salida" className="underline decoration-dotted underline-offset-4">
+                Entregar lo ya aprobado
               </Link>
             ) : null}
             <Link to="/app/inventario/almacen/movimientos" className="underline decoration-dotted underline-offset-4">
@@ -428,7 +535,23 @@ export function Almacen() {
         </div>
       ) : null}
 
-      {paso === 'listo' && listo ? <Listo titulo={listo.titulo} texto={listo.texto} onVolver={volver} /> : null}
+      {paso === 'listo' && listo ? (
+        <Listo
+          icono={listo.icono}
+          titulo={listo.titulo}
+          texto={listo.texto}
+          aviso={listo.aviso}
+          pdf={
+            listo.pdf
+              ? {
+                  armando: armandoOrden || notaDeTraslado.armando !== null,
+                  abrir: () => void verPdf(listo.pdf!),
+                }
+              : undefined
+          }
+          onVolver={volver}
+        />
+      ) : null}
 
       {paso === 'nuevo' && almacen ? (
         <FormNuevo
@@ -438,7 +561,7 @@ export function Almacen() {
           empresa={empresaNombre}
           etiquetaCategoria={etiquetaCategoria}
           onCancel={volver}
-          onHecho={hecho}
+          onHecho={(titulo, texto) => hecho({ titulo, texto })}
         />
       ) : null}
 
@@ -451,15 +574,83 @@ export function Almacen() {
           quien={quien}
           empresa={empresaNombre}
           onCancel={() => setElegido(null)}
-          onHecho={hecho}
+          onHecho={(titulo, texto) => hecho({ titulo, texto })}
         />
+      ) : null}
+
+      {paso === 'salida' && almacen && prodActual ? (
+        <FormSalida
+          key={prodActual.id}
+          almacen={almacen}
+          productos={productos}
+          inicial={prodActual}
+          articulos={articulos}
+          puedePedir={puedeSalida}
+          puedePrestar={puedePrestamo}
+          aprueba={aprueba}
+          quien={quien}
+          empresa={empresaNombre}
+          onCancel={() => setElegido(null)}
+          onHecho={(h) =>
+            hecho({ ...h, pdf: h.numero ? { clase: 'orden', numero: h.numero } : undefined })
+          }
+        />
+      ) : null}
+
+      {paso === 'traslado' && almacen && prodActual ? (
+        <FormTraslado
+          key={prodActual.id}
+          origen={almacen}
+          destinos={destinos}
+          productos={productos}
+          inicial={prodActual}
+          quien={quien}
+          empresa={empresaNombre}
+          onCancel={() => setElegido(null)}
+          onHecho={(h) =>
+            hecho({
+              titulo: h.titulo,
+              texto: h.texto,
+              pdf: h.idSalida ? { clase: 'traslado', idSalida: h.idSalida } : undefined,
+            })
+          }
+        />
+      ) : null}
+
+      {paso === 'retornos' && almacen ? (
+        <PorRetornar
+          almacen={almacen}
+          puedeRetornar={puedeRetornar}
+          quien={quien}
+          empresa={empresaNombre}
+          onVolver={volver}
+          onHecho={(h) => hecho(h)}
+        />
+      ) : null}
+
+      {paso === 'reporte' && almacen ? (
+        <ReporteStock
+          almacen={almacen}
+          quien={quien}
+          empresa={empresaNombre}
+          etiquetaCategoria={etiquetaCategoria}
+          onVolver={volver}
+        />
+      ) : null}
+
+      {paso === 'historico' && almacen ? (
+        <HistoricoSalidas almacen={almacen} empresa={empresaNombre} onVolver={volver} />
+      ) : null}
+
+      {paso === 'historicoTraslados' && almacen ? (
+        <HistoricoTraslados almacen={almacen} empresa={empresaNombre} onVolver={volver} />
       ) : null}
 
       {(paso === 'inicio' || eligiendo) && almacen ? (
         <section className="mt-5">
           {eligiendo ? (
             <div className="mb-2 flex items-center justify-between gap-2">
-              <strong className="text-lg">⬇ ¿A qué producto le llegó?</strong>
+              <strong className="text-lg">{tituloEligiendo}</strong>
               <Button variant="ghost" onClick={volver}>
                 Cancelar
               </Button>
@@ -494,20 +685,19 @@ export function Almacen() {
                 key={p.id}
                 producto={p}
                 categoria={etiquetaCategoria(p.categoria)}
-                disabled={!puedeEntrada}
+                // En salida o traslado, lo que no tiene existencia libre aquí no se elige (MGG).
+                disabled={paso === 'salida' || paso === 'traslado' ? p.disponible <= 0 : !puedeEntrada}
                 onClick={() => {
                   setElegido(p.id)
                   // Tocar un producto desde el inicio abre directamente su Entrada (MGG).
-                  setPaso('entrada')
+                  if (paso === 'inicio') setPaso('entrada')
                 }}
               />
             ))}
           </div>
           {delCatalogo.length > 0 ? (
             <>
-              <p className="text-ink/50 mt-4 mb-2 text-xs">
-                Del catálogo, todavía sin existencia en {nombreAlm}:
-              </p>
+              <p className="text-ink/50 mt-4 mb-2 text-xs">Del catálogo, todavía sin existencia en {nombreAlm}:</p>
               <div className="space-y-2">
                 {delCatalogo.map((p) => (
                   <FilaProducto
@@ -526,58 +716,14 @@ export function Almacen() {
         </section>
       ) : null}
 
+      {notaDeSalida.visor}
+      {notaDeTraslado.visor}
       <AvisosFlotantes />
     </div>
   )
 }
 
 /* ──────────────────────────────────────── piezas de la pantalla */
-
-type TonoBoton = 'royal' | 'success' | 'warning' | 'info'
-
-const TONOS_BOTON: Record<TonoBoton, string> = {
-  royal: 'bg-royal-600/10 border-royal-600/30',
-  success: 'bg-success-soft border-success/25',
-  warning: 'bg-warning-soft border-warning/35',
-  info: 'bg-info-soft border-info/25',
-}
-
-/** Los botones grandes de MGG (`surt-btn`): icono, título y una línea chica. */
-function BotonGrande({
-  tono,
-  icono,
-  titulo,
-  sub,
-  className,
-  onClick,
-}: {
-  tono: TonoBoton
-  icono?: string
-  titulo: string
-  sub: string
-  className?: string
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'rounded-card flex min-h-[96px] w-full flex-col items-center justify-center gap-1 border p-4 text-center transition-[filter] active:brightness-95',
-        TONOS_BOTON[tono],
-        className,
-      )}
-    >
-      {icono ? (
-        <span className="text-2xl leading-none" aria-hidden>
-          {icono}
-        </span>
-      ) : null}
-      <span className="text-ink/90 text-base font-semibold">{titulo}</span>
-      <small className="text-ink/55 text-xs leading-snug">{sub}</small>
-    </button>
-  )
-}
 
 function FilaProducto({
   producto: p,
@@ -613,28 +759,6 @@ function FilaProducto({
   )
 }
 
-/** El aviso de mala señal de las demás vistas de teléfono, a los doce segundos. */
-function useTardaPorLaSeñal(guardando: boolean) {
-  const [tarda, setTarda] = useState(false)
-  useEffect(() => {
-    if (!guardando) {
-      setTarda(false)
-      return
-    }
-    const t = setTimeout(() => setTarda(true), SEGUNDOS_PARA_AVISAR_DE_LA_SEÑAL * 1000)
-    return () => clearTimeout(t)
-  }, [guardando])
-  return tarda
-}
-
-function AvisoDeSeñal() {
-  return (
-    <p className="border-warning/30 bg-warning-soft text-ink/80 rounded-card border p-3 text-sm">
-      Está tardando por la señal. <strong>La entrada ya se está guardando: no la cargue otra vez.</strong>
-    </p>
-  )
-}
-
 /** La casilla de «sin valorar», la misma de `AlmacenEntrada`. */
 function CasillaSinValor({ marcada, onCambiar }: { marcada: boolean; onCambiar: (v: boolean) => void }) {
   return (
@@ -652,17 +776,6 @@ function CasillaSinValor({ marcada, onCambiar }: { marcada: boolean; onCambiar: 
       />
       <span className="text-ink/80">Donación, o no se sabe cuánto costó</span>
     </label>
-  )
-}
-
-function TituloDePaso({ icono, children }: { icono: string; children: ReactNode }) {
-  return (
-    <div className="flex items-center gap-2">
-      <span className="text-2xl" aria-hidden>
-        {icono}
-      </span>
-      <strong className="text-lg leading-snug">{children}</strong>
-    </div>
   )
 }
 
@@ -1146,63 +1259,5 @@ function FormEntrada({
         </Link>
       </p>
     </form>
-  )
-}
-
-/* ──────────────────────────────────────── ✅ listo (MGG `Listo`) */
-
-/*
-  Lo guardado: el aviso para WhatsApp y la vuelta al inicio. Nada se manda
-  solo. Sin «📄 Ver PDF del comprobante»: aquí todavía no hay un comprobante
-  de una entrada suelta que reutilizar.
-*/
-function Listo({ titulo, texto, onVolver }: { titulo: string; texto: string; onVolver: () => void }) {
-  const [copiado, setCopiado] = useState(false)
-
-  // En el teléfono, la hoja de compartir del teléfono (como MGG y ModalWhatsappCompra).
-  const puedeCompartir =
-    typeof navigator !== 'undefined' &&
-    typeof navigator.share === 'function' &&
-    window.matchMedia('(pointer: coarse)').matches
-
-  const enviar = async () => {
-    if (puedeCompartir) {
-      try {
-        await navigator.share({ text: texto })
-        return
-      } catch (e) {
-        if (e instanceof DOMException && e.name === 'AbortError') return
-      }
-    }
-    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank', 'noopener,noreferrer')
-  }
-
-  const copiar = async () => {
-    const ok = await copiarAlPortapapeles(texto)
-    setCopiado(ok)
-    toast(
-      ok ? 'Mensaje copiado' : 'No se pudo copiar. Mantén el dedo sobre el texto para copiarlo.',
-      ok ? 'success' : 'error',
-    )
-  }
-
-  return (
-    <div className="bg-surface shadow-card mt-4 space-y-4 rounded-[10px] p-4">
-      <TituloDePaso icono="✅">{titulo}</TituloDePaso>
-      <pre className="bg-ink/4 text-ink/80 max-h-[50vh] overflow-auto rounded-[6px] p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap select-all">
-        {texto}
-      </pre>
-      <div className="grid grid-cols-[1fr_auto] gap-2">
-        <Button size="lg" onClick={() => void enviar()}>
-          📲 Enviar por WhatsApp
-        </Button>
-        <Button size="lg" variant="outline" onClick={() => void copiar()}>
-          {copiado ? '✅ Copiado' : '📋 Copiar'}
-        </Button>
-      </div>
-      <Button block size="lg" variant="ghost" onClick={onVolver}>
-        ← Volver al inicio
-      </Button>
-    </div>
   )
 }

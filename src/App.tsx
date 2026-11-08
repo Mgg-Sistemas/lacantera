@@ -174,9 +174,6 @@ const AlmacenPedirSalida = pagina(() =>
 const AlmacenPrestamo = pagina(() =>
   import('@/pages/inventario/AlmacenPrestamo').then((m) => ({ default: m.AlmacenPrestamo })),
 )
-const AlmacenRetorno = pagina(() =>
-  import('@/pages/inventario/AlmacenRetorno').then((m) => ({ default: m.AlmacenRetorno })),
-)
 const AlmacenExistencias = pagina(() =>
   import('@/pages/inventario/AlmacenExistencias').then((m) => ({ default: m.AlmacenExistencias })),
 )
@@ -453,7 +450,9 @@ const paginas: Record<string, ReactNode> = {
   '/app/inventario/almacen/salida': <AlmacenSalida />,
   '/app/inventario/almacen/salida/pedir': <AlmacenPedirSalida />,
   '/app/inventario/almacen/prestamo': <AlmacenPrestamo />,
-  '/app/inventario/almacen/retornar': <AlmacenRetorno />,
+  // 08/11/2026, fase 1b de «Almacén e Inventario como MGG»: «Por retornar» vive en
+  // la página única del teléfono, con retorno parcial. `AlmacenRetorno` queda sin ruta.
+  '/app/inventario/almacen/retornar': <Navigate to="/app/inventario/almacen?paso=retornos" replace />,
   '/app/inventario/almacen/existencias': <AlmacenExistencias />,
   '/app/inventario/almacen/movimientos': <AlmacenMovimientos />,
   '/app/combustible': <Combustible />,
