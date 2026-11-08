@@ -42,6 +42,7 @@ import type { Cuenta } from '@/lib/api/tesoreria'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { useMonedas, useTasasVigentes } from '@/lib/api/tasas'
 import { dinero, fecha, tasa as formatoTasa } from '@/lib/formato'
+import { limiteReferencia } from '@/lib/pagos'
 import { BANCOS } from '@/lib/bancos'
 
 const vacia = {
@@ -709,6 +710,8 @@ function ModalMovimiento({
           type="number"
           step="0.01"
           inputMode="decimal"
+          // Un ajuste puede ser negativo: falta dinero en la cuenta.
+          limite={{ maxDecimales: 2 }}
           autoFocus
           value={monto}
           onChange={(e) => setMonto(e.target.value)}
@@ -769,11 +772,13 @@ function ModalMovimiento({
           <div className="grid gap-4 sm:grid-cols-2">
             <Input
               label="De quién / a quién"
+              maxLength={120}
               value={contraparte}
               onChange={(e) => setContraparte(e.target.value)}
             />
             <Input
               label="Referencia"
+              {...limiteReferencia(null)}
               value={referencia}
               onChange={(e) => setReferencia(e.target.value)}
             />
@@ -873,6 +878,7 @@ function ModalTraslado({
         />
 
         <Input
+          limite={{ maxDecimales: 2, sinNegativos: true }}
           label={`Monto${cOrigen ? ` en ${cOrigen.moneda}` : ''}`}
           type="number"
           step="0.01"
@@ -900,6 +906,7 @@ function ModalTraslado({
             type="number"
             step="0.01"
             inputMode="decimal"
+            limite={{ maxDecimales: 2, sinNegativos: true }}
             value={llega}
             onChange={(e) => setLlega(e.target.value)}
             hint="Se copia del comprobante: la casa de cambio no usa la tasa oficial."
@@ -909,6 +916,7 @@ function ModalTraslado({
         <div className="grid gap-4 sm:grid-cols-2">
           <Input
             label="Referencia"
+            {...limiteReferencia(null)}
             value={referencia}
             onChange={(e) => setReferencia(e.target.value)}
           />
@@ -992,6 +1000,7 @@ function ModalCuenta({
             <Input
               label="Nombre"
               placeholder="Banesco · cuenta corriente Bs"
+              maxLength={80}
               value={edicion.nombre}
               onChange={(e) => cambiar({ nombre: e.target.value })}
             />
@@ -1008,7 +1017,10 @@ function ModalCuenta({
               />
               <Input
                 label="Número de cuenta"
-                placeholder="0134-0000-00-0000000000"
+                placeholder="01340000000000000000"
+                // Veinte cifras, como toda cuenta bancaria de aquí.
+                solo="numeros"
+                maxLength={20}
                 value={edicion.numero_cuenta}
                 onChange={(e) => cambiar({ numero_cuenta: e.target.value })}
               />
@@ -1020,6 +1032,7 @@ function ModalCuenta({
               <Input
                 label="Correo de la plataforma"
                 placeholder="pagos@lacantera.com"
+                maxLength={120}
                 value={edicion.correo_binance}
                 onChange={(e) => cambiar({ correo_binance: e.target.value })}
               />
@@ -1027,12 +1040,14 @@ function ModalCuenta({
                   de la wallet: hay quien solo tiene la segunda. */}
               <Input
                 label="Dirección de la billetera"
+                maxLength={120}
                 value={edicion.numero_cuenta}
                 onChange={(e) => cambiar({ numero_cuenta: e.target.value })}
               />
               <Input
                 label="Red"
                 placeholder="TRC20"
+                maxLength={20}
                 value={edicion.red_cripto}
                 onChange={(e) => cambiar({ red_cripto: e.target.value })}
               />
@@ -1049,6 +1064,7 @@ function ModalCuenta({
           <div className="grid gap-4 sm:grid-cols-2">
             <Input
               label={edicion.tipo === 'CAJA' ? 'Responsable' : 'Titular'}
+              maxLength={120}
               value={edicion.titular}
               onChange={(e) => cambiar({ titular: e.target.value })}
             />

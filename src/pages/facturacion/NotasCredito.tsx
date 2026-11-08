@@ -319,6 +319,7 @@ export function NotasCredito() {
                 label="Motivo"
                 className="mt-4"
                 rows={2}
+                maxLength={500}
                 value={motivo}
                 onChange={(e) => setMotivo(e.target.value)}
                 placeholder="Se despachó piedra 2 en lugar de piedra 1 y el cliente devolvió 12 t."
@@ -364,7 +365,11 @@ export function NotasCredito() {
                             inputMode="decimal"
                             disabled={!l.usar}
                             value={l.cantidad}
-                            onChange={(e) => cambiar(i, { cantidad: comoNumero(e.target.value) })}
+                            onChange={(e) =>
+                              cambiar(i, {
+                                cantidad: comoNumero(e.target.value, { maxDecimales: 4, sinNegativos: true }),
+                              })
+                            }
                             className="border-hairline tabular bg-surface text-ink/85 w-full rounded-[5px] border px-2 py-1.5 text-right text-sm disabled:opacity-40"
                             aria-label={`Cantidad de ${l.descripcion}`}
                           />
@@ -389,7 +394,11 @@ export function NotasCredito() {
                             disabled={!l.usar}
                             value={l.precio_unitario}
                             onChange={(e) =>
-                              cambiar(i, { precio_unitario: comoNumero(e.target.value) })
+                              // Seis decimales, los del precio de la factura (numeric(20,6)): con
+                              // menos, retocar el precio cortaría el que ya venía (08/11/2026).
+                              cambiar(i, {
+                                precio_unitario: comoNumero(e.target.value, { maxDecimales: 6, sinNegativos: true }),
+                              })
                             }
                             className="border-hairline tabular bg-surface text-ink/85 w-full rounded-[5px] border px-2 py-1.5 text-right text-sm disabled:opacity-40"
                             aria-label={`Precio de ${l.descripcion}`}
@@ -551,6 +560,7 @@ export function NotasCredito() {
           <Textarea
             label="Motivo"
             rows={3}
+            maxLength={500}
             value={motivoAnulacion}
             onChange={(e) => setMotivoAnulacion(e.target.value)}
           />

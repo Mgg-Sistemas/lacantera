@@ -325,6 +325,7 @@ export function QueLlevaEncima({
             <Input
               label="Qué se le montó"
               placeholder="Antena Starlink"
+              maxLength={80}
               value={f.nombre}
               onChange={(e) => setF({ ...f, nombre: e.target.value })}
             />
@@ -349,6 +350,7 @@ export function QueLlevaEncima({
             <Input
               label="Motivo"
               placeholder="Para tener señal en el frente norte"
+              maxLength={120}
               value={f.motivo}
               onChange={(e) => setF({ ...f, motivo: e.target.value })}
             />
@@ -356,6 +358,7 @@ export function QueLlevaEncima({
             <Input
               label="Quién lo hizo"
               placeholder="Starlink Venezuela, el taller de Upata, un mecánico de la casa"
+              maxLength={80}
               value={f.hecho_por}
               onChange={(e) => setF({ ...f, hecho_por: e.target.value })}
               hint="Quién montó el equipo."
@@ -364,6 +367,8 @@ export function QueLlevaEncima({
             <div className="grid gap-4 sm:grid-cols-2">
               <Input
                 label="Serial del equipo"
+                solo="alfanumerico"
+                maxLength={30}
                 value={f.serial}
                 onChange={(e) => setF({ ...f, serial: e.target.value })}
                 hint="El del equipo montado, no el de la máquina."
@@ -375,6 +380,7 @@ export function QueLlevaEncima({
                 step="0.01"
                 inputMode="decimal"
                 placeholder={f.almacen_id ? 'Hace falta' : undefined}
+                limite={{ maxDecimales: 2, sinNegativos: true }}
                 value={f.cantidad}
                 onChange={(e) => setF({ ...f, cantidad: e.target.value })}
                 hint={
@@ -411,6 +417,7 @@ export function QueLlevaEncima({
                   min="0"
                   step="0.01"
                   inputMode="decimal"
+                  limite={{ maxDecimales: 2, sinNegativos: true }}
                   value={f.costo_usd}
                   onChange={(e) => setF({ ...f, costo_usd: e.target.value })}
                   hint="Solo como referencia: no entra en el valor del inventario."
@@ -421,6 +428,7 @@ export function QueLlevaEncima({
             <Input
               label="Nota"
               placeholder="Va en la cabina, la instaló el proveedor"
+              maxLength={160}
               value={f.nota}
               onChange={(e) => setF({ ...f, nota: e.target.value })}
             />
@@ -478,6 +486,7 @@ export function QueLlevaEncima({
           <Input
             label="Motivo"
             placeholder="Se pasó a la 0453"
+            maxLength={120}
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
             hint="Se pasó a otra máquina, se gastó, se lo llevó el dueño."

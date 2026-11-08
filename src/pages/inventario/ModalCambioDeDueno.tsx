@@ -149,6 +149,7 @@ export function ModalCambioDeDueno({
         />
         <div>
           <Input
+            limite={{ maxDecimales: 4, sinNegativos: true }}
             label={`Cantidad (${fila.unidad})`}
             type="number"
             min="0"
@@ -183,6 +184,7 @@ export function ModalCambioDeDueno({
         declaró, que es distinto de que se calculara.
       */}
       <Input
+        limite={{ maxDecimales: 2, sinNegativos: true }}
         className="mt-4"
         label="Valor acordado (USD)"
         type="number"
@@ -201,6 +203,7 @@ export function ModalCambioDeDueno({
         dejó de ser de quien era. La base también lo exige.
       */}
       <Textarea
+        maxLength={500}
         className="mt-4"
         label="Motivo"
         rows={3}

@@ -231,6 +231,7 @@ export function ExportarInventario({
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <Input
+              maxLength={100}
               label="Texto (SKU o nombre)"
               icon={<Search />}
               placeholder="Filtro libre"

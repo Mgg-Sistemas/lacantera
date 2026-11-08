@@ -330,6 +330,7 @@ export function LineasMateriales({
               ) : null}
             </div>
             <Input
+              limite={{ maxDecimales: 4, sinNegativos: true }}
               className="mt-2"
               label={`Cantidad (${p.unidad})`}
               ocultarEtiqueta
@@ -360,6 +361,7 @@ export function LineasMateriales({
       {buscando ? (
         <div className="border-hairline space-y-2 rounded-[8px] border border-dashed p-3">
           <Input
+            maxLength={100}
             label="Buscar el material"
             ocultarEtiqueta
             sinNormalizar

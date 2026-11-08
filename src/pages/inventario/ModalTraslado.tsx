@@ -639,6 +639,7 @@ export function ModalTraslado({
       </div>
 
       <Textarea
+        maxLength={500}
         className="mt-4"
         label="Motivo"
         rows={2}

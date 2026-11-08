@@ -190,6 +190,7 @@ export function FormTraslado({
       <LineasMateriales lineas={lineas} productos={productos} onCambiar={setLineas} />
 
       <Textarea
+        maxLength={500}
         label="Motivo"
         rows={2}
         placeholder="Para qué se lleva, quién lo lleva…"

@@ -167,6 +167,7 @@ export function HistoricoSalidas({
         }}
       />
       <Input
+        maxLength={100}
         label="Buscar salida"
         ocultarEtiqueta
         sinNormalizar
@@ -358,6 +359,7 @@ export function HistoricoTraslados({
         }}
       />
       <Input
+        maxLength={100}
         label="Buscar traslado"
         ocultarEtiqueta
         sinNormalizar

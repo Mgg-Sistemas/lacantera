@@ -260,6 +260,7 @@ export function ModalAlTaller({
           }
         />
         <Input
+          limite={{ maxDecimales: 4, sinNegativos: true }}
           label={`Cantidad${enCurso ? ` (${enPlural(enCurso.unidad)})` : ''}`}
           type="number"
           min="0.01"
@@ -273,6 +274,7 @@ export function ModalAlTaller({
 
       <div className="mt-4">
         <Textarea
+          maxLength={500}
           label="Motivo"
           rows={2}
           placeholder="Se torcieron en el traslado y hay que enderezarlas"
@@ -306,6 +308,7 @@ export function ModalAlTaller({
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <Input label="Fecha de salida" type="date" value={dia} onChange={(e) => setDia(e.target.value)} />
         <Input
+          limite={{ maxEnteros: 3, maxDecimales: 0, sinNegativos: true }}
           label="Días estimados"
           type="number"
           min="1"

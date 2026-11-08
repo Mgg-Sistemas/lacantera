@@ -6,6 +6,7 @@ import { cn } from '@/lib/cn'
 import { useServicioRealizado, type Orden } from '@/lib/api/pedidos'
 import { fmtCant, money } from '@/lib/pedidos'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
+import { comoNumero } from '@/lib/formato'
 
 /*
   «SERVICIO REALIZADO · {código}» (MGG `RecepcionParcialModal` con `esServicio`)
@@ -114,7 +115,7 @@ export function ServicioRealizadoModal({
                         v < Number(it.cantidad) && 'border-warning text-warning',
                       )}
                       value={cant[it.sku] ?? ''}
-                      onChange={(e) => setCant((m) => ({ ...m, [it.sku]: e.target.value }))}
+                      onChange={(e) => setCant((m) => ({ ...m, [it.sku]: comoNumero(e.target.value, { maxDecimales: 4, sinNegativos: true }) }))}
                     />
                   </td>
                   <td className="px-3 py-2 text-right font-mono">{money(v * (Number(it.precio) || 0))}</td>

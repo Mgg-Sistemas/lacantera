@@ -278,6 +278,9 @@ export function CantidadDeArticulo({
           min="0"
           step="0.0001"
           inputMode="decimal"
+          // Los bultos se cuentan enteros (lo exige `private.en_unidad_base`);
+          // en la unidad del artículo, los cuatro decimales de la base (08/11/2026).
+          limite={{ maxDecimales: usandoPresentacion ? 0 : 4, sinNegativos: true }}
           required={required}
           disabled={disabled}
           value={usandoPresentacion ? tecleado : valor}
@@ -373,6 +376,7 @@ export function CantidadDeArticulo({
           min="0"
           step="0.0001"
           inputMode="decimal"
+          limite={{ maxDecimales: 4, sinNegativos: true }}
           disabled={disabled}
           value={suelto}
           onChange={(e) => escribirSuelto(e.target.value)}

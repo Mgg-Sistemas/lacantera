@@ -550,6 +550,7 @@ export function Procesos() {
             <Input
               label="Descripción"
               placeholder="Segunda quincena de julio"
+              maxLength={80}
               value={nuevo.descripcion}
               onChange={(e) => setNuevo((n) => (n ? { ...n, descripcion: e.target.value } : n))}
             />
@@ -590,6 +591,7 @@ export function Procesos() {
           <div className="space-y-4">
             <Input
               label="Referencia (opcional)"
+              maxLength={40}
               value={pago.referencia}
               onChange={(e) => setPago((p) => ({ ...p, referencia: e.target.value }))}
             />

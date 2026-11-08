@@ -318,6 +318,7 @@ export function Documentos() {
         <Input
           className="mt-4"
           label="Nombre"
+          maxLength={120}
           value={form.nombre}
           onChange={(e) => cambiar({ nombre: e.target.value })}
         />

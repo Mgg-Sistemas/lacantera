@@ -11,6 +11,7 @@ import { useCuentas } from '@/lib/api/tesoreria'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { usePagarSaldoACliente, usePorPagarAClientes, type PorPagarACliente } from '@/lib/api/cobrosConMaterial'
 import { dinero, documento, fecha } from '@/lib/formato'
+import { limiteReferencia } from '@/lib/pagos'
 
 /*
   LO QUE LA EMPRESA LE DEBE A UN CLIENTE
@@ -129,11 +130,13 @@ export function PorPagarAClientes() {
               min="0"
               step="0.01"
               inputMode="decimal"
+              limite={{ maxDecimales: 2, sinNegativos: true }}
               value={pago.monto}
               onChange={(e) => setPago({ ...pago, monto: e.target.value })}
             />
             <Input
               label="Referencia"
+              {...limiteReferencia(null)}
               value={pago.referencia}
               onChange={(e) => setPago({ ...pago, referencia: e.target.value })}
             />

@@ -114,10 +114,13 @@ function CampoMonto({
 }) {
   return (
     <Input
+      // Cifras y separadores nada más; el largo cabe 12 enteras con sus puntos
+      // de millar y los decimales (08/11/2026).
+      maxLength={22}
       {...resto}
       inputMode="decimal"
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e) => onChange(e.target.value.replace(/[^0-9.,]/g, ''))}
       onBlur={() => onChange(comoCifra(value, decimales))}
     />
   )
@@ -226,6 +229,7 @@ export function RegistrosDePagos() {
               label="Buscar"
               icon={<Search />}
               placeholder="Referencia, descripción, NE o cliente"
+              maxLength={100}
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
@@ -896,7 +900,7 @@ function DetalleDelPago({
             </>
           }
         >
-          <Textarea label="Motivo" rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+          <Textarea label="Motivo" rows={2} maxLength={500} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
           {anular.error ? <ErrorDeCarga error={anular.error} className="mt-3" /> : null}
         </Modal>
       ) : null}
@@ -1041,6 +1045,7 @@ function ModalAsociar({ pago, onCerrar }: { pago: PagoBancario; onCerrar: () => 
           icon={<Search />}
           placeholder="NE-2026-0012 o nombre del cliente"
           className="flex-1"
+          maxLength={100}
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
         />
@@ -1227,12 +1232,19 @@ function ModalPago({ pago, onCerrar }: { pago: PagoBancario | null; onCerrar: ()
             onChange={(t) => cambiar({ tasa: t })}
           />
         ) : null}
-        <Input label="Referencia" value={f.referencia} onChange={(e) => cambiar({ referencia: e.target.value })} />
+        <Input
+          label="Referencia"
+          solo="alfanumerico"
+          maxLength={30}
+          value={f.referencia}
+          onChange={(e) => cambiar({ referencia: e.target.value })}
+        />
       </div>
       <Textarea
         label="Descripción"
         className="mt-4"
         rows={2}
+        maxLength={500}
         value={f.descripcion}
         onChange={(e) => cambiar({ descripcion: e.target.value })}
       />

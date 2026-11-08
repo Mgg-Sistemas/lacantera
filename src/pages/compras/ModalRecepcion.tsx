@@ -239,6 +239,7 @@ export function ModalRecepcion({ abierto, onCerrar, orden, onHecho }: Props) {
               max={r.pendiente}
               step="0.01"
               inputMode="decimal"
+              limite={{ maxDecimales: 4, sinNegativos: true }}
               value={cantidades[r.id] ?? ''}
               onChange={(e) => setCantidades((c) => ({ ...c, [r.id]: e.target.value }))}
               hint="Déjelo en cero si este renglón no llegó todavía."

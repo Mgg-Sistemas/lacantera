@@ -118,6 +118,8 @@ function FilaDeCamion({
             <div className="mt-2 grid gap-2 sm:grid-cols-[2fr_1fr_auto]">
               <Input
                 label="Nombre del chofer"
+                solo="letras"
+                maxLength={60}
                 value={nuevoChofer}
                 onChange={(e) => setNuevoChofer(e.target.value)}
               />
@@ -168,10 +170,17 @@ function FilaDeCamion({
             <div className="mt-2 grid gap-2 sm:grid-cols-[2fr_1fr_auto]">
               <Input
                 label="Vehículo (marca/modelo)"
+                maxLength={60}
                 value={nuevoVehiculo}
                 onChange={(e) => setNuevoVehiculo(e.target.value)}
               />
-              <Input label="Placa" value={nuevaPlaca} onChange={(e) => setNuevaPlaca(e.target.value)} />
+              <Input
+                label="Placa"
+                solo="alfanumerico"
+                maxLength={8}
+                value={nuevaPlaca}
+                onChange={(e) => setNuevaPlaca(e.target.value)}
+              />
               <div className="flex items-end">
                 <Button
                   variant="outline"
@@ -201,12 +210,16 @@ function FilaDeCamion({
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <Input
           label="Ticket de romana"
+          solo="alfanumerico"
+          maxLength={20}
           value={camion.ticket}
           onChange={(e) => onCambio({ ticket: e.target.value })}
         />
         <Input
           label="Peso neto (kg)"
+          type="number"
           inputMode="decimal"
+          limite={{ maxEnteros: 6, maxDecimales: 2, sinNegativos: true }}
           value={camion.peso_neto}
           onChange={(e) => onCambio({ peso_neto: e.target.value })}
           hint="Lo que cargó este camión."

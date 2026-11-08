@@ -503,6 +503,7 @@ function ModalDotacion({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
             type="number"
             min="0"
             step="0.01"
+            limite={{ maxDecimales: 2, sinNegativos: true }}
             value={cantidad}
             onChange={(e) => setCantidad(e.target.value)}
           />
@@ -512,6 +513,7 @@ function ModalDotacion({ abierto, onCerrar }: { abierto: boolean; onCerrar: () =
             type="number"
             min="1"
             step="1"
+            limite={{ maxEnteros: 3, maxDecimales: 0, sinNegativos: true }}
             value={repone}
             disabled={!seRepone}
             onChange={(e) => setRepone(e.target.value)}

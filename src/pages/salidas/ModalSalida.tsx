@@ -30,6 +30,7 @@ import {
 import type { GrupoDeSalida } from '@/lib/api/inventario'
 import { cn } from '@/lib/cn'
 import { porQueNoSubio } from '@/lib/castellano'
+import { CIFRAS_DOCUMENTO, soloDocumento } from '@/lib/formato'
 
 /*
   SACAR MATERIAL, EN EL MÓDULO QUE LE TOCA
@@ -223,6 +224,7 @@ export function ParaQuienSale({
           <Input
             label="Destino"
             hint="La empresa o la persona que lo recibe."
+            maxLength={120}
             value={externo}
             onChange={(e) => onExterno(e.target.value)}
           />
@@ -295,6 +297,8 @@ function QuienResponde({
         <Input
           label="Nombre del responsable"
           hint="La persona que responde por lo que sale."
+          solo="letras"
+          maxLength={60}
           value={responsable}
           onChange={(e) => onResponsable(e.target.value)}
         />
@@ -883,6 +887,7 @@ export function ModalSalida({
                 className="mt-4"
                 rows={3}
                 placeholder="Mascarillas para el turno de cribado"
+                maxLength={500}
                 value={motivo}
                 onChange={(e) => setMotivo(e.target.value)}
                 hint="Es lo que lee quien la aprueba, y queda en la nota cuando se entregue."
@@ -958,12 +963,15 @@ export function ModalSalida({
                     placeholder="Placa, o cómo se reconoce"
                     hint={vehiculoId ? 'Ya eligió uno de la lista.' : undefined}
                     disabled={Boolean(vehiculoId)}
+                    maxLength={60}
                     value={vehiculoEscrito}
                     onChange={(e) => setVehiculoEscrito(e.target.value)}
                   />
                   <Input
                     label="Recibido por"
                     placeholder="Nombre y apellido"
+                    solo="letras"
+                    maxLength={60}
                     value={recibeNombre}
                     onChange={(e) => setRecibeNombre(e.target.value)}
                   />
@@ -972,7 +980,7 @@ export function ModalSalida({
                     placeholder="V-12345678"
                     hint="Va debajo del nombre, en el papel que firma."
                     value={recibeCedula}
-                    onChange={(e) => setRecibeCedula(e.target.value)}
+                    onChange={(e) => setRecibeCedula(soloDocumento(e.target.value, CIFRAS_DOCUMENTO.cedula))}
                   />
                 </div>
               ) : null}
@@ -1034,6 +1042,7 @@ export function ModalSalida({
                 }
                 className="mt-4"
                 rows={3}
+                maxLength={500}
                 value={motivo}
                 onChange={(e) => setMotivo(e.target.value)}
                 hint="Queda en el libro y no se puede editar después."

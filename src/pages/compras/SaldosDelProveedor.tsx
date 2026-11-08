@@ -14,6 +14,7 @@ import { useCuentas } from '@/lib/api/tesoreria'
 import { hoyEnCaracas } from '@/lib/api/tasas'
 import { useCobrarSaldoAFavor, useSaldosAFavor, type SaldoAFavor } from '@/lib/api/intercambio'
 import { dinero, fecha } from '@/lib/formato'
+import { limiteReferencia } from '@/lib/pagos'
 
 /*
   LO QUE EL PROVEEDOR LE DEBE A LA EMPRESA
@@ -161,6 +162,7 @@ function CobrarSaldo({ saldo, onCerrar }: { saldo: SaldoAFavor; onCerrar: () => 
           min="0"
           step="0.01"
           inputMode="decimal"
+          limite={{ maxDecimales: 2, sinNegativos: true }}
           value={monto}
           onChange={(e) => setMonto(e.target.value)}
         />
@@ -169,6 +171,7 @@ function CobrarSaldo({ saldo, onCerrar }: { saldo: SaldoAFavor; onCerrar: () => 
       <Input
         className="mt-4"
         label="Referencia"
+        {...limiteReferencia(null)}
         value={referencia}
         onChange={(e) => setReferencia(e.target.value)}
       />

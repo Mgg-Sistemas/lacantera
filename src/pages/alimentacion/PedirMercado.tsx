@@ -8,7 +8,7 @@ import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
 import { useArticulos, useCategoriasDeArticulo, type Articulo } from '@/lib/api/catalogo'
 import { useAlmacenes } from '@/lib/api/inventario'
 import { useSolicitarMercado, useUltimaListaDeMercado, useViveres } from '@/lib/api/alimentacion'
-import { fecha as fmtFecha } from '@/lib/formato'
+import { comoNumero, fecha as fmtFecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 
 /*
@@ -306,15 +306,15 @@ export function PedirMercado({ onCerrar }: { onCerrar: () => void }) {
                           {extras.some((x) => x.id === a.id) ? ` · ${a.categoria}` : ''}
                         </p>
                       </div>
+                      {/* Como texto y con `comoNumero`, igual que `Input`: admite la
+                          coma y no deja pasar cifras de más (08/11/2026). */}
                       <input
-                        type="number"
-                        min="0"
-                        step="any"
+                        type="text"
                         inputMode="decimal"
                         disabled={!s.check}
                         value={s.cant}
                         onChange={(e) =>
-                          setSel((m) => ({ ...m, [a.id]: { check: s.check, cant: e.target.value } }))
+                          setSel((m) => ({ ...m, [a.id]: { check: s.check, cant: comoNumero(e.target.value, { maxDecimales: 2, sinNegativos: true }) } }))
                         }
                         className={cn(
                           'border-hairline bg-surface tabular w-24 rounded-[8px] border px-2 py-1.5 text-right text-sm',
@@ -351,6 +351,7 @@ export function PedirMercado({ onCerrar }: { onCerrar: () => void }) {
               min="0"
               step="any"
               inputMode="decimal"
+              limite={{ maxDecimales: 2, sinNegativos: true }}
               value={agregarCant}
               onChange={(e) => setAgregarCant(e.target.value)}
             />
@@ -374,6 +375,7 @@ export function PedirMercado({ onCerrar }: { onCerrar: () => void }) {
               <Input
                 label="Descripción"
                 placeholder="Bombona de gas de 10 kg"
+                maxLength={120}
                 value={l.descripcion}
                 onChange={(e) =>
                   setLibres((xs) =>
@@ -387,6 +389,7 @@ export function PedirMercado({ onCerrar }: { onCerrar: () => void }) {
                 min="0"
                 step="any"
                 inputMode="decimal"
+                limite={{ maxDecimales: 2, sinNegativos: true }}
                 value={l.cantidad}
                 onChange={(e) =>
                   setLibres((xs) =>
@@ -428,6 +431,7 @@ export function PedirMercado({ onCerrar }: { onCerrar: () => void }) {
             />
             <Input
               label="Nota para la oficina"
+              maxLength={160}
               value={nota}
               onChange={(e) => setNota(e.target.value)}
             />

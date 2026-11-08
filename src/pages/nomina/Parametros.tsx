@@ -569,6 +569,8 @@ export function Parametros() {
                 {...(nuevo.unidad === 'TEXTO'
                   ? { placeholder: 'Ana Rodríguez' }
                   : { type: 'number', step: '0.0001', inputMode: 'decimal' as const })}
+                maxLength={80}
+                limite={{ maxDecimales: 4, sinNegativos: true }}
                 value={nuevo.valor}
                 onChange={(e) => setNuevo((n) => (n ? { ...n, valor: e.target.value } : n))}
               />
@@ -588,6 +590,7 @@ export function Parametros() {
             />
             <Input
               label="Descripción"
+              maxLength={120}
               value={nuevo.descripcion}
               onChange={(e) => setNuevo((n) => (n ? { ...n, descripcion: e.target.value } : n))}
             />
@@ -595,6 +598,7 @@ export function Parametros() {
               label="Fuente"
               placeholder="Decreto 4.805, G.O. 42.880"
               icon={<Scale />}
+              maxLength={120}
               value={nuevo.fuente}
               onChange={(e) => setNuevo((n) => (n ? { ...n, fuente: e.target.value } : n))}
             />

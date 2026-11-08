@@ -265,6 +265,7 @@ export function ModalPago({ abierto, onCerrar, orden }: Props) {
           min="0"
           step="0.01"
           inputMode="decimal"
+          limite={{ maxDecimales: 2, sinNegativos: true }}
           value={monto}
           onChange={(e) => setMonto(e.target.value)}
           hint={

@@ -599,6 +599,7 @@ export function InventarioPrincipal() {
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
               <div className="sm:col-span-2 lg:col-span-3 xl:col-span-2">
                 <Input
+                  maxLength={100}
                   label="Buscar"
                   icon={<Search />}
                   placeholder="Buscar: nombre, código, medida, marca… (ej. clavo media pulgada)"
@@ -1241,6 +1242,7 @@ function ModalEliminarDuplicado({ articulo, onCerrar }: { articulo: Articulo; on
       }
     >
       <Textarea
+        maxLength={500}
         label="Motivo (queda en la auditoría)"
         value={motivo}
         onChange={(e) => setMotivo(e.target.value)}

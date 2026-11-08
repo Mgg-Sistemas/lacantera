@@ -263,6 +263,7 @@ export function Gastos() {
             label="Buscar"
             icon={<Search />}
             placeholder="Proveedor, número o para qué se usó"
+            maxLength={100}
             value={buscado}
             onChange={(e) => setBuscado(e.target.value)}
           />
@@ -411,6 +412,7 @@ export function Gastos() {
             <div>
               <Input
                 label="Proveedor"
+                maxLength={120}
                 value={form.proveedor}
                 list="gastos-proveedores-conocidos"
                 onChange={(e) => {
@@ -444,6 +446,7 @@ export function Gastos() {
               <Input
                 label="Monto"
                 type="number"
+                limite={{ maxDecimales: 2, sinNegativos: true }}
                 value={form.monto}
                 onChange={(e) => setForm((f) => ({ ...f, monto: e.target.value }))}
               />
@@ -457,6 +460,8 @@ export function Gastos() {
             <div>
               <Input
                 label="N.º de factura (si tiene)"
+                solo="alfanumerico"
+                maxLength={20}
                 value={form.numero_factura}
                 onChange={(e) => setForm((f) => ({ ...f, numero_factura: e.target.value }))}
               />
@@ -470,8 +475,16 @@ export function Gastos() {
             <Input
               label="RIF o cédula del proveedor (si tiene)"
               placeholder="J-12345678-9"
+              // La base lo admite tal cual: letra, guion, de 6 a 9 cifras y el dígito
+              // final (J-123456789-0 son 13). Sin puntos (08/11/2026).
+              maxLength={13}
               value={form.documento_proveedor}
-              onChange={(e) => setForm((f) => ({ ...f, documento_proveedor: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  documento_proveedor: e.target.value.toUpperCase().replace(/[^VEJPGC0-9-]/g, ''),
+                }))
+              }
             />
           </div>
 
@@ -479,6 +492,7 @@ export function Gastos() {
             <Textarea
               label="Para qué se usó lo comprado"
               rows={3}
+              maxLength={500}
               value={form.observacion}
               onChange={(e) => setForm((f) => ({ ...f, observacion: e.target.value }))}
             />
@@ -526,6 +540,7 @@ export function Gastos() {
             label="Motivo"
             rows={2}
             autoFocus
+            maxLength={500}
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
           />

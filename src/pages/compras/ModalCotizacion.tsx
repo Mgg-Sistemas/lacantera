@@ -311,6 +311,7 @@ export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props
                 min="0"
                 step="0.000001"
                 inputMode="decimal"
+                limite={{ maxDecimales: 6, sinNegativos: true }}
                 value={precios[r.id]?.precio ?? ''}
                 onChange={(e) => cambiar(r.id, { precio: e.target.value })}
               />
@@ -341,6 +342,7 @@ export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props
               <Input
                 label="Marca"
                 placeholder="La que ofrece el proveedor"
+                maxLength={60}
                 value={precios[r.id]?.marca ?? ''}
                 onChange={(e) => cambiar(r.id, { marca: e.target.value })}
               />
@@ -375,6 +377,7 @@ export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props
           type="number"
           min="0"
           step="0.01"
+          limite={{ maxDecimales: 2, sinNegativos: true }}
           value={descuento}
           onChange={(e) => setDescuento(e.target.value)}
         />
@@ -383,6 +386,7 @@ export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props
           type="number"
           min="0"
           step="0.01"
+          limite={{ maxDecimales: 2, sinNegativos: true }}
           value={flete}
           onChange={(e) => setFlete(e.target.value)}
         />
@@ -392,6 +396,7 @@ export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props
           min="0"
           max="100"
           step="0.01"
+          limite={{ maxEnteros: 3, maxDecimales: 2, sinNegativos: true }}
           value={alicuota}
           onChange={(e) => setAlicuota(e.target.value)}
         />
@@ -399,6 +404,7 @@ export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props
           label="Entrega en (días)"
           type="number"
           min="0"
+          limite={{ maxEnteros: 3, maxDecimales: 0, sinNegativos: true }}
           value={diasEntrega}
           onChange={(e) => setDiasEntrega(e.target.value)}
         />
@@ -415,6 +421,7 @@ export function ModalCotizacion({ abierto, onCerrar, compra, cotizacion }: Props
           label="Validez (días)"
           type="number"
           min="1"
+          limite={{ maxEnteros: 3, maxDecimales: 0, sinNegativos: true }}
           value={validez}
           onChange={(e) => setValidez(e.target.value)}
         />
@@ -565,6 +572,7 @@ function NombreEnElInventario({
           <Input
             label="O créelo con este nombre"
             hint="Tal como se pidió, o corríjalo."
+            maxLength={150}
             value={nombre}
             onChange={(e) => {
               setNombre(e.target.value)

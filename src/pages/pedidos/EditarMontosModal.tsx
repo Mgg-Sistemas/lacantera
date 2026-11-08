@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { useEditarMontosServicioDirecto, type ServicioDirecto } from '@/lib/api/pedidos'
 import { fmtCant, money } from '@/lib/pedidos'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
+import { comoNumero } from '@/lib/formato'
 
 /*
   «✎ EDITAR MONTOS» DE UN SERVICIO DIRECTO YA FINALIZADO (MGG `EditarMontosModal`)
@@ -93,7 +94,7 @@ export function EditarMontosModal({ servicio: s, onClose }: { servicio: Servicio
                       placeholder="0,00"
                       aria-label={`Monto de ${it.descripcion}`}
                       value={gastos[i]}
-                      onChange={(e) => setGastos((prev) => prev.map((x, k) => (k === i ? e.target.value : x)))}
+                      onChange={(e) => setGastos((prev) => prev.map((x, k) => (k === i ? comoNumero(e.target.value, { maxDecimales: 2, sinNegativos: true }) : x)))}
                     />
                   </td>
                   <td className="px-3 py-2 text-right font-mono">{money(cu)}</td>

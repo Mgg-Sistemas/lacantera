@@ -127,6 +127,7 @@ export function Deshabilitados({
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="sm:col-span-2">
             <Input
+              maxLength={100}
               label="Buscar"
               icon={<Search />}
               placeholder="Buscar en todo: nombre, código, marca, modelo, motivo de la baja…"
@@ -277,6 +278,7 @@ function Reactivar({ articulo, onCerrar }: { articulo: Articulo; onCerrar: () =>
       }
     >
       <Textarea
+        maxLength={500}
         label="¿Por qué vuelve? *"
         rows={3}
         autoFocus

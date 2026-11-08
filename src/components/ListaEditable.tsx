@@ -105,6 +105,7 @@ export function ListaEditable({
                   <Input
                     label="Nombre"
                     ocultarEtiqueta
+                    maxLength={80}
                     value={borrador}
                     onChange={(ev) => setBorrador(ev.target.value)}
                     onKeyDown={(ev) => {
@@ -164,6 +165,7 @@ export function ListaEditable({
             <Input
               label="Nombre"
               placeholder={placeholderNuevo}
+              maxLength={80}
               value={nuevo}
               onChange={(e) => setNuevo(e.target.value)}
               onKeyDown={(e) => {

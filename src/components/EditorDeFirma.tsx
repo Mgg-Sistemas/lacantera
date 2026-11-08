@@ -214,6 +214,7 @@ export function EditorDeFirma({
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <Input
             label="Cómo firma"
+            maxLength={60}
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
             hint="Puede ser el nombre completo o solo las iniciales."

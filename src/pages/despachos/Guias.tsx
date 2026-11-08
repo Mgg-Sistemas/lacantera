@@ -256,6 +256,8 @@ export function Guias() {
             <Input
               label="Número de guía"
               placeholder="GM-2026-0099"
+              solo="alfanumerico"
+              maxLength={20}
               value={nueva.numero_guia}
               onChange={(e) => setNueva({ ...nueva, numero_guia: e.target.value })}
               required
@@ -276,6 +278,7 @@ export function Guias() {
             <Input
               label="Destino"
               placeholder="Ciudad Bolívar"
+              maxLength={120}
               value={nueva.destino}
               onChange={(e) => setNueva({ ...nueva, destino: e.target.value })}
               className="sm:col-span-2"
@@ -313,6 +316,7 @@ export function Guias() {
               min="0"
               step="0.01"
               inputMode="decimal"
+              limite={{ maxDecimales: 3, sinNegativos: true }}
               value={nueva.cantidad}
               onChange={(e) => setNueva({ ...nueva, cantidad: e.target.value })}
               required
@@ -340,12 +344,14 @@ export function Guias() {
             <Input
               label="Origen"
               placeholder="La mina, si no sale de un frente"
+              maxLength={120}
               value={nueva.origen}
               onChange={(e) => setNueva({ ...nueva, origen: e.target.value })}
               className="sm:col-span-2"
             />
             <Input
               label="Transportista"
+              maxLength={120}
               value={nueva.transportista}
               onChange={(e) => setNueva({ ...nueva, transportista: e.target.value })}
             />
@@ -382,12 +388,16 @@ export function Guias() {
               <Input
                 label="Placa"
                 placeholder="A12BC3D"
+                solo="alfanumerico"
+                maxLength={8}
                 value={nueva.vehiculo}
                 onChange={(e) => setNueva({ ...nueva, vehiculo: e.target.value })}
               />
             ) : null}
             <Input
               label="Chofer"
+              solo="letras"
+              maxLength={60}
               value={nueva.chofer}
               onChange={(e) => setNueva({ ...nueva, chofer: e.target.value })}
             />
@@ -403,6 +413,7 @@ export function Guias() {
             label="Observación"
             rows={2}
             className="mt-4"
+            maxLength={500}
             value={nueva.observacion}
             onChange={(e) => setNueva({ ...nueva, observacion: e.target.value })}
           />
@@ -438,6 +449,7 @@ export function Guias() {
           <Textarea
             label="Motivo"
             rows={3}
+            maxLength={500}
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
             required

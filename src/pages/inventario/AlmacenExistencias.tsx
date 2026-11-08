@@ -63,6 +63,7 @@ export function AlmacenExistencias() {
           opciones={(almacenes ?? []).map((a) => ({ valor: String(a.id), etiqueta: a.nombre }))}
         />
         <Input
+          maxLength={100}
           label="Buscar"
           ocultarEtiqueta
           value={buscado}

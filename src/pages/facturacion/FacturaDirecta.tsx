@@ -260,6 +260,7 @@ export function ModalFacturaDirecta({
         label="Observación"
         className="mt-4"
         rows={2}
+        maxLength={500}
         value={observacion}
         onChange={(e) => setObservacion(e.target.value)}
       />

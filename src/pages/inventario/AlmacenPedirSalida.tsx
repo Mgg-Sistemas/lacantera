@@ -17,6 +17,7 @@ import { useMiFirma } from '@/lib/api/firmas'
 import { subirFotosDeCarga } from '@/lib/api/fotosDeCarga'
 import { useExistencias } from '@/lib/api/inventario'
 import { porQueNoSubio } from '@/lib/castellano'
+import { CIFRAS_DOCUMENTO, soloDocumento } from '@/lib/formato'
 import { ParaQuienSale, paraQuienVa, type AmbitoDeSalida } from '@/pages/salidas/ModalSalida'
 
 /*
@@ -455,6 +456,7 @@ export function AlmacenPedirSalida() {
         />
 
         <Textarea
+          maxLength={500}
           label="Motivo"
           rows={3}
           placeholder="Mascarillas para el turno de cribado"
@@ -516,6 +518,7 @@ export function AlmacenPedirSalida() {
               }))}
             />
             <Input
+              maxLength={60}
               label="…o escríbalo"
               placeholder="Placa, o cómo se reconoce"
               hint={vehiculoId ? 'Ya eligió uno de la lista.' : undefined}
@@ -524,6 +527,8 @@ export function AlmacenPedirSalida() {
               onChange={(e) => setVehiculoEscrito(e.target.value)}
             />
             <Input
+              solo="letras"
+              maxLength={60}
               label="Recibido por"
               placeholder="Nombre y apellido"
               value={recibeNombre}
@@ -533,7 +538,7 @@ export function AlmacenPedirSalida() {
               label="Cédula"
               placeholder="V-12345678"
               value={recibeCedula}
-              onChange={(e) => setRecibeCedula(e.target.value)}
+              onChange={(e) => setRecibeCedula(soloDocumento(e.target.value, CIFRAS_DOCUMENTO.cedula))}
             />
           </div>
         ) : null}

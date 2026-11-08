@@ -154,6 +154,7 @@ export function CostoDeArticulo({
           min="0"
           step="0.0001"
           inputMode="decimal"
+          limite={{ maxDecimales: 4, sinNegativos: true }}
           required={required}
           disabled={disabled}
           value={usandoPresentacion ? tecleado : valor}

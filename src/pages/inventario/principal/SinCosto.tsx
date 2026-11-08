@@ -10,7 +10,7 @@ import { useCostosSugeridos, useValorarSinCosto } from '@/lib/api/inventarioPrin
 import { useMonedasUsables } from '@/lib/api/tasas'
 import { useMisAcciones } from '@/lib/api/usuarios'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
-import { dinero, dolares, enteros } from '@/lib/formato'
+import { comoNumero, dinero, dolares, enteros } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 import { cantidad, filaUsable, numeroTecleado } from './comun'
 
@@ -136,6 +136,7 @@ export function SinCosto({ onCerrar }: { onCerrar: () => void }) {
 
       <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_14rem_9rem_auto] sm:items-end">
         <Input
+          maxLength={100}
           label="Buscar"
           ocultarEtiqueta
           icon={<Search />}
@@ -214,7 +215,7 @@ export function SinCosto({ onCerrar }: { onCerrar: () => void }) {
                         placeholder="0,00"
                         disabled={!puede}
                         value={texto}
-                        onChange={(e) => setCostos((c) => ({ ...c, [r.clave]: e.target.value }))}
+                        onChange={(e) => setCostos((c) => ({ ...c, [r.clave]: comoNumero(e.target.value, { maxDecimales: 4, sinNegativos: true }) }))}
                         className="rounded-control border-ink/20 bg-surface focus:border-royal-600 h-9 w-28 border px-2.5 text-right"
                       />
                       {sug ? (

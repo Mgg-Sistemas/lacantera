@@ -14,6 +14,7 @@ import { useAlmacenes, useExistencias } from '@/lib/api/inventario'
 import { useEmpleados } from '@/lib/api/nomina'
 import { useEntregables, useEntregarATrabajador } from '@/lib/api/asignaciones'
 import { cn } from '@/lib/cn'
+import { comoNumero } from '@/lib/formato'
 
 /*
   ENTREGAR UNA HERRAMIENTA O UN CONSUMIBLE, EN EL TELÉFONO.
@@ -218,6 +219,7 @@ export function AlmacenPrestamo() {
             </p>
             {delAlmacen.length > 8 ? (
               <Input
+                maxLength={100}
                 label="Buscar"
                 ocultarEtiqueta
                 value={buscado}
@@ -264,7 +266,7 @@ export function AlmacenPrestamo() {
                           placeholder="0"
                           value={cantidad}
                           onChange={(e) =>
-                            setCuantas((c) => ({ ...c, [v.articulo_id]: e.target.value }))
+                            setCuantas((c) => ({ ...c, [v.articulo_id]: comoNumero(e.target.value, { maxDecimales: 4, sinNegativos: true }) }))
                           }
                           className={cn(
                             'border-hairline bg-surface tabular h-10 w-24 rounded-[8px] border px-2 text-right text-sm',
@@ -294,7 +296,7 @@ export function AlmacenPrestamo() {
           </div>
         )}
 
-        <Textarea label="Nota" rows={2} value={nota} onChange={(e) => setNota(e.target.value)} />
+        <Textarea maxLength={500} label="Nota" rows={2} value={nota} onChange={(e) => setNota(e.target.value)} />
 
         {entregar.error ? <ErrorDeCarga error={entregar.error} /> : null}
 

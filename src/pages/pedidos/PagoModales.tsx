@@ -126,11 +126,11 @@ function CamposPago({
             { valor: 'USDT', etiqueta: 'USDT' },
           ]}
         />
-        <Input label={`Monto pagado (${moneda}) *`} type="number" placeholder="0,00" value={monto} onChange={(e) => setMonto(e.target.value)} />
+        <Input label={`Monto pagado (${moneda}) *`} type="number" limite={{ maxDecimales: 2, sinNegativos: true }} placeholder="0,00" value={monto} onChange={(e) => setMonto(e.target.value)} />
       </div>
       {moneda === 'Bs' ? (
         <div className="grid gap-3 sm:grid-cols-2">
-          <Input label="Tasa (Bs por $) *" type="number" value={tasa} onChange={(e) => setTasa(e.target.value)} />
+          <Input label="Tasa (Bs por $) *" type="number" limite={{ maxDecimales: 8, sinNegativos: true }} value={tasa} onChange={(e) => setTasa(e.target.value)} />
           <div className="text-ink/60 self-end pb-2 text-sm">
             Equivale a <strong className="font-mono">{money(montoUsd)}</strong>
           </div>

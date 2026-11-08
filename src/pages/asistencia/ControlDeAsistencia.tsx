@@ -848,6 +848,7 @@ function Ajustes({ onCerrar }: { onCerrar: () => void }) {
           type="number"
           min="4"
           max="24"
+          limite={{ maxEnteros: 2, maxDecimales: 0, sinNegativos: true }}
           value={horas}
           onChange={(e) => setHoras(e.target.value)}
           hint="Al escanear, si la jornada abierta tiene menos de estas horas, el toque es la salida. Si tiene más, se abre una nueva y la vieja queda para revisar."
@@ -857,6 +858,7 @@ function Ajustes({ onCerrar }: { onCerrar: () => void }) {
           type="number"
           min="0"
           max="30"
+          limite={{ maxEnteros: 2, maxDecimales: 0, sinNegativos: true }}
           value={minutos}
           onChange={(e) => setMinutos(e.target.value)}
           hint="Dos toques del mismo carnet dentro de estos minutos: el segundo se rechaza."

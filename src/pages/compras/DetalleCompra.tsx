@@ -3337,6 +3337,7 @@ function ModalCorregirPrecio({
         min="0"
         step="0.000001"
         inputMode="decimal"
+        limite={{ maxDecimales: 6, sinNegativos: true }}
         value={nuevo}
         onChange={(e) => setNuevo(e.target.value)}
       />

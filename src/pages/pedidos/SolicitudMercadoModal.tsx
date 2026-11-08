@@ -11,6 +11,7 @@ import { useExistenciasTotales } from '@/lib/api/inventario'
 import { useCrearSolicitudMercado, useUltimaSolicitudMercado } from '@/lib/api/pedidos'
 import { FINALIDAD_MERCADO, fechaHoraVE, fmtCant } from '@/lib/pedidos'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
+import { comoNumero } from '@/lib/formato'
 import { enMayuscula } from '@/lib/texto'
 
 /*
@@ -237,8 +238,8 @@ export function SolicitudMercadoModal({ onClose, onCreated }: { onClose: () => v
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <Input label="Unidad solicitante" value={unidad} onChange={(e) => setUnidad(e.target.value.toUpperCase())} />
-          <Input label="Solicitado por" value={persona} onChange={(e) => setPersona(e.target.value.toUpperCase())} />
+          <Input maxLength={60} label="Unidad solicitante" value={unidad} onChange={(e) => setUnidad(e.target.value.toUpperCase())} />
+          <Input solo="letras" maxLength={80} label="Solicitado por" value={persona} onChange={(e) => setPersona(e.target.value.toUpperCase())} />
         </div>
         <Textarea
           label="Nota"
@@ -282,6 +283,7 @@ export function SolicitudMercadoModal({ onClose, onCreated }: { onClose: () => v
                   type="number"
                   inputMode="decimal"
                   min={0}
+                  limite={{ maxDecimales: 4, sinNegativos: true }}
                   value={agregarCant}
                   onChange={(e) => setAgregarCant(e.target.value)}
                   onKeyDown={(e) => {
@@ -313,16 +315,17 @@ export function SolicitudMercadoModal({ onClose, onCreated }: { onClose: () => v
                     en el inventario.
                   </p>
                   <div className="grid gap-2 sm:grid-cols-[1fr_6rem_6rem_auto]">
-                    <Input label="Nombre general de lo que se pide *" value={nuevoNombre} onChange={(e) => setNuevoNombre(e.target.value)} />
+                    <Input maxLength={150} label="Nombre general de lo que se pide *" value={nuevoNombre} onChange={(e) => setNuevoNombre(e.target.value)} />
                     <Input
                       label="Cantidad *"
                       type="number"
                       inputMode="decimal"
                       min={0}
+                      limite={{ maxDecimales: 4, sinNegativos: true }}
                       value={nuevoCant}
                       onChange={(e) => setNuevoCant(e.target.value)}
                     />
-                    <Input label="Unidad" value={nuevoUnd} onChange={(e) => setNuevoUnd(e.target.value.toUpperCase())} />
+                    <Input maxLength={20} label="Unidad" value={nuevoUnd} onChange={(e) => setNuevoUnd(e.target.value.toUpperCase())} />
                     <div className="flex items-end pb-0.5">
                       <Button variant="outline" onClick={agregarGeneral}>
                         Añadir
@@ -428,7 +431,7 @@ export function SolicitudMercadoModal({ onClose, onCreated }: { onClose: () => v
                                 aria-label={`Cantidad de ${a.nombre}`}
                                 disabled={!s.check}
                                 value={s.cant}
-                                onChange={(e) => setSel((m) => ({ ...m, [a.id]: { check: s.check, cant: e.target.value } }))}
+                                onChange={(e) => setSel((m) => ({ ...m, [a.id]: { check: s.check, cant: comoNumero(e.target.value, { maxDecimales: 4, sinNegativos: true }) } }))}
                                 className={cn(
                                   'border-ink/20 bg-surface w-20 rounded border px-1.5 py-0.5 text-right font-mono',
                                   !s.check && 'opacity-40',
@@ -465,7 +468,7 @@ export function SolicitudMercadoModal({ onClose, onCreated }: { onClose: () => v
                               aria-label={`Cantidad de ${g.nombre}`}
                               value={g.cantidad}
                               onChange={(e) =>
-                                setGenerales((gs) => gs.map((x) => (x.sku === g.sku ? { ...x, cantidad: e.target.value } : x)))
+                                setGenerales((gs) => gs.map((x) => (x.sku === g.sku ? { ...x, cantidad: comoNumero(e.target.value, { maxDecimales: 4, sinNegativos: true }) } : x)))
                               }
                               className="border-ink/20 bg-surface w-20 rounded border px-1.5 py-0.5 text-right font-mono"
                             />{' '}
