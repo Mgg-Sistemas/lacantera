@@ -143,9 +143,16 @@ export interface SolicitudDeSalida {
   renglones?: RenglonDeSolicitud[]
 }
 
-export function useSolicitudesDeSalida() {
+/*
+  CUÁNTAS SE TRAEN. 08/11/2026: el tablero de Salidas (como MGG) enseña las 10
+  últimas de cada columna y manda el resto al «📚 Histórico», que cuenta «las N
+  anteriores». Con 200 la cuenta salía corta, así que esa pantalla pide más; las
+  demás se quedan en 200. La clave lleva el tope para que no se pisen, y sigue
+  empezando por 'solicitudes-salida', que es lo que invalidan las acciones.
+*/
+export function useSolicitudesDeSalida(tope = 200) {
   return useQuery({
-    queryKey: ['solicitudes-salida'],
+    queryKey: tope === 200 ? ['solicitudes-salida'] : ['solicitudes-salida', tope],
     queryFn: async () =>
       desenvolver<SolicitudDeSalida[]>(
         await supabase
@@ -154,8 +161,80 @@ export function useSolicitudesDeSalida() {
             '*, almacen:almacenes(nombre), renglones:solicitud_salida_renglones(*, articulo:articulos(codigo, nombre, unidad))',
           )
           .order('pedida_en', { ascending: false })
-          .limit(200),
+          .limit(tope),
       ),
+  })
+}
+
+/*
+  EL «📊 RESUMEN» DE SALIDAS (MGG `ResumenSalidas`), 08/11/2026.
+
+  MGG suma las solicitudes ejecutadas (cantidad × precio de la cabecera). Aquí
+  la solicitud no lleva precio: lo que vale es el asiento del libro, al costo
+  promedio con el que salió. Así que el resumen lee las salidas de
+  `inventario_movimientos` —solo lectura— y quita las que se deshicieron
+  después, igual que `leerAsientosDeLaSalida`. `valor_usd` llega nulo a quien no
+  tiene INVENTARIO.VER_VALORACION: la pantalla lo dice en vez de sumar cero.
+*/
+export interface AsientoDeResumen {
+  id: number
+  numero: string
+  fecha: string
+  registrado_en: string
+  tipo: string
+  cantidad: string
+  unidad: string
+  valor_usd: string | null
+  nota_salida: string | null
+  grupo_id: number | null
+  destinatario_empleado_id: number | null
+  destino_externo: string | null
+  responsable_externo: string | null
+  registrado_por: string | null
+  almacen: { nombre: string } | null
+  articulo: { codigo: string; nombre: string } | null
+}
+
+/** Los tipos de movimiento que son una salida del almacén (no traslados ni ajustes). */
+export const TIPOS_DE_SALIDA = [
+  'SALIDA_CONSUMO',
+  'SALIDA_DESPACHO',
+  'SALIDA_MERMA',
+  'SALIDA_BAJA',
+  'SALIDA_INTERCAMBIO',
+]
+
+export const TOPE_RESUMEN = 5000
+
+export function useResumenDeSalidas(rango: { desde: string; hasta: string }) {
+  return useQuery({
+    queryKey: ['movimientos', 'resumen-salidas', rango.desde, rango.hasta],
+    queryFn: async () => {
+      let q = supabase
+        .from('inventario_movimientos')
+        // Con «*» el cliente no intenta adivinar la forma de los enlaces.
+        .select('*, almacen:almacenes(nombre), articulo:articulos(codigo, nombre)')
+        .in('tipo', TIPOS_DE_SALIDA)
+        .eq('signo', -1)
+        .order('registrado_en', { ascending: false })
+        .limit(TOPE_RESUMEN)
+      if (rango.desde) q = q.gte('fecha', rango.desde)
+      if (rango.hasta) q = q.lte('fecha', rango.hasta)
+      const asientos = desenvolver<AsientoDeResumen[]>(await q)
+
+      // Un reverso siempre es posterior a lo que deshace: basta con mirar desde «desde».
+      let r = supabase
+        .from('inventario_movimientos')
+        .select('movimiento_origen')
+        .eq('tipo', 'REVERSO')
+        .not('movimiento_origen', 'is', null)
+        .limit(TOPE_RESUMEN)
+      if (rango.desde) r = r.gte('fecha', rango.desde)
+      const deshechos = new Set(
+        desenvolver<{ movimiento_origen: number | null }[]>(await r).map((d) => d.movimiento_origen),
+      )
+      return asientos.filter((a) => !deshechos.has(a.id))
+    },
   })
 }
 
