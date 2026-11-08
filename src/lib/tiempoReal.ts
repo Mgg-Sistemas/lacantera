@@ -71,25 +71,76 @@ const AFECTA: Record<string, string[][]> = {
 
   // Recibir material cierra la compra, mueve las existencias y cambia lo que
   // vale el inventario en el panel, que se lee bajo la clave de tesorería.
-  inventario_movimientos: [['movimientos'], ['existencias'], ['compras'], ['tesoreria']],
+  /*
+    08/11/2026, fase 7 de «Almacén e Inventario como MGG»: las pantallas nuevas
+    (el teléfono del almacenista, la pantalla principal de inventario, los
+    almacenes con su valor y Salidas) leen además el total por artículo, la
+    trazabilidad, los movimientos de un almacén y los históricos del teléfono.
+    ['movimientos'] ya cubre el kardex, el resumen y los costos sugeridos.
+  */
+  inventario_movimientos: [
+    ['movimientos'],
+    ['existencias'],
+    ['existencias-totales'],
+    ['existencias-articulo'],
+    ['historial-articulo'],
+    ['movimientos-de-almacen'],
+    ['telefono-reporte-stock'],
+    ['telefono-historico-salidas'],
+    ['telefono-historico-traslados'],
+    ['compras'],
+    ['tesoreria'],
+  ],
   // Las formas de contar cuelgan del artículo y se escriben en la misma
   // transacción que él: `guardar_presentacion_de_articulo` toca las dos tablas.
   // Sin esta clave, quien tiene abierta una entrada mientras otro declara un
   // bidón sigue viendo solo el tambor hasta que recargue.
-  articulos: [['articulos'], ['existencias'], ['tesoreria'], ['presentaciones-articulo']],
-  almacenes: [['almacenes'], ['existencias']],
+  articulos: [
+    ['articulos'],
+    ['existencias'],
+    ['existencias-totales'],
+    ['telefono-reporte-stock'],
+    ['tesoreria'],
+    ['presentaciones-articulo'],
+  ],
+  // ['almacenes'] cubre también «qué impide desactivar» del detalle (fase 6).
+  almacenes: [['almacenes'], ['existencias'], ['existencias-totales'], ['movimientos-de-almacen']],
   // Cada paso de un traslado escribe en el libro —aceptar saca del origen,
   // recibir mete en el destino— y avisa. La lista de Transferencias lo sigue en
   // vivo, y Existencias también, porque lo que va de camino se ve ahí.
-  traslados: [['traslados'], ['existencias'], ['movimientos'], ['notificaciones']],
+  traslados: [
+    ['traslados'],
+    ['existencias'],
+    ['existencias-totales'],
+    ['movimientos'],
+    ['telefono-historico-traslados'],
+    ['notificaciones'],
+  ],
   // Una solicitud la pide uno y la aprueba otro, casi siempre con las dos
   // pantallas abiertas a la vez: sin esto, quien aprueba sigue viendo «por
   // aprobar» después de haberla aprobado desde el móvil.
+  // 08/11/2026, fase 7: la tabla no estaba en la publicación de tiempo real y
+  // estos avisos nunca llegaban; la migración de la fase 7 la agrega.
   solicitudes_salida: [
     ['solicitudes-salida'],
     ['existencias'],
+    ['existencias-totales'],
     ['movimientos'],
+    ['telefono-historico-salidas'],
     ['notificaciones'],
+  ],
+  /*
+    Un préstamo lo entrega el teléfono («¿Retorna? SÍ») y lo devuelve otro día,
+    a veces en parte. «🔄 Por retornar» del teléfono y Asignaciones lo siguen
+    en vivo (08/11/2026, fase 7).
+  */
+  asignaciones_herramienta: [
+    ['asignaciones'],
+    ['asignables'],
+    ['entregables'],
+    ['telefono-por-retornar'],
+    ['existencias'],
+    ['existencias-totales'],
   ],
   // El nombre del dueño se pinta en los almacenes y en las máquinas: si alguien
   // registra a la gobernación mientras otro tiene abierto el formulario del

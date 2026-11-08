@@ -283,6 +283,9 @@ function SidebarItem({ item, collapsed, open, onToggle, onNavigate }: SidebarIte
   const { pathname } = useLocation()
   const Icon = item.icon
   const isGroupActive = item.children?.some((child) => pathname.startsWith(child.to)) ?? false
+  // 08/11/2026, fase 7: el enlace directo que cubre una rama entera.
+  const enSuRama =
+    !!item.activoBajo && (pathname === item.activoBajo || pathname.startsWith(item.activoBajo + '/'))
 
   const baseRow = cn(
     'group relative flex w-full items-center rounded-md transition-colors duration-150',
@@ -301,7 +304,7 @@ function SidebarItem({ item, collapsed, open, onToggle, onNavigate }: SidebarIte
           className={({ isActive }) =>
             cn(
               baseRow,
-              isActive
+              isActive || enSuRama
                 ? 'bg-royal-600 shadow-primary text-white'
                 : 'text-ink/70 hover:bg-ink/6 hover:text-ink/90',
             )

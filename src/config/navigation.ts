@@ -60,6 +60,13 @@ export interface NavItem {
   icon: LucideIcon
   /** Destino directo. Excluyente con `children`. */
   to?: string
+  /**
+   * Un enlace directo que se pinta activo en toda una rama, no solo en su
+   * dirección. 08/11/2026, fase 7: «Salidas y traslados» quedó en una sola
+   * entrada que lleva a las solicitudes, y tiene que seguir encendida en el
+   * historial y en los traslados, que se abren desde su cabecera.
+   */
+  activoBajo?: string
   children?: NavChild[]
   /** Contador de pendientes. Se resolverá contra datos reales. */
   badge?: number
@@ -244,6 +251,26 @@ export const PANTALLAS_SIN_ENTRADA: Array<{
     label: 'Movimientos de inventario',
     to: '/app/inventario/movimientos',
     grupo: 'Inventario',
+    seccion: 'Operación',
+  },
+  // 08/11/2026, fase 7: salieron del menú (las repiten pestañas y cabeceras de
+  // las pantallas de MGG), pero se siguen buscando por su nombre.
+  {
+    label: 'Existencias',
+    to: '/app/inventario/existencias',
+    grupo: 'Inventario',
+    seccion: 'Operación',
+  },
+  {
+    label: 'Historial de salidas y traslados',
+    to: '/app/salidas',
+    grupo: 'Salidas y traslados',
+    seccion: 'Operación',
+  },
+  {
+    label: 'Traslados',
+    to: '/app/salidas/traslados',
+    grupo: 'Salidas y traslados',
     seccion: 'Operación',
   },
   {
@@ -595,10 +622,16 @@ export const navigation: NavSection[] = [
           dentro del catálogo, que es donde se está cuando hace falta. Su
           dirección sigue viva.
         */
+        /*
+          08/11/2026, fase 7 de «Almacén e Inventario como MGG»: sale
+          «Existencias». La pantalla de inventario de MGG ya enseña el stock por
+          almacén y por dueño, y lleva arriba las pestañas «Existencias ·
+          Catálogo · Movimientos»: la entrada del menú repetía una pestaña. La
+          dirección sigue viva (la lupa la encuentra en PANTALLAS_SIN_ENTRADA).
+        */
         children: [
           // 08/11/2026: ya no es el Tablero, es la pantalla de inventario de MGG.
           { label: 'Inventario', to: '/app/inventario' },
-          { label: 'Existencias', to: '/app/inventario/existencias' },
           { label: 'Almacenes y talleres', to: '/app/inventario/almacenes' },
           // El almacén general revisa cada solicitud de pedido antes de Compras.
           { label: 'Solicitudes de pedido', to: '/app/solicitudes-pedido' },
@@ -616,11 +649,16 @@ export const navigation: NavSection[] = [
         */
         label: 'Salidas y traslados',
         icon: PackageMinus,
-        children: [
-          { label: 'Historial', to: '/app/salidas' },
-          { label: 'Salidas', to: '/app/salidas/solicitudes' },
-          { label: 'Traslados', to: '/app/salidas/traslados' },
-        ],
+        /*
+          08/11/2026, fase 7 de «Almacén e Inventario como MGG»: una sola
+          entrada, como MGG. Desde la fase 5 la pantalla lleva su propia
+          cabecera «↘ Salidas / ↔ Traslados» y «🗂 Solicitudes / 📚 Histórico /
+          📜 Historial / 📊 Resumen», así que «Historial», «Salidas» y
+          «Traslados» repetían esos botones. Las tres direcciones siguen vivas
+          y la lupa las encuentra (PANTALLAS_SIN_ENTRADA).
+        */
+        to: '/app/salidas/solicitudes',
+        activoBajo: '/app/salidas',
       },
       {
         /*
