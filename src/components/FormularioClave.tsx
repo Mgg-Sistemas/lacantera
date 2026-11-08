@@ -94,7 +94,6 @@ export function FormularioClave({
         onChange={(e) => setActual(e.target.value)}
         autoComplete="current-password"
         // 72: lo más que compara la clave guardada (bcrypt), 08/11/2026.
-        maxLength={72}
         revealable
         required
       />
@@ -105,7 +104,6 @@ export function FormularioClave({
         maxLength={72}
         onChange={(e) => setNueva(e.target.value)}
         autoComplete="new-password"
-        maxLength={72}
         revealable
         required
         error={
@@ -124,7 +122,6 @@ export function FormularioClave({
         maxLength={72}
         onChange={(e) => setConfirmacion(e.target.value)}
         autoComplete="new-password"
-        maxLength={72}
         revealable
         required
         error={noCoinciden ? 'Las dos claves no son iguales.' : undefined}
