@@ -292,7 +292,7 @@ export function Existencias() {
     almacenId ? { almacenId: Number(almacenId) } : {},
   )
 
-  const { puede } = useMisRoles()
+  const { puede, isSuccess: rolesListos } = useMisRoles()
   // El de arriba comprueba ROL literal; este comprueba NIVEL por modulo, que es
   // lo que exige `guardar_clase_de_salida` (INVENTARIO en TOTAL). Ofrecer el
   // boton a quien la RPC va a rechazar es enseñar una puerta cerrada.
@@ -680,6 +680,39 @@ export function Existencias() {
     setResolviendoCosto(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [costoDirecto.data, costoDirecto.isPending, resolviendoCosto])
+
+  /*
+    08/11/2026 · LA PANTALLA DE INVENTARIO NUEVA (la de MGG) MANDA AQUÍ.
+
+    «↕» y «⋯ Contar» de `InventarioPrincipal.tsx` abren la entrada y el conteo
+    de siempre, que viven dentro de esta pantalla. Hasta que la fase 3 traiga
+    el modal «Movimiento · {SKU}» de MGG, se llega con la dirección:
+    `?accion=entrada|contar&articulo={id}` (y `&almacen={id}` si ya se sabe de
+    qué sitio). Se lee una vez, en cuanto llegan los datos, y se borra de la
+    dirección para que recargar no vuelva a abrir el formulario.
+  */
+  const accionPedida = params.get('accion')
+  const articuloPedido = Number(params.get('articulo')) || null
+  const datosListos = rolesListos && (enTotal ? totales.isSuccess : porAlmacen.isSuccess)
+  useEffect(() => {
+    if (!accionPedida || !datosListos) return
+    const fila =
+      !enTotal && articuloPedido
+        ? ((porAlmacen.data ?? []).find((e) => e.articulo_id === articuloPedido) ?? null)
+        : null
+    if (accionPedida === 'entrada' && puede('ALMACEN')) {
+      abrir('entrada', fila)
+      if (!fila && articuloPedido) setRenglones([renglonVacio(String(articuloPedido))])
+    } else if (accionPedida === 'contar' && articuloPedido && puede('ALMACEN')) {
+      if (fila) abrir('ajuste', fila)
+      else if (enTotal) setResolviendoAjuste(articuloPedido)
+    }
+    const siguiente = new URLSearchParams(params)
+    siguiente.delete('accion')
+    siguiente.delete('articulo')
+    setParams(siguiente, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accionPedida, articuloPedido, datosListos])
 
   const guardar = async () => {
     if (!modal) return
@@ -2424,7 +2457,7 @@ function ComoEntroAqui({ articuloId, almacenId }: { articuloId: number; almacenI
  * muestran igual, apagadas: saber que un taller tuvo el repuesto y se le acabó
  * es distinto de no verlo listado, que se lee como que nunca lo manejó.
  */
-function ModalDesglose({
+export function ModalDesglose({
   articulo,
   onCerrar,
   puedeMover,
@@ -2603,7 +2636,7 @@ function ModalDesglose({
  * dos renglones quedan a la vista en el historial. Una corrección de esta
  * magnitud tiene que verse.
  */
-function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCerrar: () => void }) {
+export function ModalCorregirCosto({ fila, onCerrar }: { fila: Existencia; onCerrar: () => void }) {
   const corregir = useCorregirCosto()
   const [nuevo, setNuevo] = useState('')
   const [porque, setPorque] = useState('')
