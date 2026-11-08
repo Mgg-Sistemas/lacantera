@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { Boxes, Pencil, Plus, Search, Trash2, Upload } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { ParecidosAEste } from '@/components/ParecidosAEste'
@@ -141,7 +141,29 @@ export function Articulos() {
   // se pega en un mensaje. Ver `enLaDireccion.ts`.
   const [busqueda, setBusqueda] = useFiltroEnLaDireccion()
   const [categoria, setCategoria] = useState('')
-  const [form, setForm] = useState<typeof nuevo | null>(null)
+  /*
+    08/11/2026 · «+ Nuevo producto» y «🗄 PRODUCTOS DESHABILITADOS» de la
+    pantalla de inventario nueva (la de MGG, `InventarioPrincipal.tsx`) traen
+    aquí `?nuevo=1` y `?desactivados=1`: hasta la fase 4 de MGG no tienen modal
+    propio y se usa el formulario y la lista de siempre. Se leen al entrar y se
+    borran de la dirección, para que recargar no vuelva a abrir el formulario.
+  */
+  const [parametros, setParametros] = useSearchParams()
+  const [form, setForm] = useState<typeof nuevo | null>(() =>
+    parametros.get('nuevo') === '1' ? { ...nuevo } : null,
+  )
+  useEffect(() => {
+    if (!parametros.has('nuevo') && !parametros.has('desactivados')) return
+    setParametros(
+      (previos) => {
+        const siguientes = new URLSearchParams(previos)
+        siguientes.delete('nuevo')
+        siguientes.delete('desactivados')
+        return siguientes
+      },
+      { replace: true },
+    )
+  }, [parametros, setParametros])
   /*
     CORREGIR UN ARTÍCULO QUE YA EXISTE VIVE EN SU PROPIO COMPONENTE desde el
     28/10/2026, compartido con el botón «Editar» que Existencias ofrece solo a
@@ -163,7 +185,9 @@ export function Articulos() {
     cambio ya no es un clic sobre una etiqueta: abre una ventana que pregunta
     por qué, y la base no lo acepta sin eso.
   */
-  const [verDesactivados, setVerDesactivados] = useState(false)
+  const [verDesactivados, setVerDesactivados] = useState(
+    () => parametros.get('desactivados') === '1',
+  )
   const [cambiando, setCambiando] = useState<Articulo | null>(null)
   /*
     BORRAR PEDÍA CONFIRMACIÓN EN NINGÚN LADO. Un clic sobre la papelera llamaba
@@ -1087,7 +1111,9 @@ export function Articulos() {
   se vende, los víveres se cocinan— y las creadas aquí solo clasifican.
   Una creada por error se puede eliminar mientras ningún artículo la use.
 */
-function Categorias({ onCerrar }: { onCerrar: () => void }) {
+// Exportada el 08/11/2026: «⚙ Categorías» de la pantalla de inventario nueva
+// abre esta misma ventana, sin salir de allí.
+export function Categorias({ onCerrar }: { onCerrar: () => void }) {
   const categorias = useCategoriasDeInventario()
   const crearCategoria = useCrearCategoriaDeArticulo()
   const eliminarCategoria = useEliminarCategoriaDeArticulo()

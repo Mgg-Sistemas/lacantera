@@ -596,7 +596,8 @@ export const navigation: NavSection[] = [
           dirección sigue viva.
         */
         children: [
-          { label: 'Tablero', to: '/app/inventario' },
+          // 08/11/2026: ya no es el Tablero, es la pantalla de inventario de MGG.
+          { label: 'Inventario', to: '/app/inventario' },
           { label: 'Existencias', to: '/app/inventario/existencias' },
           { label: 'Almacenes y talleres', to: '/app/inventario/almacenes' },
           // El almacén general revisa cada solicitud de pedido antes de Compras.
