@@ -62,7 +62,15 @@ export function SolicitudesAlmacenPage() {
   const { soloTelefono } = useSoloTelefono()
   const { ver, armando, visor } = usePdfSolicitud()
 
-  const [pestana, setPestana] = useState<Pestana>('pendientes')
+  /*
+    08/11/2026 · El botón «Recepciones» de la pantalla de inventario (la de
+    MGG) trae `?pestana=recepciones` para abrir directo «📥 Recepciones por
+    recibir», como la pestaña «Recepciones» de MGG.
+  */
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [pestana, setPestana] = useState<Pestana>(() =>
+    searchParams.get('pestana') === 'recepciones' ? 'recepciones' : 'pendientes',
+  )
   const [busca, setBusca] = useState('')
   const [buscaRev, setBuscaRev] = useState('')
   const [selId, setSelId] = useState<number | null>(null)
@@ -87,7 +95,6 @@ export function SolicitudesAlmacenPage() {
 
   // El aviso de la campana trae ?detalle=ID: se abre esa SP si sigue por
   // revisar, o esa OC si está por recibir (fase 4).
-  const [searchParams, setSearchParams] = useSearchParams()
   useEffect(() => {
     const id = searchParams.get('detalle')
     if (!id || !enRevision.isSuccess || porRecibirQ.isPending) return

@@ -175,6 +175,37 @@ function QUE_HACER(faltantes: number): GrupoDeAcciones[] {
   lista propia sería la que nadie se acuerda de tocar ese día.
 */
 
+/*
+  08/11/2026 · «QUÉ HACER» Y «PRIMERA VEZ», APARTE DEL TABLERO.
+
+  La dueña decidió que `/app/inventario` pase a ser la pantalla de MGG
+  (`InventarioPrincipal.tsx`) y que esta ayuda quede plegada al final de
+  ella, sin borrarse. Por eso vive en su propio componente: la usan el
+  Tablero de siempre y la pantalla nueva, y no se escribe dos veces.
+*/
+export function QueHacerDelInventario({ faltantes }: { faltantes: number }) {
+  return (
+    <>
+      <QueHacer grupos={QUE_HACER(faltantes)} />
+
+      <PrimeraVez className="mt-8">
+        <p>
+          La existencia es la suma del libro de movimientos: cada cosa que entra, sale o se
+          traslada deja su renglón.
+        </p>
+        <p className="text-ink/50">
+          Lo que llega con una orden entra al recibir la compra; lo demás, con «Registrar
+          entrada» en Existencias. Las salidas y los traslados están en Salidas y traslados.
+        </p>
+        <p className="text-ink/50">
+          Si el conteo no cuadra con el sistema, se corrige con un ajuste, que queda anotado con
+          su motivo y con quién lo hizo.
+        </p>
+      </PrimeraVez>
+    </>
+  )
+}
+
 export function TableroInventario() {
   const { data: existencias, isPending, error } = useExistencias()
   const { data: movimientos } = useMovimientos()
@@ -364,22 +395,7 @@ export function TableroInventario() {
             </Card>
           </div>
 
-          <QueHacer grupos={QUE_HACER(bajoMinimo.length)} />
-
-          <PrimeraVez className="mt-8">
-            <p>
-              La existencia es la suma del libro de movimientos: cada cosa que entra, sale o se
-              traslada deja su renglón.
-            </p>
-            <p className="text-ink/50">
-              Lo que llega con una orden entra al recibir la compra; lo demás, con «Registrar
-              entrada» en Existencias. Las salidas y los traslados están en Salidas y traslados.
-            </p>
-            <p className="text-ink/50">
-              Si el conteo no cuadra con el sistema, se corrige con un ajuste, que queda anotado con
-              su motivo y con quién lo hizo.
-            </p>
-          </PrimeraVez>
+          <QueHacerDelInventario faltantes={bajoMinimo.length} />
 
         </>
       ) : null}
