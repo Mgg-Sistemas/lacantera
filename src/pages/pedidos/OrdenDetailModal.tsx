@@ -106,6 +106,7 @@ import { EditarOcModal } from './EditarOcModal'
 import { DocumentoRetencionesModal, MetodoPagoModal } from './MetodoPagoModal'
 import { AbonoModal, CreditoModal, MarcarPagadaModal } from './PagoModales'
 import { RecibirOrdenModal } from './RecibirOrdenModal'
+import { DevolucionesDeOrden } from './DevolucionesDeOrden'
 import { ComprobanteOcModal, FinalizarPedidoModal, RecepcionesDeOrdenModal } from './FinalizarPedidoModal'
 import { ServicioRealizadoModal } from './ServicioRealizadoModal'
 
@@ -1477,6 +1478,8 @@ export function OrdenDetailModal({
           </table>
         </div>
         {aviso ? <p className="text-warning mt-1 text-xs">⚠ {aviso}</p> : null}
+
+        {o.oc_codigo ? <DevolucionesDeOrden orden={o} puedeDecidir={canManageProcurement} /> : null}
 
         <h4 className="text-ink/85 mt-6 mb-2 font-semibold">Historial</h4>
         {historial.length === 0 ? (
