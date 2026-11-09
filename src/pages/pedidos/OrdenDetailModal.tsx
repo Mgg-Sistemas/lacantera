@@ -26,6 +26,7 @@ import {
   useOfertas,
   useReabrirOc,
   type Abono,
+  type EstadoOrden,
   type ItemOrden,
   type Oferta,
   type Orden,
@@ -42,6 +43,7 @@ import {
   fechaHoraVE,
   fmtCant,
   money,
+  MOTIVO_NO_PAGO,
   esMercado,
   esRecibible,
   PUNTUALIDAD_LABEL,
@@ -51,6 +53,7 @@ import {
   repartoRenglon,
   revisadaPorAlmacen,
   textoEstadoSedes,
+  textoNoPago,
   textoPuntualidad,
   tieneRecepcion,
   type TonoEstado,
@@ -76,6 +79,7 @@ import {
   textoAbono,
   textoFinalizada,
   textoOcAprobada,
+  textoOcNoSePagara,
   textoOrdenAprobacion,
   textoOrdenPagada,
   textoOrdenPago,
@@ -101,6 +105,7 @@ import { abrirDeAlmacen } from '@/lib/abrirArchivo'
 import { comoNumero } from '@/lib/formato'
 import { ModalWhatsappCompra } from '@/pages/compras/ModalWhatsappCompra'
 import { ConfirmDialog, MotivoModal } from './Dialogos'
+import { AprobarOcModal } from './AprobarOcModal'
 import { OfertasComparativa } from './OfertasComparativa'
 import { AgregarOfertaModal } from './AgregarOfertaModal'
 import { AceptarOfertaModal } from './AceptarOfertaModal'
@@ -452,25 +457,33 @@ export function OrdenDetailModal({
                 }
               : { titulo: `Avisar por WhatsApp · abono a OC ${o.oc_codigo ?? o.codigo}`, texto: textoAbono(o, avisoPaso.abono, datosMensaje) }
 
-  async function onAprobarOc() {
+  // «✔ Aprobar OC» abre la ventana con «¿Se pagará esta OC?» (09/11/2026).
+  const [aprobando, setAprobando] = useState(false)
+  function onAprobarOc() {
     if (!puedeAprobarOc) {
       toast('Solo los usuarios autorizados para aprobar órdenes de compra (Usuarios > Roles y Permisos) pueden autorizarlas.', 'error')
       return
     }
-    try {
-      const [r] = await aprobarOc.mutateAsync([o.id])
-      toast(
-        r?.estado === 'por_recibir'
-          ? `OC confirmada: ${ocCodigo} · contra entrega: pendiente por recepción`
-          : r?.estado === 'cuenta_abierta'
-            ? `OC confirmada: ${ocCodigo} · crédito (cuenta abierta)`
-            : `OC confirmada: ${ocCodigo} · falta indicar el método de pago`,
-        'success',
-      )
-      setAvisoPaso({ tipo: 'aprobada' })
-    } catch (e) {
-      toast(mensajeDe(e, 'Error al confirmar'), 'error')
-    }
+    setAprobando(true)
+  }
+  function alAprobar(estado: EstadoOrden | undefined) {
+    setAprobando(false)
+    toast(
+      estado === 'por_recibir'
+        ? `OC confirmada: ${ocCodigo} · contra entrega: pendiente por recepción`
+        : estado === 'cuenta_abierta'
+          ? `OC confirmada: ${ocCodigo} · crédito (cuenta abierta)`
+          : `OC confirmada: ${ocCodigo} · falta indicar el método de pago`,
+      'success',
+    )
+    setAvisoPaso({ tipo: 'aprobada' })
+  }
+  function alNoSePagara(motivo: string, noProcede: boolean) {
+    setAprobando(false)
+    setMensajeWs({
+      titulo: `Avisar por WhatsApp · OC ${ocCodigo} ${noProcede ? 'NO PROCEDE' : 'no se pagará por ahora'}`,
+      texto: textoOcNoSePagara(o, { ...datosMensaje, motivo, noProcede }),
+    })
   }
 
   // Sin la dirección del almacén en la barra (ver `abrirArchivo.ts`).
@@ -605,8 +618,8 @@ export function OrdenDetailModal({
         <Button
           className="bg-success hover:bg-success hover:brightness-95"
           disabled={aprobarOc.isPending}
-          title="Aprobar la OC: sigue según su condición de pago"
-          onClick={() => void onAprobarOc()}
+          title="Aprobar la OC: «¿Se pagará esta OC?» Sí sigue según su condición de pago; No deja el motivo"
+          onClick={onAprobarOc}
         >
           {aprobarOc.isPending ? 'Aprobando…' : '✔ Aprobar OC'}
         </Button>
@@ -1485,6 +1498,27 @@ export function OrdenDetailModal({
         </div>
         {aviso ? <p className="text-warning mt-1 text-xs">⚠ {aviso}</p> : null}
 
+        {o.estado === 'oc_creada' && o.no_pago_motivo ? (
+          <div
+            className={cn(
+              'mt-4 rounded-[8px] border px-3 py-2.5 text-sm',
+              o.no_pago_motivo === 'no_procede' ? 'border-danger bg-danger/6' : 'border-warning bg-warning/6',
+            )}
+          >
+            <strong>
+              {MOTIVO_NO_PAGO[o.no_pago_motivo].icono}{' '}
+              {o.no_pago_motivo === 'no_procede' ? 'No procede esta compra' : 'No se pagará por ahora'}
+            </strong>
+            <span className="text-ink/75"> · {textoNoPago(o)}</span>
+            <div className="text-ink/55 text-xs">
+              {o.no_pago_por_nombre ?? '—'} · {fechaHoraVE(o.no_pago_en)}
+              {o.no_pago_motivo === 'no_procede'
+                ? ' · el analista cancela la OC o busca otra cotización'
+                : ' · se aprueba cuando se pueda pagar'}
+            </div>
+          </div>
+        ) : null}
+
         {o.oc_codigo ? <DevolucionesDeOrden orden={o} puedeDecidir={canManageProcurement} /> : null}
 
         <h4 className="text-ink/85 mt-6 mb-2 font-semibold">Historial</h4>
@@ -1762,6 +1796,16 @@ export function OrdenDetailModal({
       ) : null}
 
       {avisoTexto ? <ModalWhatsappCompra titulo={avisoTexto.titulo} texto={avisoTexto.texto} onCerrar={() => setAvisoPaso(null)} /> : null}
+
+      {aprobando ? (
+        <AprobarOcModal
+          orden={o}
+          proveedor={prov?.nombre ?? ''}
+          onCerrar={() => setAprobando(false)}
+          onAprobada={alAprobar}
+          onNoSePagara={alNoSePagara}
+        />
+      ) : null}
 
       {mensajeWs ? (
         <ModalWhatsappCompra titulo={mensajeWs.titulo} texto={mensajeWs.texto} onCerrar={() => setMensajeWs(null)} />

@@ -13,7 +13,7 @@
   `almacen_origenes['ALM-GEN']`— para que estas funciones lean lo mismo que en
   MGG y el día que haya otro almacén que revise baste con sumarlo aquí.
 */
-import type { EventoHistorial, EstadoOrden, ItemOrden, MarcaAlmacen, Orden } from '@/lib/api/pedidos'
+import type { EventoHistorial, EstadoOrden, ItemOrden, MarcaAlmacen, MotivoNoPago, Orden } from '@/lib/api/pedidos'
 
 /** La única sede que revisa: el almacén general. */
 export const SEDE_ALMACEN = 'ALM-GEN'
@@ -194,6 +194,27 @@ const EVENTOS: Record<string, string> = {
   montado: 'Factura y monto cargados · por pagar',
   montos_editados: 'Montos editados',
   facturas_actualizadas: 'Facturas actualizadas',
+  // 09/11/2026: «¿Se pagará esta OC?» al aprobar → No.
+  no_se_pagara: 'No se pagará por ahora · sigue por aprobar',
+}
+
+/*
+  MOTIVO DE PAGO AL APROBAR (MGG Tesorería «💳 Motivo de Pago», 09/11/2026).
+  Al aprobar la OC se pregunta «¿Se pagará esta OC?»; si no, uno de estos.
+*/
+export const MOTIVO_NO_PAGO: Record<MotivoNoPago, { icono: string; label: string; corto: string }> = {
+  sin_fondos: { icono: '⏳', label: 'Sin fondos en estos momentos', corto: 'Sin fondos' },
+  esperando_jefe: { icono: '👔', label: 'Esperando respuesta del jefe', corto: 'Esperando al jefe' },
+  no_procede: { icono: '🚫', label: 'No procede esta compra', corto: 'No procede' },
+  otro: { icono: '📝', label: 'Otro', corto: 'No se pagará' },
+}
+
+/** «Sin fondos en estos momentos» / «No procede esta compra: JUSTIFICACIÓN». */
+export function textoNoPago(o: Pick<Orden, 'no_pago_motivo' | 'no_pago_detalle'>): string {
+  if (!o.no_pago_motivo) return ''
+  const base = o.no_pago_motivo === 'otro' ? '' : MOTIVO_NO_PAGO[o.no_pago_motivo].label
+  const det = (o.no_pago_detalle ?? '').trim()
+  return [base, det].filter(Boolean).join(': ')
 }
 
 export const etiquetaEvento = (ev: string): string => EVENTOS[ev] ?? ev
@@ -240,6 +261,7 @@ const CLASE_EVENTO: Record<string, TonoEstado> = {
   montado: 'info',
   montos_editados: 'warning',
   facturas_actualizadas: 'info',
+  no_se_pagara: 'warning',
 }
 
 export const claseEvento = (ev: string): TonoEstado => CLASE_EVENTO[ev] ?? 'neutral'
@@ -257,6 +279,13 @@ export function extraEvento(h: EventoHistorial): string {
     return ` · ${h.proveedor}${typeof h.oc_codigo === 'string' ? ` · ${h.oc_codigo}` : ''}${typeof h.parent === 'string' ? ` · de ${h.parent}` : ''}`
   }
   if (h.evento === 'desistida_proveedor' && typeof h.proveedor === 'string') return ` · ${h.proveedor}${motivo}`
+  if (h.evento === 'no_se_pagara' && typeof h.motivo === 'string' && h.motivo in MOTIVO_NO_PAGO) {
+    const txt = textoNoPago({
+      no_pago_motivo: h.motivo as MotivoNoPago,
+      no_pago_detalle: typeof h.detalle === 'string' ? h.detalle : null,
+    })
+    return txt ? ` · ${txt}` : ''
+  }
   if (h.evento === 'proveedores_asignados' && Array.isArray(h.proveedores)) {
     return ` · ${(h.proveedores as unknown[]).join(', ')}${h.completo ? ' · todo asignado' : ' · queda algo por asignar'}`
   }
