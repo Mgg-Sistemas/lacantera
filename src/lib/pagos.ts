@@ -46,6 +46,27 @@ export const METODOS_PAGO: { value: string; label: string; moneda: MonedaPago; s
 export const labelMetodoPago = (v: string | null | undefined): string =>
   METODOS_PAGO.find((m) => m.value === v)?.label ?? (v || '—')
 
+/** Cuántas letras lleva «¿Cuál método?» del método «Otro» (09/11/2026). */
+export const MAX_DETALLE_OTRO = 60
+
+/**
+ * El nombre del método como se enseña: «Otro: <detalle>» cuando el método
+ * «Otro» dice cuál es (la dueña, 09/11/2026); si no, su etiqueta.
+ */
+export function nombreMetodoPago(metodo: string | null | undefined, detalle?: string | null): string {
+  const d = (detalle ?? '').trim()
+  return metodo === 'otro' && d ? `Otro: ${d}` : labelMetodoPago(metodo)
+}
+
+/** El error de «¿Cuál método?» cuando el método es «Otro», o null. */
+export function errorDetalleOtro(metodo: string, detalle: string | null | undefined): string | null {
+  if (metodo !== 'otro') return null
+  const d = (detalle ?? '').trim()
+  if (!d) return 'Otro: indicá cuál método.'
+  if (d.length > MAX_DETALLE_OTRO) return `Otro: el método va en ${MAX_DETALLE_OTRO} letras como mucho.`
+  return null
+}
+
 /** La moneda la dicta el método (MGG `monedaPorMetodo`). */
 export const monedaPorMetodo = (v: string): MonedaPago => METODOS_PAGO.find((m) => m.value === v)?.moneda ?? 'USD'
 
@@ -63,6 +84,8 @@ export interface PagoMetodo {
   moneda: MonedaPago | string
   monto: number
   datos?: DatosPago
+  /** Con el método «otro»: cuál es (hasta 60 letras). */
+  detalle?: string
 }
 
 /** Métodos que requieren los datos del proveedor para pagarle (MGG `METODOS_CON_DATOS`). */

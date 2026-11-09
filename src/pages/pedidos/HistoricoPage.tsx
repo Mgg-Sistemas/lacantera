@@ -25,7 +25,7 @@ import {
 } from '@/lib/api/pedidos'
 import { ESTADOS, coincide, etiquetaEstado, fechaHoraVE, fmtCant, money, sinTildes, solicitaDe } from '@/lib/pedidos'
 import { labelCondicionPago } from '@/lib/ofertas'
-import { abrirArchivoPago, abrirArchivoRecepcion, labelMetodoPago } from '@/lib/pagos'
+import { abrirArchivoPago, abrirArchivoRecepcion, nombreMetodoPago } from '@/lib/pagos'
 import { ESTADO_SD } from '@/lib/servicios'
 import { fechaVE } from '@/lib/reportesCompras'
 import { armarDetallePedidoPdf } from '@/lib/ficha/reportesComprasPdf'
@@ -258,7 +258,7 @@ function HistoricoPedidos() {
         const o = f.orden
         const extraTxt = sinTildes(
           [
-            ...(o.metodo_pago ?? []).map((m) => labelMetodoPago(m.metodo)),
+            ...(o.metodo_pago ?? []).map((m) => nombreMetodoPago(m.metodo, m.detalle)),
             o.condiciones_pago ? labelCondicionPago(o.condiciones_pago) : '',
             o.finalidad,
             o.motivo,
@@ -288,7 +288,7 @@ function HistoricoPedidos() {
           money(s.gasto),
           String(s.gasto ?? ''),
           fechaHoraVE(s.creado_en),
-          ...(s.metodo_pago ?? []).map((m) => labelMetodoPago(m.metodo)),
+          ...(s.metodo_pago ?? []).map((m) => nombreMetodoPago(m.metodo, m.detalle)),
           ...(s.items ?? []).map((i) => i.descripcion),
         ]
           .filter(Boolean)
@@ -598,7 +598,7 @@ function PedidoDetalleModal({
           {fila('Proveedor', proveedorNombre || '—')}
           {(o.clasificacion ?? []).length ? fila('Clasificación', o.clasificacion.join(', ')) : null}
           {o.condiciones_pago ? fila('Condición de pago', labelCondicionPago(o.condiciones_pago)) : null}
-          {o.metodo_pago?.length ? fila('Método de pago', o.metodo_pago.map((m) => labelMetodoPago(m.metodo)).join(' + ')) : null}
+          {o.metodo_pago?.length ? fila('Método de pago', o.metodo_pago.map((m) => nombreMetodoPago(m.metodo, m.detalle)).join(' + ')) : null}
           {fila('Almacén destino', o.clase === 'servicio' ? '—' : 'Almacén General')}
           {fila('Fecha solicitud', fechaHoraVE(o.creado_en))}
           {o.aprobada_en ? fila('Aprobada', fechaHoraVE(o.aprobada_en)) : null}
