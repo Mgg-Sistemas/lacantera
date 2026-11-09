@@ -49,7 +49,9 @@ union all select 'rol_permisos_por_defecto', to_jsonb(d) from public.rol_permiso
 -- ---------------------------------------------------------------------------
 -- 1. Todo usuario activo ve el panel (y con él, pide)
 -- ---------------------------------------------------------------------------
-create or replace function private.tiene_permiso(p_modulo text, p_nivel text)
+-- Con el mismo `default 'LECTURA'` que ya tenía: `create or replace` no deja
+-- quitarlo (42P13).
+create or replace function private.tiene_permiso(p_modulo text, p_nivel text default 'LECTURA')
 returns boolean
 language sql
 stable
