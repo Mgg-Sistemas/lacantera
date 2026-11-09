@@ -546,11 +546,25 @@ export async function armarOrdenCompraPdf(o: Orden, empresa: EmpresaPapel, d: Da
       `${fechaCortaVE(o.pago_fecha) ?? ''} · ${money2(o.pago_monto_usd)}${o.pago_referencia ? ` · ref. ${o.pago_referencia}` : ''}`,
     ])
   }
+  /*
+    LAS FIRMAS NUNCA SOLAS EN UNA HOJA (la dueña, 09/11/2026: «el OC PDF tiene
+    una hoja vacía solo para las firmas»). Antes se preguntaba si cabía el pago
+    y, después, si cabían las firmas: el pago llenaba la primera hoja y las
+    firmas caían solas en la segunda. Ahora se mide el final entero —pago,
+    notas y firmas— y, si no cabe, baja junto a la hoja siguiente.
+  */
+  const nota = (o.notas ?? '').trim()
+  doc.setFont('helvetica', 'normal').setFontSize(9)
+  const lineasDeNota = nota ? (doc.splitTextToSize(nota, 150) as string[]).length : 0
+  const altoPago = filasPago.length ? 12 + filasPago.length * 5.6 : 0
+  const altoNotas = nota ? 12 + lineasDeNota * 4.6 + 6 : 0
+  const ALTO_FIRMAS = 26
+  if (altoPago + altoNotas > 0 && y + altoPago + altoNotas + ALTO_FIRMAS > 262) {
+    doc.addPage()
+    y = 30
+  }
+
   if (filasPago.length) {
-    if (y + 30 > 265) {
-      doc.addPage()
-      y = 30
-    }
     y = seccion(doc, y, 'Pago')
     y = etiquetaValor(doc, y, filasPago, { columnas: 1 })
   }
