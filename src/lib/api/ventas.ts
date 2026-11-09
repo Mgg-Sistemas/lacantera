@@ -887,7 +887,7 @@ export function useSolicitudesDespacho() {
   })
 }
 
-/** Si quien mira tiene la casilla de aprobar despachos (propia o prestada, y no restringida). */
+/** Si quien mira tiene la casilla de aprobar despachos en la matriz de su rol. */
 export function usePuedoAprobarDespachos() {
   return useQuery({
     queryKey: ['mis-acciones', 'aprobar-despachos'],

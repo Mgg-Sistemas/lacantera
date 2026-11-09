@@ -4,11 +4,11 @@
   Es el espejo de la base (migración «los camiones los gobierna Maquinaria»,
   16/09/2026). Si la pantalla dejara ver un botón que la base rechaza, el botón
   mentiría; si escondiera uno que la base acepta, quien tiene la casilla
-  prestada no encontraría cómo usarla. Por eso va aquí y no repetido en la
+  no encontraría cómo usarla. Por eso va aquí y no repetido en la
   pantalla de Equipos, en la ficha del camión y en su formulario.
 
   - Editar y dar de alta: Maquinaria en escritura, Despachos en escritura o la
-    casilla DESPACHOS.EDITAR_VEHICULO (también prestada).
+    casilla DESPACHOS.EDITAR_VEHICULO.
   - De quién es, lo que le cabe y su ficha de mantenimiento, en un camión que
     ya existe: solo Despachos en escritura o esa casilla. Deciden a quién se le
     pagan los viajes.
