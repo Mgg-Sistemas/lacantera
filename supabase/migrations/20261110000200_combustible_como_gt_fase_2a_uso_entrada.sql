@@ -915,7 +915,10 @@ begin
   if v_mov.id is null then
     raise exception 'Ese movimiento no existe.' using errcode = 'P0002';
   end if;
-  if not exists (select 1 from public.almacenes a where a.id = v_mov.almacen_id and a.tipo = 'COMBUSTIBLE') then
+  -- Solo lo de un tanque y de un combustible: el resto del libro de inventario
+  -- se deshace desde Inventario, con sus permisos.
+  if not exists (select 1 from public.almacenes a where a.id = v_mov.almacen_id and a.tipo = 'COMBUSTIBLE')
+     or not exists (select 1 from public.articulos ar where ar.id = v_mov.articulo_id and ar.categoria = 'COMBUSTIBLE') then
     raise exception 'El movimiento % no es de un tanque de combustible.', v_mov.numero using errcode = '22023';
   end if;
   if v_mov.tipo = 'REVERSO' then
@@ -933,9 +936,11 @@ begin
     return 1;
   end if;
 
+  -- Un uso sin vale no nace en Combustible (el surtido, también a un bidón,
+  -- siempre deja vale): no se anula desde aquí.
   v_accion := case
     when v_mov.tipo in ('ENTRADA_DIRECTA', 'ENTRADA_DEVOLUCION') then 'COMBUSTIBLE.ENTRADA'
-    when v_mov.tipo in ('TRANSFERENCIA_SALIDA', 'TRANSFERENCIA_ENTRADA', 'SALIDA_CONSUMO') then 'COMBUSTIBLE.TRASLADO'
+    when v_mov.tipo in ('TRANSFERENCIA_SALIDA', 'TRANSFERENCIA_ENTRADA') then 'COMBUSTIBLE.TRASLADO'
     when v_mov.tipo = 'SALIDA_MERMA' then
       case when exists (select 1 from public.combustible_mov_datos md
                          where md.movimiento_id = v_mov.id and md.merma_de_mov_id is not null)
@@ -979,6 +984,13 @@ begin
   end if;
   if v_par.id is not null and private.combustible_anulado(v_par.id) then
     raise exception 'La otra mitad del traslado (%) ya estaba anulada.', v_par.numero using errcode = '55000';
+  end if;
+  -- Si la otra pata está en un almacén que no es tanque (el «Pasar al tanque»
+  -- desde el almacén general), anularla devuelve material a ese almacén: eso
+  -- pide además lo que pide `transferir_existencia`.
+  if v_par.id is not null
+     and not exists (select 1 from public.almacenes a where a.id = v_par.almacen_id and a.tipo = 'COMBUSTIBLE') then
+    perform private.exigir_rol('ALMACEN');
   end if;
 
   -- El orden: primero las mermas que cuelgan de esto, después lo demás.

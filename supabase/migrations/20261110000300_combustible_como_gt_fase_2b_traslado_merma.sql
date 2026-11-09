@@ -53,9 +53,11 @@ as $$
   select case
     when m.tipo in ('ENTRADA_DIRECTA', 'ENTRADA_DEVOLUCION') then 'COMBUSTIBLE.ENTRADA'
     when m.tipo in ('TRANSFERENCIA_SALIDA', 'TRANSFERENCIA_ENTRADA') then 'COMBUSTIBLE.TRASLADO'
+    -- Un uso sin vale no nace en Combustible: el surtido, también a un bidón,
+    -- siempre deja vale.
     when m.tipo = 'SALIDA_CONSUMO' then
       case when exists (select 1 from public.despachos_combustible d where d.movimiento_id = m.id)
-           then 'COMBUSTIBLE.DESPACHAR' else 'COMBUSTIBLE.TRASLADO' end
+           then 'COMBUSTIBLE.DESPACHAR' end
     when m.tipo = 'SALIDA_MERMA' then
       case
         when md.merma_de_mov_id is null then 'COMBUSTIBLE.MERMA'
@@ -64,6 +66,8 @@ as $$
       end
   end
     from public.inventario_movimientos m
+    join public.almacenes a   on a.id = m.almacen_id and a.tipo = 'COMBUSTIBLE'
+    join public.articulos ar  on ar.id = m.articulo_id and ar.categoria = 'COMBUSTIBLE'
     left join public.combustible_mov_datos md on md.movimiento_id = m.id
     left join public.inventario_movimientos o on o.id = md.merma_de_mov_id
    where m.id = p_mov;
@@ -76,21 +80,26 @@ $$;
 /*
   EL TRASLADO DE GOLDEN TOUCH CON LAS REJAS DE `transferir_existencia`.
 
-  · El destino es un tanque. El origen, un tanque o cualquier almacén con
-    gasoil: es también el «Pasar al tanque».
+  · El destino es un tanque activo. El origen, un tanque o un almacén activo
+    con gasoil: es también el «Pasar al tanque». Sacar de un almacén que no es
+    tanque pide además lo que pide `transferir_existencia` (el rol de almacén,
+    o INVENTARIO:ESCRITURA), y solo se mueve un artículo de combustible.
   · Sale al costo promedio del origen y entra a ese costo: no cambia lo que hay
     en total, cambia dónde está.
   · La reja del tanque sin costo, tal cual (07/09/2026): de un sitio sin costo
     no se pasa a uno con costo, ni al revés.
   · El dueño viaja con el material: si no se dice de quién, se mira el origen.
   · A un BIDÓN no es traslado: es un uso del tanque de origen, en el momento
-    (Golden Touch, 23/10/2026). El bidón no acumula saldo.
+    (Golden Touch, 23/10/2026). El bidón no acumula saldo. Y como es un uso,
+    sale con VALE por `private.despachar_combustible_nucleo`, con sus reglas:
+    para qué (`p_motivo_vale`), quién recibió y el destino (el bidón). Así un
+    bidón no es un atajo para sacar combustible sin vale.
   · Si se anota lo que llegó, la diferencia queda como merma del destino,
     ligada al traslado. Si pasa el margen del destino: motivo y
     COMBUSTIBLE.MERMA_FUERA_DE_MARGEN.
   · El contador es el del surtidor del tanque de ORIGEN.
 
-  Devuelve {salida_id, entrada_id, merma_movimiento_id, bidon}.
+  Devuelve {salida_id, entrada_id, merma_movimiento_id, bidon, despacho_id, numero}.
 */
 create or replace function public.combustible_trasladar(
   p_origen_id bigint,
@@ -108,13 +117,20 @@ create or replace function public.combustible_trasladar(
   p_cuaderno boolean default false,
   p_cuaderno_litros numeric default null,
   p_articulo_id bigint default null,
-  p_propietario text default null)
+  p_propietario text default null,
+  p_motivo_vale text default null,
+  p_motivo_detalle text default null,
+  p_empleado_id bigint default null,
+  p_recibio_nombre text default null,
+  p_recibio_cedula text default null)
 returns jsonb
 language plpgsql
 security definer
 set search_path = ''
 as $$
 declare
+  v_vale    bigint;
+  v_d       public.despachos_combustible;
   v_origen  public.almacenes;
   v_destino public.almacenes;
   v_art     public.articulos;
@@ -140,6 +156,14 @@ begin
   select * into v_origen from public.almacenes where id = p_origen_id;
   if v_origen.id is null then
     raise exception 'No existe el almacén de origen %.', p_origen_id using errcode = 'P0002';
+  end if;
+  if not v_origen.activo then
+    raise exception 'El almacén «%» está desactivado: de ahí no sale nada.', v_origen.nombre using errcode = '22023';
+  end if;
+  -- Sacar de un almacén que no es tanque es mover inventario: pide lo mismo
+  -- que `transferir_existencia`.
+  if v_origen.tipo <> 'COMBUSTIBLE' then
+    perform private.exigir_rol('ALMACEN');
   end if;
   v_destino := private.combustible_tanque(p_destino_id);
 
@@ -236,25 +260,32 @@ begin
       v_nota := v_obs;
     end if;
 
-    v_salida := private.registrar_movimiento(
-      p_tipo => 'SALIDA_CONSUMO', p_signo => (-1)::smallint,
-      p_almacen => p_origen_id, p_articulo => v_art.id,
-      p_cantidad => p_litros, p_costo_usd => v_costo,
-      p_nota => format('Combustible · %s · %s', v_destino.nombre, v_nota),
-      p_fecha => v_fecha, p_propietario => v_dueno);
+    -- Un uso con vale: las reglas del surtido (para qué, quién recibió, el
+    -- tanque de origen, el saldo) las pone el núcleo del vale.
+    v_vale := private.despachar_combustible_nucleo(
+      v_art.id, p_origen_id, p_litros, p_motivo_vale, p_motivo_detalle,
+      null, v_destino.nombre, null, p_empleado_id, p_recibio_nombre, p_recibio_cedula,
+      v_fecha, v_nota, v_dueno, null);
+
+    if p_hora is not null then
+      update public.despachos_combustible set hora = p_hora where id = v_vale;
+    end if;
+    select * into v_d from public.despachos_combustible where id = v_vale;
+    v_salida := v_d.movimiento_id;
 
     insert into public.combustible_mov_datos
-      (movimiento_id, hora, equipo, autorizado, ubicacion, observacion, contador_ini, contador_fin,
+      (movimiento_id, hora, despacho_id, equipo, autorizado, ubicacion, observacion, contador_ini, contador_fin,
        destino_almacen_id, cuaderno, cuaderno_litros)
     values
-      (v_salida, v_hora, v_destino.nombre,
+      (v_salida, v_d.hora, v_vale, v_destino.nombre,
        nullif(btrim(coalesce(p_autorizado, '')), ''), nullif(btrim(coalesce(p_ubicacion, '')), ''),
        v_nota, v_ci, v_cf, p_destino_id,
        coalesce(p_cuaderno, false),
        case when coalesce(p_cuaderno, false) then coalesce(p_cuaderno_litros, p_litros) end);
 
     return jsonb_build_object('salida_id', v_salida, 'entrada_id', null,
-                              'merma_movimiento_id', null, 'bidon', true);
+                              'merma_movimiento_id', null, 'bidon', true,
+                              'despacho_id', v_vale, 'numero', v_d.numero);
   end if;
 
   v_nota := coalesce(v_obs, format('De %s a %s', v_origen.nombre, v_destino.nombre));
@@ -296,7 +327,8 @@ begin
   end if;
 
   return jsonb_build_object('salida_id', v_salida, 'entrada_id', v_entrada,
-                            'merma_movimiento_id', v_mmov, 'bidon', false);
+                            'merma_movimiento_id', v_mmov, 'bidon', false,
+                            'despacho_id', null, 'numero', null);
 end;
 $$;
 
@@ -562,9 +594,11 @@ begin
     raise exception 'La corrección no se entiende.' using errcode = '22023';
   end if;
 
+  -- Solo lo de un tanque y de un combustible.
   select m.* into v_mov
     from public.inventario_movimientos m
-    join public.almacenes a on a.id = m.almacen_id and a.tipo = 'COMBUSTIBLE'
+    join public.almacenes a  on a.id = m.almacen_id and a.tipo = 'COMBUSTIBLE'
+    join public.articulos ar on ar.id = m.articulo_id and ar.categoria = 'COMBUSTIBLE'
    where m.id = p_movimiento_id;
   if v_mov.id is null then
     raise exception 'Ese movimiento no es de un tanque de combustible.' using errcode = 'P0002';
@@ -672,6 +706,11 @@ begin
       v_mov.numero, v_mov.tipo using errcode = '55000';
   end if;
   perform private.exigir_accion(v_accion);
+  -- La otra pata en un almacén que no es tanque: tocarla es mover inventario.
+  if v_par.id is not null
+     and not exists (select 1 from public.almacenes a where a.id = v_par.almacen_id and a.tipo = 'COMBUSTIBLE') then
+    perform private.exigir_rol('ALMACEN');
+  end if;
 
   -- ── 2. Cambia lo que el libro mide ──────────────────────────────────────
   v_litros  := coalesce((d ->> 'litros')::numeric, v_mov.cantidad);
@@ -729,7 +768,7 @@ begin
         case when d ? 'ubicacion' then d ->> 'ubicacion' else v_md.ubicacion end,
         v_mov.articulo_id);
 
-    elsif v_mov.tipo in ('TRANSFERENCIA_SALIDA', 'SALIDA_CONSUMO') then
+    elsif v_mov.tipo = 'TRANSFERENCIA_SALIDA' then
       if v_destino is null then
         raise exception 'Para corregir este movimiento hay que decir a qué tanque va.' using errcode = '22023';
       end if;
@@ -807,7 +846,7 @@ begin
   end loop;
 
   foreach f in array array[
-    'public.combustible_trasladar(bigint, bigint, numeric, text, date, time, text, text, numeric, numeric, numeric, text, boolean, numeric, bigint, text)',
+    'public.combustible_trasladar(bigint, bigint, numeric, text, date, time, text, text, numeric, numeric, numeric, text, boolean, numeric, bigint, text, text, text, bigint, text, text)',
     'public.combustible_registrar_merma(bigint, numeric, text, date, time, text, text, bigint)',
     'public.combustible_registrar_retorno(bigint, numeric, text, bigint, text, date, time, text, text, bigint)',
     'public.combustible_marcar_cuaderno(bigint, boolean, numeric)',
