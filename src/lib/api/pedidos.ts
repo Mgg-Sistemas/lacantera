@@ -172,6 +172,11 @@ export interface Orden {
   oc_creada_en: string | null
   oc_aprobada_por_nombre: string | null
   oc_aprobada_en: string | null
+  /** «¿Se pagará esta OC?» → No, al aprobar (09/11/2026). */
+  no_pago_motivo?: MotivoNoPago | null
+  no_pago_detalle?: string | null
+  no_pago_por_nombre?: string | null
+  no_pago_en?: string | null
   condiciones_pago: string | null
   modalidad_pago: 'usd' | 'bs' | null
   // La OC (fase 2).
@@ -911,6 +916,22 @@ export function useAprobarOc() {
     mutationFn: (ids: number[]) =>
       rpc<Array<{ id: number; codigo: string; oc_codigo: string | null; estado: EstadoOrden }>>('compras_aprobar_oc', {
         p_ids: ids,
+      }),
+    onSuccess: invalidar,
+  })
+}
+
+export type MotivoNoPago = 'sin_fondos' | 'esperando_jefe' | 'no_procede' | 'otro'
+
+/** «¿Se pagará esta OC?» → No: la OC sigue por aprobar, con su motivo (MGG). */
+export function useNoSePagara() {
+  const invalidar = useInvalidar()
+  return useMutation({
+    mutationFn: (d: { id: number; motivo: MotivoNoPago; detalle: string | null }) =>
+      rpc<{ id: number; oc_codigo: string | null; motivo: MotivoNoPago; texto: string }>('compras_no_se_pagara', {
+        p_id: d.id,
+        p_motivo: d.motivo,
+        p_detalle: d.detalle,
       }),
     onSuccess: invalidar,
   })
