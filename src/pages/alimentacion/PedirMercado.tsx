@@ -29,9 +29,10 @@ import { cn } from '@/lib/cn'
 
   - Lo que sale de aquí es la Solicitud de Mercado de «Pedidos / Compras»
     (SP-…, urgente; antes de la fase 5b era un SOL- del flujo anterior) y
-    sigue su circuito —aprobar, cotizar, pagar, recibir en el almacén
-    general—. Esta pantalla no inventa un flujo; solo ahorra el tecleo de
-    armarlo.
+    sigue su circuito —revisión del almacén general (09/11/2026: confirma
+    qué tiene, como en cualquier SP), aprobar lo que falta, cotizar, pagar,
+    recibir en el almacén general—. Esta pantalla no inventa un flujo; solo
+    ahorra el tecleo de armarlo.
 */
 
 interface Marcado {
@@ -186,9 +187,10 @@ export function PedirMercado({ onCerrar }: { onCerrar: () => void }) {
         acciones={<Button onClick={onCerrar}>Listo</Button>}
       >
         <p className="text-ink/70 text-sm">
-          Salió como la Solicitud de Mercado <span className="text-ink/90 font-mono">{acuse}</span>, urgente. De
-          aquí en adelante va por Pedidos / Compras: la aprueban, la cotizan, la pagan y, cuando llegue, el almacén
-          general la recibe e ingresa los víveres al inventario.
+          Salió como la Solicitud de Mercado <span className="text-ink/90 font-mono">{acuse}</span>, urgente. Primero
+          la revisa el almacén general: lo que tenga en stock lo entrega de ahí. Lo que falte va por Pedidos / Compras:
+          lo aprueban, lo cotizan, lo pagan y, cuando llegue, el almacén general lo recibe e ingresa los víveres al
+          inventario.
         </p>
       </Modal>
     )

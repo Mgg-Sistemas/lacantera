@@ -19,6 +19,7 @@ import {
 import {
   ETIQUETA_ALMACEN,
   coincide,
+  esMercado,
   estadoRevision,
   fechaHoraVE,
   relTime,
@@ -217,6 +218,7 @@ export function SolicitudesAlmacenPage() {
                     <div className="flex items-center gap-2">
                       <strong className="font-mono">{o.codigo}</strong>
                       <span className="ml-auto flex items-center gap-1.5">
+                        {esMercado(o) ? <Chip tone="neutral">🛒 Mercado</Chip> : null}
                         {o.urgente ? <Chip tone="danger">🚨 Urgente</Chip> : null}
                         <span className="text-ink/45 text-xs">{relTime(o.creado_en)}</span>
                       </span>
