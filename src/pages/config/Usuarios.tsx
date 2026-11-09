@@ -6,7 +6,6 @@ import {
   KeyRound,
   Plus,
   ShieldCheck,
-  Trash2,
   UserCheck,
   UserPlus,
   UserX,
@@ -30,6 +29,11 @@ import { useMisRoles } from '@/lib/api/catalogo'
 import { esModuloEnObra, PANTALLAS_DE_TELEFONO } from '@/config/navigation'
 import { UsuariosAutorizados } from '@/pages/config/UsuariosAutorizados'
 import {
+  ConfirmarEliminarRol,
+  GestionarRolesModal,
+  NuevoRolModal,
+} from '@/pages/config/RolesModales'
+import {
   alcanza,
   nivelAlMarcar,
   useActivarUsuario,
@@ -38,7 +42,6 @@ import {
   useMisAcciones,
   useAsignarRol,
   useCambiarClave,
-  useCrearRol,
   useCrearUsuario,
   useEliminarRol,
   useGuardarPerfil,
@@ -67,11 +70,20 @@ import type {
 // Matriz de un rol
 // ---------------------------------------------------------------------------
 
-const COLUMNAS: { nivel: Nivel; etiqueta: string }[] = [
+const COLUMNAS: { nivel: Nivel; etiqueta: string; dice?: string }[] = [
   { nivel: 'LECTURA', etiqueta: 'Lectura' },
   { nivel: 'ESCRITURA', etiqueta: 'Escritura' },
-  { nivel: 'TOTAL', etiqueta: 'Control total' },
+  { nivel: 'TOTAL', etiqueta: 'Control total', dice: 'Implica lectura y escritura' },
 ]
+
+/** El emoji de cada pantalla de teléfono, como se leen en MGG. */
+const EMOJI_DE_PANTALLA: Record<string, string> = {
+  'COMBUSTIBLE.SURTIDOR_TELEFONO': '⛽',
+  'ALIMENTACION.COCINA_TELEFONO': '🍳',
+  'INVENTARIO.ALMACEN_TELEFONO': '📦',
+  'COMPRAS.TELEFONO': '🛒',
+  'INVENTARIO.SOLICITUDES_TELEFONO': '📋',
+}
 
 function Casilla({
   marcada,
@@ -99,6 +111,7 @@ function Casilla({
 function TarjetaRol({
   rol,
   usuarios,
+  borrable,
   incluye,
   niveles,
   marcadas,
@@ -114,6 +127,8 @@ function TarjetaRol({
 }: {
   rol: RolSistema
   usuarios: number
+  /** Como en MGG: se elimina solo un rol propio que nadie tiene asignado. */
+  borrable: boolean
   /** Los nombres de los roles a los que equivale (un rol que junta varios). */
   incluye: string[]
   niveles: Map<string, Nivel>
@@ -277,14 +292,17 @@ function TarjetaRol({
               <Button variant="ghost" size="sm" onClick={onEditar}>
                 Editar
               </Button>
-              {!rol.sistema ? (
+              {!rol.sistema && borrable ? (
                 <Button
                   variant="ghost"
                   size="sm"
+                  className="text-danger"
                   onClick={onBorrar}
-                  icon={<Trash2 />}
-                  aria-label={`Borrar el rol ${rol.nombre}`}
-                />
+                  title="Eliminar este rol"
+                  aria-label={`Eliminar el rol ${rol.nombre}`}
+                >
+                  🗑 Eliminar
+                </Button>
               ) : null}
             </div>
           ) : null}
@@ -305,6 +323,7 @@ function TarjetaRol({
               {COLUMNAS.map((c) => (
                 <th
                   key={c.nivel}
+                  title={c.dice}
                   className="px-2 py-2.5 text-center font-medium tracking-wider uppercase"
                 >
                   {c.etiqueta}
@@ -522,7 +541,11 @@ function TarjetaRol({
                     />
                     <span className="min-w-0">
                       <span className="text-ink/85 flex items-center gap-1.5 text-sm">
-                        <p.icon className="size-3.5" />
+                        {EMOJI_DE_PANTALLA[p.accion] ? (
+                          <span aria-hidden="true">{EMOJI_DE_PANTALLA[p.accion]}</span>
+                        ) : (
+                          <p.icon className="size-3.5" />
+                        )}
                         {p.label}
                       </span>
                       {sinModulo ? (
@@ -544,7 +567,7 @@ function TarjetaRol({
                 className="accent-royal-600 mt-0.5 size-4 shrink-0 cursor-pointer disabled:cursor-not-allowed"
               />
               <span>
-                <span className="text-ink/85 block text-sm">Solo teléfono</span>
+                <span className="text-ink/85 block text-sm font-medium">Solo teléfono</span>
                 <span className="text-ink/50 block text-xs">
                   Entra directo a sus pantallas de teléfono y no ve las de escritorio.
                 </span>
@@ -627,7 +650,6 @@ function PestanaRoles({ editable }: { editable: boolean }) {
   const accionesDeRoles = useAccionesDeLosRoles()
   const rolIncluye = useRolIncluye()
   const marcarAccion = useMarcarAccion()
-  const crearRol = useCrearRol()
   const guardarRol = useGuardarRol()
   const eliminarRol = useEliminarRol()
   const restablecer = useRestablecerRol()
@@ -635,8 +657,9 @@ function PestanaRoles({ editable }: { editable: boolean }) {
   const [buscar, setBuscar] = useState('')
   const [borrando, setBorrando] = useState<RolSistema | null>(null)
   const [gestionando, setGestionando] = useState(false)
+  const [creando, setCreando] = useState(false)
 
-  const [edicion, setEdicion] = useState<(typeof rolVacio & { nuevo: boolean }) | null>(null)
+  const [edicion, setEdicion] = useState<typeof rolVacio | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [verMatices, setVerMatices] = useState(false)
 
@@ -697,10 +720,15 @@ function PestanaRoles({ editable }: { editable: boolean }) {
     incluyePorRol.set(ri.rol, lista)
   }
 
+  // Los activos, para decirlo en la tarjeta; todos, para saber si se puede
+  // borrar (la base no deja borrar un rol que alguien tiene, activo o no).
   const cuentaPorRol = new Map<string, number>()
+  const asignadosPorRol = new Map<string, number>()
   for (const u of usuarios.data ?? []) {
-    if (!u.activo) continue
-    for (const r of u.roles) cuentaPorRol.set(r, (cuentaPorRol.get(r) ?? 0) + 1)
+    for (const r of u.roles) {
+      asignadosPorRol.set(r, (asignadosPorRol.get(r) ?? 0) + 1)
+      if (u.activo) cuentaPorRol.set(r, (cuentaPorRol.get(r) ?? 0) + 1)
+    }
   }
 
   /*
@@ -730,14 +758,12 @@ function PestanaRoles({ editable }: { editable: boolean }) {
       a_la_medida: r.a_la_medida,
       color: r.color,
       solo_telefono: r.solo_telefono,
-      nuevo: false,
     })
 
   const guardar = () => {
     if (!edicion) return
     setError(null)
-    const accion = edicion.nuevo ? crearRol : guardarRol
-    accion.mutate(edicion, {
+    guardarRol.mutate(edicion, {
       onSuccess: () => setEdicion(null),
       onError: (e: Error) => setError(e.message),
     })
@@ -752,9 +778,10 @@ function PestanaRoles({ editable }: { editable: boolean }) {
             firmas solo importa a quien se pregunta por que no las ve, y ese lo
             abre. */}
         <div className="max-w-2xl">
-          <p className="text-ink/55 text-sm">
-            Cada rol decide <strong className="text-ink/75 font-medium">a qué llega</strong> y{' '}
-            <strong className="text-ink/75 font-medium">qué puede hacer</strong> ahí.
+          <h2 className="text-ink/90 text-base font-semibold">🛡 Roles y permisos</h2>
+          <p className="text-ink/55 mt-1 text-sm">
+            Defina qué puede hacer cada rol en cada módulo. Puede crear roles nuevos y eliminar los
+            que no tengan usuarios asignados.
           </p>
           <button
             type="button"
@@ -779,7 +806,7 @@ function PestanaRoles({ editable }: { editable: boolean }) {
             <Button variant="outline" onClick={() => setGestionando(true)}>
               ⚙ Gestionar
             </Button>
-            <Button icon={<Plus />} onClick={() => setEdicion({ ...rolVacio, nuevo: true })}>
+            <Button icon={<Plus />} onClick={() => setCreando(true)}>
               Nuevo rol
             </Button>
           </div>
@@ -790,12 +817,12 @@ function PestanaRoles({ editable }: { editable: boolean }) {
       <UsuariosAutorizados editable={editable} />
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <div className="min-w-[220px] flex-1">
+        <div className="min-w-[220px] flex-1 sm:max-w-sm">
           <Input
             label="Buscar rol"
             value={buscar}
             onChange={(e) => setBuscar(e.target.value)}
-            placeholder="Por nombre o descripción…"
+            placeholder="🔍 Por nombre o descripción…"
           />
         </div>
         <span className="text-ink/50 mt-5 text-xs">
@@ -818,6 +845,7 @@ function PestanaRoles({ editable }: { editable: boolean }) {
             key={r.codigo}
             rol={r}
             usuarios={cuentaPorRol.get(r.codigo) ?? 0}
+            borrable={(asignadosPorRol.get(r.codigo) ?? 0) === 0}
             incluye={incluyePorRol.get(r.codigo) ?? []}
             niveles={nivelesPorRol.get(r.codigo) ?? new Map()}
             marcadas={marcadasPorRol.get(r.codigo) ?? new Set()}
@@ -870,134 +898,36 @@ function PestanaRoles({ editable }: { editable: boolean }) {
         </div>
       ) : null}
 
-      <Modal
-        abierto={borrando !== null}
+      <ConfirmarEliminarRol
+        rol={borrando}
         onCerrar={() => setBorrando(null)}
-        titulo="Eliminar rol"
-        acciones={
-          <>
-            <Button variant="ghost" onClick={() => setBorrando(null)}>
-              Cancelar
-            </Button>
-            <Button
-              variant="danger"
-              disabled={eliminarRol.isPending}
-              onClick={() =>
-                borrando &&
-                eliminarRol.mutate(borrando.codigo, {
-                  onSuccess: () => setBorrando(null),
-                  onError: (e: Error) => {
-                    setBorrando(null)
-                    setError(e.message)
-                  },
-                })
-              }
-            >
-              Eliminar
-            </Button>
-          </>
+        pendiente={eliminarRol.isPending}
+        onConfirmar={(r) =>
+          eliminarRol.mutate(r.codigo, {
+            onSuccess: () => setBorrando(null),
+            onError: (e: Error) => {
+              setBorrando(null)
+              setError(e.message)
+            },
+          })
         }
-      >
-        <p className="text-ink/70 text-sm">
-          Se eliminará el rol «{borrando?.nombre}». Esto borra también sus permisos. ¿Continuar?
-        </p>
-      </Modal>
+      />
 
-      <Modal
-        abierto={gestionando}
-        onCerrar={() => setGestionando(false)}
-        titulo="Gestión de roles"
-        descripcion="Corrija el nombre, la descripción o el color. Los roles del sistema no se eliminan, pero sí se renombran."
-        ancho="lg"
-        acciones={
-          <Button variant="ghost" onClick={() => setGestionando(false)}>
-            Cerrar
-          </Button>
-        }
-      >
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[480px] text-sm">
-            <thead>
-              <tr className="text-ink/45 border-hairline border-b text-left text-2xs">
-                <th className="py-2 pr-2 font-medium tracking-wider uppercase">Rol</th>
-                <th className="px-2 py-2 font-medium tracking-wider uppercase">Usuarios</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {[...todos]
-                .sort((a, b) =>
-                  a.sistema === b.sistema ? a.nombre.localeCompare(b.nombre) : a.sistema ? -1 : 1,
-                )
-                .map((r) => {
-                  const usos = cuentaPorRol.get(r.codigo) ?? 0
-                  return (
-                    <tr key={r.codigo} className="border-hairline border-b last:border-0">
-                      <td className="py-2 pr-2">
-                        <span className="flex items-center gap-2">
-                          <span
-                            className="size-2.5 shrink-0 rounded-full"
-                            style={{ backgroundColor: r.color }}
-                          />
-                          <span className="text-ink/85 font-medium">{r.nombre}</span>
-                          <span className="text-ink/40 font-mono text-2xs">{r.codigo}</span>
-                          {r.sistema ? <Chip tone="neutral">Sistema</Chip> : null}
-                          {r.solo_telefono ? <Chip tone="warning">Solo teléfono</Chip> : null}
-                        </span>
-                      </td>
-                      <td className="text-ink/60 px-2 py-2 text-xs">
-                        {usos ? `${usos} usuario${usos === 1 ? '' : 's'}` : '—'}
-                      </td>
-                      <td className="py-2 text-right whitespace-nowrap">
-                        {r.codigo !== 'ADMIN' ? (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              setGestionando(false)
-                              editar(r)
-                            }}
-                          >
-                            ✎ Editar
-                          </Button>
-                        ) : null}
-                        {!r.sistema && usos === 0 ? (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-danger"
-                            icon={<Trash2 />}
-                            aria-label={`Eliminar el rol ${r.nombre}`}
-                            onClick={() => {
-                              setGestionando(false)
-                              setBorrando(r)
-                            }}
-                          />
-                        ) : null}
-                      </td>
-                    </tr>
-                  )
-                })}
-            </tbody>
-          </table>
-        </div>
-      </Modal>
+      <GestionarRolesModal abierto={gestionando} onCerrar={() => setGestionando(false)} />
+
+      <NuevoRolModal abierto={creando} onCerrar={() => setCreando(false)} />
 
       <Modal
         abierto={edicion !== null}
         onCerrar={() => setEdicion(null)}
-        titulo={edicion?.nuevo ? 'Nuevo rol' : 'Editar rol'}
-        descripcion={
-          edicion?.nuevo
-            ? 'Nace sin acceso a nada. Se le abre después, módulo por módulo.'
-            : 'El código no cambia.'
-        }
+        titulo="Editar rol"
+        descripcion="La clave no cambia."
         acciones={
           <>
             <Button variant="ghost" onClick={() => setEdicion(null)}>
               Cancelar
             </Button>
-            <Button onClick={guardar} disabled={crearRol.isPending || guardarRol.isPending}>
+            <Button onClick={guardar} disabled={guardarRol.isPending}>
               Guardar
             </Button>
           </>
@@ -1005,20 +935,7 @@ function PestanaRoles({ editable }: { editable: boolean }) {
       >
         {edicion ? (
           <div className="space-y-4">
-            <Input
-              label="Código"
-              value={edicion.codigo}
-              disabled={!edicion.nuevo}
-              maxLength={40}
-              onChange={(e) =>
-                cambiarRol({
-                  // Lo que admite la base: ^[A-Z][A-Z0-9_]{2,}$ (08/11/2026).
-                  codigo: e.target.value.toUpperCase().replace(/\s/g, '_').replace(/[^A-Z0-9_]/g, ''),
-                })
-              }
-              hint="Mayúsculas y guion bajo. Es el nombre interno y no se puede cambiar después."
-              placeholder="SUPERVISOR_PATIO"
-            />
+            <Input label="Clave" value={edicion.codigo} disabled />
             <Input
               label="Nombre"
               maxLength={60}
@@ -1061,92 +978,67 @@ function PestanaRoles({ editable }: { editable: boolean }) {
             </div>
 
             {/*
-              UN ROL NUEVO NACE POR MÓDULO ENTERO, Y NO SE PREGUNTA.
-
-              Christopher, 05/10/2026, con las dos tarjetas delante: «cuando
-              creo un nuevo rol se ve como el de la derecha, una lista
-              interminable de permisos; la idea es que se vea como el de la
-              izquierda, y después con los permisos extendidos o restringidos
-              se va cambiando».
-
-              El alta ofrecía elegir entre las dos clases, y «permiso por
-              permiso» sonaba a la opción cuidadosa — así nació AUDITOR, que es
-              la tarjeta de la derecha. Pero esa clase apaga la escalera del
-              módulo y obliga a decidir casilla por casilla desde cero, que es
-              justo lo que no se quiere al crear un rol.
-
-              Así que el alta ya no pregunta: se nace con niveles, que es como
-              funcionan los roles de la casa, y lo fino se ajusta en la misma
-              matriz, con sus acciones especiales (desde el 09/11/2026 no hay
-              permisos por persona: todo es del rol). La clase detallada sigue
-              existiendo para el caso raro, pero se elige al EDITAR, a sabiendas.
+              La clase del rol (por módulo entero o permiso por permiso) se
+              elige solo al EDITAR, a sabiendas: el alta («Nuevo rol», como en
+              MGG) nace siempre por niveles (Christopher, 05/10/2026).
             */}
-            {edicion.nuevo ? (
-              <p className="border-hairline text-ink/55 rounded-card border border-dashed p-3 text-xs leading-relaxed">
-                <span className="text-ink/75 font-medium">Nace con niveles por módulo:</span>{' '}
-                ninguno, lectura, escritura o control total, como los roles de siempre. Lo que su
-                nivel no abre se marca en sus{' '}
-                <span className="text-ink/75">⭐ Acciones especiales</span>.
-              </p>
-            ) : (
-              <div className="border-hairline rounded-card border p-3.5">
-                <span className="text-ink/70 mb-2 block text-sm font-medium">
-                  Cómo se le dan los permisos
+            <div className="border-hairline rounded-card border p-3.5">
+              <span className="text-ink/70 mb-2 block text-sm font-medium">
+                Cómo se le dan los permisos
+              </span>
+
+              <label className="flex cursor-pointer items-start gap-2.5">
+                <input
+                  type="radio"
+                  name="clase-de-rol"
+                  checked={!edicion.a_la_medida}
+                  onChange={() => cambiarRol({ a_la_medida: false })}
+                  className="accent-royal-600 mt-0.5 size-4 shrink-0 cursor-pointer"
+                />
+                <span className="min-w-0">
+                  <span className="text-ink/85 block text-sm">
+                    Por módulo entero
+                    <span className="text-ink/45 ml-1.5 text-xs">— lo normal</span>
+                  </span>
+                  <span className="text-ink/50 block text-xs leading-relaxed">
+                    Se le da un nivel en cada módulo: ninguno, lectura, escritura o total. Es
+                    como funcionan los roles de siempre.
+                  </span>
                 </span>
+              </label>
 
-                <label className="flex cursor-pointer items-start gap-2.5">
-                  <input
-                    type="radio"
-                    name="clase-de-rol"
-                    checked={!edicion.a_la_medida}
-                    onChange={() => cambiarRol({ a_la_medida: false })}
-                    className="accent-royal-600 mt-0.5 size-4 shrink-0 cursor-pointer"
-                  />
-                  <span className="min-w-0">
-                    <span className="text-ink/85 block text-sm">
-                      Por módulo entero
-                      <span className="text-ink/45 ml-1.5 text-xs">— lo normal</span>
-                    </span>
-                    <span className="text-ink/50 block text-xs leading-relaxed">
-                      Se le da un nivel en cada módulo: ninguno, lectura, escritura o total. Es
-                      como funcionan los roles de siempre.
-                    </span>
+              <label className="mt-3 flex cursor-pointer items-start gap-2.5">
+                <input
+                  type="radio"
+                  name="clase-de-rol"
+                  checked={edicion.a_la_medida}
+                  onChange={() => cambiarRol({ a_la_medida: true })}
+                  className="accent-royal-600 mt-0.5 size-4 shrink-0 cursor-pointer"
+                />
+                <span className="min-w-0">
+                  <span className="text-ink/85 block text-sm">
+                    Permiso por permiso
+                    <span className="text-ink/45 ml-1.5 text-xs">— para el caso raro</span>
                   </span>
-                </label>
-
-                <label className="mt-3 flex cursor-pointer items-start gap-2.5">
-                  <input
-                    type="radio"
-                    name="clase-de-rol"
-                    checked={edicion.a_la_medida}
-                    onChange={() => cambiarRol({ a_la_medida: true })}
-                    className="accent-royal-600 mt-0.5 size-4 shrink-0 cursor-pointer"
-                  />
-                  <span className="min-w-0">
-                    <span className="text-ink/85 block text-sm">
-                      Permiso por permiso
-                      <span className="text-ink/45 ml-1.5 text-xs">— para el caso raro</span>
-                    </span>
-                    <span className="text-ink/50 block text-xs leading-relaxed">
-                      Se marca una por una cada cosa que puede hacer, y la escalera del módulo
-                      deja de valer: lo que no esté marcado no lo hace por ningún camino. Para
-                      darle algo que su nivel no abre no hace falta esto: basta con sus acciones
-                      especiales.
-                    </span>
+                  <span className="text-ink/50 block text-xs leading-relaxed">
+                    Se marca una por una cada cosa que puede hacer, y la escalera del módulo
+                    deja de valer: lo que no esté marcado no lo hace por ningún camino. Para
+                    darle algo que su nivel no abre no hace falta esto: basta con sus acciones
+                    especiales.
                   </span>
-                </label>
+                </span>
+              </label>
 
-                {/* Cambiar de clase a un rol que ya lleva gente es lo que puede
-                    dejar a alguien sin su pantalla el lunes por la mañana. */}
-                {edicion.a_la_medida !== yaEra ? (
-                  <p className="text-warning mt-3 text-xs leading-relaxed">
-                    {edicion.a_la_medida
-                      ? 'Al detallarlo, en los módulos ya desglosados dejará de valer su nivel y solo valdrán las casillas que le marque. Empieza sin ninguna.'
-                      : 'Al devolverlo a módulo entero, sus casillas dejan de decidir y vuelve a mandar el nivel de cada módulo.'}
-                  </p>
-                ) : null}
-              </div>
-            )}
+              {/* Cambiar de clase a un rol que ya lleva gente es lo que puede
+                  dejar a alguien sin su pantalla el lunes por la mañana. */}
+              {edicion.a_la_medida !== yaEra ? (
+                <p className="text-warning mt-3 text-xs leading-relaxed">
+                  {edicion.a_la_medida
+                    ? 'Al detallarlo, en los módulos ya desglosados dejará de valer su nivel y solo valdrán las casillas que le marque. Empieza sin ninguna.'
+                    : 'Al devolverlo a módulo entero, sus casillas dejan de decidir y vuelve a mandar el nivel de cada módulo.'}
+                </p>
+              ) : null}
+            </div>
           </div>
         ) : null}
       </Modal>
@@ -1222,6 +1114,16 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
   } | null>(null)
   const [desarchivando, setDesarchivando] = useState<UsuarioSistema | null>(null)
 
+  // Buscar y filtrar por rol y estado, como en MGG.
+  const [buscar, setBuscar] = useState('')
+  const [filtroRol, setFiltroRol] = useState('')
+  const [filtroEstado, setFiltroEstado] = useState('')
+
+  // «+ Nuevo» y «⚙» al lado del rol, como en MGG: el rol se crea sin salir
+  // de la ficha y queda elegido.
+  const [creandoRol, setCreandoRol] = useState(false)
+  const [gestionandoRoles, setGestionandoRoles] = useState(false)
+
   // Igual que en la pestaña de roles: se actualiza a partir del valor vigente,
   // no del que tenía este render. Al teclear rápido, o al rellenar el
   // formulario de golpe, la forma con objeto pierde caracteres por el camino.
@@ -1291,7 +1193,25 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
 
   const enUso = (usuarios.data ?? []).filter((u) => u.archivado_en === null)
   const archivados = (usuarios.data ?? []).filter((u) => u.archivado_en !== null)
-  const lista = apartado === 'en_uso' ? enUso : archivados
+  const q = buscar.trim().toLowerCase()
+  const lista = (apartado === 'en_uso' ? enUso : archivados)
+    .filter((u) => !filtroRol || u.roles.includes(filtroRol))
+    .filter(
+      (u) =>
+        apartado !== 'en_uso' ||
+        !filtroEstado ||
+        (filtroEstado === 'activo' ? u.activo : !u.activo),
+    )
+    .filter(
+      (u) =>
+        !q ||
+        `${u.usuario} ${u.nombre} ${u.cedula ?? ''} ${u.roles.map(nombreDeRol).join(' ')}`
+          .toLowerCase()
+          .includes(q),
+    )
+  const colorDeRol = (codigo: string) =>
+    roles.data?.find((r) => r.codigo === codigo)?.color ?? '#64748b'
+  const rolElegido = edicion ? roles.data?.find((r) => r.codigo === edicion.rol) : undefined
 
   return (
     <>
@@ -1332,12 +1252,44 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
         ))}
       </div>
 
+      <div className="mb-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_220px_180px] sm:items-end">
+        <Input
+          label="Buscar"
+          value={buscar}
+          onChange={(e) => setBuscar(e.target.value)}
+          placeholder="🔍 Por usuario, nombre, cédula o rol…"
+        />
+        <SelectBuscable
+          label="Rol"
+          vacio="Todos los roles"
+          valor={filtroRol}
+          onCambio={setFiltroRol}
+          opciones={(roles.data ?? []).map((r) => ({ valor: r.codigo, etiqueta: r.nombre }))}
+        />
+        {apartado === 'en_uso' ? (
+          <SelectBuscable
+            label="Estado"
+            vacio="Todos los estados"
+            valor={filtroEstado}
+            onCambio={setFiltroEstado}
+            opciones={[
+              { valor: 'activo', etiqueta: 'Activos' },
+              { valor: 'inactivo', etiqueta: 'Inactivos' },
+            ]}
+          />
+        ) : null}
+      </div>
+
       {usuarios.data && usuarios.data.length === 0 ? (
         <Card>
           <Vacio
             icono={<UsersIcon />}
             titulo="Sin usuarios"
           />
+        </Card>
+      ) : (apartado === 'archivados' ? archivados : enUso).length > 0 && lista.length === 0 ? (
+        <Card>
+          <Vacio icono={<UsersIcon />} titulo="Ningún usuario coincide con el filtro" />
         </Card>
       ) : apartado === 'archivados' && archivados.length === 0 ? (
         <Card>
@@ -1428,6 +1380,11 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
                             <span className="text-ink/40">Sin rol</span>
                           ) : (
                             <Chip tone={u.roles[0] === 'ADMIN' ? 'safety' : 'neutral'}>
+                              <span
+                                className="mr-1.5 inline-block size-2 rounded-full align-middle"
+                                style={{ backgroundColor: colorDeRol(u.roles[0]) }}
+                                aria-hidden="true"
+                              />
                               {nombreDeRol(u.roles[0])}
                             </Chip>
                           )}
@@ -1633,36 +1590,62 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
             </div>
 
             {/* Un solo rol por usuario (la dueña, 09/11/2026): sus permisos son
-                la matriz de ese rol, en «Roles y permisos». */}
-            <fieldset>
-              <legend className="text-ink/70 mb-2 text-sm font-medium">Rol</legend>
-              <div className="grid gap-1.5 sm:grid-cols-2">
-                {(roles.data ?? []).map((r) => (
-                  <label
-                    key={r.codigo}
-                    className={cn(
-                      'hover:bg-ink/4 flex cursor-pointer items-start gap-2.5 rounded-[6px] p-2 transition-colors',
-                      edicion.rol === r.codigo && 'bg-royal-600/8',
-                    )}
-                  >
-                    <input
-                      type="radio"
-                      name="rol-del-usuario"
-                      checked={edicion.rol === r.codigo}
-                      onChange={() => cambiar({ rol: r.codigo })}
-                      className="accent-royal-600 mt-0.5 size-4 shrink-0"
-                    />
-                    <span className="min-w-0">
-                      <span className="text-ink/85 block text-sm font-medium">{r.nombre}</span>
-                      <span className="text-ink/50 block text-xs">{r.descripcion}</span>
-                    </span>
-                  </label>
-                ))}
+                la matriz de ese rol, en «Roles y permisos». Como en MGG: el
+                rol se elige de la lista y al lado están «+ Nuevo» y «⚙». */}
+            <div>
+              <div className="flex items-end gap-1.5">
+                <SelectBuscable
+                  label="Tipo de rol"
+                  className="flex-1"
+                  valor={edicion.rol}
+                  onCambio={(v) => cambiar({ rol: v })}
+                  opciones={(roles.data ?? []).map((r) => ({
+                    valor: r.codigo,
+                    etiqueta: r.nombre,
+                    detalle: r.descripcion || undefined,
+                  }))}
+                />
+                <Button
+                  variant="outline"
+                  onClick={() => setCreandoRol(true)}
+                  title="Crear un rol nuevo"
+                >
+                  + Nuevo
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setGestionandoRoles(true)}
+                  title="Editar nombre, descripción o color de los roles"
+                  aria-label="Gestionar roles"
+                >
+                  ⚙
+                </Button>
               </div>
-            </fieldset>
+              {rolElegido ? (
+                <p className="text-ink/50 mt-1.5 flex items-start gap-1.5 text-xs">
+                  <span
+                    className="mt-1 inline-block size-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: rolElegido.color }}
+                    aria-hidden="true"
+                  />
+                  <span>
+                    {rolElegido.descripcion || 'Sin descripción.'}
+                    {rolElegido.solo_telefono ? ' · 📱 Solo teléfono' : ''}
+                  </span>
+                </p>
+              ) : null}
+            </div>
           </div>
         ) : null}
       </Modal>
+
+      {/* Se montan después de la ficha para quedar por encima de ella. */}
+      <NuevoRolModal
+        abierto={creandoRol}
+        onCerrar={() => setCreandoRol(false)}
+        onCreado={(codigo) => cambiar({ rol: codigo })}
+      />
+      <GestionarRolesModal abierto={gestionandoRoles} onCerrar={() => setGestionandoRoles(false)} />
 
       {/* ---------- Clave ---------- */}
       <Modal
@@ -1942,7 +1925,11 @@ export function Usuarios() {
     <>
       <PageHeader
         title="Usuarios y roles"
-        description="Usuarios del sistema y los módulos a los que accede cada uno."
+        description={
+          pestana === 'usuarios'
+            ? 'Cree cuentas, corrija sus datos, cambie claves y habilite o inhabilite accesos.'
+            : 'La matriz de permisos de cada rol, módulo por módulo.'
+        }
       />
 
       {!isPending && !editable ? (
@@ -1958,8 +1945,8 @@ export function Usuarios() {
       <div className="border-hairline mb-5 flex gap-1 border-b">
         {(
           [
-            { id: 'usuarios', etiqueta: 'Usuarios' },
-            { id: 'roles', etiqueta: 'Roles y permisos' },
+            { id: 'usuarios', etiqueta: '👤 Usuarios' },
+            { id: 'roles', etiqueta: '🛡 Roles y permisos' },
           ] as const
         ).map((p) => (
           <button
