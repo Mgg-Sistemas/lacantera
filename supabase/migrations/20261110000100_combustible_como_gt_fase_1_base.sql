@@ -242,6 +242,14 @@ select 'equipo', m.nombre, m.id, m.estado <> 'DESINCORPORADA', 100, null
 -- 3. Vistas
 -- ═══════════════════════════════════════════════════════════════════════════
 
+-- El libro pregunta por cada renglón si tiene reverso, cuál es la otra pata de
+-- su traslado y de qué vale es. Sin estos índices, cada pregunta recorre el
+-- libro de inventario entero.
+create index if not exists inventario_movimientos_origen_idx
+  on public.inventario_movimientos (movimiento_origen) where movimiento_origen is not null;
+create index if not exists despachos_combustible_movimiento_idx
+  on public.despachos_combustible (movimiento_id) where movimiento_id is not null;
+
 /*
   EL LIBRO DEL TANQUE.
 
@@ -262,7 +270,8 @@ select 'equipo', m.nombre, m.id, m.estado <> 'DESINCORPORADA', 100, null
   `anulado` dice si el movimiento tiene un REVERSO: la pantalla lo tacha y no
   lo borra. El saldo corrido (litros y dólares) sale de una ventana por tanque
   y combustible, en el orden fecha → hora → número, e incluye los reversos: por
-  eso la última fila de cada tanque es su existencia.
+  eso la última fila de cada tanque es su existencia. `orden` es la posición en
+  esa ventana: la pantalla ordena por ella y no vuelve a adivinar el orden.
 
   VISTA DEFINIDORA, CON PUERTA. `inventario_movimientos` exige INVENTARIO:LECTURA
   y el libro de combustible tiene que verlo quien ve Combustible. La vista corre
@@ -330,6 +339,7 @@ select
   v.cantidad                                     as litros,
   case when (select private.puede_accion('INVENTARIO.VER_VALORACION')) then v.costo_usd end  as tasa_usd_litro,
   case when (select private.puede_accion('INVENTARIO.VER_VALORACION')) then v.valor_usd end  as monto_usd,
+  row_number() over w                            as orden,
   sum(v.cantidad * v.signo) over w               as saldo_litros,
   case when (select private.puede_accion('INVENTARIO.VER_VALORACION'))
        then sum(v.valor_usd * v.signo) over w end as saldo_usd,
@@ -689,19 +699,18 @@ begin
       raise exception 'El libro de combustible no cuadra con las existencias: %.', v_txt;
     end if;
 
-    -- El saldo corrido de la última fila es la existencia del tanque.
+    -- El saldo corrido de la última fila (por `orden`) es la existencia del tanque.
     select string_agg(format('%s/%s', u.tanque_id, u.articulo_id), ', ') into v_txt
       from (
         select distinct on (tanque_id, articulo_id) tanque_id, articulo_id, saldo_litros
           from public.v_combustible_libro
-         order by tanque_id, articulo_id, fecha desc,
-                  coalesce(hora, time '23:59:59') desc, id desc
+         order by tanque_id, articulo_id, orden desc
       ) u
       join (select almacen_id, articulo_id, existencia from public.v_existencias) e
         on e.almacen_id = u.tanque_id and e.articulo_id = u.articulo_id
      where u.saldo_litros <> e.existencia;
     if v_txt is not null then
-      raise notice 'Aviso: la última fila del libro de % no coincide en orden con la existencia (revisar horas).', v_txt;
+      raise exception 'El saldo corrido de la última fila no es la existencia en: %.', v_txt;
     end if;
 
     if exists (select 1 from public.almacenes where codigo = 'CMB-INI')
