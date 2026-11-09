@@ -43,7 +43,8 @@ import { dolares, enteros, fecha } from '@/lib/formato'
  *
  * NO DUPLICA EXISTENCIAS
  *
- * El detalle artículo por artículo sigue estando en Existencias, y el enlace
+ * El detalle artículo por artículo está en el detalle del almacén (desde el
+ * 09/11/2026; antes, en Existencias), y el enlace
  * lleva allí con el taller ya elegido. Esta pantalla responde otra pregunta:
  * qué está pasando en cada taller.
  */
@@ -105,7 +106,7 @@ export function Talleres() {
     <>
       <PageHeader
         title="Talleres"
-        description="Material asignado a cada taller y su consumo. El detalle por artículo está en Existencias."
+        description="Material asignado a cada taller y su consumo. El detalle por artículo está en «Ver su inventario»."
       />
 
       <Pestanas pestanas={PESTANAS_SITIOS} />
@@ -317,7 +318,7 @@ export function Talleres() {
                   size="sm"
                   variant="soft"
                   icon={<Boxes />}
-                  onClick={() => navegar(`/app/inventario/existencias?almacen=${t.id}`)}
+                  onClick={() => navegar(`/app/inventario/almacenes?almacen=${t.id}`)}
                 >
                   Ver su inventario
                 </Button>
