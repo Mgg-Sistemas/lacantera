@@ -21,9 +21,13 @@ import { enMayuscula } from '@/lib/texto'
   los productos de las categorías de cocina, marcados, con la cantidad de la
   última Solicitud de Mercado— y se quita lo que no hace falta. Sale como una
   Solicitud de Pedido URGENTE con la finalidad «PEDIDO PARA RESTABLECER EL
-  MERCADO», que no pasa por el almacén: entra a Pedidos para aprobación.
+  MERCADO».
 
   Lo que cambia respecto a MGG:
+    - PASA POR EL ALMACÉN (la dueña, 09/11/2026): en MGG entra directo a
+      Pedidos para aprobación; aquí nace «En revisión de almacén» como
+      cualquier SP, el almacenista confirma qué tiene (eso sale del almacén)
+      y solo lo que falta pasa a Compras para aprobación.
     - LA LISTA SON LAS CATEGORÍAS «SE CONSUME EN COCINA» del catálogo de La
       Cantera (MGG busca las que se llaman «víveres» u «hortalizas»).
     - SIN «PRODUCTO NUEVO» QUE CREA FICHA: lo que no está en el inventario se
@@ -206,7 +210,7 @@ export function SolicitudMercadoModal({ onClose, onCreated }: { onClose: () => v
         unidad_solicitante: enMayuscula(unidad.trim()),
         solicitante_nombre: persona.trim() ? enMayuscula(persona.trim()) : null,
       })
-      toast(`Solicitud de mercado ${r.codigo} creada`, 'success')
+      toast(`Solicitud de mercado ${r.codigo} · URGENTE enviada a Almacén para revisión`, 'success')
       onCreated(r.id)
     } catch (e) {
       toast(mensajeDe(e, 'No se pudo crear la solicitud'), 'error')
@@ -494,7 +498,8 @@ export function SolicitudMercadoModal({ onClose, onCreated }: { onClose: () => v
 
         <p className="text-ink/55 text-xs">
           Se crea una <strong>Solicitud de Pedido</strong> (finalidad: {FINALIDAD_MERCADO}) sin monto; el precio lo fija el
-          proveedor al cotizar. Entra al módulo de Pedidos para aprobación.
+          proveedor al cotizar. Primero va a <strong>revisión del Almacén General</strong>: el almacenista confirma qué
+          tiene en stock (eso sale del almacén) y solo lo que falta pasa a Compras para aprobación.
         </p>
       </div>
     </Modal>

@@ -41,6 +41,7 @@ import {
   fechaHoraVE,
   fmtCant,
   money,
+  esMercado,
   esRecibible,
   estrellas,
   progresoRecepcion,
@@ -795,7 +796,7 @@ export function OrdenDetailModal({
       <Modal
         abierto
         onCerrar={onClose}
-        titulo={`Orden ${o.codigo}${o.urgente ? ' · 🚨 URGENTE' : ''}`}
+        titulo={`Orden ${o.codigo}${esMercado(o) ? ' · 🛒 Mercado' : ''}${o.urgente ? ' · 🚨 URGENTE' : ''}`}
         ancho="lg"
         acciones={buttons}
       >
