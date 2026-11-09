@@ -19,7 +19,7 @@ import {
   basesPago,
   esCredito,
   etiquetaDocumento,
-  labelMetodoPago,
+  nombreMetodoPago,
   labelRetencion,
   montoAPagar,
   saldoCredito,
@@ -302,7 +302,7 @@ export function textoOrdenPago(o: Orden, d: DatosMensajePago): string {
     if (!metodos.length) L.push('💳 *Pago:* (todavía sin método de pago indicado)')
     for (const m of metodos) {
       const conMonto = Number(m.monto) > 0 && !(metodos.length === 1 && Math.abs(Number(m.monto) - aPagar) < 0.01)
-      L.push(`💳 *${labelMetodoPago(m.metodo)}:*${conMonto ? ` ${montoTxt(m.monto, m.moneda === 'USD' ? '$' : m.moneda)}` : ''}`)
+      L.push(`💳 *${nombreMetodoPago(m.metodo, m.detalle)}:*${conMonto ? ` ${montoTxt(m.monto, m.moneda === 'USD' ? '$' : m.moneda)}` : ''}`)
       L.push(...lineasDatosPago(m.metodo, m.datos))
     }
   }
@@ -368,7 +368,7 @@ export function textoAbono(o: Orden, a: Abono, d: { proveedor: string; empresa: 
   L.push(
     `💵 *Abono:* ${montoTxt(a.monto, '$')}${a.moneda === 'Bs' ? ` (${montoTxt(a.monto_moneda, 'Bs')} a ${Number(a.tasa).toLocaleString('es-VE')})` : ''}`,
   )
-  L.push(`💳 *Método:* ${labelMetodoPago(a.metodo)}`)
+  L.push(`💳 *Método:* ${nombreMetodoPago(a.metodo, a.metodo_detalle)}`)
   if (a.referencia) L.push(`🧾 *Referencia:* ${a.referencia}`)
   L.push(`📅 *Fecha:* ${fechaDia(a.fecha)}`)
   L.push(`💵 *Monto a pagar:* ${montoTxt(montoAPagar(o), '$')}`)

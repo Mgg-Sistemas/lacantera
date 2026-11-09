@@ -879,6 +879,8 @@ export interface Abono {
   monto_moneda: number | string
   tasa: number | string | null
   metodo: string
+  /** Con el método «otro»: cuál es (09/11/2026). */
+  metodo_detalle?: string | null
   referencia: string | null
   comprobante_path: string | null
   comprobante_nombre: string | null
@@ -915,7 +917,7 @@ export function useAprobarOc() {
 }
 
 export interface DatosMetodoPago {
-  metodos: Array<{ metodo: string; monto: number; datos?: DatosPago }>
+  metodos: Array<{ metodo: string; monto: number; datos?: DatosPago; detalle?: string }>
   numero_administracion: string
   comprobante_tipo: 'factura' | 'nota_entrega'
   retenciones: Array<{ tipo: string; modo: string; valor: number | null; moneda: 'USD' | 'Bs' }>
@@ -992,6 +994,8 @@ export interface DatosPagoRegistrado {
   nota: string | null
   /** Solo el abono: con qué se abonó. */
   metodo?: string
+  /** Solo el abono con el método «otro»: cuál es. */
+  metodo_detalle?: string | null
 }
 
 export function useMarcarPagada() {

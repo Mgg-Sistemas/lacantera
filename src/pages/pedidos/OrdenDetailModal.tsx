@@ -88,7 +88,7 @@ import {
   basesPago,
   esCredito,
   etiquetaDocumento,
-  labelMetodoPago,
+  nombreMetodoPago,
   labelRetencion,
   montoAPagar,
   resumenDatosPago,
@@ -975,7 +975,7 @@ export function OrdenDetailModal({
             <Fila k="Método de pago">
               {o.metodo_pago.map((m, i) => (
                 <div key={i}>
-                  💳 {labelMetodoPago(m.metodo)}
+                  💳 {nombreMetodoPago(m.metodo, m.detalle)}
                   {Number(m.monto) > 0 ? ` · ${m.moneda === 'USD' ? money(m.monto) : `${m.moneda} ${Number(m.monto).toLocaleString('es-VE', { minimumFractionDigits: 2 })}`}` : ` · ${m.moneda}`}
                   {m.datos && resumenDatosPago(m.metodo, m.datos) ? (
                     <div className="text-ink/55 pl-5 text-xs">↳ {resumenDatosPago(m.metodo, m.datos)}</div>

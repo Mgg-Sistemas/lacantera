@@ -23,11 +23,13 @@ import {
 import { fechaHoraVE, money } from '@/lib/pedidos'
 import { r2 } from '@/lib/ofertas'
 import {
+  MAX_DETALLE_OTRO,
   METODOS_PAGO,
   abrirArchivoPago,
   basesPago,
+  errorDetalleOtro,
   etiquetaDocumento,
-  labelMetodoPago,
+  nombreMetodoPago,
   labelRetencion,
   leerMonto,
   monedaPorMetodo,
@@ -319,7 +321,7 @@ export function MarcarPagadaModal({
         <div className="text-ink/55 pt-1">Método de pago indicado{efectivo ? ' · efectivo' : ''}:</div>
         {metodos.map((m, i) => (
           <div key={i} className="pl-2">
-            💳 <strong>{labelMetodoPago(m.metodo)}</strong>
+            💳 <strong>{nombreMetodoPago(m.metodo, m.detalle)}</strong>
             {Number(m.monto) > 0 ? ` · ${fmtMoneda(Number(m.monto), String(m.moneda))}` : ''}
             {m.datos && resumenDatosPago(m.metodo, m.datos) ? (
               <div className="text-ink/60 pl-5 text-xs">↳ {resumenDatosPago(m.metodo, m.datos)}</div>
@@ -377,6 +379,8 @@ export function AbonoModal({
   const { data: tasaHoy } = useTasaVigente()
   const saldo = saldoCredito(o)
   const [metodo, setMetodo] = useState('transferencia')
+  // Con «Otro»: cuál método es (la dueña, 09/11/2026).
+  const [metodoDetalle, setMetodoDetalle] = useState('')
   const [fecha, setFecha] = useState(hoyCaracas())
   const [moneda, setMoneda] = useState<MonedaPago>('USD')
   const [tasa, setTasa] = useState(tasaHoy ? String(tasaHoy.tasa) : '')
@@ -398,6 +402,8 @@ export function AbonoModal({
   async function onAbonar() {
     setError(null)
     if (!fecha) return setError('Indicá la fecha del pago.')
+    const eOtro = errorDetalleOtro(metodo, metodoDetalle)
+    if (eOtro) return setError(eOtro)
     if (!(leerMonto(monto) > 0)) return setError('Indicá cuánto abonar.')
     if (moneda === 'Bs' && !(leerMonto(tasa) > 0)) return setError('Indicá la tasa (Bs por $) para pasar el pago a dólares.')
     if (montoUsd > saldo + 0.01) return setError(`El abono (${money(montoUsd)}) supera el saldo pendiente (${money(saldo)}).`)
@@ -414,6 +420,7 @@ export function AbonoModal({
         moneda,
         tasa: moneda === 'Bs' ? leerMonto(tasa) : null,
         metodo,
+        metodo_detalle: metodo === 'otro' ? metodoDetalle.trim() : null,
         referencia: referencia.trim() || null,
         comprobante: subido,
         nota: nota.trim() || null,
@@ -429,6 +436,7 @@ export function AbonoModal({
         monto_moneda: leerMonto(monto),
         tasa: datos.tasa,
         metodo,
+        metodo_detalle: datos.metodo_detalle,
         referencia: datos.referencia,
         comprobante_path: subido?.path ?? null,
         comprobante_nombre: subido?.filename ?? null,
@@ -482,6 +490,16 @@ export function AbonoModal({
         }}
         opciones={METODOS_PAGO.map((m) => ({ valor: m.value, etiqueta: m.label }))}
       />
+      {metodo === 'otro' ? (
+        <Input
+          className="mb-3"
+          label="¿Cuál método? *"
+          placeholder="Ej.: PayPal, cheque, Cashea…"
+          maxLength={MAX_DETALLE_OTRO}
+          value={metodoDetalle}
+          onChange={(e) => setMetodoDetalle(e.target.value)}
+        />
+      ) : null}
       <CamposPago
         fecha={fecha}
         setFecha={setFecha}
@@ -596,7 +614,7 @@ export function CreditoModal({
                       <div className="text-ink/45 text-xs">{fmtMoneda(Number(a.monto_moneda), a.moneda)}</div>
                     ) : null}
                   </td>
-                  <td className="px-3 py-2">{labelMetodoPago(a.metodo)}</td>
+                  <td className="px-3 py-2">{nombreMetodoPago(a.metodo, a.metodo_detalle)}</td>
                   <td className="px-3 py-2 font-mono text-xs">{a.referencia ?? '—'}</td>
                   <td className="px-3 py-2 text-right font-mono">{a.saldo_restante != null ? money(a.saldo_restante) : '—'}</td>
                   <td className="px-3 py-2">

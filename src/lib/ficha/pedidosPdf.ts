@@ -17,7 +17,7 @@ import { DATOS_TECNICOS, LOGISTICA, desglosarOc, infoModalidad, labelCondicionPa
 import type { Orden } from '@/lib/api/pedidos'
 import {
   etiquetaDocumento,
-  labelMetodoPago,
+  nombreMetodoPago,
   labelRetencion,
   montoAPagar,
   resumenDatosPago,
@@ -474,7 +474,7 @@ export async function armarOrdenCompraPdf(o: Orden, empresa: EmpresaPapel, d: Da
   for (const m of o.metodo_pago ?? []) {
     const datos = resumenDatosPago(m.metodo, m.datos)
     const monto = Number(m.monto) > 0 ? `${m.moneda} ${Number(m.monto).toLocaleString('es-VE', { minimumFractionDigits: 2 })}` : ''
-    filasPago.push([`Método · ${labelMetodoPago(m.metodo)}`, [monto, datos].filter(Boolean).join(' · ') || String(m.moneda)])
+    filasPago.push([`Método · ${nombreMetodoPago(m.metodo, m.detalle)}`, [monto, datos].filter(Boolean).join(' · ') || String(m.moneda)])
   }
   if (o.numero_administracion) filasPago.push(['Tel. administración del proveedor', o.numero_administracion])
   if (Number(o.iva_factura) > 0) filasPago.push(['IVA de la factura', `+${money2(o.iva_factura)}`])
