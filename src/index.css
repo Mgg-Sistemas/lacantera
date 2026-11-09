@@ -235,6 +235,39 @@
 }
 
 @layer base {
+  /*
+    ELEGIR ARCHIVOS, CON CARA DE BOTÓN (la dueña, 09/11/2026: «donde dice
+    elegir archivos, que sea formato botón, para que el usuario pueda
+    identificar y subir los archivos»). El navegador lo pintaba como texto
+    suelto y no se veía que se podía tocar. Vale para todos los campos de
+    archivo del sistema; los que se esconden detrás de un botón propio no
+    cambian.
+  */
+  input[type='file'] {
+    color: color-mix(in oklab, var(--color-ink) 60%, transparent);
+    font-size: 0.8125rem;
+    max-width: 100%;
+  }
+  input[type='file']::file-selector-button {
+    margin-right: 0.75rem;
+    padding: 0.45rem 0.9rem;
+    border: 1px solid var(--color-royal-600);
+    border-radius: var(--radius-control);
+    background: color-mix(in oklab, var(--color-royal-600) 12%, transparent);
+    color: var(--color-ink);
+    font-weight: 600;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: background-color 150ms;
+  }
+  input[type='file']:hover::file-selector-button {
+    background: color-mix(in oklab, var(--color-royal-600) 22%, transparent);
+  }
+  input[type='file']:disabled::file-selector-button {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
   html {
     -webkit-text-size-adjust: 100%;
   }

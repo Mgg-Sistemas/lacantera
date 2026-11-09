@@ -45,6 +45,7 @@ import { QueHacerDelInventario } from './Tablero'
 import { decorate } from './restock'
 import type { AbcClass, Decoracion, ProductoParaRestock } from './restock'
 import { useColumnasDeArticulos } from './columnasDeArticulos'
+import { ModalArticuloNuevo } from './Articulos'
 import { BorrarProducto } from './principal/BorrarProducto'
 import { CategoriasConCasillas } from './principal/CategoriasConCasillas'
 import { CategoriasYMedidas } from './principal/CategoriasYMedidas'
@@ -193,7 +194,7 @@ export function InventarioPrincipal() {
   const [trasvase, setTrasvase] = useState<Existencia | null>(null)
   const [categoriasAbiertas, setCategoriasAbiertas] = useState(false)
   // Los modales de la cabecera de MGG (fase 4).
-  const [cabecera, setCabecera] = useState<'' | 'resumen' | 'exportar' | 'importar' | 'sinCosto' | 'deshabilitados'>('')
+  const [cabecera, setCabecera] = useState<'' | 'resumen' | 'exportar' | 'importar' | 'sinCosto' | 'deshabilitados' | 'nuevo'>('')
 
   // «Ver dónde está» usa el modal de Existencias, que pide la fila total.
   const totales = useExistenciasTotales(desgloseDe !== null)
@@ -544,9 +545,11 @@ export function InventarioPrincipal() {
             ↓ Exportar
           </Button>
           {escribe ? (
-            <Link to="/app/inventario/articulos?nuevo=1" className="sm:ml-auto">
-              <Button size="sm">+ Nuevo producto</Button>
-            </Link>
+            // 09/11/2026: la ventana se abre aquí mismo. Antes llevaba al
+            // Catálogo y, al cerrar, quedaba en el módulo viejo.
+            <Button size="sm" className="sm:ml-auto" onClick={() => setCabecera('nuevo')}>
+              + Nuevo producto
+            </Button>
           ) : null}
         </div>
       </div>
@@ -924,6 +927,7 @@ export function InventarioPrincipal() {
         />
       ) : null}
       {cabecera === 'importar' ? <ImportarExcel onCerrar={() => setCabecera('')} /> : null}
+      {cabecera === 'nuevo' ? <ModalArticuloNuevo onCerrar={() => setCabecera('')} /> : null}
       {cabecera === 'sinCosto' ? <SinCosto onCerrar={() => setCabecera('')} /> : null}
       {cabecera === 'deshabilitados' ? (
         <Deshabilitados onCerrar={() => setCabecera('')} onVerProducto={verFicha} />
