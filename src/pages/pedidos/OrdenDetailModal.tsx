@@ -4,6 +4,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Chip } from '@/components/ui/Chip'
+import { Estrellas } from '@/components/ui/Estrellas'
 import { Visor } from '@/components/Visor'
 import { cn } from '@/lib/cn'
 import { useArticulos, useProveedores } from '@/lib/api/catalogo'
@@ -32,7 +33,7 @@ import {
   type Recepcion,
 } from '@/lib/api/pedidos'
 import {
-  CALIDAD_LABEL,
+  CALIDAD_ESTRELLAS,
   ETIQUETA_ALMACEN,
   ESTADOS,
   claseEvento,
@@ -42,7 +43,7 @@ import {
   fmtCant,
   money,
   esRecibible,
-  estrellas,
+  PUNTUALIDAD_LABEL,
   progresoRecepcion,
   puedeFinalizarse,
   recibidoDe,
@@ -1107,8 +1108,13 @@ export function OrdenDetailModal({
           ) : null}
           {evaluacion ? (
             <Fila k="Evaluación del proveedor">
-              <span className="text-warning">{estrellas(evaluacion.calidad)}</span> {CALIDAD_LABEL[evaluacion.calidad] ?? evaluacion.calidad} ·{' '}
-              {textoPuntualidad(evaluacion.puntualidad_dias)}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <Estrellas soloLectura size="sm" label="Calidad" value={evaluacion.calidad} etiquetas={CALIDAD_ESTRELLAS} />
+                {evaluacion.puntualidad != null ? (
+                  <Estrellas soloLectura size="sm" label="Puntualidad" value={evaluacion.puntualidad} etiquetas={PUNTUALIDAD_LABEL} />
+                ) : null}
+              </div>
+              <div className="text-ink/60 text-xs">🕒 {textoPuntualidad(evaluacion.puntualidad_dias)}</div>
               {evaluacion.comentario ? <div className="text-ink/60 text-xs">📝 {evaluacion.comentario}</div> : null}
             </Fila>
           ) : null}

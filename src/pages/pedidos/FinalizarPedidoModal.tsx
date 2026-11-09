@@ -3,6 +3,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Chip } from '@/components/ui/Chip'
+import { Estrellas } from '@/components/ui/Estrellas'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
@@ -16,17 +17,29 @@ import {
   type Orden,
   type Recepcion,
 } from '@/lib/api/pedidos'
-import { CALIDAD_LABEL, ETIQUETA_ALMACEN, fechaHoraVE, fmtCant, money } from '@/lib/pedidos'
+import {
+  CALIDAD_ESTRELLAS,
+  DIAS_POR_ESTRELLAS,
+  ETIQUETA_ALMACEN,
+  PUNTUALIDAD_LABEL,
+  estrellasPorDias,
+  fechaHoraVE,
+  fmtCant,
+  money,
+} from '@/lib/pedidos'
 import { abrirArchivoRecepcion } from '@/lib/pagos'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
 
 /*
   ✓ FINALIZAR ORDEN, CON LA EVALUACIÓN DEL PROVEEDOR (MGG `FinalizarPedidoModal`)
 
-  Los mismos campos y textos de MGG: la calidad (5 · Excelente … 1 · Muy
-  mala), la puntualidad (por fecha prometida, en la fecha, adelantado o
-  atrasado), la factura y el comentario. La evaluación alimenta el score de
-  las próximas cotizaciones. Sin la palabra «(opcional)» (la dueña).
+  Los campos de MGG, calificados con estrellas (la dueña, 09/11/2026: «que
+  al momento de calificar al proveedor sea todo tipo estrellas»): la calidad
+  (5 Excelente … 1 Muy mala) y la puntualidad (5 a tiempo o antes … 1 más de
+  7 días tarde), que se sugiere sola con la fecha prometida y la de recibido
+  hasta que se toquen las estrellas. Luego la factura y el comentario. La
+  evaluación alimenta el score de las próximas cotizaciones. Sin la palabra
+  «(opcional)» (la dueña).
 
   Y dos piezas más de la fase 4:
     - «📎 Cargar factura / nota de entrega» (MGG `ComprobanteOcModal`), sin
@@ -35,8 +48,6 @@ import { mensajeDe, toast } from '@/lib/avisosFlotantes'
 */
 
 const hoyCaracas = (): string => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Caracas' })
-
-type Puntualidad = 'por_fecha' | 'en_fecha' | 'adelantado' | 'atrasado'
 
 export function FinalizarPedidoModal({
   orden: o,
@@ -54,8 +65,8 @@ export function FinalizarPedidoModal({
   const [factura, setFactura] = useState<File | null>(null)
   const [facturaTipo, setFacturaTipo] = useState<'factura' | 'nota_entrega'>('factura')
   const [calidad, setCalidad] = useState(5)
-  const [puntualidad, setPuntualidad] = useState<Puntualidad>('por_fecha')
-  const [dias, setDias] = useState('1')
+  // null: la persona no tocó las estrellas y se sugieren por las fechas.
+  const [puntualidadElegida, setPuntualidadElegida] = useState<number | null>(null)
   const [comentario, setComentario] = useState('')
   const [fechaPrometida, setFechaPrometida] = useState((fechaPrometidaOferta ?? '').slice(0, 10))
   const [fechaRecibido, setFechaRecibido] = useState(() =>
@@ -73,19 +84,13 @@ export function FinalizarPedidoModal({
     return Math.round((p - r) / 86_400_000)
   })()
 
+  const sugerida = diasPorFecha != null ? estrellasPorDias(diasPorFecha) : null
+  const puntualidad = puntualidadElegida ?? sugerida ?? 5
+
   async function handle() {
     setError(null)
-    let puntualidadDias: number
-    if (puntualidad === 'por_fecha') {
-      if (diasPorFecha == null) {
-        setError('Indicá la fecha prometida y la de recibido.')
-        return
-      }
-      puntualidadDias = diasPorFecha
-    } else {
-      const d = Math.max(0, Math.floor(Number(dias) || 0))
-      puntualidadDias = puntualidad === 'en_fecha' ? 0 : puntualidad === 'adelantado' ? d : -d
-    }
+    // Los días salen de las fechas si están las dos; si no, de las estrellas.
+    const puntualidadDias = diasPorFecha ?? DIAS_POR_ESTRELLAS[puntualidad] ?? 0
     if (factura && factura.size > 10 * 1024 * 1024) {
       setError('La factura no puede superar 10 MB.')
       return
@@ -103,9 +108,10 @@ export function FinalizarPedidoModal({
         id: o.id,
         datos: {
           calidad,
+          puntualidad,
           puntualidad_dias: puntualidadDias,
-          fecha_prometida: puntualidad === 'por_fecha' ? fechaPrometida || null : null,
-          fecha_recibido: puntualidad === 'por_fecha' ? fechaRecibido || null : null,
+          fecha_prometida: fechaPrometida || null,
+          fecha_recibido: fechaRecibido || null,
           comentario: comentario.trim() || null,
           factura: fac,
         },
@@ -147,74 +153,56 @@ export function FinalizarPedidoModal({
       ) : null}
 
       <div className="space-y-3">
-        <Select
-          label="Calidad a evaluar *"
-          value={String(calidad)}
-          onChange={(e) => setCalidad(Number(e.target.value))}
-          opciones={[5, 4, 3, 2, 1].map((n) => ({ valor: String(n), etiqueta: CALIDAD_LABEL[n] }))}
+        <Estrellas label="Calidad *" value={calidad} onChange={setCalidad} etiquetas={CALIDAD_ESTRELLAS} />
+        <Estrellas
+          label="Puntualidad *"
+          value={puntualidad}
+          onChange={setPuntualidadElegida}
+          etiquetas={PUNTUALIDAD_LABEL}
+          hint={
+            puntualidadElegida == null
+              ? sugerida != null
+                ? 'Sugerida por las fechas de abajo; podés cambiarla.'
+                : 'Sin las dos fechas, calificala con las estrellas.'
+              : sugerida != null && sugerida !== puntualidadElegida
+                ? `Por las fechas serían ${sugerida} estrella(s).`
+                : undefined
+          }
         />
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Select
-            label="Puntualidad *"
-            value={puntualidad}
-            onChange={(e) => setPuntualidad(e.target.value as Puntualidad)}
-            opciones={[
-              { valor: 'por_fecha', etiqueta: 'Por fecha prometida' },
-              { valor: 'en_fecha', etiqueta: 'En la fecha prometida' },
-              { valor: 'adelantado', etiqueta: 'Adelantado' },
-              { valor: 'atrasado', etiqueta: 'Atrasado' },
-            ]}
-          />
-          {puntualidad === 'adelantado' || puntualidad === 'atrasado' ? (
-            <Input
-              label={`Días ${puntualidad === 'adelantado' ? 'de adelanto' : 'de atraso'}`}
-              type="number"
-              min={0}
-              step={1}
-              limite={{ maxEnteros: 4, maxDecimales: 0, sinNegativos: true }}
-              value={dias}
-              onChange={(e) => setDias(e.target.value)}
-            />
-          ) : null}
-        </div>
 
-        {puntualidad === 'por_fecha' ? (
-          <>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Input
-                label="Fecha prometida (de la oferta)"
-                type="date"
-                value={fechaPrometida}
-                hint={fechaPrometida ? 'Tomada de la oferta del proveedor; podés ajustarla.' : 'La oferta no tiene fecha prometida: colocala acá.'}
-                onChange={(e) => setFechaPrometida(e.target.value)}
-              />
-              <Input
-                label="Fecha de recibido"
-                type="date"
-                value={fechaRecibido}
-                max={hoyCaracas()}
-                hint="Por defecto, el día en que el almacén cerró la recepción."
-                onChange={(e) => setFechaRecibido(e.target.value)}
-              />
-            </div>
-            {diasPorFecha != null ? (
-              <div className="border-hairline rounded-[6px] border px-3 py-2 text-sm">
-                {diasPorFecha === 0 ? (
-                  <>
-                    ✓ Recibido <strong>en la fecha prometida</strong>.
-                  </>
-                ) : diasPorFecha > 0 ? (
-                  <>
-                    ✓ Recibido <strong>{diasPorFecha} día(s) antes</strong> de lo prometido (adelantado).
-                  </>
-                ) : (
-                  <>
-                    ⚠ Recibido <strong>{Math.abs(diasPorFecha)} día(s) después</strong> de lo prometido (atrasado).
-                  </>
-                )}
-              </div>
-            ) : null}
-          </>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Input
+            label="Fecha prometida (de la oferta)"
+            type="date"
+            value={fechaPrometida}
+            hint={fechaPrometida ? 'Tomada de la oferta del proveedor; podés ajustarla.' : 'La oferta no tiene fecha prometida: colocala acá.'}
+            onChange={(e) => setFechaPrometida(e.target.value)}
+          />
+          <Input
+            label="Fecha de recibido"
+            type="date"
+            value={fechaRecibido}
+            max={hoyCaracas()}
+            hint="Por defecto, el día en que el almacén cerró la recepción."
+            onChange={(e) => setFechaRecibido(e.target.value)}
+          />
+        </div>
+        {diasPorFecha != null ? (
+          <div className="border-hairline rounded-[6px] border px-3 py-2 text-sm">
+            {diasPorFecha === 0 ? (
+              <>
+                ✓ Recibido <strong>en la fecha prometida</strong>.
+              </>
+            ) : diasPorFecha > 0 ? (
+              <>
+                ✓ Recibido <strong>{diasPorFecha} día(s) antes</strong> de lo prometido (adelantado).
+              </>
+            ) : (
+              <>
+                ⚠ Recibido <strong>{Math.abs(diasPorFecha)} día(s) después</strong> de lo prometido (atrasado).
+              </>
+            )}
+          </div>
         ) : null}
 
         <div>

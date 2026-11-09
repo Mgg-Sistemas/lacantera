@@ -355,6 +355,33 @@ export const CALIDAD_LABEL: Record<number, string> = {
   1: '1 · Muy mala',
 }
 
+/** La calidad en estrellas: «Excelente» (CALIDAD_LABEL sin el número). */
+export const CALIDAD_ESTRELLAS: Record<number, string> = Object.fromEntries(
+  Object.entries(CALIDAD_LABEL).map(([n, t]) => [n, t.replace(/^\d+\s*·\s*/, '')]),
+)
+
+/** La puntualidad en estrellas (la dueña, 09/11/2026). */
+export const PUNTUALIDAD_LABEL: Record<number, string> = {
+  5: 'A tiempo o antes',
+  4: 'Un día tarde',
+  3: 'Algo tarde (2-3 días)',
+  2: 'Tarde (4-7 días)',
+  1: 'Muy tarde (más de 7 días)',
+}
+
+/** Las estrellas que sugieren los días (+ adelantado, − atrasado). */
+export function estrellasPorDias(dias: number): number {
+  const d = Math.round(num(dias))
+  if (d >= 0) return 5
+  if (d === -1) return 4
+  if (d >= -3) return 3
+  if (d >= -7) return 2
+  return 1
+}
+
+/** Los días que se guardan cuando solo hay estrellas (sin fechas). */
+export const DIAS_POR_ESTRELLAS: Record<number, number> = { 5: 0, 4: -1, 3: -3, 2: -7, 1: -15 }
+
 /** «★★★★☆». */
 export const estrellas = (n: number): string => {
   const k = Math.max(0, Math.min(5, Math.round(num(n))))
@@ -435,6 +462,7 @@ function extraRecepcion(h: EventoHistorial): string {
     }
     case 'evaluacion':
       if (h.calidad != null) partes.push(`${estrellas(h.calidad as number)} ${CALIDAD_LABEL[num(h.calidad)] ?? h.calidad}`)
+      if (h.puntualidad != null) partes.push(`🕒 ${estrellas(h.puntualidad as number)} ${PUNTUALIDAD_LABEL[num(h.puntualidad)] ?? ''}`.trim())
       if (h.puntualidad_dias != null) partes.push(textoPuntualidad(h.puntualidad_dias as number))
       if (typeof h.comentario === 'string' && h.comentario.trim()) partes.push(h.comentario)
       break
