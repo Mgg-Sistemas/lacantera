@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { Boxes, ChevronDown, Search } from 'lucide-react'
 import { Pestanas } from '@/components/Pestanas'
-import type { Pestana } from '@/components/Pestanas'
 import { PESTANAS_MATERIAL } from '@/components/pestanasDeModulos'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -35,11 +34,16 @@ import { descargarPlantilla } from '@/lib/hojas/plantilla'
 import { LA_CASA, detalleDeDueno } from '@/lib/deQuien'
 import { dolares, enteros } from '@/lib/formato'
 import { cn } from '@/lib/cn'
-import { ModalCorregirCosto, ModalDesglose } from './Existencias'
+import { useNotaDeTraslado } from '@/pages/salidas/NotaDeTraslado'
+import { BotonActaDeConteo } from './BotonActaDeConteo'
+import { ModalCorregirCosto, ModalDesglose } from './ModalesDeExistencias'
 import { MaterialPorRecibir } from './MaterialPorRecibir'
 import { ModalAlTaller } from './ModalAlTaller'
 import { ModalCambioDeDueno } from './ModalCambioDeDueno'
+import { ModalConteo } from './ModalConteo'
 import { ModalEditarArticulo } from './ModalEditarArticulo'
+import { ModalEntradaDeMaterial } from './ModalEntradaDeMaterial'
+import { ModalTraslado } from './ModalTraslado'
 import { ModalTrasvase } from './ModalTrasvase'
 import { QueHacerDelInventario } from './Tablero'
 import { decorate } from './restock'
@@ -159,19 +163,27 @@ export function InventarioPrincipal() {
     el costo; INVENTARIO en TOTAL para el dueño y las categorías; ADMIN para
     eliminar un duplicado. La base vuelve a comprobarlo todo.
   */
-  const { puede: tieneRol } = useMisRoles()
+  const { puede: tieneRol, isSuccess: rolesListos } = useMisRoles()
   const { puede: alcanza } = useMisPermisos()
   const { puede: puedeAccion } = useMisAcciones()
   const escribe = alcanza('INVENTARIO', 'ESCRITURA')
   const almacenista = tieneRol('ALMACEN')
 
   // -------------------------------------------------------------- filtros
+  /*
+    `?almacen=`, `?dueno=` y `?stock=` ponen el filtro al entrar: son los que
+    traían los enlaces a la pantalla vieja de Existencias (09/11/2026), que
+    ahora redirige aquí.
+  */
   const [texto, setTexto] = useState('')
   const [cats, setCats] = useState<string[]>([])
-  const [almacenSel, setAlmacenSel] = useState('')
-  const [dueno, setDueno] = useState('')
+  const [almacenSel, setAlmacenSel] = useState(() => parametros.get('almacen') ?? '')
+  const [dueno, setDueno] = useState(() => parametros.get('dueno') ?? '')
   const [clase, setClase] = useState<'' | AbcClass>('')
-  const [filtroStock, setFiltroStock] = useState<FiltroStock>('')
+  const [filtroStock, setFiltroStock] = useState<FiltroStock>(() => {
+    const s = parametros.get('stock')
+    return s === 'critico' || s === 'restock' || s === 'ok' || s === 'sin_mov' ? s : ''
+  })
   const [limite, setLimite] = useState(TANDA)
 
   // ------------------------------------------------------------- modales
@@ -192,11 +204,21 @@ export function InventarioPrincipal() {
   const [alTaller, setAlTaller] = useState<Existencia | null>(null)
   const [cambiandoDueno, setCambiandoDueno] = useState<Existencia | null>(null)
   const [trasvase, setTrasvase] = useState<Existencia | null>(null)
+  /*
+    Lo que hacía la cabecera de la pantalla vieja de Existencias (09/11/2026):
+    contar una fila, la entrada de varios renglones, el traslado y mandar al
+    taller sin elegir antes un producto.
+  */
+  const [contando, setContando] = useState<Existencia | null>(null)
+  const [entrando, setEntrando] = useState<{ almacen: string; articulo: string } | null>(null)
+  const [trasladando, setTrasladando] = useState(false)
+  const [alTallerSuelto, setAlTallerSuelto] = useState(false)
+  const notaDeTraslado = useNotaDeTraslado()
   const [categoriasAbiertas, setCategoriasAbiertas] = useState(false)
   // Los modales de la cabecera de MGG (fase 4).
   const [cabecera, setCabecera] = useState<'' | 'resumen' | 'exportar' | 'importar' | 'sinCosto' | 'deshabilitados' | 'nuevo'>('')
 
-  // «Ver dónde está» usa el modal de Existencias, que pide la fila total.
+  // «Ver dónde está» usa el modal de siempre (`ModalesDeExistencias`), que pide la fila total.
   const totales = useExistenciasTotales(desgloseDe !== null)
   const totalDelDesglose = (totales.data ?? []).find((t) => t.articulo_id === desgloseDe) ?? null
 
@@ -426,12 +448,9 @@ export function InventarioPrincipal() {
     setEligiendo(null)
     setMasAcciones(null)
     setMovimiento(null)
-    if (accion === 'contar') {
-      // El conteo vive dentro de Existencias (ver el efecto `accion` de allá).
-      void navegar(
-        `/app/inventario/existencias?almacen=${fila.almacen_id}&accion=contar&articulo=${fila.articulo_id}`,
-      )
-    } else if (accion === 'costo') setCosto(fila)
+    // El conteo es su propio modal desde el 09/11/2026 (antes vivía en Existencias).
+    if (accion === 'contar') setContando(fila)
+    else if (accion === 'costo') setCosto(fila)
     else if (accion === 'taller') setAlTaller(fila)
     else setCambiandoDueno(fila)
   }
@@ -448,13 +467,77 @@ export function InventarioPrincipal() {
 
   const conExistencia = (p: Producto) => p.filas.filter((f) => Number(f.existencia) > 0)
 
+  /*
+    `?accion=entrada|contar&articulo={id}&almacen={id}`: lo que pedían los
+    enlaces a la pantalla vieja de Existencias, que ahora redirige aquí con la
+    misma dirección. Se lee una vez, con los datos ya cargados, y se borra para
+    que recargar no vuelva a abrir el formulario.
+  */
+  const accionPedida = parametros.get('accion')
+  const datosListos = rolesListos && articulosQ.isSuccess && existenciasQ.isSuccess
+  useEffect(() => {
+    if (!accionPedida || !datosListos) return
+    const articuloPedido = Number(parametros.get('articulo')) || null
+    const almacenPedido = parametros.get('almacen') ?? ''
+    if (accionPedida === 'entrada' && almacenista) {
+      setEntrando({ almacen: almacenPedido, articulo: articuloPedido ? String(articuloPedido) : '' })
+    } else if (accionPedida === 'contar' && articuloPedido && almacenista) {
+      const filas = (existenciasQ.data ?? []).filter((e) => e.articulo_id === articuloPedido)
+      const fila = almacenPedido
+        ? filas.find((e) => String(e.almacen_id) === almacenPedido)
+        : filas.length === 1
+          ? filas[0]
+          : undefined
+      if (fila) setContando(fila)
+      // En varios sitios y sin decir cuál: «Ver dónde está», que sabe elegir.
+      else if (filas.length > 1) setDesgloseDe(articuloPedido)
+    }
+    const siguen = new URLSearchParams(parametros)
+    siguen.delete('accion')
+    siguen.delete('articulo')
+    setParametros(siguen, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accionPedida, datosListos])
+
+  /* El acta lleva lo que se está viendo, sin lo que está en cero (salvo lo que
+     está por reponer, donde el cero es justo la alerta). */
+  const renglonesDelActa = filtrados
+    .filter((p) => p.stock !== 0 || p._needsRestock || filtroStock === 'sin_mov')
+    .map((p) => ({
+      articuloId: p.id,
+      codigo: p.sku,
+      articulo: p.nombre,
+      unidad: p.unidad,
+      existencia: p.stock,
+      costoUsd: veValor ? (p.precio ?? 0) : null,
+      valorUsd: veValor ? (p.valor ?? 0) : null,
+    }))
+  const filtroDelActa =
+    [
+      texto.trim() ? `Búsqueda: «${texto.trim()}»` : null,
+      cats.length > 0 ? `Categorías: ${cats.map(etiquetaDeCategoria).join(', ')}` : null,
+      dueno ? `Solo lo de ${nombreDeDueno(dueno) ?? dueno}` : null,
+      clase ? `Clase ${clase}` : null,
+      filtroStock === 'critico'
+        ? 'Solo lo crítico'
+        : filtroStock === 'restock'
+          ? 'Solo lo que hay que reabastecer'
+          : filtroStock === 'ok'
+            ? 'Solo el stock óptimo'
+            : filtroStock === 'sin_mov'
+              ? 'Solo lo que está sin existencias'
+              : null,
+    ]
+      .filter(Boolean)
+      .join(' · ') || null
+
   const hayFiltros = !!texto.trim() || cats.length > 0 || !!clase || !!filtroStock
 
   const cargando = articulosQ.isPending || existenciasQ.isPending
   const error = articulosQ.error ?? existenciasQ.error
 
-  /* Las pestañas de siempre, con esta pantalla delante. */
-  const pestanas: Pestana[] = [{ etiqueta: 'Inventario', a: '/app/inventario' }, ...PESTANAS_MATERIAL]
+  /* Las pestañas de siempre: esta pantalla, el catálogo y los movimientos. */
+  const pestanas = PESTANAS_MATERIAL
 
   return (
     <>
@@ -481,6 +564,59 @@ export function InventarioPrincipal() {
               {recepciones > 0 ? <Chip tone="warning">{recepciones}</Chip> : null}
             </Button>
           </Link>
+          {/*
+            LO QUE HACÍA LA CABECERA DE LA PANTALLA VIEJA DE EXISTENCIAS
+            (09/11/2026). Esa pantalla se retiró y sus botones viven aquí, con
+            los mismos modales y para el mismo rol de Almacén: la entrada de
+            varios renglones (el saldo inicial de un almacén), pedir una salida,
+            el traslado, mandar al taller y el acta para contar a mano. El «↕» y
+            el «⋯» de cada producto siguen siendo lo de uno solo.
+          */}
+          {almacenista ? (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                title="Material que entra sin una compra: saldo inicial, compra por fuera, donación. Varios renglones a la vez."
+                onClick={() => setEntrando({ almacen: almacenSel, articulo: '' })}
+              >
+                + Registrar entrada
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                title="Pedir una salida de material: sale cuando la aprueba quien responde por el almacén"
+                onClick={() =>
+                  void navegar(
+                    `/app/salidas/solicitudes?solicitar=1${almacenSel ? `&almacen=${almacenSel}` : ''}`,
+                  )
+                }
+              >
+                Solicitar salida
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                title="Trasladar material de un almacén a otro, con su nota de traslado"
+                onClick={() => setTrasladando(true)}
+              >
+                ⇄ Trasladar
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                title="Mandar a reparar algo reparable. Vuelve, no se consume."
+                onClick={() => setAlTallerSuelto(true)}
+              >
+                Mandar al taller
+              </Button>
+              <BotonActaDeConteo
+                sitio={nombreAlmacenSel ?? null}
+                filtro={filtroDelActa}
+                renglones={renglonesDelActa}
+              />
+            </>
+          ) : null}
           {alcanza('INVENTARIO', 'TOTAL') ? (
             <Button
               variant="ghost"
@@ -882,14 +1018,39 @@ export function InventarioPrincipal() {
         <ModalEliminarDuplicado articulo={duplicando} onCerrar={() => setDuplicando(null)} />
       ) : null}
 
-      {/* Los modales de siempre, los mismos que abre Existencias. */}
+      {/* Los modales de siempre, los mismos que abría la pantalla vieja de Existencias. */}
       {editando ? <ModalEditarArticulo articulo={editando} onCerrar={() => setEditando(null)} /> : null}
       {costo ? <ModalCorregirCosto fila={costo} onCerrar={() => setCosto(null)} /> : null}
       {cambiandoDueno ? (
         <ModalCambioDeDueno fila={cambiandoDueno} onCerrar={() => setCambiandoDueno(null)} />
       ) : null}
-      <ModalAlTaller fila={alTaller} onCerrar={() => setAlTaller(null)} />
+      <ModalAlTaller
+        fila={alTaller}
+        abierto={alTallerSuelto}
+        onCerrar={() => {
+          setAlTaller(null)
+          setAlTallerSuelto(false)
+        }}
+      />
       <ModalTrasvase fila={trasvase} onCerrar={() => setTrasvase(null)} />
+      {contando ? <ModalConteo fila={contando} onCerrar={() => setContando(null)} /> : null}
+      {entrando ? (
+        <ModalEntradaDeMaterial
+          almacenInicial={entrando.almacen}
+          articuloInicial={entrando.articulo}
+          onCerrar={() => setEntrando(null)}
+        />
+      ) : null}
+      <ModalTraslado
+        abierto={trasladando}
+        onCerrar={() => setTrasladando(false)}
+        origen={almacenSel || undefined}
+        // La nota sale cuando el material ya salió; un pedido todavía no mueve nada.
+        onTrasladado={(t) => {
+          if (t.forma !== 'PEDIR') void notaDeTraslado.abrirTraslado(t.id)
+        }}
+      />
+      {notaDeTraslado.visor}
       <ModalDesglose
         articulo={totalDelDesglose}
         onCerrar={() => setDesgloseDe(null)}
