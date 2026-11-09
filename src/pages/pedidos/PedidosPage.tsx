@@ -31,11 +31,13 @@ import {
   esMercado,
   fechaHoraVE,
   money,
+  MOTIVO_NO_PAGO,
   progresoRecepcion,
   puedeFinalizarse,
   quienCargo,
   quienSolicita,
   relTime,
+  textoNoPago,
   type TonoEstado,
 } from '@/lib/pedidos'
 import { desglosarOc, infoModalidad } from '@/lib/ofertas'
@@ -956,6 +958,15 @@ const KanbanCard = memo(function KanbanCard({
         {orden.revisada_almacen_en ? (
           <Chip tone="info" title={`Revisada por almacén · ${fechaHoraVE(orden.revisada_almacen_en)}`}>
             📦 Revisada por almacén
+          </Chip>
+        ) : null}
+        {/* «¿Se pagará esta OC?» → No (09/11/2026): mientras siga por aprobar. */}
+        {orden.estado === 'oc_creada' && orden.no_pago_motivo ? (
+          <Chip
+            tone={orden.no_pago_motivo === 'no_procede' ? 'danger' : 'warning'}
+            title={`${textoNoPago(orden)} · ${orden.no_pago_por_nombre ?? '—'} · ${fechaHoraVE(orden.no_pago_en)}`}
+          >
+            {MOTIVO_NO_PAGO[orden.no_pago_motivo].icono} {MOTIVO_NO_PAGO[orden.no_pago_motivo].corto}
           </Chip>
         ) : null}
       </div>

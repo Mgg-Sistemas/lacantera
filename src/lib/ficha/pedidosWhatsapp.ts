@@ -334,6 +334,34 @@ export function textoOcAprobada(o: Orden, d: { proveedor: string; empresa: strin
 }
 
 /**
+ * «¿Se pagará esta OC?» → No, al aprobar (MGG `textoOrdenTesoreria` con
+ * estado «NO PAGADA · motivo» o «NO PROCEDE LA COMPRA · Motivo: …»).
+ */
+export function textoOcNoSePagara(
+  o: Orden,
+  d: { proveedor: string; empresa: string; condicion: string | null; motivo: string; noProcede: boolean },
+): string {
+  const analista = (o.oc_creada_por_nombre ?? '').trim()
+  const solicita = (quienSolicita(o) ?? '').trim()
+  const L: string[] = []
+  L.push(`${d.noProcede ? '🚫' : '⏳'} *OC ${d.noProcede ? 'NO PROCEDE' : 'NO SE PAGARÁ POR AHORA'}: ${o.oc_codigo ?? o.codigo}*`)
+  if (o.urgente) L.push('🚨 *URGENTE*')
+  L.push(`🏭 *Proveedor:* ${d.proveedor || '—'}`)
+  if (analista) L.push(`🛒 *Analista encargado:* ${analista}`)
+  if (solicita) L.push(`🙋 *Solicita:* ${solicita}`)
+  if (d.condicion) L.push(`📋 *Condición:* ${d.condicion}`)
+  L.push(`💵 *Total:* ${montoTxt(o.total, '$')}`)
+  L.push(`📌 *Motivo:* ${d.motivo}`)
+  L.push(
+    d.noProcede
+      ? '➡ *Sigue:* el analista cancela la OC o busca otra cotización'
+      : '➡ *Sigue:* por aprobar; se aprueba cuando se pueda pagar',
+  )
+  L.push(`🏢 *${d.empresa.toUpperCase()}*`)
+  return L.join('\n')
+}
+
+/**
  * MGG `textoOrdenTesoreria` («PAGADA POR TESORERIA»); aquí paga Compras, y el
  * mensaje lleva la referencia, la fecha y que sigue la recepción.
  */
