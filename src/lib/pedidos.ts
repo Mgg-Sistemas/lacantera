@@ -496,6 +496,14 @@ const r4 = (n: number) => Math.round(n * 10000) / 10000
 export const fmtCant = (n: number | string | null | undefined): string =>
   num(n).toLocaleString('es-VE', { maximumFractionDigits: 3 })
 
+/**
+ * El SKU de un renglón tal como lo enseña la pantalla: el código del
+ * inventario o, en uno de nombre general, su GEN-…. Los PDF lo escribían «—»
+ * en los generales y la dueña lo vio (09/11/2026): lo que dice el modal es lo
+ * que va en el papel.
+ */
+export const skuDe = (it: { sku?: string | null }): string => it.sku?.trim() || '—'
+
 /** dd/mm/aaaa hh:mm en hora de Caracas. */
 export function fechaHoraVE(iso?: string | null): string {
   const d = iso ? new Date(iso) : new Date()

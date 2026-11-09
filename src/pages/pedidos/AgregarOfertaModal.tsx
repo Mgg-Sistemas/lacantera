@@ -734,7 +734,7 @@ export function AgregarOfertaModal({
                     <tr key={f.key} className="border-hairline border-t align-top">
                       <td className="px-2 py-1.5 font-mono">
                         {f.variante ? <span title="Variante del mismo producto">↳ </span> : null}
-                        {f.general ? '—' : f.sku}
+                        {f.sku}
                       </td>
                       <td className="px-2 py-1.5">
                         {f.nombre}

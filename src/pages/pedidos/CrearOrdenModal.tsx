@@ -6,13 +6,14 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
-import { useArticulos, useUnidades } from '@/lib/api/catalogo'
+import { useArticulos, useCategoriasDeInventario, useUnidades } from '@/lib/api/catalogo'
 import {
   MAX_IMAGENES_OP,
   guardarImagenesOrden,
   useAgregarUnidad,
   useCrearSolicitud,
   useEditarSolicitud,
+  useFichaDesdeSolicitud,
   useProximoCodigo,
   useUnidadesSolicitantes,
   type Imagen,
@@ -31,9 +32,13 @@ import { enMayuscula } from '@/lib/texto'
   existe:
 
   - SIN «¿DÓNDE SE NECESITA?»: un solo almacén revisa, todo llega a ALM-GEN.
-  - SIN «PRODUCTO NUEVO» QUE CREA FICHA: en MGG solo pasa con el flujo de
-    almacén apagado; aquí está siempre prendido, así que lo que no está en el
-    inventario se pide con NOMBRE GENERAL y no se crea nada.
+  - «+ NO ESTÁ EN INVENTARIO»: sin categoría se pide con NOMBRE GENERAL y no
+    se crea nada (SKU GEN-…). CON CATEGORÍA (la dueña, 09/11/2026) se crea la
+    ficha en el catálogo con el código siguiente de la categoría —REP-0001,
+    REP-0002…— con `compras_ficha_desde_solicitud`, y el renglón entra como
+    un producto del inventario. Si ya hay una con ese nombre en la categoría,
+    entra esa. La base se la admite también a quien pide con nombres
+    generales: es la ficha que él mismo sacó.
   - QUIÉN PIDE: quien no puede pedir por otro (`puede_pedir_por_otro`) ve su
     nombre y no lo puede cambiar; la base tampoco se lo acepta.
   - LA NOTA: MGG dice «la ve Tesorería al pagar». Aquí Tesorería no entra en
@@ -55,6 +60,12 @@ interface Fila {
   articulo_id: number | null
   /** El almacén ya lo entregó entero: queda con cero a comprar. */
   entregado: boolean
+  /**
+   * La ficha salió de «+ No está en inventario» con categoría: recién creada
+   * o la que ya se llamaba así. Quien pide con nombres generales sí la puede
+   * llevar (la base se la admite por ser suya).
+   */
+  fichaPropia: 'creada' | 'existente' | null
 }
 
 let contador = 0
@@ -77,6 +88,8 @@ export function CrearOrdenModal({
   const crear = useCrearSolicitud()
   const editar = useEditarSolicitud()
   const agregarUnidad = useAgregarUnidad()
+  const fichaDesdeSolicitud = useFichaDesdeSolicitud()
+  const { data: categorias } = useCategoriasDeInventario()
   const { data: unidadesSol } = useUnidadesSolicitantes()
   const { data: articulos } = useArticulos()
   const { data: medidas } = useUnidades()
@@ -98,6 +111,7 @@ export function CrearOrdenModal({
       general: !!it.general || !it.articulo_id,
       articulo_id: it.articulo_id ?? null,
       entregado: Number(it.cantidad_almacen) > 0,
+      fichaPropia: null,
     })),
   )
   const [unidad, setUnidad] = useState(orden?.unidad_solicitante ?? '')
@@ -113,6 +127,7 @@ export function CrearOrdenModal({
   const [nuevoNombre, setNuevoNombre] = useState('')
   const [generalCant, setGeneralCant] = useState('1')
   const [nuevoUnidad, setNuevoUnidad] = useState('UND')
+  const [nuevoCategoria, setNuevoCategoria] = useState('')
 
   const [imagenes, setImagenes] = useState<File[]>([])
   const [imagenesExist] = useState<Imagen[]>(orden?.imagenes ?? [])
@@ -139,6 +154,12 @@ export function CrearOrdenModal({
   )
 
   const medidasOpciones = (medidas ?? []).map((m) => ({ valor: m.codigo, etiqueta: m.nombre }))
+
+  // Un servicio no se pide aquí: va por «Nuevo servicio».
+  const categoriasOpciones = (categorias ?? [])
+    .filter((c) => c.activa && c.codigo !== 'SERVICIO')
+    .map((c) => ({ valor: c.codigo, etiqueta: `${c.etiqueta} · ${c.prefijo}-…` }))
+  const prefijoElegido = (categorias ?? []).find((c) => c.codigo === nuevoCategoria)?.prefijo ?? '…'
 
   async function handleAddUnidad() {
     const n = enMayuscula(nuevaUnidad.trim())
@@ -186,13 +207,17 @@ export function CrearOrdenModal({
         general: false,
         articulo_id: a.id,
         entregado: false,
+        fichaPropia: null,
       },
     ])
     toast(`"${a.nombre}" agregado a la solicitud`, 'success')
   }
 
-  /** Un renglón con NOMBRE GENERAL, sin crear producto en el inventario. */
-  function agregarNombreGeneral() {
+  /**
+   * Lo que no está en el inventario. Sin categoría, un renglón con NOMBRE
+   * GENERAL y no se crea nada; con categoría, la ficha nueva con su código.
+   */
+  async function agregarNombreGeneral() {
     const nombre = enMayuscula(nuevoNombre.trim())
     if (!nombre) {
       toast('Escribí el nombre general de lo que se pide', 'error')
@@ -208,6 +233,48 @@ export function CrearOrdenModal({
       return
     }
     const und = nuevoUnidad.trim() || 'UND'
+
+    if (nuevoCategoria) {
+      let ficha
+      try {
+        ficha = await fichaDesdeSolicitud.mutateAsync({ nombre, categoria: nuevoCategoria, unidad: und })
+      } catch (e) {
+        toast(mensajeDe(e, 'No se pudo crear el producto en el inventario'), 'error')
+        return
+      }
+      const undFicha = ficha.unidad || und
+      if (filas.some((f) => f.articulo_id === ficha.id)) {
+        toast(`"${ficha.nombre}" (${ficha.codigo}) ya está en la solicitud: cambiá su cantidad en la lista.`, 'warning')
+        return
+      }
+      setFilas((prev) => [
+        ...prev,
+        {
+          clave: clave(),
+          sku: ficha.codigo,
+          nombre: ficha.nombre,
+          cantidad: String(cantidad),
+          unidad: undFicha,
+          comprar: true,
+          finalidad: '',
+          general: false,
+          articulo_id: ficha.id,
+          entregado: false,
+          fichaPropia: ficha.creada ? 'creada' : 'existente',
+        },
+      ])
+      toast(
+        ficha.creada
+          ? `"${ficha.nombre}" creado en el inventario con el código ${ficha.codigo} · ${fmtCant(cantidad)} ${undFicha}`
+          : `"${ficha.nombre}" ya estaba en el inventario como ${ficha.codigo}: se agregó ese · ${fmtCant(cantidad)} ${undFicha}`,
+        'success',
+      )
+      setNuevoNombre('')
+      setGeneralCant('1')
+      setNuevoOpen(false)
+      return
+    }
+
     setFilas((prev) => [
       ...prev,
       {
@@ -221,6 +288,7 @@ export function CrearOrdenModal({
         general: true,
         articulo_id: null,
         entregado: false,
+        fichaPropia: null,
       },
     ])
     toast(`"${nombre}" agregado con nombre general · ${fmtCant(cantidad)} ${und}`, 'success')
@@ -256,7 +324,7 @@ export function CrearOrdenModal({
       return
     }
     const previos = new Set((orden?.items ?? []).map((i) => i.sku))
-    if (soloNombreGeneral && filas.some((f) => f.articulo_id && !previos.has(f.sku))) {
+    if (soloNombreGeneral && filas.some((f) => f.articulo_id && !previos.has(f.sku) && !f.fichaPropia)) {
       toast('La solicitud va con nombres generales: el analista de Compras pone el nombre de inventario al cotizar.', 'error')
       return
     }
@@ -420,8 +488,9 @@ export function CrearOrdenModal({
               <span aria-hidden="true">ℹ</span>
               <span>
                 Escribe lo que necesitas con un <strong className="font-semibold">nombre general</strong> (ej.
-                «TORNILLO 1/2»). No se guarda en el inventario: el analista de Compras le pone el nombre correcto al
-                cargar la cotización.
+                «TORNILLO 1/2»). Sin categoría no se guarda en el inventario: el analista de Compras le pone el nombre
+                correcto al cargar la cotización. Si sabés su categoría, elegila en «+ No está en inventario» y se crea
+                en el inventario con su código.
               </span>
             </div>
           ) : (
@@ -476,6 +545,7 @@ export function CrearOrdenModal({
                         ) : (
                           <span className="text-ink/50 font-mono">{f.sku}</span>
                         )}
+                        {f.fichaPropia === 'creada' ? <Chip tone="info">nuevo en inventario</Chip> : null}
                         {f.entregado ? <Chip tone="success">📦 lo entrega el almacén</Chip> : null}
                       </div>
                     </div>
@@ -538,14 +608,32 @@ export function CrearOrdenModal({
           {nuevoOpen ? (
             <div className="border-hairline mt-3 space-y-3 rounded-[6px] border border-dashed p-3">
               <p className="text-ink/60 text-xs">
-                Nombre general (Compras fija el nombre de inventario al cotizar).{' '}
-                <strong className="font-semibold">No se crea</strong> ningún producto en el inventario.
+                {nuevoCategoria ? (
+                  <>
+                    Con categoría <strong className="font-semibold">se crea el producto en el inventario</strong> con su
+                    código ({prefijoElegido}-0001, {prefijoElegido}-0002…) y entra a la solicitud como cualquier producto
+                    del inventario. Si ya hay uno con ese nombre en la categoría, se usa ese.
+                  </>
+                ) : (
+                  <>
+                    Sin categoría va con nombre general (Compras fija el nombre de inventario al cotizar) y{' '}
+                    <strong className="font-semibold">no se crea</strong> ningún producto en el inventario. Si elegís la
+                    categoría, sí se crea con su código.
+                  </>
+                )}
               </p>
               <Input
                 label="Nombre general de lo que se pide *"
                 maxLength={150}
                 value={nuevoNombre}
                 onChange={(e) => setNuevoNombre(e.target.value)}
+              />
+              <Select
+                label="Categoría"
+                value={nuevoCategoria}
+                onChange={(e) => setNuevoCategoria(e.target.value)}
+                vacio="Sin categoría (nombre general)"
+                opciones={categoriasOpciones}
               />
               <div className="grid grid-cols-2 gap-3">
                 <Input
@@ -563,8 +651,16 @@ export function CrearOrdenModal({
                   opciones={medidasOpciones.length ? medidasOpciones : [{ valor: 'UND', etiqueta: 'Unidad' }]}
                 />
               </div>
-              <Button variant="outline" onClick={agregarNombreGeneral}>
-                Añadir a la solicitud con nombre general
+              <Button
+                variant="outline"
+                onClick={() => void agregarNombreGeneral()}
+                disabled={fichaDesdeSolicitud.isPending}
+              >
+                {fichaDesdeSolicitud.isPending
+                  ? 'Creando en el inventario…'
+                  : nuevoCategoria
+                    ? 'Crear en el inventario y añadir'
+                    : 'Añadir a la solicitud con nombre general'}
               </Button>
             </div>
           ) : null}
