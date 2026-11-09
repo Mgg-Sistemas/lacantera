@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react'
 import { Navigate } from 'react-router'
 import { Cargando } from '@/components/ui/Estado'
-import { useMisAcciones } from '@/lib/api/usuarios'
+import { useMisAcciones, useSoloTelefono } from '@/lib/api/usuarios'
+import { useMediaQuery } from '@/lib/useMediaQuery'
 import { useMisRoles } from '@/lib/api/catalogo'
 import { PANTALLAS_DE_TELEFONO } from '@/config/navigation'
 
@@ -31,17 +32,30 @@ import { PANTALLAS_DE_TELEFONO } from '@/config/navigation'
   nada: enseñar el tablero y saltar al surtidor medio segundo después se lee
   como un parpadeo roto.
 */
+/*
+  VISTA DE PC Y VISTA DE TELÉFONO (la dueña, 09/11/2026: los roles nuevos
+  llevan «vista de PC y de tlf»). La casilla de teléfono ya no manda a nadie a
+  su pantalla de teléfono estando en la PC: en la PC se entra al panel y desde
+  el menú a cada módulo; en el teléfono, directo a su pantalla. La excepción
+  sigue siendo el rol «solo teléfono», que aterriza en ella siempre.
+*/
+const ES_TELEFONO = '(max-width: 767px)'
+
 export function Entrada({ tablero }: { tablero: ReactNode }) {
   const acciones = useMisAcciones()
   const roles = useMisRoles()
+  // `isPending` y no `resuelto`: si la pregunta fallara, se sigue como cuenta
+  // normal en vez de quedarse cargando para siempre.
+  const { soloTelefono, isPending: telefonoPendiente } = useSoloTelefono()
+  const enTelefono = useMediaQuery(ES_TELEFONO)
 
-  if (!acciones.resuelto || !roles.isSuccess) return <Cargando />
+  if (!acciones.resuelto || !roles.isSuccess || telefonoPendiente) return <Cargando />
 
   const esAdmin = roles.roles.includes('ADMIN')
   // El orden de PANTALLAS_DE_TELEFONO es la prioridad: si alguien tuviera dos
   // casillas, gana la primera que case. Ver su propio comentario en
   // navigation.ts para por qué el surtidor va delante.
-  if (!esAdmin) {
+  if (!esAdmin && (enTelefono || soloTelefono)) {
     const propia = PANTALLAS_DE_TELEFONO.find((p) => acciones.puede(p.accion))
     if (propia) return <Navigate to={propia.ruta} replace />
   }

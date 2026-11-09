@@ -1057,8 +1057,11 @@ const usuarioVacio = {
   cargo: '',
   cedula: '',
   telefono: '',
-  /** Un usuario, un rol (la dueña, 09/11/2026). */
-  rol: 'BASICO',
+  /**
+   * Un usuario, un rol (la dueña, 09/11/2026). Sin rol preelegido: desde que
+   * los roles son cinco («Básico» se borró), sistemas elige a mano.
+   */
+  rol: '',
 }
 
 function PestanaUsuarios({ editable }: { editable: boolean }) {
