@@ -103,10 +103,10 @@ import { AgregarOfertaModal } from './AgregarOfertaModal'
 import { AceptarOfertaModal } from './AceptarOfertaModal'
 import { AsignarProveedoresModal } from './AsignarProveedoresModal'
 import { EditarOcModal } from './EditarOcModal'
-import { ChatOC } from './ChatOC'
 import { DocumentoRetencionesModal, MetodoPagoModal } from './MetodoPagoModal'
 import { AbonoModal, CreditoModal, MarcarPagadaModal } from './PagoModales'
 import { RecibirOrdenModal } from './RecibirOrdenModal'
+import { DevolucionesDeOrden } from './DevolucionesDeOrden'
 import { ComprobanteOcModal, FinalizarPedidoModal, RecepcionesDeOrdenModal } from './FinalizarPedidoModal'
 import { ServicioRealizadoModal } from './ServicioRealizadoModal'
 
@@ -739,20 +739,17 @@ export function OrdenDetailModal({
           📥 Ver recepción
         </Button>
       ) : null}
-      {o.factura_path && (permisos.compras || permisos.recibe_almacen) ? (
+      {/*
+        Finalizada (la dueña, 09/11/2026: «muchos botones»): la factura en un
+        solo botón —verla si está, cargarla si falta— y nada de avisos.
+      */}
+      {o.estado === 'finalizada' && o.factura_path && (permisos.compras || permisos.recibe_almacen) ? (
         <Button variant="ghost" onClick={() => void abrirArchivoRecepcion(o.factura_path!)}>
-          {o.estado === 'finalizada' ? '📎 Ver factura / soporte' : '📎 Ver soporte adjunto'}
+          📎 Ver factura
         </Button>
       ) : null}
-      {o.estado === 'finalizada' && canManageProcurement ? (
-        <Button onClick={() => setSub({ kind: 'comprobante' })}>
-          {o.factura_path ? '📎 Reemplazar factura / nota' : '📎 Cargar factura / nota de entrega'}
-        </Button>
-      ) : null}
-      {o.estado === 'finalizada' && permisos.compras ? (
-        <Button variant="ghost" onClick={() => setAvisoPaso({ tipo: 'finalizada' })}>
-          💬 Aviso de finalizado
-        </Button>
+      {o.estado === 'finalizada' && !o.factura_path && canManageProcurement ? (
+        <Button onClick={() => setSub({ kind: 'comprobante' })}>📎 Cargar factura / nota de entrega</Button>
       ) : null}
       {puedeFinalizarse(o) && canManageProcurement ? (
         <Button title="Confirmá que se recibió todo y evaluá al proveedor" onClick={() => setSub({ kind: 'finalizar' })}>
@@ -1482,6 +1479,8 @@ export function OrdenDetailModal({
         </div>
         {aviso ? <p className="text-warning mt-1 text-xs">⚠ {aviso}</p> : null}
 
+        {o.oc_codigo ? <DevolucionesDeOrden orden={o} puedeDecidir={canManageProcurement} /> : null}
+
         <h4 className="text-ink/85 mt-6 mb-2 font-semibold">Historial</h4>
         {historial.length === 0 ? (
           <p className="text-ink/50 text-sm">Sin eventos registrados.</p>
@@ -1514,7 +1513,6 @@ export function OrdenDetailModal({
           </ol>
         )}
 
-        <ChatOC orden={o} yo={yo} />
       </Modal>
 
       {porEliminar ? (

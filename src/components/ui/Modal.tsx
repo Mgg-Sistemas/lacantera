@@ -53,10 +53,12 @@ export function Modal({
   useEffect(() => {
     if (!abierto) return
 
-    const alPulsar = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') alCerrar.current()
-    }
-    document.addEventListener('keydown', alPulsar)
+    /*
+      NI UN CLIC AFUERA NI ESCAPE LO CIERRAN (la dueña, 09/11/2026: «no
+      permitas que si le dan clic afuera se cierre; para cerrarlo debe darle
+      en Cancelar o en la X»). Un clic de más se llevaba lo que se estaba
+      llenando. Solo la X y los botones del pie cierran.
+    */
 
     // El foco entra al panel: sin esto, tabular desde el modal recorre la
     // página de detrás, que el usuario no puede ver. Solo si no está ya
@@ -70,7 +72,6 @@ export function Modal({
     const liberar = bloquearScroll()
 
     return () => {
-      document.removeEventListener('keydown', alPulsar)
       liberar()
     }
   }, [abierto])
@@ -99,7 +100,6 @@ export function Modal({
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
       <div
         className="bg-ink/40 absolute inset-0 hidden backdrop-blur-[1px] sm:block"
-        onClick={onCerrar}
         aria-hidden="true"
       />
 

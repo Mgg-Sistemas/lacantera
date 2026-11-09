@@ -180,6 +180,9 @@ export function AgregarOfertaModal({
 
   // E-F. Totales e impuestos.
   const [descuentoStr, setDescuentoStr] = useState(txt(Number(oferta?.descuento)))
+  // El descuento también en % (la dueña, 09/11/2026): se guarda en monto, como siempre.
+  const [descuentoModo, setDescuentoModo] = useState<'pct' | 'monto'>('monto')
+  const [descuentoPct, setDescuentoPct] = useState('')
   const [incluyeIva, setIncluyeIva] = useState(Number(oferta?.iva) > 0)
   const [ivaPct, setIvaPct] = useState('')
   const [ivaMonto, setIvaMonto] = useState(txt(Number(oferta?.iva)))
@@ -250,8 +253,11 @@ export function AgregarOfertaModal({
   const precioEfectivo = bcvSubtotal > 0 && usdTotal > 0 ? r2(usdTotal) : 0
   const ahorro = precioEfectivo > 0 ? r2(precioTotal - precioEfectivo) : 0
   const ahorroPct = ahorro > 0 && precioTotal > 0 ? Math.round((ahorro / precioTotal) * 100) : 0
-  const descuentoObt = Math.max(0, r2(parseMontoEs(descuentoStr)))
   const baseFactura = precioTotal > 0 ? precioTotal : precioEfectivo
+  const descuentoObt =
+    descuentoModo === 'pct'
+      ? r2((baseFactura * Math.min(100, Math.max(0, parseMontoEs(descuentoPct)))) / 100)
+      : Math.max(0, r2(parseMontoEs(descuentoStr)))
   const facturaNeta = r2(Math.max(0, baseFactura - descuentoObt))
   const ivaCalc =
     ivaModo === 'pct' ? ivaDesdePorcentaje(facturaNeta, parseMontoEs(ivaPct), ivaIncluido) : r2(parseMontoEs(ivaMonto))
@@ -802,7 +808,7 @@ export function AgregarOfertaModal({
                         />
                         <input
                           className={cn(CAMPO, 'mt-1')}
-                          placeholder="Modelo (opcional)"
+                          placeholder="Modelo"
                           maxLength={60}
                           value={f.modelo}
                           onChange={(e) => setFila(f.key, { modelo: e.target.value.toUpperCase() })}
@@ -956,15 +962,34 @@ export function AgregarOfertaModal({
               </span>
             ) : null}
           </div>
-          <div className="mt-2 max-w-xs">
-            <Input
-              label="Descuento obtenido (opcional)"
-              type="number"
-              limite={{ maxDecimales: 2, sinNegativos: true }}
-              placeholder="0,00"
-              value={descuentoStr}
-              onChange={(e) => setDescuentoStr(e.target.value)}
-            />
+          <div className="mt-2">
+            <div className="text-ink/75 mb-1.5 text-sm font-medium">Descuento obtenido</div>
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <span className="text-ink/60">%</span>
+              <input
+                className={cn(CAMPO, 'w-20')}
+                inputMode="decimal"
+                placeholder="0"
+                aria-label="Descuento en porcentaje"
+                value={descuentoModo === 'pct' ? descuentoPct : baseFactura > 0 && descuentoObt > 0 ? cifra2((descuentoObt / baseFactura) * 100) : ''}
+                onChange={(e) => {
+                  setDescuentoModo('pct')
+                  setDescuentoPct(comoNumero(e.target.value, { maxEnteros: 3, maxDecimales: 2, sinNegativos: true }))
+                }}
+              />
+              <span className="text-ink/60">Monto</span>
+              <input
+                className={cn(CAMPO, 'w-28')}
+                inputMode="decimal"
+                placeholder="0,00"
+                aria-label="Descuento en monto"
+                value={descuentoModo === 'monto' ? descuentoStr : descuentoObt > 0 ? cifra2(descuentoObt) : ''}
+                onChange={(e) => {
+                  setDescuentoModo('monto')
+                  setDescuentoStr(comoNumero(e.target.value, { maxDecimales: 2, sinNegativos: true }))
+                }}
+              />
+            </div>
           </div>
           <p className="text-ink/55 mt-1 text-xs">
             Descuento negociado que se le resta al monto. Factura a pagar: <strong>{money(facturaNeta)}</strong> · descuento{' '}
@@ -1066,7 +1091,7 @@ export function AgregarOfertaModal({
             </div>
           ) : null}
           <div className="mt-3 text-sm">
-            <div className="text-ink/75 font-medium">Ajuste frente a la factura (opcional, ± con signo)</div>
+            <div className="text-ink/75 font-medium">Ajuste frente a la factura (± con signo)</div>
             <div className="mt-1 flex flex-wrap gap-2">
               <input
                 className={cn(CAMPO, 'w-28')}
@@ -1129,7 +1154,7 @@ export function AgregarOfertaModal({
 
         {/* I. Datos técnicos */}
         <div className="border-hairline rounded-[8px] border p-3">
-          <div className="text-ink/85 mb-2 font-semibold">📋 Datos técnicos del producto (opcional)</div>
+          <div className="text-ink/85 mb-2 font-semibold">📋 Datos técnicos del producto</div>
           <div className="grid gap-2 sm:grid-cols-3">
             {DATOS_TECNICOS.map((t) => (
               <Input
@@ -1177,7 +1202,7 @@ export function AgregarOfertaModal({
         {/* K. Adjuntos */}
         <div>
           <label className="text-ink/75 mb-1.5 block text-sm font-medium">
-            Cargue la cotización del proveedor (hasta 4 fotos/PDF · opcional)
+            Cargue la cotización del proveedor (hasta 4 fotos/PDF)
             <input type="file" multiple accept="application/pdf,image/*" className="mt-1 block text-sm" onChange={elegirArchivos} />
           </label>
           {archivos.map((f, i) => (
