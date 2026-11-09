@@ -608,7 +608,7 @@ function ModalReportePorCobrar({
       abierto
       onCerrar={onCerrar}
       titulo="Reporte de cuentas por cobrar"
-      descripcion="Los clientes que deben por notas de entrega, de quien más debe a quien menos."
+      descripcion="Relación de clientes con saldo pendiente en notas de entrega, ordenada de mayor a menor saldo."
       acciones={
         <>
           <Button variant="ghost" onClick={onCerrar}>
@@ -622,8 +622,8 @@ function ModalReportePorCobrar({
     >
       <p className={`text-sm ${salen.length === 0 ? 'text-warning font-medium' : 'text-ink/65'}`}>
         {salen.length === 0
-          ? 'No hay notas vencidas: no hay nada que informar.'
-          : `Saldrán ${salen.length} cliente${salen.length === 1 ? '' : 's'} con ${notas} nota${notas === 1 ? '' : 's'}.`}
+          ? 'No existen notas vencidas para incluir en el reporte.'
+          : `Se incluirán ${salen.length} cliente${salen.length === 1 ? '' : 's'} con ${notas} nota${notas === 1 ? '' : 's'}.`}
       </p>
       <div className="mt-5 space-y-3">
         {/*
@@ -632,8 +632,8 @@ function ModalReportePorCobrar({
         */}
         <div role="radiogroup" aria-label="Qué reporte" className="grid gap-2 sm:grid-cols-2">
           {[
-            { valor: true, titulo: 'Resumen + detalle', texto: 'La deuda por cliente y, después, cada nota con su atraso.' },
-            { valor: false, titulo: 'Solo resumen', texto: 'Una fila por cliente, sin las notas. Suele caber en una hoja.' },
+            { valor: true, titulo: 'Resumen + detalle', texto: 'Saldo consolidado por cliente y desglose de cada nota con su estatus de vencimiento.' },
+            { valor: false, titulo: 'Solo resumen', texto: 'Formato consolidado con una fila por cliente, sin desglose de notas.' },
           ].map((o) => (
             <button
               key={o.titulo}
@@ -654,7 +654,7 @@ function ModalReportePorCobrar({
           encendido={soloVencidas}
           onCambio={setSoloVencidas}
           etiqueta="Solo las notas vencidas"
-          detalle="Deja fuera las que todavía no llegan a su fecha de pago."
+          detalle="Incluye únicamente las notas cuya fecha de vencimiento ha transcurrido."
         />
         <Interruptor encendido={conLogo} onCambio={setConLogo} etiqueta="Con logo" />
       </div>
