@@ -102,22 +102,6 @@ function unNombre(
 export function Articulos() {
   const navegar = useNavigate()
   const { data, isPending, error } = useArticulos(false)
-  const { data: unidades } = useUnidades()
-  const { data: presentaciones } = usePresentaciones()
-  /*
-    Las marcas que ya se han usado, para ofrecerlas en vez de que cada quien
-    teclee la suya. Salen de los articulos que ya estan cargados —no hace falta
-    otra consulta— y se ordenan para que la lista no baile entre aperturas.
-  */
-  const marcasUsadas = useMemo(
-    () =>
-      [...new Set((data ?? []).map((a) => a.marca).filter((m): m is string => !!m))].sort((x, y) =>
-        x.localeCompare(y, 'es'),
-      ),
-    [data],
-  )
-  const crear = useCrearArticulo()
-  const editar = useEditarArticulo()
 
   /*
     Las categorías salen de la base desde el 05/10/2026: lo que antes era una
@@ -129,12 +113,9 @@ export function Articulos() {
   const opcionesCategoria = opcionesDeCategoria(categorias.data)
   const etiquetaDeCategoria = (codigo: string) =>
     (categorias.data ?? []).find((c) => c.codigo === codigo)?.etiqueta ?? codigo
-  const prefijoDeCategoria = (codigo: string) =>
-    (categorias.data ?? []).find((c) => c.codigo === codigo)?.prefijo
   const [gestionando, setGestionando] = useState(false)
 
   const eliminar = useEliminarArticulo()
-  const renumerar = useRenumerarArticulo()
   const cambiarEstado = useCambiarEstadoArticulo()
 
   // En la dirección y no en el estado: así «el catálogo filtrado por aceite»
@@ -203,72 +184,6 @@ export function Articulos() {
   const [motivoEstado, setMotivoEstado] = useState('')
   const desactivados = (data ?? []).filter((a) => !a.activo).length
 
-  /*
-    La unidad con la que está guardado lo que se está corrigiendo, y si ya se
-    movió alguna vez. Las dos solo se piden con el formulario abierto: nadie
-    necesita doscientos movimientos para pintar el catálogo.
-  */
-  const unidadDeAntes = (data ?? []).find((a) => a.id === form?.id)?.unidad
-
-  /*
-    LA DENSIDAD, UNA POR MATERIAL.
-
-    Christopher, 16/09/2026: «en los formularios al cargar algo en m3, debe pedir
-    directamente su densidad y expresar su conversión». Lo que se mide en M3 o en
-    TON no se guarda sin ella —la base tampoco lo acepta—, y cambiar la que ya
-    tenía pide motivo, porque los papeles convierten con la del día en que se
-    imprimen, también los viejos. Ponerla por primera vez no lo pide.
-  */
-  const articuloAbierto = (data ?? []).find((a) => a.id === form?.id)
-  const densidadDeAntes = articuloAbierto?.densidad_ton_m3 ?? null
-  const pideDensidad = form?.unidad === 'M3' || form?.unidad === 'TON'
-  const densidadEscrita = Number(form?.densidad_ton_m3)
-  const cambiaDensidad =
-    !!form?.id &&
-    densidadDeAntes !== null &&
-    densidadEscrita > 0 &&
-    densidadEscrita !== Number(densidadDeAntes)
-  const movimientosDelArticulo = useMovimientos(
-    { articuloId: form?.id ?? undefined },
-    Boolean(form?.id),
-  )
-  const seHaMovido = (movimientosDelArticulo.data?.length ?? 0) > 0
-  /*
-    LO QUE EL PANEL DE ABAJO YA DECLARO.
-
-    El modal toma una foto del articulo al abrirse. Si desde el panel se anade o
-    se cambia una presentacion, la foto se queda vieja — y «Guardar» la manda de
-    vuelta, pisando lo que el panel acababa de escribir. Se leyo la lista aqui
-    tambien: react-query la comparte por clave con el panel, asi que no cuesta
-    una consulta mas.
-  */
-  const { data: yaDeclaradas } = usePresentacionesDeArticulo(form?.id ?? null)
-  const laDeDefecto = (yaDeclaradas ?? []).find((x) => x.activa && x.por_defecto)
-
-  /*
-    La misma consulta que hace el aviso de abajo. React-query la comparte por la
-    clave, así que preguntarla aquí no cuesta una llamada de más — y lo que gana
-    es que el botón no deje chocar contra la reja de la base para enterarse.
-  */
-  const parecidos = useArticulosParecidos(
-    form?.nombre ?? '',
-    form?.id || undefined,
-    form?.categoria,
-  )
-  const hayHomonimo = (parecidos.data ?? []).some((p) => p.es_el_mismo)
-
-  /*
-    ¿EL CÓDIGO SIGUE DICIENDO LA CATEGORÍA VIEJA?
-
-    Solo para decidir si se ofrece la renumeración. Quien decide de verdad es la
-    base, que además comprueba lo que esta pantalla no puede saber: si el
-    artículo ya salió en algún papel.
-  */
-  const desencaja =
-    !!form?.id &&
-    !!form.codigo &&
-    !!prefijoDeCategoria(form.categoria) &&
-    form.codigo.split('-')[0] !== prefijoDeCategoria(form.categoria)
 
   const filtrados = useMemo(() => {
     const texto = busqueda.trim().toLowerCase()
@@ -566,10 +481,266 @@ export function Articulos() {
         </Modal>
       ) : null}
 
-      {form ? (
+      {form ? <ModalArticuloNuevo onCerrar={() => setForm(null)} /> : null}
+
+      {gestionando ? <Categorias onCerrar={() => setGestionando(false)} /> : null}
+
+      {editando ? (
+        <ModalEditarArticulo articulo={editando} onCerrar={() => setEditando(null)} />
+      ) : null}
+    </>
+  )
+}
+
+/* ──────────────────────────────────────────────────── las categorías */
+
+/*
+  LAS CATEGORÍAS SE CREAN AQUÍ, NO EN UNA MIGRACIÓN.
+
+  Christopher, 05/10/2026: «necesito poder crear nuevas categorías sin
+  necesidad de que sea por código». La lista vive en la tabla
+  `categorias_articulo`; las marcadas como del sistema no se eliminan
+  —el programa las usa por nombre: el combustible se despacha, el producto
+  se vende, los víveres se cocinan— y las creadas aquí solo clasifican.
+  Una creada por error se puede eliminar mientras ningún artículo la use.
+*/
+// Exportada el 08/11/2026: «⚙ Categorías» de la pantalla de inventario nueva
+// abre esta misma ventana, sin salir de allí.
+export function Categorias({ onCerrar }: { onCerrar: () => void }) {
+  return (
+    <Modal
+      abierto
+      onCerrar={onCerrar}
+      ancho="lg"
+      titulo="Categorías del catálogo"
+      descripcion="Clasifican los artículos y deciden con qué letras empiezan sus códigos. Las del sistema no se eliminan."
+      acciones={<Button onClick={onCerrar}>Listo</Button>}
+    >
+      <GestionDeCategorias />
+    </Modal>
+  )
+}
+
+/*
+  EL CONTENIDO DE «CATEGORÍAS», SIN SU VENTANA (08/11/2026).
+
+  Lo usa también «⚙ Categorías y medidas» de la pantalla principal de
+  inventario (fase 4 de «Almacén e Inventario como MGG»), dentro de su pestaña
+  «Categorías».
+*/
+export function GestionDeCategorias() {
+  const categorias = useCategoriasDeInventario()
+  const crearCategoria = useCrearCategoriaDeArticulo()
+  const eliminarCategoria = useEliminarCategoriaDeArticulo()
+  const marcarCocina = useMarcarCategoriaDeCocina()
+
+  const [etiqueta, setEtiqueta] = useState('')
+  const [prefijo, setPrefijo] = useState('')
+
+  // El prefijo que saldría si no se escribe uno: las tres primeras letras,
+  // la misma red que usa la base.
+  const prefijoPropuesto = etiqueta
+    .toUpperCase()
+    .replace(/[ÁÉÍÓÚÜÑ]/g, (l) => 'AEIOUUN'['ÁÉÍÓÚÜÑ'.indexOf(l)])
+    .replace(/[^A-Z]/g, '')
+    .slice(0, 3)
+
+  const crear = async () => {
+    await crearCategoria.mutateAsync({
+      etiqueta: etiqueta.trim(),
+      prefijo: prefijo.trim() || null,
+    })
+    setEtiqueta('')
+    setPrefijo('')
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-2 sm:grid-cols-[1fr_8rem_auto]">
+        <Input
+          maxLength={60}
+          label="Nueva categoría"
+          placeholder="Material médico"
+          value={etiqueta}
+          onChange={(e) => setEtiqueta(e.target.value)}
+        />
+        <Input
+          // La base exige de dos a cuatro letras (08/11/2026).
+          solo="letras"
+          maxLength={4}
+          label="Prefijo"
+          placeholder={prefijoPropuesto || 'VIV'}
+          hint="Con él empiezan sus códigos."
+          value={prefijo}
+          onChange={(e) => setPrefijo(e.target.value.toUpperCase())}
+        />
+        <div className="flex items-start pt-6">
+          <Button
+            icon={<Plus />}
+            disabled={etiqueta.trim().length < 3 || crearCategoria.isPending}
+            onClick={() => void crear()}
+          >
+            {crearCategoria.isPending ? 'Creando…' : 'Crear'}
+          </Button>
+        </div>
+      </div>
+
+      {crearCategoria.error ? <ErrorDeCarga error={crearCategoria.error} /> : null}
+      {eliminarCategoria.error ? <ErrorDeCarga error={eliminarCategoria.error} /> : null}
+      {marcarCocina.error ? <ErrorDeCarga error={marcarCocina.error} /> : null}
+
+      {categorias.isPending ? <Cargando /> : null}
+      {categorias.error ? <ErrorDeCarga error={categorias.error} /> : null}
+
+      <ul className="divide-hairline border-hairline divide-y rounded-card border">
+        {(categorias.data ?? []).map((c) => (
+          <li key={c.codigo} className="flex items-center gap-3 px-3 py-2">
+            <div className="min-w-0 flex-1">
+              <p className="text-ink/85 text-sm">{c.etiqueta}</p>
+              <p className="text-ink/40 font-mono text-xs">{c.codigo}</p>
+            </div>
+            <span className="tabular text-ink/60 font-mono text-xs">{c.prefijo}-…</span>
+            {/*
+              La casilla que decide qué puede consumir la cocina: con ella
+              marcada, los artículos de la categoría entran a Servir comida y
+              a la lista del mercado, y la base los acepta (17/10/2026).
+            */}
+            <Interruptor
+              encendido={c.de_cocina}
+              deshabilitado={marcarCocina.isPending}
+              onCambio={(v) => marcarCocina.mutate({ codigo: c.codigo, de_cocina: v })}
+              etiqueta="Cocina"
+            />
+            {c.de_sistema ? (
+              <Chip tone="neutral">Del sistema</Chip>
+            ) : (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-danger"
+                disabled={eliminarCategoria.isPending}
+                onClick={() => eliminarCategoria.mutate(c.codigo)}
+              >
+                Eliminar
+              </Button>
+            )}
+          </li>
+        ))}
+      </ul>
+
+      <p className="text-ink/45 text-xs">
+        La categoría nueva aparece de inmediato en los formularios y en la planilla de carga. Solo se
+        elimina la que ningún artículo usa. El interruptor «Cocina» decide si sus artículos se
+        pueden servir en comidas y entran a la lista del mercado.
+      </p>
+    </div>
+  )
+}
+
+/**
+ * «Nuevo artículo», en su propia ventana (09/11/2026).
+ *
+ * Vivía dentro del Catálogo, y la pantalla de inventario nueva (la de MGG,
+ * `InventarioPrincipal.tsx`) mandaba allí con `?nuevo=1`: al cerrar el
+ * formulario quedaba en el módulo viejo. Ahora la pantalla que lo pida lo
+ * abre encima de sí misma y, al cerrarlo, sigue donde estaba. El Catálogo lo
+ * usa igual.
+ */
+export function ModalArticuloNuevo({ onCerrar }: { onCerrar: () => void }) {
+  const { data } = useArticulos(false)
+  const { data: unidades } = useUnidades()
+  const { data: presentaciones } = usePresentaciones()
+  const marcasUsadas = useMemo(
+    () =>
+      [...new Set((data ?? []).map((a) => a.marca).filter((m): m is string => !!m))].sort((x, y) =>
+        x.localeCompare(y, 'es'),
+      ),
+    [data],
+  )
+  const crear = useCrearArticulo()
+  const editar = useEditarArticulo()
+  const categorias = useCategoriasDeInventario()
+  const opcionesCategoria = opcionesDeCategoria(categorias.data)
+  const prefijoDeCategoria = (codigo: string) =>
+    (categorias.data ?? []).find((c) => c.codigo === codigo)?.prefijo
+  const renumerar = useRenumerarArticulo()
+  const [formAbierto, setForm] = useState<typeof nuevo>(() => ({ ...nuevo }))
+  // El formulario siempre está abierto mientras exista la ventana; las cuentas
+  // de abajo se escribieron para un `form` que podía ser null.
+  const form = formAbierto as typeof nuevo | null
+
+  /*
+    La unidad con la que está guardado lo que se está corrigiendo, y si ya se
+    movió alguna vez. Las dos solo se piden con el formulario abierto: nadie
+    necesita doscientos movimientos para pintar el catálogo.
+  */
+  const unidadDeAntes = (data ?? []).find((a) => a.id === form?.id)?.unidad
+
+  /*
+    LA DENSIDAD, UNA POR MATERIAL.
+
+    Christopher, 16/09/2026: «en los formularios al cargar algo en m3, debe pedir
+    directamente su densidad y expresar su conversión». Lo que se mide en M3 o en
+    TON no se guarda sin ella —la base tampoco lo acepta—, y cambiar la que ya
+    tenía pide motivo, porque los papeles convierten con la del día en que se
+    imprimen, también los viejos. Ponerla por primera vez no lo pide.
+  */
+  const articuloAbierto = (data ?? []).find((a) => a.id === form?.id)
+  const densidadDeAntes = articuloAbierto?.densidad_ton_m3 ?? null
+  const pideDensidad = form?.unidad === 'M3' || form?.unidad === 'TON'
+  const densidadEscrita = Number(form?.densidad_ton_m3)
+  const cambiaDensidad =
+    !!form?.id &&
+    densidadDeAntes !== null &&
+    densidadEscrita > 0 &&
+    densidadEscrita !== Number(densidadDeAntes)
+  const movimientosDelArticulo = useMovimientos(
+    { articuloId: form?.id ?? undefined },
+    Boolean(form?.id),
+  )
+  const seHaMovido = (movimientosDelArticulo.data?.length ?? 0) > 0
+  /*
+    LO QUE EL PANEL DE ABAJO YA DECLARO.
+
+    El modal toma una foto del articulo al abrirse. Si desde el panel se anade o
+    se cambia una presentacion, la foto se queda vieja — y «Guardar» la manda de
+    vuelta, pisando lo que el panel acababa de escribir. Se leyo la lista aqui
+    tambien: react-query la comparte por clave con el panel, asi que no cuesta
+    una consulta mas.
+  */
+  const { data: yaDeclaradas } = usePresentacionesDeArticulo(form?.id ?? null)
+  const laDeDefecto = (yaDeclaradas ?? []).find((x) => x.activa && x.por_defecto)
+
+  /*
+    La misma consulta que hace el aviso de abajo. React-query la comparte por la
+    clave, así que preguntarla aquí no cuesta una llamada de más — y lo que gana
+    es que el botón no deje chocar contra la reja de la base para enterarse.
+  */
+  const parecidos = useArticulosParecidos(
+    form?.nombre ?? '',
+    form?.id || undefined,
+    form?.categoria,
+  )
+  const hayHomonimo = (parecidos.data ?? []).some((p) => p.es_el_mismo)
+
+  /*
+    ¿EL CÓDIGO SIGUE DICIENDO LA CATEGORÍA VIEJA?
+
+    Solo para decidir si se ofrece la renumeración. Quien decide de verdad es la
+    base, que además comprueba lo que esta pantalla no puede saber: si el
+    artículo ya salió en algún papel.
+  */
+  const desencaja =
+    !!form?.id &&
+    !!form.codigo &&
+    !!prefijoDeCategoria(form.categoria) &&
+    form.codigo.split('-')[0] !== prefijoDeCategoria(form.categoria)
+
+  if (!form) return null
+  return (
         <Modal
           abierto
-          onCerrar={() => setForm(null)}
+          onCerrar={() => onCerrar()}
           titulo={form.id ? `Corregir ${form.codigo}` : 'Nuevo artículo'}
           descripcion={
             form.id
@@ -578,7 +749,7 @@ export function Articulos() {
           }
           acciones={
             <>
-              <Button variant="ghost" onClick={() => setForm(null)}>
+              <Button variant="ghost" onClick={() => onCerrar()}>
                 Cancelar
               </Button>
               <Button
@@ -621,7 +792,7 @@ export function Articulos() {
                   }
                   if (form.id) await editar.mutateAsync(datos)
                   else await crear.mutateAsync(datos)
-                  setForm(null)
+                  onCerrar()
                 }}
               >
                 {crear.isPending || editar.isPending ? 'Guardando…' : 'Guardar'}
@@ -1101,159 +1272,5 @@ export function Articulos() {
               por qué. */}
           {editar.error ? <ErrorDeCarga error={editar.error} className="mt-4" /> : null}
         </Modal>
-      ) : null}
-
-      {gestionando ? <Categorias onCerrar={() => setGestionando(false)} /> : null}
-
-      {editando ? (
-        <ModalEditarArticulo articulo={editando} onCerrar={() => setEditando(null)} />
-      ) : null}
-    </>
   )
 }
-
-/* ──────────────────────────────────────────────────── las categorías */
-
-/*
-  LAS CATEGORÍAS SE CREAN AQUÍ, NO EN UNA MIGRACIÓN.
-
-  Christopher, 05/10/2026: «necesito poder crear nuevas categorías sin
-  necesidad de que sea por código». La lista vive en la tabla
-  `categorias_articulo`; las marcadas como del sistema no se eliminan
-  —el programa las usa por nombre: el combustible se despacha, el producto
-  se vende, los víveres se cocinan— y las creadas aquí solo clasifican.
-  Una creada por error se puede eliminar mientras ningún artículo la use.
-*/
-// Exportada el 08/11/2026: «⚙ Categorías» de la pantalla de inventario nueva
-// abre esta misma ventana, sin salir de allí.
-export function Categorias({ onCerrar }: { onCerrar: () => void }) {
-  return (
-    <Modal
-      abierto
-      onCerrar={onCerrar}
-      ancho="lg"
-      titulo="Categorías del catálogo"
-      descripcion="Clasifican los artículos y deciden con qué letras empiezan sus códigos. Las del sistema no se eliminan."
-      acciones={<Button onClick={onCerrar}>Listo</Button>}
-    >
-      <GestionDeCategorias />
-    </Modal>
-  )
-}
-
-/*
-  EL CONTENIDO DE «CATEGORÍAS», SIN SU VENTANA (08/11/2026).
-
-  Lo usa también «⚙ Categorías y medidas» de la pantalla principal de
-  inventario (fase 4 de «Almacén e Inventario como MGG»), dentro de su pestaña
-  «Categorías».
-*/
-export function GestionDeCategorias() {
-  const categorias = useCategoriasDeInventario()
-  const crearCategoria = useCrearCategoriaDeArticulo()
-  const eliminarCategoria = useEliminarCategoriaDeArticulo()
-  const marcarCocina = useMarcarCategoriaDeCocina()
-
-  const [etiqueta, setEtiqueta] = useState('')
-  const [prefijo, setPrefijo] = useState('')
-
-  // El prefijo que saldría si no se escribe uno: las tres primeras letras,
-  // la misma red que usa la base.
-  const prefijoPropuesto = etiqueta
-    .toUpperCase()
-    .replace(/[ÁÉÍÓÚÜÑ]/g, (l) => 'AEIOUUN'['ÁÉÍÓÚÜÑ'.indexOf(l)])
-    .replace(/[^A-Z]/g, '')
-    .slice(0, 3)
-
-  const crear = async () => {
-    await crearCategoria.mutateAsync({
-      etiqueta: etiqueta.trim(),
-      prefijo: prefijo.trim() || null,
-    })
-    setEtiqueta('')
-    setPrefijo('')
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="grid gap-2 sm:grid-cols-[1fr_8rem_auto]">
-        <Input
-          maxLength={60}
-          label="Nueva categoría"
-          placeholder="Material médico"
-          value={etiqueta}
-          onChange={(e) => setEtiqueta(e.target.value)}
-        />
-        <Input
-          // La base exige de dos a cuatro letras (08/11/2026).
-          solo="letras"
-          maxLength={4}
-          label="Prefijo"
-          placeholder={prefijoPropuesto || 'VIV'}
-          hint="Con él empiezan sus códigos."
-          value={prefijo}
-          onChange={(e) => setPrefijo(e.target.value.toUpperCase())}
-        />
-        <div className="flex items-start pt-6">
-          <Button
-            icon={<Plus />}
-            disabled={etiqueta.trim().length < 3 || crearCategoria.isPending}
-            onClick={() => void crear()}
-          >
-            {crearCategoria.isPending ? 'Creando…' : 'Crear'}
-          </Button>
-        </div>
-      </div>
-
-      {crearCategoria.error ? <ErrorDeCarga error={crearCategoria.error} /> : null}
-      {eliminarCategoria.error ? <ErrorDeCarga error={eliminarCategoria.error} /> : null}
-      {marcarCocina.error ? <ErrorDeCarga error={marcarCocina.error} /> : null}
-
-      {categorias.isPending ? <Cargando /> : null}
-      {categorias.error ? <ErrorDeCarga error={categorias.error} /> : null}
-
-      <ul className="divide-hairline border-hairline divide-y rounded-card border">
-        {(categorias.data ?? []).map((c) => (
-          <li key={c.codigo} className="flex items-center gap-3 px-3 py-2">
-            <div className="min-w-0 flex-1">
-              <p className="text-ink/85 text-sm">{c.etiqueta}</p>
-              <p className="text-ink/40 font-mono text-xs">{c.codigo}</p>
-            </div>
-            <span className="tabular text-ink/60 font-mono text-xs">{c.prefijo}-…</span>
-            {/*
-              La casilla que decide qué puede consumir la cocina: con ella
-              marcada, los artículos de la categoría entran a Servir comida y
-              a la lista del mercado, y la base los acepta (17/10/2026).
-            */}
-            <Interruptor
-              encendido={c.de_cocina}
-              deshabilitado={marcarCocina.isPending}
-              onCambio={(v) => marcarCocina.mutate({ codigo: c.codigo, de_cocina: v })}
-              etiqueta="Cocina"
-            />
-            {c.de_sistema ? (
-              <Chip tone="neutral">Del sistema</Chip>
-            ) : (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-danger"
-                disabled={eliminarCategoria.isPending}
-                onClick={() => eliminarCategoria.mutate(c.codigo)}
-              >
-                Eliminar
-              </Button>
-            )}
-          </li>
-        ))}
-      </ul>
-
-      <p className="text-ink/45 text-xs">
-        La categoría nueva aparece de inmediato en los formularios y en la planilla de carga. Solo se
-        elimina la que ningún artículo usa. El interruptor «Cocina» decide si sus artículos se
-        pueden servir en comidas y entran a la lista del mercado.
-      </p>
-    </div>
-  )
-}
-

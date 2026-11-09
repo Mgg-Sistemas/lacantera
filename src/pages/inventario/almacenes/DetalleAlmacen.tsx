@@ -18,6 +18,7 @@ import { hoyEnCaracas } from '@/lib/api/tasas'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { armarReporteAlmacen, hojaReporteAlmacen } from '@/lib/ficha/reporteAlmacen'
 import { dolares } from '@/lib/formato'
+import { ModalArticuloNuevo } from '../Articulos'
 import { useSesion } from '@/lib/sesion'
 import { bajarArchivo, escribirXlsx } from '@/lib/xlsx'
 import { cn } from '@/lib/cn'
@@ -127,6 +128,9 @@ export function DetalleAlmacen({
   const statsDe = (id: number) => stats.get(id) ?? SIN_ESTADISTICA
   const cargandoStats = movs.isPending
 
+  // 09/11/2026: «+ Nuevo producto» abre su ventana aquí mismo, sin ir al Catálogo.
+  const [nuevo, setNuevo] = useState(false)
+
   return (
     <>
       {/* ---------------------------------------------------- cabecera */}
@@ -142,9 +146,14 @@ export function DetalleAlmacen({
         </span>
         <div className="flex w-full flex-wrap gap-2 sm:ml-auto sm:w-auto">
           {escribe ? (
-            <Link to="/app/inventario/articulos?nuevo=1" title="Dar de alta un producto en el catálogo">
-              <Button variant="ghost" size="sm">+ Nuevo producto</Button>
-            </Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              title="Dar de alta un producto en el catálogo"
+              onClick={() => setNuevo(true)}
+            >
+              + Nuevo producto
+            </Button>
           ) : null}
           <Link
             to={`/app/inventario/existencias?almacen=${almacen.id}`}
@@ -370,6 +379,7 @@ export function DetalleAlmacen({
         nombreArchivo={pdf?.nombre ?? ''}
         titulo={`Reporte · ${almacen.nombre}`}
       />
+      {nuevo ? <ModalArticuloNuevo onCerrar={() => setNuevo(false)} /> : null}
     </>
   )
 }

@@ -504,6 +504,13 @@ export function OrdenDetailModal({
   const desglose = desglosarOc(o)
   const aviso = conPrecio ? avisoDeCuadre(o, money) : null
 
+  /*
+    CADA BOTÓN EN SU ETAPA (la dueña, 09/11/2026: «hay muchos botones de lo
+    mismo; en este nivel solo debe salir confirmar recepción, comprobante de
+    pago, OC PDF y cerrar»). Los mensajes de la solicitud y del almacén son de
+    antes de la OC; una vez creada, ya no se ofrecen.
+  */
+  const etapaDeSolicitud = ['revision_almacen', 'atendida_almacen', 'pendiente', 'aprobada', 'asignada'].includes(o.estado)
   const buttons = (
     <>
       {isPendiente ? (
@@ -515,7 +522,7 @@ export function OrdenDetailModal({
           ↓ PDF de la OP
         </Button>
       ) : null}
-      {!esServicio ? (
+      {!etapaDeSolicitud ? null : !esServicio ? (
         <Button
           variant="ghost"
           title="Ver el mensaje de la Solicitud de Pedido (productos y cantidades) para copiarlo o mandarlo por WhatsApp"
@@ -532,7 +539,7 @@ export function OrdenDetailModal({
           💬 WhatsApp del servicio
         </Button>
       )}
-      {revisadaAlmacen ? (
+      {revisadaAlmacen && etapaDeSolicitud ? (
         <Button
           variant="ghost"
           title="Ver el mensaje de almacén (qué tiene y qué va a solicitar a Compras) para copiarlo o mandarlo por WhatsApp"
@@ -708,9 +715,11 @@ export function OrdenDetailModal({
           >
             📥 Comprobante de pago
           </Button>
-          <Button variant="ghost" onClick={() => setAvisoPaso({ tipo: 'pagada' })}>
-            💬 Aviso de pago
-          </Button>
+          {o.estado === 'pagada' ? (
+            <Button variant="ghost" onClick={() => setAvisoPaso({ tipo: 'pagada' })}>
+              💬 Aviso de pago
+            </Button>
+          ) : null}
         </>
       ) : null}
       {/* Recepción y cierre (fase 4) */}
