@@ -626,17 +626,35 @@ function ModalReportePorCobrar({
           : `Saldrán ${salen.length} cliente${salen.length === 1 ? '' : 's'} con ${notas} nota${notas === 1 ? '' : 's'}.`}
       </p>
       <div className="mt-5 space-y-3">
+        {/*
+          QUÉ REPORTE: los dos a la vista, para elegir de un toque (09/11/2026:
+          «que se pueda elegir, con resumen + detalle y solo resumen»).
+        */}
+        <div role="radiogroup" aria-label="Qué reporte" className="grid gap-2 sm:grid-cols-2">
+          {[
+            { valor: true, titulo: 'Resumen + detalle', texto: 'La deuda por cliente y, después, cada nota con su atraso.' },
+            { valor: false, titulo: 'Solo resumen', texto: 'Una fila por cliente, sin las notas. Suele caber en una hoja.' },
+          ].map((o) => (
+            <button
+              key={o.titulo}
+              type="button"
+              role="radio"
+              aria-checked={conDetalle === o.valor}
+              onClick={() => setConDetalle(o.valor)}
+              className={`rounded-[6px] border p-3 text-left transition-colors ${
+                conDetalle === o.valor ? 'border-royal-600 bg-royal-600/10' : 'border-hairline hover:bg-ink/3'
+              }`}
+            >
+              <span className="text-ink/85 block text-sm font-medium">{o.titulo}</span>
+              <span className="text-ink/55 mt-0.5 block text-xs">{o.texto}</span>
+            </button>
+          ))}
+        </div>
         <Interruptor
           encendido={soloVencidas}
           onCambio={setSoloVencidas}
           etiqueta="Solo las notas vencidas"
           detalle="Deja fuera las que todavía no llegan a su fecha de pago."
-        />
-        <Interruptor
-          encendido={conDetalle}
-          onCambio={setConDetalle}
-          etiqueta="Incluir el detalle de notas de cada cliente"
-          detalle="Apagado, el papel lleva solo una fila por cliente."
         />
         <Interruptor encendido={conLogo} onCambio={setConLogo} etiqueta="Con logo" />
       </div>
