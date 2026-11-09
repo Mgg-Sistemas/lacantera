@@ -107,6 +107,25 @@ export function usePermisos() {
 }
 
 /**
+ * A qué roles equivale cada rol.
+ *
+ * Desde el 09/11/2026 un usuario tiene un solo rol. Quien tenía varios recibió
+ * uno que junta los suyos («Compras + Almacén»), y ese rol cuenta como cada uno
+ * de ellos para lo que el sistema pregunta por rol (avisos, quién aprueba de
+ * respaldo…). Los permisos no salen de aquí: salen de su propia matriz.
+ */
+export function useRolIncluye() {
+  return useQuery({
+    queryKey: ['rol-incluye'],
+    queryFn: async () =>
+      desenvolver<{ rol: string; incluye: string }[]>(
+        await supabase.from('rol_incluye').select('rol, incluye'),
+      ),
+    staleTime: 10 * 60_000,
+  })
+}
+
+/**
  * Lo que puede el usuario que está mirando.
  *
  * Decide qué módulos aparecen en el menú y qué botones se dibujan. No
@@ -248,7 +267,8 @@ export function useCrearUsuario() {
       cargo?: string
       cedula?: string
       telefono?: string
-      roles: string[]
+      /** Un usuario, un rol (09/11/2026). */
+      rol: string
     }) =>
       /*
         El teléfono va, y antes no iba.
@@ -265,7 +285,7 @@ export function useCrearUsuario() {
         p_cargo: v.cargo || null,
         p_cedula: v.cedula || null,
         p_telefono: v.telefono || null,
-        p_roles: v.roles,
+        p_roles: [v.rol],
       }),
     onSuccess: () => invalidar(qc),
   })
@@ -292,11 +312,12 @@ export function useGuardarPerfil() {
   })
 }
 
-export function useAsignarRoles() {
+/** Un usuario tiene un solo rol: asignarlo reemplaza el que tenía. */
+export function useAsignarRol() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (v: { id: string; roles: string[] }) =>
-      rpc('asignar_roles', { p_usuario_id: v.id, p_roles: v.roles }),
+    mutationFn: (v: { id: string; rol: string }) =>
+      rpc('asignar_rol', { p_usuario_id: v.id, p_rol: v.rol }),
     onSuccess: () => invalidar(qc),
   })
 }
@@ -603,65 +624,9 @@ export function useSoloTelefono() {
 }
 
 // ---------------------------------------------------------------------------
-// Autorizaciones: lo que se le extiende a UNA PERSONA por encima de su rol
-//
-// La lider: «Coloca que Jesmary pueda aprobar las ordenes marcando un check que
-// diga: Autorizada bajo autorizacion del gerente general».
-//
-// Y Christopher lo que hay detras: «en usuarios, se pueda extender permisos que
-// no competen a un rol, bajo una justificacion». Por persona, no por rol — el
-// rol dice lo que compete al puesto, y esto es lo que se le presta a alguien
-// concreto por encima de su puesto, con fecha de fin o sin ella.
-//
-// El check solo es verdad porque hay un registro detras. Sin el, seria una
-// frase que teclea sobre si mismo quien aprueba, en un papel que compromete
-// dinero.
+// Presencia
 // ---------------------------------------------------------------------------
 
-export interface AutorizacionDelSistema {
-  id: number
-  accion: string
-  accion_nombre: string
-  modulo: string
-  modulo_nombre: string
-  a_usuario: string
-  a_nombre: string
-  por_usuario: string
-  por_nombre: string
-  desde: string
-  /** Nulo es indefinida, que es la mitad de lo que se pidio. */
-  hasta: string | null
-  motivo: string
-  /** Ya calculado por la base: ni retirada, ni por empezar, ni caducada. */
-  vigente: boolean
-  revocada_en: string | null
-  revocada_por: string | null
-  revocada_nombre: string | null
-  revocada_motivo: string | null
-  creada_en: string
-}
-
-export function useAutorizaciones() {
-  return useQuery({
-    queryKey: ['autorizaciones'],
-    queryFn: () => rpc<AutorizacionDelSistema[]>('autorizaciones_del_sistema'),
-  })
-}
-
-/** Lo que devuelve extender varias: cuantas entraron y cuales no, con su motivo. */
-export interface ResumenDeExtension {
-  extendidas: number
-  omitidas: { accion: string; motivo: string }[]
-}
-
-/**
- * Extender varias casillas de una vez, a la misma persona y con el mismo motivo.
- *
- * La base las mete una a una en su propia subtransaccion, asi que la que no
- * entra no tumba a las demas: marcar cinco y que una ya la tuviera por su rol
- * no puede dejar las otras cuatro sin extender. Devuelve cuantas entraron y
- * cuales se quedaron fuera, que es lo que hay que enseñar despues.
- */
 export interface Presencia {
   id: string
   nombre: string
@@ -724,203 +689,6 @@ export function useLatido() {
       document.removeEventListener('visibilitychange', latir)
     }
   }, [])
-}
-
-export function useAutorizarVarias() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (v: {
-      usuario_id: string
-      acciones: string[]
-      motivo: string
-      desde?: string | null
-      hasta?: string | null
-    }) =>
-      rpc<ResumenDeExtension>('autorizar_varias', {
-        p_usuario_id: v.usuario_id,
-        p_acciones: v.acciones,
-        p_motivo: v.motivo,
-        p_desde: v.desde || null,
-        p_hasta: v.hasta || null,
-      }),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['autorizaciones'] })
-      void qc.invalidateQueries({ queryKey: ['mis-autorizaciones'] })
-      void qc.invalidateQueries({ queryKey: ['mis-acciones'] })
-    },
-  })
-}
-
-export function useAutorizar() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (v: {
-      usuario_id: string
-      accion: string
-      motivo: string
-      desde?: string | null
-      hasta?: string | null
-    }) =>
-      rpc<number>('autorizar_accion', {
-        p_usuario_id: v.usuario_id,
-        p_accion: v.accion,
-        p_motivo: v.motivo,
-        p_desde: v.desde || null,
-        p_hasta: v.hasta || null,
-      }),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['autorizaciones'] })
-      // Lo que YO puedo cambia si me acabo de autorizar algo a otro y luego
-      // miro su ficha; y sobre todo cambia para quien la recibe al recargar.
-      void qc.invalidateQueries({ queryKey: ['mis-acciones'] })
-      void qc.invalidateQueries({ queryKey: ['mis-autorizaciones'] })
-    },
-  })
-}
-
-export function useRetirarAutorizacion() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (v: { id: number; motivo?: string }) =>
-      rpc('retirar_autorizacion', { p_id: v.id, p_motivo: v.motivo || null }),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['autorizaciones'] })
-      void qc.invalidateQueries({ queryKey: ['mis-acciones'] })
-      void qc.invalidateQueries({ queryKey: ['mis-autorizaciones'] })
-    },
-  })
-}
-
-/**
- * Lo que tiene prestado quien esta mirando, y de quien.
- *
- * Distinto de `useMisAcciones`, que dice lo que puede sin distinguir de donde
- * le viene. Aqui hace falta la distincion: el check de «bajo autorizacion de»
- * solo debe salir cuando de verdad esta actuando con permiso de otro. A quien
- * le compete por su rol no se le pide que declare nada.
- */
-export function useMisAutorizaciones() {
-  const consulta = useQuery({
-    queryKey: ['mis-autorizaciones'],
-    queryFn: () =>
-      rpc<
-        {
-          accion: string
-          por_nombre: string
-          hasta: string | null
-          motivo: string
-        }[]
-      >('mis_autorizaciones'),
-    staleTime: 5 * 60_000,
-  })
-
-  const mapa = new Map((consulta.data ?? []).map((a) => [a.accion, a]))
-
-  return {
-    ...consulta,
-    /** La autorizacion viva para esa casilla, o `undefined` si va por lo suyo. */
-    de: (accion: string) => mapa.get(accion),
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Restricciones: lo que se le quita a UNA PERSONA aunque su rol se lo dé
-//
-// Christopher, 16/09/2026: «así como hay permisos extendidos, deberían haber
-// permisos reducidos o revocados». Es el espejo de lo de arriba, con la misma
-// forma: la casilla, quién la restringió, desde cuándo, hasta cuándo y por qué.
-// Manda sobre el rol y sobre lo extendido, y al administrador no se le pone.
-//
-// Solo se ofrecen las casillas que la base pregunta por su nombre. Las demás
-// las decide el nivel del módulo en el rol, y restringirlas escondería el
-// botón sin frenar a la base: quien la puso creería que está puesta.
-// ---------------------------------------------------------------------------
-
-export interface RestriccionDelSistema {
-  id: number
-  accion: string
-  accion_nombre: string
-  modulo: string
-  modulo_nombre: string
-  a_usuario: string
-  a_nombre: string
-  /** Si hoy tiene el rol de administrador, la restricción no le aplica. */
-  a_es_administrador: boolean
-  por_usuario: string
-  por_nombre: string
-  desde: string
-  /** Nulo es sin fecha de fin. */
-  hasta: string | null
-  motivo: string
-  /** Ya calculado por la base: ni levantada, ni por empezar, ni vencida, ni de un administrador. */
-  vigente: boolean
-  levantada_en: string | null
-  levantada_por: string | null
-  levantada_nombre: string | null
-  levantada_motivo: string | null
-  creada_en: string
-}
-
-/** Quien las gestiona las ve todas; los demás, solo las suyas. */
-export function useRestricciones() {
-  return useQuery({
-    queryKey: ['restricciones'],
-    queryFn: () => rpc<RestriccionDelSistema[]>('restricciones_del_sistema'),
-  })
-}
-
-/** Los códigos de las casillas que la base pregunta por su nombre. */
-export function useAccionesRestringibles() {
-  return useQuery({
-    queryKey: ['acciones', 'restringibles'],
-    queryFn: () => rpc<string[]>('acciones_restringibles'),
-    staleTime: 10 * 60_000,
-  })
-}
-
-/** Lo que devuelve restringir varias: cuántas entraron y cuáles no, con su motivo. */
-export interface ResumenDeRestriccion {
-  restringidas: number
-  omitidas: { accion: string; motivo: string }[]
-}
-
-export function useRestringirVarias() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (v: {
-      usuario_id: string
-      acciones: string[]
-      motivo: string
-      desde?: string | null
-      hasta?: string | null
-    }) =>
-      rpc<ResumenDeRestriccion>('restringir_varias', {
-        p_usuario_id: v.usuario_id,
-        p_acciones: v.acciones,
-        p_motivo: v.motivo,
-        p_desde: v.desde || null,
-        p_hasta: v.hasta || null,
-      }),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['restricciones'] })
-      // Restringir retira en el mismo paso lo extendido de esa casilla.
-      void qc.invalidateQueries({ queryKey: ['autorizaciones'] })
-      void qc.invalidateQueries({ queryKey: ['mis-acciones'] })
-      void qc.invalidateQueries({ queryKey: ['mis-autorizaciones'] })
-    },
-  })
-}
-
-export function useLevantarRestriccion() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (v: { id: number; motivo: string }) =>
-      rpc('levantar_restriccion', { p_id: v.id, p_motivo: v.motivo }),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['restricciones'] })
-      void qc.invalidateQueries({ queryKey: ['mis-acciones'] })
-    },
-  })
 }
 
 export function useEliminarRol() {

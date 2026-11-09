@@ -441,18 +441,15 @@ export function useEntregarSolicitud() {
 }
 
 /**
- * Cómo apruebo las solicitudes de salida: `respaldo` si tengo la casilla y
- * apruebo en cualquier almacén, `sitios` los almacenes por los que respondo, y
- * `restringida` si se me quitó, que deja las otras dos vacías.
+ * Cómo apruebo las solicitudes de salida: `respaldo` si estoy en la lista de
+ * autorizados (o soy administrador) y apruebo en cualquier almacén, y `sitios`
+ * los almacenes por los que respondo.
  *
- * Es la regla de `private.como_aprueba_salida`, dicha a la pantalla. Ya no es
- * la del traslado: desde el 16/09 aprobar una salida tiene casilla propia, que
- * se extiende y se restringe por persona, y aceptar un traslado no.
+ * Es la regla de `private.como_aprueba_salida`, dicha a la pantalla.
  */
 export interface ComoAprueboSalidas {
   yo: string
   respaldo: boolean
-  restringida: boolean
   sitios: number[]
 }
 
@@ -527,8 +524,9 @@ export function quePuedoHacerConLaSolicitud(
 // marcar que deje además su nota de entrega. Al cliente se le entrega solo la de
 // salida; la de entrega queda de respaldo y se imprime cuando haga falta.
 //
-// La casilla no la da ningún nivel ni ningún rol: «que sea un permiso
-// extendido». Se presta persona por persona en Configuración › Usuarios.
+// La casilla no la da ningún nivel: se marca en las acciones especiales del rol
+// (Configuración › Usuarios › Roles y permisos). Desde el 09/11/2026 no hay
+// permisos por persona.
 //
 // No mueve inventario: documenta los mismos asientos que ya escribió la salida.
 // ---------------------------------------------------------------------------
