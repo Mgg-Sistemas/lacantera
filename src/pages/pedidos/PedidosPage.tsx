@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { PageHeader } from '@/components/PageHeader'
 import { AvisosFlotantes } from '@/components/AvisosFlotantes'
@@ -28,6 +28,7 @@ import {
   KANBAN_COLS_SERVICIO,
   TOPE_COLUMNA_OC,
   coincide,
+  esMercado,
   fechaHoraVE,
   money,
   progresoRecepcion,
@@ -137,6 +138,16 @@ type ModalKind =
   | { kind: 'approve'; orden: Orden }
   | { kind: 'cancel'; orden: Orden }
 
+/*
+  En qué columna del Kanban cae cada estado. La SP «Repartida entre
+  proveedores» (`asignada`: todas sus líneas ya están en OC hijas) no tiene
+  columna propia y se perdía del tablero (la dueña, 09/11/2026: «no la
+  ubico»). En «✉ Solicitud de Pedido» va con las aprobadas, nombrando sus OC;
+  en «🧾 Órdenes de Compra» la representan sus hijas, cada una en su columna.
+*/
+const columnaDe = (scope: Scope, estado: EstadoOrden): EstadoOrden =>
+  scope === 'pedidos' && estado === 'asignada' ? 'aprobada' : estado
+
 const ACENTO: Record<TonoEstado, string> = {
   info: 'bg-info',
   success: 'bg-success',
@@ -205,20 +216,41 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
     return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1], 'es'))
   }, [ordenesDePestana])
 
+  // Las OC hijas de cada SP repartida entre proveedores (la madre las nombra en
+  // su tarjeta y el buscador la encuentra por sus códigos).
+  const hijasDe = useMemo(() => {
+    const m = new Map<number, Orden[]>()
+    for (const o of ordenes) {
+      if (!o.parent_orden_id) continue
+      const l = m.get(o.parent_orden_id)
+      if (l) l.push(o)
+      else m.set(o.parent_orden_id, [o])
+    }
+    return m
+  }, [ordenes])
+
   const filteredOrdenes = useMemo(
     () =>
       ordenesDePestana.filter(
         (o) =>
           !(filterEstado && o.estado !== filterEstado) &&
           !(filterCreador && o.creado_por !== filterCreador) &&
-          coincide(o, filterText, nombreProveedor(o.proveedor_id)),
+          coincide(
+            o,
+            filterText,
+            nombreProveedor(o.proveedor_id),
+            (hijasDe.get(o.id) ?? []).flatMap((h) => [h.codigo, h.oc_codigo, nombreProveedor(h.proveedor_id)]),
+          ),
       ),
-    [ordenesDePestana, filterEstado, filterCreador, filterText, nombreProveedor],
+    [ordenesDePestana, filterEstado, filterCreador, filterText, nombreProveedor, hijasDe],
   )
 
+  const columna = useCallback((e: EstadoOrden) => columnaDe(scope, e), [scope])
   const columnas = scope === 'oc' ? KANBAN_COLS_OC : scope === 'servicio' ? KANBAN_COLS_SERVICIO : KANBAN_COLS_PEDIDOS
   const kanbanCols =
-    filterEstado && columnas.some((c) => c.key === filterEstado) ? columnas.filter((c) => c.key === filterEstado) : columnas
+    filterEstado && columnas.some((c) => c.key === columnaDe(scope, filterEstado))
+      ? columnas.filter((c) => c.key === columnaDe(scope, filterEstado))
+      : columnas
 
   // ?detalle=ID abre el detalle (avisos y búsqueda global). Se consume de la URL.
   const [searchParams, setSearchParams] = useSearchParams()
@@ -376,11 +408,16 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
               <option value="revision_almacen">En revisión de almacén</option>
               <option value="pendiente">Pendientes</option>
               <option value="aprobada">Aprobadas (OP)</option>
+              <option value="asignada">Repartidas entre proveedores</option>
               {!soloSolicitud ? (
                 <>
                   <option value="oc_creada">OC creada</option>
+                  <option value="cuenta_abierta">Crédito / cuentas abiertas</option>
+                  <option value="confirmada_metodo">Confirmada (indicar método de pago)</option>
                   <option value="oc_aprobada">OC confirmada</option>
+                  <option value="por_recibir">Pendiente por recepción</option>
                   <option value="pagada">Pagadas</option>
+                  <option value="anulada">Anuladas</option>
                   <option value="desistida_proveedor">Proveedor desistió</option>
                 </>
               ) : null}
@@ -420,6 +457,8 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
             <KanbanBoard
               ordenes={filteredOrdenes}
               cols={kanbanCols}
+              columna={columna}
+              hijasDe={hijasDe}
               tope={scope === 'oc' ? TOPE_COLUMNA_OC : null}
               proveedor={nombreProveedor}
               noLeidos={noLeidos.data}
@@ -429,6 +468,7 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
           ) : (
             <OrdenesTable
               ordenes={filteredOrdenes}
+              hijasDe={hijasDe}
               canManageProcurement={canManageProcurement}
               proveedor={nombreProveedor}
               noLeidos={noLeidos.data}
@@ -573,8 +613,31 @@ type NombreProveedor = (id: number | null | undefined) => string | null
 /** MGG «↻ n»: cuántas veces cambió el proveedor de la orden. */
 const cambiosDeProveedor = (o: Orden): number => (o.historial ?? []).filter((h) => h.evento === 'proveedor_cambiado').length
 
+/** «🛒 Mercado»: la Solicitud de Mercado y sus OC hijas se reconocen a simple vista. */
+function MarcaMercado({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn('bg-safety/15 text-ink/85 rounded px-1.5 py-0.5 font-sans text-[10px] font-semibold', className)}
+      title="Solicitud de Mercado: víveres y art. de limpieza para la cocina"
+    >
+      🛒 Mercado
+    </span>
+  )
+}
+
+/** «🧾 OC-…, OC-…»: las OC hijas de una SP repartida entre proveedores. */
+function OcHijas({ hijas, className }: { hijas: Orden[]; className?: string }) {
+  if (!hijas.length) return null
+  return (
+    <div className={cn('text-ink/55 text-[11px]', className)} title="Órdenes de compra en que se repartió la solicitud">
+      🧾 {hijas.length === 1 ? 'OC' : `${hijas.length} OC`}: {hijas.map((h) => h.oc_codigo ?? h.codigo).join(' · ')}
+    </div>
+  )
+}
+
 function OrdenesTable({
   ordenes,
+  hijasDe,
   canManageProcurement,
   proveedor,
   noLeidos,
@@ -582,6 +645,7 @@ function OrdenesTable({
   onApprove,
 }: {
   ordenes: Orden[]
+  hijasDe: Map<number, Orden[]>
   canManageProcurement: boolean
   proveedor: NombreProveedor
   noLeidos: Map<number, number> | undefined
@@ -624,11 +688,13 @@ function OrdenesTable({
                 <td className="px-4 py-2.5 font-mono">
                   {o.oc_codigo ?? o.codigo}
                   {o.oc_codigo ? <div className="text-ink/45 text-[11px]">{o.codigo}</div> : null}
+                  {esMercado(o) ? <MarcaMercado className="ml-1.5" /> : null}
                   {o.urgente ? (
                     <span className="bg-danger ml-1.5 rounded px-1.5 py-0.5 font-sans text-[10px] font-semibold text-white">
                       🚨 URGENTE
                     </span>
                   ) : null}
+                  <OcHijas hijas={hijasDe.get(o.id) ?? []} className="font-sans" />
                   {sinLeer ? (
                     <Chip tone="royal" className="ml-1.5 font-sans" title={`${sinLeer} mensaje(s) sin leer`}>
                       💬 {sinLeer}
@@ -672,6 +738,8 @@ function OrdenesTable({
 function KanbanBoard({
   ordenes,
   cols,
+  columna,
+  hijasDe,
   tope,
   proveedor,
   noLeidos,
@@ -680,6 +748,9 @@ function KanbanBoard({
 }: {
   ordenes: Orden[]
   cols: { key: EstadoOrden; label: string }[]
+  /** La columna de cada estado (la SP repartida va con las aprobadas). */
+  columna: (estado: EstadoOrden) => EstadoOrden
+  hijasDe: Map<number, Orden[]>
   /** Pestaña OC: 10 tarjetas por columna salvo «Pendiente (cargar ofertas)». */
   tope: number | null
   proveedor: NombreProveedor
@@ -690,9 +761,9 @@ function KanbanBoard({
   const byState = useMemo(() => {
     const map = new Map<EstadoOrden, Orden[]>()
     cols.forEach((c) => map.set(c.key, []))
-    ordenes.forEach((o) => map.get(o.estado)?.push(o))
+    ordenes.forEach((o) => map.get(columna(o.estado))?.push(o))
     return map
-  }, [ordenes, cols])
+  }, [ordenes, cols, columna])
 
   return (
     <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-3">
@@ -727,6 +798,7 @@ function KanbanBoard({
                   <KanbanCard
                     key={o.id}
                     orden={o}
+                    hijas={hijasDe.get(o.id)}
                     proveedor={proveedor(o.proveedor_id)}
                     sinLeer={noLeidos?.get(o.id) ?? 0}
                     onOpen={onOpen}
@@ -752,11 +824,13 @@ function KanbanBoard({
 
 const KanbanCard = memo(function KanbanCard({
   orden,
+  hijas,
   proveedor,
   sinLeer,
   onOpen,
 }: {
   orden: Orden
+  hijas: Orden[] | undefined
   proveedor: string | null
   sinLeer: number
   onOpen: (id: number) => void
@@ -835,6 +909,7 @@ const KanbanCard = memo(function KanbanCard({
     >
       <div className="flex flex-wrap items-center gap-1.5 font-mono text-xs font-semibold">
         {orden.oc_codigo ?? orden.codigo}
+        {esMercado(orden) ? <MarcaMercado /> : null}
         {orden.urgente ? (
           <span className="bg-danger rounded px-1.5 py-0.5 font-sans text-[10px] font-semibold text-white">
             🚨 URGENTE
@@ -847,6 +922,10 @@ const KanbanCard = memo(function KanbanCard({
         ) : null}
       </div>
       {orden.oc_codigo ? <div className="text-ink/45 font-mono text-[11px]">{orden.codigo}</div> : null}
+      {orden.estado === 'asignada' ? (
+        <div className="text-info mt-0.5 text-[11px] font-medium">Repartida entre proveedores</div>
+      ) : null}
+      <OcHijas hijas={hijas ?? []} className="mt-0.5" />
       <div className="text-ink/90 mt-1 font-semibold">
         {proveedor
           ? proveedor

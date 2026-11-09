@@ -16,7 +16,15 @@ function pagina<T extends ComponentType<any>>(importar: () => Promise<{ default:
   return lazy(conAvisoSiNoLlega(importar))
 }
 import { salioAProposito } from '@/lib/auth'
-import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router'
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useParams,
+  useSearchParams,
+} from 'react-router'
 import { Landing } from '@/pages/Landing'
 import { Login } from '@/pages/Login'
 import { ModuloPendiente } from '@/pages/ModuloPendiente'
@@ -147,9 +155,6 @@ const FichaMaquina = pagina(() =>
 )
 const Maquinaria = pagina(() =>
   import('@/pages/maquinaria/Maquinaria').then((m) => ({ default: m.Maquinaria })),
-)
-const Existencias = pagina(() =>
-  import('@/pages/inventario/Existencias').then((m) => ({ default: m.Existencias })),
 )
 const Movimientos = pagina(() =>
   import('@/pages/inventario/Movimientos').then((m) => ({ default: m.Movimientos })),
@@ -442,7 +447,8 @@ const paginas: Record<string, ReactNode> = {
   '/app/maquinaria/nueva': <FichaMaquina />,
   '/app/maquinaria/mantenimientos': <Mantenimientos />,
   '/app/inventario': <InventarioPrincipal />,
-  '/app/inventario/existencias': <Existencias />,
+  // 09/11/2026: la pantalla vieja se retiró. Ver `AExistencias`.
+  '/app/inventario/existencias': <AExistencias />,
   '/app/inventario/movimientos': <Movimientos />,
   '/app/inventario/talleres': <Talleres />,
   '/app/inventario/almacen': <Almacen />,
@@ -591,6 +597,27 @@ function Cargando() {
 function AFichaDeCamion() {
   const { id } = useParams()
   return <Navigate to={`/app/maquinaria/camiones/${id ?? ''}`} replace />
+}
+
+/*
+  09/11/2026 · LA PANTALLA VIEJA DE «EXISTENCIAS» SE RETIRÓ.
+
+  La dueña: «esto mantiene el formato viejo, cambialo». Sus botones (entrada,
+  salida, traslado, taller, conteo y acta) viven ahora en la pantalla de
+  inventario de MGG y en el detalle de cada almacén. La dirección sigue viva
+  para no romper marcadores ni enlaces guardados:
+  - con un almacén (`?almacen=ID`) lleva al detalle nuevo de ese almacén;
+  - con una acción (`?accion=entrada|contar&articulo=…`) o sin almacén, a la
+    pantalla de inventario, que lee los mismos parámetros.
+*/
+function AExistencias() {
+  const [parametros] = useSearchParams()
+  const almacen = parametros.get('almacen')
+  if (almacen && !parametros.get('accion')) {
+    return <Navigate to={`/app/inventario/almacenes?almacen=${encodeURIComponent(almacen)}`} replace />
+  }
+  const resto = parametros.toString()
+  return <Navigate to={`/app/inventario${resto ? `?${resto}` : ''}`} replace />
 }
 
 /** «Corregir» un pedido del flujo anterior ya no existe: se ve su ficha, solo para leer. */

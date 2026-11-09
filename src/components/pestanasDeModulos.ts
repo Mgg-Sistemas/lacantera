@@ -12,9 +12,14 @@ import type { Pestana } from '@/components/Pestanas'
   agrupó cada módulo, que es la decisión que de verdad importa aquí.
 */
 
-/** Las tres miradas al mismo material. */
+/**
+ * Las tres miradas al mismo material.
+ *
+ * 09/11/2026: la primera es la pantalla de inventario de MGG. Llevaba a la
+ * pantalla vieja de Existencias, que se retiró (su dirección redirige aquí).
+ */
 export const PESTANAS_MATERIAL: Pestana[] = [
-  { etiqueta: 'Existencias', a: '/app/inventario/existencias' },
+  { etiqueta: 'Inventario', a: '/app/inventario' },
   { etiqueta: 'Catálogo', a: '/app/inventario/articulos' },
   { etiqueta: 'Movimientos', a: '/app/inventario/movimientos' },
 ]

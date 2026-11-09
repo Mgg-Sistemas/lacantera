@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { useNavigate } from 'react-router'
 import { Search, Warehouse } from 'lucide-react'
 import { DeQuienEs } from '@/components/DeQuienEs'
 import { Visor } from '@/components/Visor'
@@ -7,18 +7,33 @@ import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
+import { Modal } from '@/components/ui/Modal'
 import { Segmento } from '@/components/ui/Segmento'
 import { Select } from '@/components/ui/Select'
 import { ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { estadisticasDeAlmacen, useMovimientosDeAlmacen } from '@/lib/api/almacenesValor'
 import type { EstadisticaDeProducto } from '@/lib/api/almacenesValor'
+import { useArticulos, useMisRoles } from '@/lib/api/catalogo'
+import type { Articulo } from '@/lib/api/catalogo'
+import { usePropietarios } from '@/lib/api/inventario'
 import type { Almacen, Existencia } from '@/lib/api/inventario'
 import { useEmpresa } from '@/lib/api/empresa'
+import { useMisAcciones, useMisPermisos } from '@/lib/api/usuarios'
 import { hoyEnCaracas } from '@/lib/api/tasas'
+import { LA_CASA } from '@/lib/deQuien'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { armarReporteAlmacen, hojaReporteAlmacen } from '@/lib/ficha/reporteAlmacen'
 import { dolares } from '@/lib/formato'
+import { useNotaDeTraslado } from '@/pages/salidas/NotaDeTraslado'
 import { ModalArticuloNuevo } from '../Articulos'
+import { BotonActaDeConteo } from '../BotonActaDeConteo'
+import { ModalAlTaller } from '../ModalAlTaller'
+import { ModalCambioDeDueno } from '../ModalCambioDeDueno'
+import { ModalConteo } from '../ModalConteo'
+import { ModalCorregirCosto } from '../ModalesDeExistencias'
+import { ModalEntradaDeMaterial } from '../ModalEntradaDeMaterial'
+import { ModalTraslado } from '../ModalTraslado'
+import { Movimiento } from '../principal/Movimiento'
 import { useSesion } from '@/lib/sesion'
 import { bajarArchivo, escribirXlsx } from '@/lib/xlsx'
 import { cn } from '@/lib/cn'
@@ -34,10 +49,17 @@ import { cantidad, guardarVista, leerVista, productos, renglonesDeReporte } from
   total · Total usados · Consumo diario» en las tarjetas.
 
   Lo que no se copia, y por qué:
-  - «⇄ Mover» y «📍 También en…»: aquí se mueve con un traslado y un artículo
-    ya existe en todos los almacenes. Para mover está «Ver en Existencias»,
-    que abre este mismo almacén con todos sus botones de La Cantera.
+  - «📍 También en…»: aquí un artículo ya existe en todos los almacenes.
   - Subalmacenes y ubicación física: no existen en La Cantera (sin migración).
+
+  09/11/2026 · LO DE LA PANTALLA VIEJA DE EXISTENCIAS, AQUÍ.
+  «↕ Mover material» llevaba a la pantalla vieja de Existencias con este
+  almacén elegido. Esa pantalla se retiró y lo que hacía vive aquí, con los
+  mismos modales: en la cabecera «Registrar entrada», «Solicitar salida»,
+  «Trasladar», «Mandar al taller» y el «Acta de conteo físico»; en cada fila
+  «↕» (el movimiento de MGG con este almacén puesto) y «⋯» (contar, corregir
+  el costo, al taller y cambiar de dueño). Y el filtro de dueño, para un
+  almacén con material de varios dueños.
 */
 
 type Vista = 'kanban' | 'lista'
@@ -74,7 +96,37 @@ export function DetalleAlmacen({
   }
   const [texto, setTexto] = useState('')
   const [categoria, setCategoria] = useState('')
+  const [dueno, setDueno] = useState('')
   const [conCeros, setConCeros] = useState(false)
+
+  /*
+    Los mismos permisos que la pantalla principal: rol ALMACEN para entrar,
+    contar, trasladar y mandar al taller; SALIDAS para pedir una salida con
+    «↕»; INVENTARIO.AJUSTAR_COSTO para el costo; INVENTARIO en TOTAL para el
+    dueño. La base vuelve a comprobarlo todo.
+  */
+  const { puede: tieneRol } = useMisRoles()
+  const { puede: alcanza } = useMisPermisos()
+  const { puede: puedeAccion } = useMisAcciones()
+  const almacenista = tieneRol('ALMACEN')
+  const puedeMovimiento = almacenista || alcanza('SALIDAS', 'LECTURA')
+  const { data: articulos } = useArticulos(false)
+  const { data: propietarios } = usePropietarios()
+  const nombreDeDueno = (codigo?: string | null) =>
+    (propietarios ?? []).find((d) => d.codigo === codigo)?.nombre ?? codigo ?? undefined
+  const articuloDe = (id: number): Articulo | undefined => (articulos ?? []).find((a) => a.id === id)
+
+  // Los modales de siempre, con este almacén puesto.
+  const [entrando, setEntrando] = useState(false)
+  const [trasladando, setTrasladando] = useState(false)
+  const [alTallerSuelto, setAlTallerSuelto] = useState(false)
+  const [alTaller, setAlTaller] = useState<Existencia | null>(null)
+  const [movimiento, setMovimiento] = useState<Articulo | null>(null)
+  const [masAcciones, setMasAcciones] = useState<Existencia | null>(null)
+  const [contando, setContando] = useState<Existencia | null>(null)
+  const [costo, setCosto] = useState<Existencia | null>(null)
+  const [cambiandoDueno, setCambiandoDueno] = useState<Existencia | null>(null)
+  const notaDeTraslado = useNotaDeTraslado()
   const [pdf, setPdf] = useState<ArchivoArmado | null>(null)
   const [armando, setArmando] = useState(false)
   const [errorPdf, setErrorPdf] = useState<unknown>(null)
@@ -95,11 +147,64 @@ export function DetalleAlmacen({
     return filas
       .filter((e) => conCeros || (Number(e.existencia) || 0) !== 0)
       .filter((e) => !categoria || e.categoria === categoria)
+      /* El dueño filtra por lo que hay de él en la fila (`duenos`); una fila
+         sin dueños anotados es del dueño del almacén. */
+      .filter(
+        (e) =>
+          !dueno ||
+          ((e.duenos ?? []).length > 0 ? e.duenos.includes(dueno) : (almacen.propietario ?? LA_CASA) === dueno),
+      )
       .filter(
         (e) => !q || e.articulo.toLowerCase().includes(q) || e.articulo_codigo.toLowerCase().includes(q),
       )
       .sort((a, b) => a.articulo.localeCompare(b.articulo, 'es', { numeric: true, sensitivity: 'base' }))
-  }, [filas, texto, categoria, conCeros])
+  }, [filas, texto, categoria, dueno, conCeros, almacen.propietario])
+
+  /* Lo que ofrece «⋯» en una fila: lo de La Cantera que MGG no tiene. */
+  const opcionesDe = (e: Existencia) => {
+    const hay = Number(e.existencia) > 0
+    const lista: { titulo: string; detalle: string; hacer: () => void }[] = []
+    if (almacenista) {
+      lista.push({
+        titulo: 'Contar',
+        detalle: 'Conteo físico. La diferencia queda como ajuste.',
+        hacer: () => setContando(e),
+      })
+    }
+    if (puedeAccion('INVENTARIO.AJUSTAR_COSTO') && hay) {
+      lista.push({
+        titulo: 'Corregir el costo',
+        detalle: 'El costo por unidad de lo que hay en este almacén, con su factura.',
+        hacer: () => setCosto(e),
+      })
+    }
+    if (almacenista && articuloDe(e.articulo_id)?.reparable && Number(e.disponibles) > 0) {
+      lista.push({
+        titulo: 'Al taller',
+        detalle: 'Mandarlo a reparar. Vuelve, no se consume.',
+        hacer: () => setAlTaller(e),
+      })
+    }
+    if (alcanza('INVENTARIO', 'TOTAL') && (propietarios ?? []).length > 1 && hay) {
+      lista.push({
+        titulo: 'Cambiar de dueño',
+        detalle: 'El material no se mueve; cambia de dueño.',
+        hacer: () => setCambiandoDueno(e),
+      })
+    }
+    return lista
+  }
+
+  /* El acta lleva lo que se está viendo, y dice con qué filtro. */
+  const filtroDelActa =
+    [
+      texto.trim() ? `Búsqueda: «${texto.trim()}»` : null,
+      categoria ? `Categoría: ${etiquetaDeCategoria(categoria)}` : null,
+      dueno ? `Solo lo de ${nombreDeDueno(dueno) ?? dueno}` : null,
+      conCeros ? 'Con lo que está en cero' : null,
+    ]
+      .filter(Boolean)
+      .join(' · ') || null
 
   const renglones = renglonesDeReporte(filas, etiquetaDeCategoria)
   const verFicha = (id: number) => void navegar(`/app/inventario/articulos/${id}`)
@@ -155,12 +260,55 @@ export function DetalleAlmacen({
               + Nuevo producto
             </Button>
           ) : null}
-          <Link
-            to={`/app/inventario/existencias?almacen=${almacen.id}`}
-            title="Contar, trasladar, sacar o corregir el costo de lo que hay en este almacén"
-          >
-            <Button variant="ghost" size="sm">↕ Mover material</Button>
-          </Link>
+          {almacenista ? (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                title="Material que entra sin una compra: saldo inicial, compra por fuera, donación. Varios renglones a la vez."
+                onClick={() => setEntrando(true)}
+              >
+                + Registrar entrada
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                title="Pedir una salida de este almacén: sale cuando la aprueba quien responde por él"
+                onClick={() => void navegar(`/app/salidas/solicitudes?solicitar=1&almacen=${almacen.id}`)}
+              >
+                Solicitar salida
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                title="Trasladar material de este almacén a otro, con su nota de traslado"
+                onClick={() => setTrasladando(true)}
+              >
+                ⇄ Trasladar
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                title="Mandar a reparar algo reparable. Vuelve, no se consume."
+                onClick={() => setAlTallerSuelto(true)}
+              >
+                Mandar al taller
+              </Button>
+              <BotonActaDeConteo
+                sitio={almacen.nombre}
+                filtro={filtroDelActa}
+                renglones={visibles.map((e) => ({
+                  articuloId: e.articulo_id,
+                  codigo: e.articulo_codigo,
+                  articulo: e.articulo,
+                  unidad: e.unidad,
+                  existencia: e.existencia,
+                  costoUsd: veValor ? (e.costo_promedio_usd ?? 0) : null,
+                  valorUsd: veValor ? e.valor_usd : null,
+                }))}
+              />
+            </>
+          ) : null}
           <Button size="sm" onClick={onConsumo} title="Gráfica de consumo por producto de este almacén">
             📊 Consumo
           </Button>
@@ -186,7 +334,14 @@ export function DetalleAlmacen({
 
       {/* ----------------------------------------------- vista y filtros */}
       <Card className="mb-4">
-        <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto] sm:items-end">
+        <div
+          className={cn(
+            'grid gap-3 sm:items-end',
+            (propietarios ?? []).length > 1
+              ? 'sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]'
+              : 'sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto]',
+          )}
+        >
           <Input
             maxLength={100}
             label="Buscar"
@@ -202,6 +357,16 @@ export function DetalleAlmacen({
             onChange={(e) => setCategoria(e.target.value)}
             opciones={categorias.map((c) => ({ valor: c, etiqueta: etiquetaDeCategoria(c) }))}
           />
+          {/* Solo si hay más de un dueño registrado; con uno solo no separa nada. */}
+          {(propietarios ?? []).length > 1 ? (
+            <Select
+              label="Dueño"
+              vacio="De todos"
+              value={dueno}
+              onChange={(e) => setDueno(e.target.value)}
+              opciones={(propietarios ?? []).map((d) => ({ valor: d.codigo, etiqueta: d.nombre }))}
+            />
+          ) : null}
           <Segmento
             className="self-end"
             valor={vista}
@@ -350,18 +515,39 @@ export function DetalleAlmacen({
                       <td className="text-ink/85 tabular px-3 py-3 text-right font-medium">
                         {veValor ? dolares(e.valor_usd ?? 0) : '—'}
                       </td>
-                      <td className="px-5 py-3 text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          title="Ver detalle y kardex"
-                          onClick={(ev) => {
-                            ev.stopPropagation()
-                            verFicha(e.articulo_id)
-                          }}
-                        >
-                          📋
-                        </Button>
+                      <td className="px-5 py-3 text-right whitespace-nowrap" onClick={(ev) => ev.stopPropagation()}>
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Ver detalle y kardex"
+                            onClick={() => verFicha(e.articulo_id)}
+                          >
+                            📋
+                          </Button>
+                          {puedeMovimiento && articuloDe(e.articulo_id) ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              title="Registrar movimiento en este almacén"
+                              aria-label={`Movimiento de ${e.articulo}`}
+                              onClick={() => setMovimiento(articuloDe(e.articulo_id) ?? null)}
+                            >
+                              ↕
+                            </Button>
+                          ) : null}
+                          {opcionesDe(e).length > 0 ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              title="Más acciones"
+                              aria-label={`Más acciones de ${e.articulo}`}
+                              onClick={() => setMasAcciones(e)}
+                            >
+                              ⋯
+                            </Button>
+                          ) : null}
+                        </div>
                       </td>
                     </tr>
                   )
@@ -380,6 +566,77 @@ export function DetalleAlmacen({
         titulo={`Reporte · ${almacen.nombre}`}
       />
       {nuevo ? <ModalArticuloNuevo onCerrar={() => setNuevo(false)} /> : null}
+
+      {/* ------------------------------------------- ↕ Movimiento · SKU */}
+      {movimiento ? (
+        <Movimiento
+          articulo={movimiento}
+          almacenInicial={almacen.id}
+          tipoInicial={almacenista ? 'entrada' : 'salida'}
+          onCerrar={() => setMovimiento(null)}
+        />
+      ) : null}
+
+      {/* ---------------------------------------------------------- ⋯ */}
+      {masAcciones ? (
+        <Modal
+          abierto
+          ancho="sm"
+          onCerrar={() => setMasAcciones(null)}
+          titulo={`${masAcciones.articulo_codigo} · ${masAcciones.articulo}`}
+          descripcion={`En ${almacen.nombre}: hay ${cantidad(Number(masAcciones.existencia) || 0)} ${masAcciones.unidad}.`}
+          acciones={
+            <Button variant="ghost" onClick={() => setMasAcciones(null)}>
+              Cerrar
+            </Button>
+          }
+        >
+          <div className="grid gap-2">
+            {opcionesDe(masAcciones).map((o) => (
+              <button
+                key={o.titulo}
+                type="button"
+                onClick={() => {
+                  setMasAcciones(null)
+                  o.hacer()
+                }}
+                className="border-ink/12 hover:border-ink/25 hover:bg-ink/4 rounded-control w-full border px-4 py-3 text-left transition-colors"
+              >
+                <span className="text-ink/85 block text-sm font-medium">{o.titulo}</span>
+                <span className="text-ink/50 mt-0.5 block text-xs">{o.detalle}</span>
+              </button>
+            ))}
+          </div>
+        </Modal>
+      ) : null}
+
+      {/* Los modales de siempre, con este almacén puesto. */}
+      {contando ? <ModalConteo fila={contando} onCerrar={() => setContando(null)} /> : null}
+      {costo ? <ModalCorregirCosto fila={costo} onCerrar={() => setCosto(null)} /> : null}
+      {cambiandoDueno ? (
+        <ModalCambioDeDueno fila={cambiandoDueno} onCerrar={() => setCambiandoDueno(null)} />
+      ) : null}
+      <ModalAlTaller
+        fila={alTaller}
+        abierto={alTallerSuelto}
+        onCerrar={() => {
+          setAlTaller(null)
+          setAlTallerSuelto(false)
+        }}
+      />
+      {entrando ? (
+        <ModalEntradaDeMaterial almacenInicial={String(almacen.id)} onCerrar={() => setEntrando(false)} />
+      ) : null}
+      <ModalTraslado
+        abierto={trasladando}
+        onCerrar={() => setTrasladando(false)}
+        origen={String(almacen.id)}
+        // La nota sale cuando el material ya salió; un pedido todavía no mueve nada.
+        onTrasladado={(t) => {
+          if (t.forma !== 'PEDIR') void notaDeTraslado.abrirTraslado(t.id)
+        }}
+      />
+      {notaDeTraslado.visor}
     </>
   )
 }

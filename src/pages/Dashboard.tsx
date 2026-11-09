@@ -111,7 +111,7 @@ function avisosDe(r: ReturnType<typeof useResumenPanel>['data']): Aviso[] {
         como una razon y empieza a leerse como texto de relleno — y entonces
         tampoco se lee el dia que si era un repuesto.
       */
-      ruta: '/app/inventario/existencias',
+      ruta: '/app/inventario',
     })
   }
 
@@ -247,7 +247,7 @@ const QUE_HACER: GrupoDeAcciones[] = [
         titulo: 'Ver cómo está el almacén',
         detalle: 'Cuánto hay de cada cosa, dónde está, y qué se está acabando.',
         icono: Boxes,
-        a: '/app/inventario/existencias',
+        a: '/app/inventario',
       },
       {
         titulo: 'Procesar la quincena',
@@ -482,7 +482,7 @@ export function Dashboard() {
                 decir dos veces lo mismo.
               */
               <StatCard
-                a="/app/inventario/existencias"
+                a="/app/inventario"
                 label={
                   Number(r.inventario_ajeno_usd) > 0
                     ? 'Valor del inventario, todo'

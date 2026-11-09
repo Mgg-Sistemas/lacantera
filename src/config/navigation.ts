@@ -254,13 +254,9 @@ export const PANTALLAS_SIN_ENTRADA: Array<{
     seccion: 'Operación',
   },
   // 08/11/2026, fase 7: salieron del menú (las repiten pestañas y cabeceras de
-  // las pantallas de MGG), pero se siguen buscando por su nombre.
-  {
-    label: 'Existencias',
-    to: '/app/inventario/existencias',
-    grupo: 'Inventario',
-    seccion: 'Operación',
-  },
+  // las pantallas de MGG), pero se siguen buscando por su nombre. «Existencias»
+  // ya no está: el 09/11/2026 la pantalla vieja se retiró y la lupa la
+  // encuentra como «Inventario» (ver CLAVES_DE_BUSQUEDA).
   {
     label: 'Historial de salidas y traslados',
     to: '/app/salidas',
@@ -344,7 +340,8 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/ventas/clientes': 'rif comprador',
   '/app/ventas/precios': 'tarifa lista precio',
   '/app/ventas/registros-de-pagos': 'banco deposito transferencia referencia cotejo conciliar pago caja',
-  '/app/inventario/existencias': 'stock cuanto hay disponible sacar salida merma consumo motivo razon contar conteo ajuste',
+  '/app/inventario':
+    'existencias stock cuanto hay disponible sacar salida merma consumo motivo razon contar conteo ajuste acta entrada saldo inicial',
   '/app/inventario/articulos': 'catalogo repuesto insumo herramienta epp material',
   '/app/organigrama': 'organizacion estructura jerarquia cargos quien depende de quien departamentos arbol',
   '/app/salidas': 'historial salidas traslados que se entrego a quien almacenista grupo consulta',

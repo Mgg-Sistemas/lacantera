@@ -96,7 +96,7 @@ function QUE_HACER(faltantes: number): GrupoDeAcciones[] {
           detalle:
             'Lo que hay hoy en cada sitio, con su costo.',
           icono: PackagePlus,
-          a: '/app/inventario/existencias',
+          a: '/app/inventario?accion=entrada',
           exige: 'ESCRITURA',
         },
       ],
@@ -135,7 +135,7 @@ function QUE_HACER(faltantes: number): GrupoDeAcciones[] {
           detalle:
             'Se imprime el acta con lo registrado, se cuenta a mano y la diferencia se anota como ajuste.',
           icono: ClipboardList,
-          a: '/app/inventario/existencias',
+          a: '/app/inventario',
         },
         {
           titulo:
@@ -147,7 +147,7 @@ function QUE_HACER(faltantes: number): GrupoDeAcciones[] {
               ? 'Hay artículos en el mínimo o por debajo.'
               : 'Ahora mismo no hay nada por reponer.',
           icono: TriangleAlert,
-          a: '/app/inventario/existencias',
+          a: '/app/inventario',
         },
         {
           titulo: 'Ver qué le pasó a un artículo',
@@ -195,7 +195,7 @@ export function QueHacerDelInventario({ faltantes }: { faltantes: number }) {
         </p>
         <p className="text-ink/50">
           Lo que llega con una orden entra al recibir la compra; lo demás, con «Registrar
-          entrada» en Existencias. Las salidas y los traslados están en Salidas y traslados.
+          entrada» en Inventario. Las salidas y los traslados están en Salidas y traslados.
         </p>
         <p className="text-ink/50">
           Si el conteo no cuadra con el sistema, se corrige con un ajuste, que queda anotado con
@@ -283,7 +283,7 @@ export function TableroInventario() {
         title="Inventario"
         description="Estado actual del patio y las entradas y salidas de material."
         actions={
-          <Link to="/app/inventario/existencias">
+          <Link to="/app/inventario">
             <Button icon={<Boxes />}>Ver existencias</Button>
           </Link>
         }

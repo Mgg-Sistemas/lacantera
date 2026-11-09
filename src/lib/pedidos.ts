@@ -92,14 +92,29 @@ export const KANBAN_COLS_SERVICIO: { key: EstadoOrden; label: string }[] = [
   { key: 'cancelada', label: 'Cancelado' },
 ]
 
-/** MGG `FINALIDAD_MERCADO`: la Solicitud de Mercado no pasa por el almacén. */
+/**
+ * MGG `FINALIDAD_MERCADO`. En MGG la Solicitud de Mercado no pasa por el
+ * almacén; en La Cantera sí (la dueña, 09/11/2026): nace en revisión de
+ * almacén como cualquier SP y el almacenista confirma qué tiene.
+ */
 export const FINALIDAD_MERCADO = 'PEDIDO PARA RESTABLECER EL MERCADO'
+
+/**
+ * ¿Es una Solicitud de Mercado (o una OC hija de una)? Las hijas heredan la
+ * finalidad y la clasificación de la madre al repartirse entre proveedores.
+ */
+export const esMercado = (o: Pick<Orden, 'finalidad' | 'clasificacion'>): boolean =>
+  o.finalidad === FINALIDAD_MERCADO || (o.clasificacion ?? []).includes('Mercado')
 
 /** MGG: en la pestaña OC, 10 tarjetas por columna salvo «Pendiente (cargar ofertas)». */
 export const TOPE_COLUMNA_OC = 10
 
-/** Las fases de la SP: lo único que ve quien no lleva Compras (MGG `ESTADOS_FASES_SP`). */
-export const ESTADOS_FASES_SP = new Set<EstadoOrden>(KANBAN_COLS_PEDIDOS.map((c) => c.key))
+/**
+ * Las fases de la SP: lo único que ve quien no lleva Compras (MGG
+ * `ESTADOS_FASES_SP`). Con «Repartida entre proveedores»: la SP ya aprobada
+ * cuyas OC hijas cubren todo sigue siendo la solicitud de quien la pidió.
+ */
+export const ESTADOS_FASES_SP = new Set<EstadoOrden>([...KANBAN_COLS_PEDIDOS.map((c) => c.key), 'asignada'])
 
 /** El color del punto de cada columna (MGG `app-shell.css`). */
 export const ACENTO_COLUMNA: Partial<Record<EstadoOrden, TonoEstado>> = {
@@ -609,8 +624,19 @@ export const sinTildes = (s: string) =>
     .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
 
-/** Todas las palabras tienen que aparecer en algún dato de la orden. */
-export function coincide(o: Orden, texto: string, proveedor?: string | null): boolean {
+/**
+ * Todas las palabras tienen que aparecer en algún dato de la orden. Entran la
+ * finalidad, la clasificación y la marca «mercado» / «urgente»: la Solicitud
+ * de Mercado se busca escribiendo «mercado» aunque su nota no lo diga
+ * (09/11/2026). `extra` suma datos de fuera de la fila (los códigos de las OC
+ * hijas de una SP repartida).
+ */
+export function coincide(
+  o: Orden,
+  texto: string,
+  proveedor?: string | null,
+  extra: readonly (string | null | undefined)[] = [],
+): boolean {
   const palabras = sinTildes(texto).split(/\s+/).filter(Boolean)
   if (palabras.length === 0) return true
   const todo = sinTildes(
@@ -622,8 +648,14 @@ export function coincide(o: Orden, texto: string, proveedor?: string | null): bo
       o.solicitante_nombre,
       o.creado_por_nombre,
       o.notas,
+      o.finalidad,
+      o.motivo,
+      ...(o.clasificacion ?? []),
+      esMercado(o) ? 'mercado solicitud de mercado' : null,
+      o.urgente ? 'urgente' : null,
       o.pago_referencia,
       etiquetaEstado(o.estado),
+      ...extra,
       money(o.total),
       String(o.total),
       fechaHoraVE(o.creado_en),
