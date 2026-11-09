@@ -26,7 +26,8 @@ import {
   type DatosPago,
 } from '@/lib/pagos'
 import {
-  CALIDAD_LABEL,
+  CALIDAD_ESTRELLAS,
+  PUNTUALIDAD_LABEL,
   cantidadSolicitada,
   estrellas,
   textoPuntualidad,
@@ -428,7 +429,7 @@ export function mensajeRecepcion(
 /** «✓ Finalizar orden»: el cierre, con la evaluación del proveedor. */
 export function textoFinalizada(
   o: Orden,
-  e: Pick<Evaluacion, 'calidad' | 'puntualidad_dias' | 'comentario'> | null,
+  e: Pick<Evaluacion, 'calidad' | 'puntualidad' | 'puntualidad_dias' | 'comentario'> | null,
   d: { proveedor: string; empresa: string },
 ): string {
   const solicita = (quienSolicita(o) ?? '').trim()
@@ -443,8 +444,12 @@ export function textoFinalizada(
   }
   if (o.pagada_en) L.push(`💳 *Pagada:* ${o.pago_monto_usd != null ? montoTxt(o.pago_monto_usd, '$') : montoTxt(montoAPagar(o), '$')}`)
   if (e) {
-    L.push(`⭐ *Calidad:* ${estrellas(e.calidad)} ${CALIDAD_LABEL[e.calidad] ?? e.calidad}`)
-    L.push(`🕒 *Puntualidad:* ${textoPuntualidad(e.puntualidad_dias)}`)
+    L.push(`⭐ *Calidad:* ${estrellas(e.calidad)} ${CALIDAD_ESTRELLAS[e.calidad] ?? e.calidad}`)
+    L.push(
+      e.puntualidad != null
+        ? `🕒 *Puntualidad:* ${estrellas(e.puntualidad)} ${PUNTUALIDAD_LABEL[e.puntualidad] ?? ''} · ${textoPuntualidad(e.puntualidad_dias)}`
+        : `🕒 *Puntualidad:* ${textoPuntualidad(e.puntualidad_dias)}`,
+    )
     if (e.comentario?.trim()) L.push(`📝 *Comentario:* ${e.comentario.trim()}`)
   }
   if (o.finalizada_por_nombre) L.push(`👔 *Finalizó:* ${o.finalizada_por_nombre}`)

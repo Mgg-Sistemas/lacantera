@@ -1130,6 +1130,8 @@ export interface Evaluacion {
   orden_id: number
   proveedor_id: number
   calidad: number
+  /** 1 a 5 estrellas (09/11/2026); null en las evaluaciones anteriores. */
+  puntualidad: number | null
   puntualidad_dias: number
   fecha_prometida: string | null
   fecha_recibido: string | null
@@ -1252,6 +1254,8 @@ export function useRecibirOrden() {
 
 export interface DatosFinalizar {
   calidad: number
+  /** 1 a 5 estrellas. */
+  puntualidad?: number
   puntualidad_dias: number
   fecha_prometida: string | null
   fecha_recibido: string | null
