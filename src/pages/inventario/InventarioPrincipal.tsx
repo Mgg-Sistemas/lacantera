@@ -58,7 +58,6 @@ import { ExportarInventario } from './principal/ExportarInventario'
 import { ImportarExcel } from './principal/ImportarExcel'
 import { Movimiento } from './principal/Movimiento'
 import { Mover } from './principal/Mover'
-import { ResumenInventario } from './principal/ResumenInventario'
 import { SinCosto } from './principal/SinCosto'
 import { Trazabilidad } from './principal/Trazabilidad'
 
@@ -216,7 +215,7 @@ export function InventarioPrincipal() {
   const notaDeTraslado = useNotaDeTraslado()
   const [categoriasAbiertas, setCategoriasAbiertas] = useState(false)
   // Los modales de la cabecera de MGG (fase 4).
-  const [cabecera, setCabecera] = useState<'' | 'resumen' | 'exportar' | 'importar' | 'sinCosto' | 'deshabilitados' | 'nuevo'>('')
+  const [cabecera, setCabecera] = useState<'' | 'exportar' | 'importar' | 'sinCosto' | 'deshabilitados' | 'nuevo'>('')
 
   // «Ver dónde está» usa el modal de siempre (`ModalesDeExistencias`), que pide la fila total.
   const totales = useExistenciasTotales(desgloseDe !== null)
@@ -647,14 +646,6 @@ export function InventarioPrincipal() {
               ↑ Importar Excel
             </Button>
           ) : null}
-          <Button
-            variant="ghost"
-            size="sm"
-            title="Resumen de inventario: valor por almacén, productos nuevos, salidas y traslados"
-            onClick={() => setCabecera('resumen')}
-          >
-            📊 Resumen
-          </Button>
           {/* Solo aparece si hay algo pendiente, como en MGG. Aquí «sin costo»
               es lo que entró «sin valorar» y sigue en un almacén. */}
           {sinCosto > 0 ? (
@@ -1078,9 +1069,6 @@ export function InventarioPrincipal() {
       {categoriasAbiertas ? <CategoriasYMedidas onCerrar={() => setCategoriasAbiertas(false)} /> : null}
 
       {/* ------------------------------- los modales de la cabecera (fase 4) */}
-      {cabecera === 'resumen' ? (
-        <ResumenInventario onCerrar={() => setCabecera('')} onVerProducto={verFicha} />
-      ) : null}
       {cabecera === 'exportar' ? (
         <ExportarInventario
           onCerrar={() => setCabecera('')}
