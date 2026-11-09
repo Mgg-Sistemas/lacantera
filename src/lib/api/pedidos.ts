@@ -507,6 +507,36 @@ export function useAgregarUnidad() {
   })
 }
 
+/** La ficha que devuelve «+ No está en inventario» con categoría. */
+export interface FichaDesdeSolicitud {
+  id: number
+  codigo: string
+  nombre: string
+  unidad: string
+  categoria: string
+  /** Falso: ya había una con ese nombre en la categoría y se devolvió esa. */
+  creada: boolean
+}
+
+/**
+ * «+ No está en inventario» con categoría (la dueña, 09/11/2026): crea la
+ * ficha en el catálogo con el código siguiente de la categoría (REP-0001…) o
+ * devuelve la que ya se llama así en esa categoría. El renglón entra entonces
+ * como un producto del inventario, con su código, en el modal y en los PDF.
+ */
+export function useFichaDesdeSolicitud() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (d: { nombre: string; categoria: string; unidad: string }) =>
+      rpc<FichaDesdeSolicitud>('compras_ficha_desde_solicitud', {
+        p_nombre: d.nombre,
+        p_categoria: d.categoria,
+        p_unidad: d.unidad,
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['articulos'] }),
+  })
+}
+
 /** Una marca de la revisión: lo que el almacén tiene de un renglón. */
 export interface MarcaEnviada {
   sku: string

@@ -2,13 +2,14 @@ import { useEffect, useMemo, useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, Vacio } from '@/components/ui/Estado'
 import { cn } from '@/lib/cn'
-import { useArticulos, useCategoriasDeArticulo, type Articulo } from '@/lib/api/catalogo'
+import { useArticulos, useCategoriasDeArticulo, useCategoriasDeInventario, type Articulo } from '@/lib/api/catalogo'
 import { useExistenciasTotales } from '@/lib/api/inventario'
-import { useCrearSolicitudMercado, useUltimaSolicitudMercado } from '@/lib/api/pedidos'
+import { useCrearSolicitudMercado, useFichaDesdeSolicitud, useUltimaSolicitudMercado } from '@/lib/api/pedidos'
 import { FINALIDAD_MERCADO, fechaHoraVE, fmtCant } from '@/lib/pedidos'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
 import { comoNumero } from '@/lib/formato'
@@ -26,9 +27,11 @@ import { enMayuscula } from '@/lib/texto'
   Lo que cambia respecto a MGG:
     - LA LISTA SON LAS CATEGORÍAS «SE CONSUME EN COCINA» del catálogo de La
       Cantera (MGG busca las que se llaman «víveres» u «hortalizas»).
-    - SIN «PRODUCTO NUEVO» QUE CREA FICHA: lo que no está en el inventario se
-      pide con nombre general, como en la Solicitud de Pedido; Compras le pone
-      el nombre de inventario al cotizar.
+    - «+ NO ESTÁ EN INVENTARIO», como en la Solicitud de Pedido: sin categoría
+      se pide con nombre general y Compras le pone el nombre de inventario al
+      cotizar; con categoría (la dueña, 09/11/2026) se crea la ficha con el
+      código siguiente de la categoría (VIV-0033…) y entra a la lista como
+      cualquier producto del inventario.
     - SIN TARJETA DE ALERTAS: en La Cantera no hay `alertas_mercado`; la
       cocina pide el mercado desde Alimentación.
 */
@@ -53,6 +56,8 @@ export function SolicitudMercadoModal({ onClose, onCreated }: { onClose: () => v
   const existencias = useExistenciasTotales()
   const ultima = useUltimaSolicitudMercado()
   const crear = useCrearSolicitudMercado()
+  const fichaDesdeSolicitud = useFichaDesdeSolicitud()
+  const categoriasInv = useCategoriasDeInventario()
 
   const [unidad, setUnidad] = useState('COCINA')
   const [persona, setPersona] = useState('COCINA')
@@ -67,6 +72,13 @@ export function SolicitudMercadoModal({ onClose, onCreated }: { onClose: () => v
   const [nuevoNombre, setNuevoNombre] = useState('')
   const [nuevoCant, setNuevoCant] = useState('1')
   const [nuevoUnd, setNuevoUnd] = useState('UND')
+  const [nuevoCategoria, setNuevoCategoria] = useState('')
+
+  // Un servicio no se pide aquí.
+  const categoriasOpciones = (categoriasInv.data ?? [])
+    .filter((c) => c.activa && c.codigo !== 'SERVICIO')
+    .map((c) => ({ valor: c.codigo, etiqueta: `${c.etiqueta} · ${c.prefijo}-…` }))
+  const prefijoElegido = (categoriasInv.data ?? []).find((c) => c.codigo === nuevoCategoria)?.prefijo ?? '…'
 
   const deCocina = useMemo(
     () => new Set((categorias.data ?? []).filter((c) => c.de_cocina).map((c) => c.codigo)),
@@ -143,7 +155,7 @@ export function SolicitudMercadoModal({ onClose, onCreated }: { onClose: () => v
     setAgregarCant('1')
   }
 
-  function agregarGeneral() {
+  async function agregarGeneral() {
     const nombre = enMayuscula(nuevoNombre.trim())
     if (!nombre) {
       toast('Escribí el nombre general de lo que se pide', 'error')
@@ -158,6 +170,39 @@ export function SolicitudMercadoModal({ onClose, onCreated }: { onClose: () => v
       toast(`"${nombre}" ya está en la solicitud: cambiá su cantidad en la lista.`, 'warning')
       return
     }
+
+    // Con categoría: la ficha en el inventario, con su código, y a la lista.
+    if (nuevoCategoria) {
+      try {
+        const ficha = await fichaDesdeSolicitud.mutateAsync({
+          nombre,
+          categoria: nuevoCategoria,
+          unidad: nuevoUnd.trim() || 'UND',
+        })
+        const recargados = await articulos.refetch()
+        const a = (recargados.data ?? []).find((x) => x.id === ficha.id)
+        if (!a) {
+          toast(`"${ficha.nombre}" quedó en el inventario como ${ficha.codigo}, pero no se pudo traer a la lista. Buscalo arriba.`, 'warning')
+          return
+        }
+        if (!lista.some((x) => x.id === a.id)) setExtras((xs) => [...xs, a])
+        setSel((m) => ({ ...m, [a.id]: { check: true, cant: String(n) } }))
+        toast(
+          ficha.creada
+            ? `"${a.nombre}" creado en el inventario con el código ${a.codigo} · ${fmtCant(n)} ${a.unidad}`
+            : `"${a.nombre}" ya estaba en el inventario como ${a.codigo}: se marcó ese · ${fmtCant(n)} ${a.unidad}`,
+          'success',
+        )
+      } catch (e) {
+        toast(mensajeDe(e, 'No se pudo crear el producto en el inventario'), 'error')
+        return
+      }
+      setNuevoNombre('')
+      setNuevoCant('1')
+      setNuevoOpen(false)
+      return
+    }
+
     setGenerales((gs) => [
       ...gs,
       { sku: `GEN-${Date.now().toString(36).toUpperCase()}-${gs.length}`, nombre, cantidad: String(n), unidad: nuevoUnd.trim() || 'UND' },
@@ -311,9 +356,27 @@ export function SolicitudMercadoModal({ onClose, onCreated }: { onClose: () => v
               {nuevoOpen ? (
                 <div className="border-hairline mt-2 space-y-2 rounded-[6px] border border-dashed p-3">
                   <p className="text-ink/60 text-xs">
-                    Nombre general (Compras fija el nombre de inventario al cotizar). <strong>No se crea</strong> ningún producto
-                    en el inventario.
+                    {nuevoCategoria ? (
+                      <>
+                        Con categoría <strong>se crea el producto en el inventario</strong> con su código ({prefijoElegido}-0001,{' '}
+                        {prefijoElegido}-0002…) y entra a la lista como cualquier producto del inventario. Si ya hay uno con ese
+                        nombre en la categoría, se usa ese.
+                      </>
+                    ) : (
+                      <>
+                        Sin categoría va con nombre general (Compras fija el nombre de inventario al cotizar) y{' '}
+                        <strong>no se crea</strong> ningún producto en el inventario. Si elegís la categoría, sí se crea con su
+                        código.
+                      </>
+                    )}
                   </p>
+                  <Select
+                    label="Categoría"
+                    value={nuevoCategoria}
+                    onChange={(e) => setNuevoCategoria(e.target.value)}
+                    vacio="Sin categoría (nombre general)"
+                    opciones={categoriasOpciones}
+                  />
                   <div className="grid gap-2 sm:grid-cols-[1fr_6rem_6rem_auto]">
                     <Input maxLength={150} label="Nombre general de lo que se pide *" value={nuevoNombre} onChange={(e) => setNuevoNombre(e.target.value)} />
                     <Input
@@ -327,8 +390,12 @@ export function SolicitudMercadoModal({ onClose, onCreated }: { onClose: () => v
                     />
                     <Input maxLength={20} label="Unidad" value={nuevoUnd} onChange={(e) => setNuevoUnd(e.target.value.toUpperCase())} />
                     <div className="flex items-end pb-0.5">
-                      <Button variant="outline" onClick={agregarGeneral}>
-                        Añadir
+                      <Button
+                        variant="outline"
+                        onClick={() => void agregarGeneral()}
+                        disabled={fichaDesdeSolicitud.isPending}
+                      >
+                        {fichaDesdeSolicitud.isPending ? 'Creando…' : 'Añadir'}
                       </Button>
                     </div>
                   </div>
