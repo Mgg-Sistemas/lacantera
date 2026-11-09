@@ -565,12 +565,12 @@ function PedidoDetalleModal({
               </Button>
             ) : null}
             {o.factura_path ? (
-              <Button variant="ghost" title={o.factura_nombre ?? 'Factura / nota de entrega'} onClick={() => void abrirArchivoRecepcion(o.factura_path!)}>
+              <Button variant="ghost" title={o.factura_nombre ?? 'Factura / nota de entrega'} onClick={() => void abrirArchivoRecepcion(o.factura_path!, o.factura_nombre)}>
                 📎 {o.estado === 'finalizada' ? 'Ver factura / soporte' : 'Ver adjunto de pago'}
               </Button>
             ) : null}
             {o.pago_qr_path ? (
-              <Button variant="ghost" title={o.pago_qr_nombre ?? 'QR de pago'} onClick={() => void abrirArchivoPago(o.pago_qr_path!)}>
+              <Button variant="ghost" title={o.pago_qr_nombre ?? 'QR de pago'} onClick={() => void abrirArchivoPago(o.pago_qr_path!, o.pago_qr_nombre)}>
                 📎 QR de pago
               </Button>
             ) : null}
@@ -579,7 +579,7 @@ function PedidoDetalleModal({
                 key={b.id}
                 variant="ghost"
                 title={b.comprobante_nombre ?? 'Comprobante del abono'}
-                onClick={() => void abrirArchivoPago(b.comprobante_path!)}
+                onClick={() => void abrirArchivoPago(b.comprobante_path!, b.comprobante_nombre)}
               >
                 📎 Abono {i + 1} · {money(b.monto)}
               </Button>

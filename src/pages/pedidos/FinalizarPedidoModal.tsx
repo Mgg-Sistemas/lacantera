@@ -322,7 +322,7 @@ export function ComprobanteOcModal({ orden: o, onClose }: { orden: Orden; onClos
         {o.factura_path ? (
           <div className="text-sm">
             Ya hay un comprobante cargado: {o.factura_nombre ?? '—'}{' '}
-            <Button size="sm" variant="ghost" onClick={() => void abrirArchivoRecepcion(o.factura_path!)}>
+            <Button size="sm" variant="ghost" onClick={() => void abrirArchivoRecepcion(o.factura_path!, o.factura_nombre)}>
               👁 Vista previa
             </Button>
           </div>

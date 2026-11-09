@@ -4,6 +4,8 @@ import { createPortal } from 'react-dom'
 import { Download, ExternalLink, FileWarning, Share2, X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { bloquearScroll } from '@/lib/bloqueoDeScroll'
+import { abrirArchivo, bajarDeDireccion, descargarArchivo } from '@/lib/abrirArchivo'
+import { mensajeDe, toast } from '@/lib/avisosFlotantes'
 
 /**
  * Ver el papel antes de quedárselo.
@@ -218,15 +220,24 @@ export function Visor({
 
     setBajando(true)
     try {
-      const respuesta = await fetch(url)
-      const temporal = URL.createObjectURL(await respuesta.blob())
-      const enlace = document.createElement('a')
-      enlace.href = temporal
-      enlace.download = nombreArchivo
-      enlace.click()
-      URL.revokeObjectURL(temporal)
+      await descargarArchivo(() => bajarDeDireccion(url), nombreArchivo)
+    } catch (e) {
+      toast(mensajeDe(e, 'No se pudo descargar el archivo'), 'error')
     } finally {
       setBajando(false)
+    }
+  }
+
+  /*
+    Abrirlo en otra pestaña sin enseñar la dirección firmada del almacén (ver
+    `abrirArchivo.ts`): la pestaña recibe una copia en memoria.
+  */
+  const abrirEnPestana = async () => {
+    if (!url) return
+    try {
+      await abrirArchivo(() => (blob ? Promise.resolve(blob) : bajarDeDireccion(url)), nombreArchivo)
+    } catch (e) {
+      toast(mensajeDe(e, 'No se pudo abrir el archivo'), 'error')
     }
   }
 
@@ -297,7 +308,7 @@ export function Visor({
                 <Button
                   variant="outline"
                   icon={<ExternalLink className="size-[18px]" />}
-                  onClick={() => window.open(url, '_blank', 'noopener')}
+                  onClick={() => void abrirEnPestana()}
                 >
                   Abrir el PDF
                 </Button>
