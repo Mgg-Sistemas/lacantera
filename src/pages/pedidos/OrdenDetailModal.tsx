@@ -103,7 +103,6 @@ import { AgregarOfertaModal } from './AgregarOfertaModal'
 import { AceptarOfertaModal } from './AceptarOfertaModal'
 import { AsignarProveedoresModal } from './AsignarProveedoresModal'
 import { EditarOcModal } from './EditarOcModal'
-import { ChatOC } from './ChatOC'
 import { DocumentoRetencionesModal, MetodoPagoModal } from './MetodoPagoModal'
 import { AbonoModal, CreditoModal, MarcarPagadaModal } from './PagoModales'
 import { RecibirOrdenModal } from './RecibirOrdenModal'
@@ -739,20 +738,17 @@ export function OrdenDetailModal({
           📥 Ver recepción
         </Button>
       ) : null}
-      {o.factura_path && (permisos.compras || permisos.recibe_almacen) ? (
+      {/*
+        Finalizada (la dueña, 09/11/2026: «muchos botones»): la factura en un
+        solo botón —verla si está, cargarla si falta— y nada de avisos.
+      */}
+      {o.estado === 'finalizada' && o.factura_path && (permisos.compras || permisos.recibe_almacen) ? (
         <Button variant="ghost" onClick={() => void abrirArchivoRecepcion(o.factura_path!)}>
-          {o.estado === 'finalizada' ? '📎 Ver factura / soporte' : '📎 Ver soporte adjunto'}
+          📎 Ver factura
         </Button>
       ) : null}
-      {o.estado === 'finalizada' && canManageProcurement ? (
-        <Button onClick={() => setSub({ kind: 'comprobante' })}>
-          {o.factura_path ? '📎 Reemplazar factura / nota' : '📎 Cargar factura / nota de entrega'}
-        </Button>
-      ) : null}
-      {o.estado === 'finalizada' && permisos.compras ? (
-        <Button variant="ghost" onClick={() => setAvisoPaso({ tipo: 'finalizada' })}>
-          💬 Aviso de finalizado
-        </Button>
+      {o.estado === 'finalizada' && !o.factura_path && canManageProcurement ? (
+        <Button onClick={() => setSub({ kind: 'comprobante' })}>📎 Cargar factura / nota de entrega</Button>
       ) : null}
       {puedeFinalizarse(o) && canManageProcurement ? (
         <Button title="Confirmá que se recibió todo y evaluá al proveedor" onClick={() => setSub({ kind: 'finalizar' })}>
@@ -1514,7 +1510,6 @@ export function OrdenDetailModal({
           </ol>
         )}
 
-        <ChatOC orden={o} yo={yo} />
       </Modal>
 
       {porEliminar ? (

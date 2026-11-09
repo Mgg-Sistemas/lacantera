@@ -490,13 +490,18 @@ export function CrearOrdenModal({
                         value={f.cantidad}
                         onChange={(e) => cambiar(f.clave, { cantidad: e.target.value })}
                       />
-                      <Input
+                      {/* Una lista con el estilo de la casa, no la del navegador (la dueña, 09/11/2026: «se perdió el estilo»). */}
+                      <Select
                         label="Unidad"
-                        ocultarEtiqueta
-                        list="pedidos-medidas"
-                        maxLength={20}
+                        className="[&>label]:sr-only"
+                        vacio="Unidad"
                         value={f.unidad}
                         onChange={(e) => cambiar(f.clave, { unidad: e.target.value })}
+                        opciones={
+                          f.unidad && !medidasOpciones.some((m) => m.valor === f.unidad)
+                            ? [{ valor: f.unidad, etiqueta: f.unidad }, ...medidasOpciones]
+                            : medidasOpciones
+                        }
                       />
                     </div>
                     <button
@@ -523,13 +528,6 @@ export function CrearOrdenModal({
               ))}
             </div>
           ) : null}
-          <datalist id="pedidos-medidas">
-            {(medidas ?? []).map((m) => (
-              <option key={m.codigo} value={m.codigo}>
-                {m.nombre}
-              </option>
-            ))}
-          </datalist>
 
           <Button variant="soft" size="sm" className="mt-3" onClick={() => setNuevoOpen((v) => !v)}>
             {nuevoOpen ? '× Cerrar' : '+ No está en inventario (pedir con nombre general)'}
