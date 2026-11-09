@@ -5,7 +5,7 @@ import { Chip } from '@/components/ui/Chip'
 import { cn } from '@/lib/cn'
 import type { ServicioDirecto } from '@/lib/api/pedidos'
 import { claseEvento, etiquetaEvento, extraEvento, fechaHoraVE, fmtCant, money, type TonoEstado } from '@/lib/pedidos'
-import { etiquetaDocumento, labelMetodoPago, labelRetencion, resumenDatosPago } from '@/lib/pagos'
+import { etiquetaDocumento, nombreMetodoPago, labelRetencion, resumenDatosPago } from '@/lib/pagos'
 import { ESTADO_SD } from '@/lib/servicios'
 import { montoAPagarDirecto } from '@/lib/ficha/servicioDirecto'
 import { abrirArchivoDirecto } from './ordenDesdeDirecto'
@@ -133,7 +133,7 @@ export function DetalleDirectoModal({
           <div className="border-hairline space-y-1 rounded-[6px] border px-3 py-2 text-sm">
             {(s.metodo_pago ?? []).map((m, i) => (
               <div key={i}>
-                💳 {labelMetodoPago(m.metodo)}
+                💳 {nombreMetodoPago(m.metodo, m.detalle)}
                 {Number(m.monto) > 0 ? ` · ${m.moneda === 'USD' ? money(m.monto) : `${m.moneda} ${Number(m.monto).toLocaleString('es-VE', { minimumFractionDigits: 2 })}`}` : ''}
                 {m.datos && resumenDatosPago(m.metodo, m.datos) ? (
                   <div className="text-ink/55 pl-5 text-xs">↳ {resumenDatosPago(m.metodo, m.datos)}</div>

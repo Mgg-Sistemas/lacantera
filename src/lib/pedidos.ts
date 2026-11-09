@@ -300,7 +300,16 @@ const METODO_TXT: Record<string, string> = {
 
 function metodosTxt(v: unknown): string {
   if (!Array.isArray(v) || !v.length) return ''
-  return (v as Array<{ metodo?: string }>).map((m) => METODO_TXT[m.metodo ?? ''] ?? m.metodo).join(' + ')
+  return (v as Array<{ metodo?: string; detalle?: string }>)
+    .map((m) => conDetalle(m.metodo, m.detalle))
+    .join(' + ')
+}
+
+/** «Otro: <detalle>» cuando el método «Otro» dice cuál es (09/11/2026). */
+function conDetalle(metodo: unknown, detalle: unknown): string {
+  const d = typeof detalle === 'string' ? detalle.trim() : ''
+  if (metodo === 'otro' && d) return `Otro: ${d}`
+  return METODO_TXT[String(metodo ?? '')] ?? String(metodo ?? '')
 }
 
 /** Lo que dicen los eventos del pago (fase 3): documento, retenciones, método, monto a pagar, referencia. */
@@ -345,7 +354,7 @@ function extraPago(h: EventoHistorial): string {
       if (typeof h.comprobante_nombre === 'string') partes.push(`📎 ${h.comprobante_nombre}`)
       break
     case 'abono':
-      partes.push(usd(h.monto), METODO_TXT[String(h.metodo)] ?? '')
+      partes.push(usd(h.monto), conDetalle(h.metodo, h.metodo_detalle))
       if (typeof h.referencia === 'string') partes.push(`ref. ${h.referencia}`)
       if (h.saldo != null) partes.push(`saldo ${usd(h.saldo)}`)
       break

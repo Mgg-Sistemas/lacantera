@@ -39,7 +39,7 @@ import {
   type TonoEstado,
 } from '@/lib/pedidos'
 import { desglosarOc, infoModalidad } from '@/lib/ofertas'
-import { esCredito, labelMetodoPago, montoAPagar, saldoCredito, totalRetenciones } from '@/lib/pagos'
+import { esCredito, nombreMetodoPago, montoAPagar, saldoCredito, totalRetenciones } from '@/lib/pagos'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
 import { CrearOrdenModal } from './CrearOrdenModal'
 import { EstadoBadge, OrdenDetailModal } from './OrdenDetailModal'
@@ -850,7 +850,7 @@ const KanbanCard = memo(function KanbanCard({
   const credito = esCredito(orden) && ['cuenta_abierta', 'por_recibir', 'recibida', 'pagada'].includes(orden.estado)
   const saldo = credito ? saldoCredito(orden) : 0
   const creditoSaldado = credito && Number(orden.abonado_total) > 0 && saldo <= 0.01
-  const metodos = (orden.metodo_pago ?? []).map((m) => labelMetodoPago(m.metodo)).join(' + ')
+  const metodos = (orden.metodo_pago ?? []).map((m) => nombreMetodoPago(m.metodo, m.detalle)).join(' + ')
   const pago =
     credito && !creditoSaldado ? (
       <span className="text-warning">

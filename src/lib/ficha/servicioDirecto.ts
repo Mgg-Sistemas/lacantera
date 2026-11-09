@@ -12,7 +12,7 @@ import {
   type EmpresaPapel,
 } from '@/lib/ficha/papel'
 import type { ServicioDirecto } from '@/lib/api/pedidos'
-import { etiquetaDocumento, labelMetodoPago, labelRetencion, montoAPagar, resumenDatosPago } from '@/lib/pagos'
+import { etiquetaDocumento, nombreMetodoPago, labelRetencion, montoAPagar, resumenDatosPago } from '@/lib/pagos'
 import { fechaHoraVE, fmtCant } from '@/lib/pedidos'
 import { ESTADO_SD } from '@/lib/servicios'
 import { montoTxt } from '@/lib/ficha/pedidosWhatsapp'
@@ -114,7 +114,7 @@ export async function armarServicioDirectoPdf(s: ServicioDirecto, empresa: Empre
   for (const m of s.metodo_pago ?? []) {
     const datos = resumenDatosPago(m.metodo, m.datos)
     const monto = Number(m.monto) > 0 ? `${m.moneda} ${Number(m.monto).toLocaleString('es-VE', { minimumFractionDigits: 2 })}` : ''
-    filasPago.push([`Método · ${labelMetodoPago(m.metodo)}`, [monto, datos].filter(Boolean).join(' · ') || String(m.moneda)])
+    filasPago.push([`Método · ${nombreMetodoPago(m.metodo, m.detalle)}`, [monto, datos].filter(Boolean).join(' · ') || String(m.moneda)])
   }
   if (s.numero_administracion) filasPago.push(['Tel. administración del proveedor', s.numero_administracion])
   if (Number(s.descuento_pago) > 0) filasPago.push(['Descuento en el pago', `-${money2(s.descuento_pago)}`])
@@ -197,7 +197,7 @@ export function textoServicioDirectoPago(s: ServicioDirecto, empresa: string): s
   if (!metodos.length) L.push('💳 *Pago:* (todavía sin método de pago indicado)')
   for (const m of metodos) {
     const conMonto = Number(m.monto) > 0 && !(metodos.length === 1 && Math.abs(Number(m.monto) - aPagar) < 0.01)
-    L.push(`💳 *${labelMetodoPago(m.metodo)}:*${conMonto ? ` ${montoTxt(m.monto, m.moneda === 'USD' ? '$' : m.moneda)}` : ''}`)
+    L.push(`💳 *${nombreMetodoPago(m.metodo, m.detalle)}:*${conMonto ? ` ${montoTxt(m.monto, m.moneda === 'USD' ? '$' : m.moneda)}` : ''}`)
     const datos = resumenDatosPago(m.metodo, m.datos)
     if (datos) L.push(`* ${datos}`)
   }

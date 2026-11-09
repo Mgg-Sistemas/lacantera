@@ -29,6 +29,7 @@ import { infoModalidad, moneyBs, r2 } from '@/lib/ofertas'
 import { useTasaVigente } from '@/lib/api/tasas'
 import {
   BASE_RETENCION,
+  MAX_DETALLE_OTRO,
   METODOS_PAGO,
   TIPOS_RETENCION,
   basesPago,
@@ -36,6 +37,7 @@ import {
   conDatosFiscales,
   datosFiscalesDe,
   datosFiscalesParaEnviar,
+  errorDetalleOtro,
   errorRetenciones,
   labelMetodoPago,
   leerMonto,
@@ -90,6 +92,8 @@ interface Pata {
   metodo: string
   monto: string
   datos: DatosPago
+  /** Con el método «Otro»: cuál es (la dueña, 09/11/2026). */
+  detalle: string
   /** La cuenta guardada elegida, o 'nueva'. */
   cuenta: number | 'nueva'
 }
@@ -414,7 +418,7 @@ export function DocumentoYRetenciones({
 /** La pata de método vacía, con la primera cuenta guardada de ese método. */
 function pataNueva(metodo: string, cuentas: CuentaProveedor[]): Pata {
   const c = cuentas.find((x) => x.metodo === metodo)
-  return { metodo, monto: '', datos: c ? { ...c.datos } : {}, cuenta: c ? c.id : 'nueva' }
+  return { metodo, monto: '', datos: c ? { ...c.datos } : {}, detalle: '', cuenta: c ? c.id : 'nueva' }
 }
 
 export function MetodoPagoModal({
@@ -451,9 +455,10 @@ export function MetodoPagoModal({
           metodo: m.metodo,
           monto: Number(m.monto) > 0 ? String(m.monto) : '',
           datos: { ...(m.datos ?? {}) },
+          detalle: m.detalle ?? '',
           cuenta: 'nueva' as const,
         }))
-      : [{ metodo: 'divisas_efectivo', monto: '', datos: {}, cuenta: 'nueva' }],
+      : [{ metodo: 'divisas_efectivo', monto: '', datos: {}, detalle: '', cuenta: 'nueva' }],
   )
   const [doc, setDoc] = useState<'factura' | 'nota_entrega'>(o.comprobante_tipo ?? (directo ? 'factura' : 'nota_entrega'))
   const [retForm, setRetForm] = useState<RetencionesForm>(() => retencionesAForm(o.retenciones))
@@ -520,6 +525,8 @@ export function MetodoPagoModal({
       if (descNum > b.total) return setError(`El descuento no puede superar el total de ${deQue}.`)
     }
     for (const p of patas) {
+      const eOtro = errorDetalleOtro(p.metodo, p.detalle)
+      if (eOtro) return setError(eOtro)
       if (requiereDatos(p.metodo)) {
         const e = validarDatosPago(p.metodo, p.datos)
         if (e) return setError(`${labelMetodoPago(p.metodo)}: ${e}`)
@@ -538,6 +545,7 @@ export function MetodoPagoModal({
           metodo: p.metodo,
           monto: leerMonto(p.monto),
           ...(requiereDatos(p.metodo) ? { datos: p.datos } : {}),
+          ...(p.metodo === 'otro' ? { detalle: p.detalle.trim() } : {}),
         })),
         // Ya no se pide (08/11/2026): va el de la OC o el de la ficha, si hay.
         numero_administracion: (o.numero_administracion ?? telFicha ?? '').trim(),
@@ -803,6 +811,16 @@ export function MetodoPagoModal({
                       </Button>
                     ) : null}
                   </div>
+                  {p.metodo === 'otro' ? (
+                    <Input
+                      className="mt-2"
+                      label="¿Cuál método? *"
+                      placeholder="Ej.: PayPal, cheque, Cashea…"
+                      maxLength={MAX_DETALLE_OTRO}
+                      value={p.detalle}
+                      onChange={(e) => setPata(i, { detalle: e.target.value })}
+                    />
+                  ) : null}
                   {requiereDatos(p.metodo) ? (
                     <div className="border-hairline mt-2 border-t border-dashed pt-2">
                       <div className="text-ink/55 mb-1.5 text-xs">
