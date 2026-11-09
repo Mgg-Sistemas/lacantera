@@ -90,6 +90,8 @@ const AFECTA: Record<string, string[][]> = {
     ['telefono-historico-traslados'],
     ['compras'],
     ['tesoreria'],
+    // El libro de cada tanque (`v_combustible_libro`) y sus saldos son este libro.
+    ['combustible'],
   ],
   // Las formas de contar cuelgan del artículo y se escriben en la misma
   // transacción que él: `guardar_presentacion_de_articulo` toca las dos tablas.
@@ -104,7 +106,14 @@ const AFECTA: Record<string, string[][]> = {
     ['presentaciones-articulo'],
   ],
   // ['almacenes'] cubre también «qué impide desactivar» del detalle (fase 6).
-  almacenes: [['almacenes'], ['existencias'], ['existencias-totales'], ['movimientos-de-almacen']],
+  // Un tanque es un almacén: su nombre, su capacidad y si está activo salen de aquí.
+  almacenes: [
+    ['almacenes'],
+    ['existencias'],
+    ['existencias-totales'],
+    ['movimientos-de-almacen'],
+    ['combustible'],
+  ],
   // Cada paso de un traslado escribe en el libro —aceptar saca del origen,
   // recibir mete en el destino— y avisa. La lista de Transferencias lo sigue en
   // vivo, y Existencias también, porque lo que va de camino se ve ahí.
@@ -154,6 +163,19 @@ const AFECTA: Record<string, string[][]> = {
   tesoreria_movimientos: [['tesoreria'], ['nomina'], ['ventas'], ['centro-costos']],
   presupuestos: [['centro-costos']],
   despachos_combustible: [['combustible'], ['existencias']],
+  /*
+    Combustible como Golden Touch (10/11/2026). El libro del tanque es una
+    vista sobre `inventario_movimientos` (que ya avisa a ['combustible'] más
+    abajo) y estas tablas le ponen los datos de Golden Touch: hora, equipo,
+    autorizado, contador, horómetro, cuaderno. Quien mira el tanque desde la
+    PC ve el surtido que acaban de cargar en el teléfono sin recargar.
+  */
+  combustible_mov_datos: [['combustible']],
+  combustible_tanques: [['combustible'], ['almacenes']],
+  combustible_catalogos: [['combustible']],
+  combustible_cubicaciones: [['combustible']],
+  combustible_conciliaciones: [['combustible']],
+  motivos_despacho: [['combustible']],
 
   // Ventas cruza medio sistema: un despacho rebaja el patio, una factura entra
   // en la cobranza y un cobro escribe en el libro de tesorería. Dos personas

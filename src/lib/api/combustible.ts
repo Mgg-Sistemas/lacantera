@@ -1,5 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import type {
+  CatalogoCombustible,
+  ConciliacionCombustible,
+  CubicacionCombustible,
+  MovimientoLibro,
+  TanqueGt,
+  TipoCatalogoCombustible,
+  TipoGeometria,
+} from '@/lib/combustible/tipos'
 import { desenvolver, rpc } from './rpc'
 
 /**
@@ -428,4 +437,646 @@ export function useCombustibles() {
           .order('nombre'),
       ),
   })
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMBUSTIBLE COMO GOLDEN TOUCH (10/11/2026)
+
+   Lo de arriba sigue igual: el vale, sus correcciones y anulaciones, los
+   motivos y las personas. Lo de abajo es el módulo de Golden Touch sobre los
+   rieles de la casa: tanques con su libro mayor (`v_combustible_tanques`,
+   `v_combustible_libro`), las cinco operaciones (uso, entrada, traslado,
+   retorno, merma), anular y corregir con reverso, catálogos, cubicación y
+   conciliación. Toda escritura va por una función de la base; la lógica pura
+   (horas, contador, merma, cubicación, reportes) vive en `src/lib/combustible`.
+═══════════════════════════════════════════════════════════════════════════ */
+
+/** Lo que queda viejo cuando se mueve combustible: el libro, las existencias y el kardex. */
+function useAccionCombustible<A, R>(fn: (a: A) => Promise<R>) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['combustible'] })
+      void qc.invalidateQueries({ queryKey: ['existencias'] })
+      void qc.invalidateQueries({ queryKey: ['existencias-totales'] })
+      void qc.invalidateQueries({ queryKey: ['movimientos'] })
+    },
+  })
+}
+
+// ─── Lecturas ──────────────────────────────────────────────────────────────
+
+/** Los tanques con su ficha, su saldo y su tasa ponderada, en el orden de la grilla. */
+export function useTanquesGt(incluirInactivos = false) {
+  return useQuery({
+    queryKey: ['combustible', 'tanques-gt', incluirInactivos],
+    queryFn: async () => {
+      let consulta = supabase.from('v_combustible_tanques').select('*').order('orden').order('nombre')
+      if (!incluirInactivos) consulta = consulta.eq('activo', true)
+      return desenvolver<TanqueGt[]>(await consulta)
+    },
+  })
+}
+
+export interface FiltroLibro {
+  /** Un tanque, o todos si es nulo. */
+  tanqueId?: number | null
+  /** AAAA-MM-DD, los dos inclusive. */
+  desde?: string | null
+  hasta?: string | null
+  /** Desde 0. */
+  pagina?: number
+  porPagina?: number
+  /** Más reciente primero (el teléfono) o en el orden del libro (la PC, el Excel). */
+  recientesPrimero?: boolean
+}
+
+/**
+ * El libro mayor por rango y por páginas. Cada renglón trae su saldo corrido,
+ * calculado sobre TODO el libro del tanque: filtrar por fecha no lo cambia.
+ */
+export function useLibroTanque(f: FiltroLibro, habilitado = true) {
+  const porPagina = f.porPagina ?? 500
+  const pagina = f.pagina ?? 0
+  return useQuery({
+    queryKey: [
+      'combustible',
+      'libro',
+      f.tanqueId ?? null,
+      f.desde ?? null,
+      f.hasta ?? null,
+      pagina,
+      porPagina,
+      !!f.recientesPrimero,
+    ],
+    enabled: habilitado,
+    queryFn: async () => {
+      let consulta = supabase.from('v_combustible_libro').select('*', { count: 'exact' })
+      if (f.tanqueId != null) consulta = consulta.eq('tanque_id', f.tanqueId)
+      if (f.desde) consulta = consulta.gte('fecha', f.desde)
+      if (f.hasta) consulta = consulta.lte('fecha', f.hasta)
+      const asc = !f.recientesPrimero
+      const { data, error, count } = await consulta
+        .order('fecha', { ascending: asc })
+        .order('tanque_id')
+        .order('orden', { ascending: asc })
+        .range(pagina * porPagina, pagina * porPagina + porPagina - 1)
+      return { filas: desenvolver<MovimientoLibro[]>({ data, error }), total: count ?? 0 }
+    },
+  })
+}
+
+/** Un renglón del libro (el detalle de un movimiento). */
+export function useMovimientoLibro(id: number | null | undefined) {
+  return useQuery({
+    queryKey: ['combustible', 'libro', 'uno', id],
+    enabled: id != null,
+    queryFn: async () =>
+      desenvolver<MovimientoLibro | null>(
+        await supabase
+          .from('v_combustible_libro')
+          .select('*')
+          .eq('id', id as number)
+          .maybeSingle(),
+      ),
+  })
+}
+
+/** Equipos, autorizados y destinos. */
+export function useCatalogosCombustible() {
+  return useQuery({
+    queryKey: ['combustible', 'catalogos'],
+    staleTime: 5 * 60_000,
+    queryFn: async () =>
+      desenvolver<CatalogoCombustible[]>(
+        await supabase
+          .from('combustible_catalogos')
+          .select('id, tipo, valor, maquina_id, activo, orden, tanques_permitidos, creado_en')
+          .order('tipo')
+          .order('orden')
+          .order('valor'),
+      ),
+  })
+}
+
+type NumeroDeLaBase = string | number | null
+
+/** El horómetro y el kilometraje vigentes de una máquina, y su operador (para «¿Quién recibió?»). */
+export function useLecturaVigente(maquinaId: number | null | undefined) {
+  return useQuery({
+    queryKey: ['combustible', 'lectura-vigente', maquinaId],
+    enabled: maquinaId != null,
+    queryFn: async () => {
+      const filas = await rpc<
+        Array<{ horometro: NumeroDeLaBase; kilometraje: NumeroDeLaBase; operador_id: number | null }>
+      >('combustible_lectura_vigente', { p_maquina_id: maquinaId })
+      const r = filas?.[0]
+      return {
+        horometro: r?.horometro == null ? null : Number(r.horometro),
+        kilometraje: r?.kilometraje == null ? null : Number(r.kilometraje),
+        operador_id: r?.operador_id ?? null,
+      }
+    },
+  })
+}
+
+/** El contador del surtidor de un tanque: donde arranca el próximo surtido. */
+export function useUltimoContador(almacenId: number | null | undefined) {
+  return useQuery({
+    queryKey: ['combustible', 'ultimo-contador', almacenId],
+    enabled: almacenId != null,
+    queryFn: async () => {
+      const v = await rpc<NumeroDeLaBase>('combustible_ultimo_contador', { p_almacen_id: almacenId })
+      return v == null ? null : Number(v)
+    },
+  })
+}
+
+export function useCubicaciones(almacenId?: number | null) {
+  return useQuery({
+    queryKey: ['combustible', 'cubicaciones', almacenId ?? null],
+    queryFn: async () => {
+      let consulta = supabase
+        .from('combustible_cubicaciones')
+        .select('*')
+        .order('fecha', { ascending: false })
+        .order('creado_en', { ascending: false })
+      if (almacenId != null) consulta = consulta.eq('almacen_id', almacenId)
+      return desenvolver<CubicacionCombustible[]>(await consulta)
+    },
+  })
+}
+
+export function useConciliaciones(almacenId?: number | null) {
+  return useQuery({
+    queryKey: ['combustible', 'conciliaciones', almacenId ?? null],
+    queryFn: async () => {
+      let consulta = supabase
+        .from('combustible_conciliaciones')
+        .select('*')
+        .order('hasta', { ascending: false })
+        .order('creado_en', { ascending: false })
+      if (almacenId != null) consulta = consulta.eq('almacen_id', almacenId)
+      return desenvolver<ConciliacionCombustible[]>(await consulta)
+    },
+  })
+}
+
+export interface ResumenTanquePeriodo {
+  almacen_id: number
+  tanque: string
+  saldo_inicial: string | number
+  entradas: string | number
+  usos: string | number
+  traslados: string | number
+  retornos: string | number
+  mermas: string | number
+  /** Reversos y ajustes, con su signo: lo que hace cerrar la cuenta. */
+  otros: string | number
+  saldo_libros: string | number
+  movimientos: number
+}
+
+/** El libro de cada tanque en un rango: con qué abrió, qué pasó y con qué cerró. */
+export function useResumenPeriodo(desde: string | null, hasta: string | null, habilitado = true) {
+  return useQuery({
+    queryKey: ['combustible', 'resumen-periodo', desde, hasta],
+    enabled: habilitado,
+    queryFn: () =>
+      rpc<ResumenTanquePeriodo[]>('combustible_resumen_periodo', { p_desde: desde, p_hasta: hasta }),
+  })
+}
+
+/** Altura → litros con la geometría del tanque, calculado en la base. */
+export async function cubicarEnLaBase(almacenId: number, alturaCm: number) {
+  const filas = await rpc<
+    Array<{ litros: NumeroDeLaBase; capacidad: NumeroDeLaBase; nivel_pct: NumeroDeLaBase; saldo_libros: NumeroDeLaBase }>
+  >('combustible_cubicar', { p_almacen_id: almacenId, p_altura_cm: alturaCm })
+  const r = filas?.[0]
+  if (!r) return null
+  return {
+    litros: Number(r.litros ?? 0),
+    capacidad: r.capacidad == null ? null : Number(r.capacidad),
+    nivel_pct: r.nivel_pct == null ? null : Number(r.nivel_pct),
+    saldo_libros: Number(r.saldo_libros ?? 0),
+  }
+}
+
+// ─── Movimientos ───────────────────────────────────────────────────────────
+
+/** Lo común a los cinco tipos de Golden Touch. */
+interface DatosComunes {
+  fecha?: string | null
+  /** «HH:MM» o «HH:MM:SS». */
+  hora?: string | null
+  autorizado?: string | null
+  ubicacion?: string | null
+  cuaderno?: boolean
+  cuaderno_litros?: number | null
+  articulo_id?: number | null
+}
+
+export interface DatosUso extends DatosComunes {
+  almacen_id: number
+  litros: number
+  motivo: MotivoDespacho
+  motivo_detalle?: string | null
+  maquina_id?: number | null
+  /** Cuando no hay ficha de máquina: a qué se le echó. */
+  equipo?: string | null
+  horometro_ini?: number | null
+  horometro_fin?: number | null
+  km?: number | null
+  empleado_id?: number | null
+  recibio_nombre?: string | null
+  recibio_cedula?: string | null
+  observacion?: string | null
+  contador_ini?: number | null
+  contador_fin?: number | null
+}
+
+/** Surtir a un equipo: el vale de siempre, con los datos de Golden Touch. */
+export function useRegistrarUso() {
+  return useAccionCombustible((d: DatosUso) =>
+    rpc<{ despacho_id: number; movimiento_id: number; numero: string }>('combustible_registrar_uso', {
+      p_almacen_id: d.almacen_id,
+      p_litros: d.litros,
+      p_motivo: d.motivo,
+      p_motivo_detalle: d.motivo_detalle ?? null,
+      p_maquina_id: d.maquina_id ?? null,
+      p_equipo: d.equipo ?? null,
+      p_horometro_ini: d.horometro_ini ?? null,
+      p_horometro_fin: d.horometro_fin ?? null,
+      p_km: d.km ?? null,
+      p_empleado_id: d.empleado_id ?? null,
+      p_recibio_nombre: d.recibio_nombre ?? null,
+      p_recibio_cedula: d.recibio_cedula ?? null,
+      p_autorizado: d.autorizado ?? null,
+      p_ubicacion: d.ubicacion ?? null,
+      p_observacion: d.observacion ?? null,
+      p_contador_ini: d.contador_ini ?? null,
+      p_contador_fin: d.contador_fin ?? null,
+      p_cuaderno: d.cuaderno ?? false,
+      p_cuaderno_litros: d.cuaderno_litros ?? null,
+      p_fecha: d.fecha ?? null,
+      p_hora: d.hora || null,
+      p_articulo_id: d.articulo_id ?? null,
+    }),
+  )
+}
+
+export interface DatosEntrada extends DatosComunes {
+  almacen_id: number
+  litros: number
+  costo_litro?: number | null
+  /** Solo en el tanque del combustible sin costo. */
+  sin_costo?: boolean
+  /** De dónde vino. */
+  motivo: string
+  referencia?: string | null
+  /** Lo que llegó de verdad: la diferencia queda como merma. */
+  recibidos?: number | null
+  merma_motivo?: string | null
+  /** Ya vio el aviso de costo raro y lo acepta. */
+  confirmado?: boolean
+}
+
+export function useRegistrarEntradaCombustible() {
+  return useAccionCombustible((d: DatosEntrada) =>
+    rpc<{ movimiento_id: number; merma_movimiento_id: number | null }>('combustible_registrar_entrada', {
+      p_almacen_id: d.almacen_id,
+      p_litros: d.litros,
+      p_costo_litro: d.costo_litro ?? null,
+      p_sin_costo: d.sin_costo ?? false,
+      p_motivo: d.motivo,
+      p_referencia: d.referencia ?? null,
+      p_fecha: d.fecha ?? null,
+      p_hora: d.hora || null,
+      p_recibidos: d.recibidos ?? null,
+      p_merma_motivo: d.merma_motivo ?? null,
+      p_autorizado: d.autorizado ?? null,
+      p_ubicacion: d.ubicacion ?? null,
+      p_cuaderno: d.cuaderno ?? false,
+      p_cuaderno_litros: d.cuaderno_litros ?? null,
+      p_confirmado: d.confirmado ?? false,
+      p_articulo_id: d.articulo_id ?? null,
+    }),
+  )
+}
+
+export interface DatosTraslado extends DatosComunes {
+  origen_id: number
+  destino_id: number
+  litros: number
+  observacion?: string | null
+  contador_ini?: number | null
+  contador_fin?: number | null
+  recibidos?: number | null
+  merma_motivo?: string | null
+  propietario?: string | null
+  /** Si el destino es un bidón, sale con vale: para qué y quién recibió. */
+  motivo_vale?: MotivoDespacho | null
+  motivo_detalle?: string | null
+  empleado_id?: number | null
+  recibio_nombre?: string | null
+  recibio_cedula?: string | null
+}
+
+export interface ResultadoTraslado {
+  salida_id: number
+  entrada_id: number | null
+  merma_movimiento_id: number | null
+  bidon: boolean
+  despacho_id: number | null
+  numero: string | null
+}
+
+/** De un tanque a otro (o del almacén al tanque). A un bidón, es un surtido con vale. */
+export function useTrasladarCombustible() {
+  return useAccionCombustible((d: DatosTraslado) =>
+    rpc<ResultadoTraslado>('combustible_trasladar', {
+      p_origen_id: d.origen_id,
+      p_destino_id: d.destino_id,
+      p_litros: d.litros,
+      p_motivo: d.observacion ?? null,
+      p_fecha: d.fecha ?? null,
+      p_hora: d.hora || null,
+      p_autorizado: d.autorizado ?? null,
+      p_ubicacion: d.ubicacion ?? null,
+      p_contador_ini: d.contador_ini ?? null,
+      p_contador_fin: d.contador_fin ?? null,
+      p_recibidos: d.recibidos ?? null,
+      p_merma_motivo: d.merma_motivo ?? null,
+      p_cuaderno: d.cuaderno ?? false,
+      p_cuaderno_litros: d.cuaderno_litros ?? null,
+      p_articulo_id: d.articulo_id ?? null,
+      p_propietario: d.propietario ?? null,
+      p_motivo_vale: d.motivo_vale ?? null,
+      p_motivo_detalle: d.motivo_detalle ?? null,
+      p_empleado_id: d.empleado_id ?? null,
+      p_recibio_nombre: d.recibio_nombre ?? null,
+      p_recibio_cedula: d.recibio_cedula ?? null,
+    }),
+  )
+}
+
+export interface DatosMerma extends DatosComunes {
+  almacen_id: number
+  litros: number
+  /** Por qué se perdió. */
+  motivo: string
+}
+
+export function useRegistrarMerma() {
+  return useAccionCombustible((d: DatosMerma) =>
+    rpc<number>('combustible_registrar_merma', {
+      p_almacen_id: d.almacen_id,
+      p_litros: d.litros,
+      p_motivo: d.motivo,
+      p_fecha: d.fecha ?? null,
+      p_hora: d.hora || null,
+      p_autorizado: d.autorizado ?? null,
+      p_ubicacion: d.ubicacion ?? null,
+      p_articulo_id: d.articulo_id ?? null,
+    }),
+  )
+}
+
+export interface DatosRetorno extends DatosComunes {
+  almacen_id: number
+  litros: number
+  /** De dónde vuelve. */
+  motivo: string
+  maquina_id?: number | null
+  equipo?: string | null
+}
+
+export function useRegistrarRetorno() {
+  return useAccionCombustible((d: DatosRetorno) =>
+    rpc<number>('combustible_registrar_retorno', {
+      p_almacen_id: d.almacen_id,
+      p_litros: d.litros,
+      p_motivo: d.motivo,
+      p_maquina_id: d.maquina_id ?? null,
+      p_equipo: d.equipo ?? null,
+      p_fecha: d.fecha ?? null,
+      p_hora: d.hora || null,
+      p_autorizado: d.autorizado ?? null,
+      p_ubicacion: d.ubicacion ?? null,
+      p_articulo_id: d.articulo_id ?? null,
+    }),
+  )
+}
+
+/** «🗑 Eliminar» de Golden Touch: anular con motivo. El renglón queda tachado, con su reverso. */
+export function useAnularMovimientoCombustible() {
+  return useAccionCombustible((a: { movimiento_id: number; motivo: string }) =>
+    rpc<number>('combustible_anular_movimiento', {
+      p_movimiento_id: a.movimiento_id,
+      p_motivo: a.motivo,
+    }),
+  )
+}
+
+/**
+ * Lo que se corrige. Una clave ausente es «déjalo como está»; una con `null`,
+ * «bórralo». Si cambian los litros, la fecha, el costo o el destino, hace falta
+ * `motivo_correccion`: el movimiento viejo se anula y se registra uno nuevo.
+ */
+export interface CorreccionMovimiento {
+  litros?: number
+  fecha?: string
+  hora?: string | null
+  costo_litro?: number | null
+  destino_id?: number
+  motivo?: MotivoDespacho
+  motivo_detalle?: string | null
+  maquina_id?: number | null
+  equipo?: string | null
+  horometro_ini?: number | null
+  horometro_fin?: number | null
+  km?: number | null
+  empleado_id?: number | null
+  recibio_nombre?: string | null
+  recibio_cedula?: string | null
+  autorizado?: string | null
+  ubicacion?: string | null
+  observacion?: string | null
+  contador_ini?: number | null
+  contador_fin?: number | null
+  recibidos?: number | null
+  merma_motivo?: string | null
+  confirmado?: boolean
+  motivo_correccion?: string | null
+}
+
+export function useCorregirMovimientoCombustible() {
+  return useAccionCombustible((c: { movimiento_id: number; datos: CorreccionMovimiento }) =>
+    rpc<{ movimiento_id: number; camino: 'vale' | 'reverso' | 'datos' }>(
+      'combustible_corregir_movimiento',
+      { p_movimiento_id: c.movimiento_id, p_datos: c.datos },
+    ),
+  )
+}
+
+/** «📖 Cuaderno»: asentado en el cuaderno de campo, con sus litros. */
+export function useMarcarCuaderno() {
+  return useAccionCombustible((c: { movimiento_id: number; cuaderno: boolean; litros?: number | null }) =>
+    rpc<void>('combustible_marcar_cuaderno', {
+      p_movimiento_id: c.movimiento_id,
+      p_cuaderno: c.cuaderno,
+      p_litros: c.litros ?? null,
+    }),
+  )
+}
+
+// ─── Tanques ───────────────────────────────────────────────────────────────
+
+export interface DatosTanque {
+  /** Nulo: se crea el almacén de tipo COMBUSTIBLE. */
+  almacen_id?: number | null
+  nombre: string
+  codigo?: string | null
+  ubicacion?: string | null
+  /** Capacidad rotulada. */
+  capacidad?: number | null
+  tipo_geometria?: TipoGeometria
+  es_movil?: boolean
+  es_bidon?: boolean
+  radio_m?: number | null
+  largo_m?: number | null
+  ancho_m?: number | null
+  alto_m?: number | null
+  margen_merma_pct?: number | null
+  merma_implicita_pct?: number | null
+  orden?: number | null
+  recibe_compras?: boolean | null
+  sin_costo?: boolean | null
+}
+
+export function useGuardarTanque() {
+  return useAccionCombustible((t: DatosTanque) =>
+    rpc<number>('combustible_guardar_tanque', {
+      p_almacen_id: t.almacen_id ?? null,
+      p_nombre: t.nombre,
+      p_codigo: t.codigo ?? null,
+      p_ubicacion: t.ubicacion ?? null,
+      p_capacidad: t.capacidad ?? null,
+      p_tipo_geometria: t.tipo_geometria ?? 'rectangular',
+      p_es_movil: t.es_movil ?? false,
+      p_es_bidon: t.es_bidon ?? false,
+      p_radio_m: t.radio_m ?? null,
+      p_largo_m: t.largo_m ?? null,
+      p_ancho_m: t.ancho_m ?? null,
+      p_alto_m: t.alto_m ?? null,
+      p_margen_merma_pct: t.margen_merma_pct ?? null,
+      p_merma_implicita_pct: t.merma_implicita_pct ?? null,
+      p_orden: t.orden ?? null,
+      p_recibe_compras: t.recibe_compras ?? null,
+      p_sin_costo: t.sin_costo ?? null,
+    }),
+  )
+}
+
+/** Apagar (vacío) o volver a encender un tanque. */
+export function useDesactivarTanque() {
+  return useAccionCombustible((t: { almacen_id: number; activo: boolean }) =>
+    rpc<void>('combustible_desactivar_tanque', { p_almacen_id: t.almacen_id, p_activo: t.activo }),
+  )
+}
+
+// ─── Catálogos ─────────────────────────────────────────────────────────────
+
+export interface DatosCatalogo {
+  id?: number | null
+  tipo?: TipoCatalogoCombustible
+  valor?: string | null
+  maquina_id?: number | null
+  activo?: boolean | null
+  orden?: number | null
+  /** Al corregir: nulo es «no lo toques», vacío es «de todos». */
+  tanques_permitidos?: number[] | null
+}
+
+export function useGuardarCatalogo() {
+  return useAccionCombustible((c: DatosCatalogo) =>
+    rpc<number>('combustible_guardar_catalogo', {
+      p_id: c.id ?? null,
+      p_tipo: c.tipo ?? null,
+      p_valor: c.valor ?? null,
+      p_maquina_id: c.maquina_id ?? null,
+      p_activo: c.activo ?? null,
+      p_orden: c.orden ?? null,
+      p_tanques_permitidos: c.tanques_permitidos ?? null,
+    }),
+  )
+}
+
+/** El valor escrito al vuelo: reutiliza el que ya existe (sin acentos ni mayúsculas) o lo crea. */
+export function useAsegurarCatalogo() {
+  return useAccionCombustible((c: { tipo: TipoCatalogoCombustible; valor: string }) =>
+    rpc<number>('combustible_asegurar_catalogo', { p_tipo: c.tipo, p_valor: c.valor }),
+  )
+}
+
+/** «¿Puede surtir?» de varios a la vez. */
+export function useActivarCatalogos() {
+  return useAccionCombustible((c: { ids: number[]; activo: boolean }) =>
+    rpc<number>('combustible_activar_catalogos', { p_ids: c.ids, p_activo: c.activo }),
+  )
+}
+
+/** De qué tanques surten unos equipos. Vacío: de todos. */
+export function useFijarTanquesPermitidos() {
+  return useAccionCombustible((c: { ids: number[]; tanques: number[] }) =>
+    rpc<number>('combustible_fijar_tanques_permitidos', { p_ids: c.ids, p_tanques: c.tanques }),
+  )
+}
+
+/** Solo lo que nunca se usó; lo usado se apaga. */
+export function useBorrarCatalogo() {
+  return useAccionCombustible((id: number) => rpc<void>('combustible_borrar_catalogo', { p_id: id }))
+}
+
+// ─── Cubicación y conciliación ─────────────────────────────────────────────
+
+export function useRegistrarCubicacion() {
+  return useAccionCombustible(
+    (c: { almacen_id: number; altura_cm: number; fecha?: string | null; notas?: string | null }) =>
+      rpc<number>('combustible_registrar_cubicacion', {
+        p_almacen_id: c.almacen_id,
+        p_altura_cm: c.altura_cm,
+        p_fecha: c.fecha ?? null,
+        p_notas: c.notas ?? null,
+      }),
+  )
+}
+
+export function useBorrarCubicacion() {
+  return useAccionCombustible((id: number) => rpc<void>('combustible_borrar_cubicacion', { p_id: id }))
+}
+
+export interface DatosConciliacion {
+  almacen_id: number
+  saldo_reportado: number
+  hasta?: string | null
+  desde?: string | null
+  saldo_cubicacion?: number | null
+  periodo?: string | null
+  notas?: string | null
+}
+
+export function useRegistrarConciliacion() {
+  return useAccionCombustible((c: DatosConciliacion) =>
+    rpc<number>('combustible_registrar_conciliacion', {
+      p_almacen_id: c.almacen_id,
+      p_saldo_reportado: c.saldo_reportado,
+      p_hasta: c.hasta ?? null,
+      p_desde: c.desde ?? null,
+      p_saldo_cubicacion: c.saldo_cubicacion ?? null,
+      p_periodo: c.periodo ?? null,
+      p_notas: c.notas ?? null,
+    }),
+  )
 }
