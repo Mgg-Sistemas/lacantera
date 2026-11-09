@@ -5486,7 +5486,7 @@ Un efecto secundario que conviene saber: **cargar la tasa del BCV pasó a pedir 
 
 Esta pantalla la maneja el rol de Administrador del sistema. Quien tenga permiso para verla pero no ese rol lee arriba un aviso naranja: **Estás viendo esta pantalla en solo lectura. Crear usuarios y cambiar permisos lo hace quien tiene el rol de administrador del sistema.** No aparecen **Nuevo usuario** ni **Nuevo rol**, no hay botones en las filas y las casillas de la matriz salen apagadas.
 
-La pantalla tiene tres pestañas: **Usuarios**, **Roles y permisos** y **Permisos extendidos**.
+La pantalla tiene dos pestañas, como en MGG: **👤 Usuarios** y **🛡 Roles y permisos**. Desde el 9 de noviembre de 2026 no hay permisos extendidos ni restringidos por persona: lo que alguien puede hacer es la matriz de su único rol.
 
 **El aviso de solo lectura vale para las dos primeras, no para la tercera.** El gerente general lo lee arriba y, sin embargo, **sí puede extender y retirar permisos**: esa pestaña la manejan el administrador del sistema y la gerencia general. Es lo único de esta pantalla que la gerencia puede usar de verdad.
 
@@ -5502,10 +5502,10 @@ La tabla tiene estas columnas:
 | **Nombre** | Nombre y apellido |
 | **Cargo** | El cargo, si se llenó |
 | **Ficha de personal** | Si la cuenta está relacionada con un trabajador. Ver abajo |
-| **Roles** | Una etiqueta por rol. Si no tiene ninguno: **Sin roles** |
+| **Rol** | Su único rol, con el punto de color del rol. Si no tiene: **Sin rol** |
 | **Estado** | **Activo** o **Inactivo**, más el botón de la llave para cambiar la clave, el del muñeco para inactivar o reactivar y, cuando la cuenta ya está inactiva, el de la caja para archivarla |
 
-Pulsar cualquier parte de la fila abre la ficha del usuario. **No hay buscador** en esta pestaña; lo único que la parte en dos es el selector de arriba, **En uso** y **Archivados**, con el número de cuentas de cada lado.
+Pulsar cualquier parte de la fila abre la ficha del usuario. Arriba están el selector **En uso** / **Archivados**, con el número de cuentas de cada lado, y desde el 9 de noviembre de 2026, como en MGG, **Buscar** (por usuario, nombre, cédula o rol), **Rol** (**Todos los roles** o uno) y **Estado** (**Todos los estados**, **Activos** o **Inactivos**).
 
 #### La columna «Ficha de personal»
 
@@ -5527,7 +5527,7 @@ Es el espejo de lo que ya hace la ficha del trabajador, que dice si esa persona 
 4. Escriba el **Nombre y apellido**. Se escribe solo en mayúsculas y sin tildes.
 5. Escriba la **Clave inicial**. **Mínimo 8 caracteres. Désela en persona y que la cambie.**
 6. Rellene el **Cargo**, la **Cédula** y el **Teléfono** si los tiene. Los tres son opcionales, y los tres se guardan.
-7. Marque al menos un rol en el bloque **Roles**. Viene marcado **Básico**.
+7. Elija su **Tipo de rol** (viene **Básico**). Debajo se lee la descripción del rol. Al lado, como en MGG, **+ Nuevo** crea un rol sin salir de la ficha (y queda elegido) y **⚙** abre la **Gestión de roles**.
 8. Pulse **Guardar**. Aparece el aviso **Usuario p.ramirez creado. Dígale la clave en persona, no por escrito.**
 
 La primera vez que esa persona entre, el sistema le obliga a ponerse una clave propia antes de dejarle ver nada. El motivo es que la clave que pone administración la saben dos personas, y mientras eso sea así la sesión existe pero no identifica a nadie.
@@ -5604,8 +5604,8 @@ Es el primer recuadro. Es **una lista por persona**, aparte de los roles: aproba
 ##### Buscar, gestionar y crear
 
 - **Buscar rol**: filtra por nombre o descripción y dice **N de M roles**. **✕ Limpiar** lo vacía.
-- **⚙ Gestionar**: una tabla con todos los roles —color, nombre, código, **Sistema**, **Solo teléfono** y cuántos usuarios— con **✎ Editar** y, si es propio y no tiene usuarios, la papelera.
-- **Nuevo rol**: código, nombre, descripción, **Color** y **📱 Solo teléfono**. Nace viendo el **Panel** y nada más.
+- **⚙ Gestionar** abre **Gestión de roles**: **Filtrar roles** y una tabla con todos los roles —color, nombre, **Sistema**, **📱 Solo teléfono**, descripción y cuántos usuarios—. **✎ Editar** corrige ahí mismo el nombre, la descripción, el color y **📱 Solo teléfono** (**Guardar** o **Cancelar**; Enter guarda y Escape cancela), y la **🗑** sale si el rol es propio y no tiene usuarios.
+- **Nuevo rol**: **Nombre del rol** (la clave sale sola del nombre y se lee debajo: *clave: SUPERVISOR_DE_PATIO*), **Descripción**, **Color** y **📱 Solo teléfono**. Nace viendo el **Panel** y nada más.
 - **Eliminar** pregunta antes: **Se eliminará el rol «…». Esto borra también sus permisos.** No se puede eliminar un rol del sistema ni uno que tenga usuarios.
 
 ##### Lo nuevo en cada tarjeta
@@ -5616,7 +5616,7 @@ Es el primer recuadro. Es **una lista por persona**, aparte de los roles: aproba
 - **Solo teléfono**: entra directo a sus pantallas de teléfono y no ve las de escritorio. Sin pantallas marcadas avisa **Sin pantallas marcadas, este rol no tiene nada que abrir.**
 - **💾 Respaldo de la base de datos**: una sola casilla. Deja generar, descargar y enviar por correo el respaldo. Ya no sale como fila de la matriz.
 
-Hay una tarjeta por rol. En la cabecera van el nombre en mayúsculas, la etiqueta **Sistema** o **Propio**, la descripción y cuántos usuarios lo tienen — **3 usuarios asignados** o **Sin usuarios asignados** —, que está ahí para que se vea a cuánta gente afecta lo que vas a cambiar. Los roles propios llevan además los botones **Editar** y una papelera.
+Hay una tarjeta por rol. En la cabecera van el nombre en mayúsculas, la etiqueta **Sistema** o **Propio**, la descripción y cuántos usuarios lo tienen — **3 usuarios asignados** o **Sin usuarios asignados** —, que está ahí para que se vea a cuánta gente afecta lo que vas a cambiar. Los roles propios llevan además **Editar** y, si nadie lo tiene asignado, **🗑 Eliminar**.
 
 La tarjeta de **Administrador del sistema** no tiene botones y muestra: **El administrador llega a todo por definición. No se recorta.** Sus casillas están bloqueadas incluso para otro administrador, porque ese rol es la salida de emergencia: si alguien pudiera bajarle el nivel, un clic dejaría el sistema sin nadie capaz de volver a subirlo.
 
@@ -5698,19 +5698,20 @@ Nómina, Tesorería y Ventas quedan fuera del rol de Consulta a propósito: «so
 
 #### Crear y editar roles
 
-**Nuevo rol** abre una ventana que avisa de dónde empieza: **Nace sin acceso a nada. Se le abre después, módulo por módulo.**
+**Nuevo rol** abre la ventana de MGG. Avisa de dónde empieza: nace viendo solo el panel, y después se le da un nivel en cada módulo y sus **⭐ Acciones especiales**.
 
 | Campo | ¿Hace falta? | Detalle |
 | --- | --- | --- |
-| **Código** | Sí | **Mayúsculas y guion bajo. Es el nombre interno y no se puede cambiar después.** Se pasa solo a mayúsculas y los espacios se vuelven guion bajo |
-| **Nombre** | Sí | Es lo que se lee en la tarjeta |
-| **Descripción** | No | **Qué hace quien tiene este rol. Se lee en la tarjeta.** |
+| **Nombre del rol** | Sí | Es lo que se lee en la tarjeta. De él sale la clave interna, en mayúsculas y sin tildes, que no se puede cambiar después. Si ya existe, avisa **ya existe** |
+| **Descripción** | No | Para qué sirve este rol |
+| **Color** | No | La raya de la tarjeta |
+| **📱 Solo teléfono** | No | Trabaja desde sus pantallas de teléfono; no ve las de escritorio |
 
 **Un rol nuevo nace siempre con niveles por módulo**, como los diez roles de la casa: ninguno, lectura, escritura o control total. El alta ya no pregunta cómo repartirlo, y es a propósito — lo que una persona concreta necesite de más o de menos **no se arregla inventando un rol a su medida**, sino en las pestañas de **Permisos extendidos** y **Permisos restringidos**.
 
 **Los roles «permiso por permiso» son la excepción, y se eligen al editar.** Esa clase apaga la escalera de niveles del módulo y obliga a marcar una por una cada cosa que la persona puede hacer; su tarjeta lo dice con la etiqueta **Detallado**. Si un rol quedó así sin querer, en su propia tarjeta se explica el camino de vuelta: **Editar** y elegir **Por módulo entero**, y entonces vuelve a mandar el nivel de cada módulo.
 
-Al editar, el **Código** queda bloqueado y la ventana lo dice: **El código no cambia.** Hay otras partes del sistema que lo nombran.
+Al editar, la **Clave** queda bloqueada y la ventana lo dice: **La clave no cambia.** Hay otras partes del sistema que la nombran.
 
 **Los roles que trae el sistema no se pueden borrar.** Solo se borran los que creó la empresa, y solo si no los tiene nadie. Si un rol del sistema sobra en alguien, el camino no es borrarlo sino quitárselo a quien no deba tenerlo: borrarlo dejaría sin dueño todas las reglas que lo nombran.
 
