@@ -18,9 +18,9 @@
   hace las mismas cuentas al guardar: aquí se repiten para enseñarlas antes.
   Si las dos dijeran cosas distintas, manda la base.
 */
-import { urlArchivoPago, urlArchivoRecepcion, type Orden } from '@/lib/api/pedidos'
+import { BUCKET_PAGOS, BUCKET_RECEPCIONES, type Orden } from '@/lib/api/pedidos'
 import { moneyBs, r2, subtotalItems } from '@/lib/ofertas'
-import { mensajeDe, toast } from '@/lib/avisosFlotantes'
+import { abrirDeAlmacen } from '@/lib/abrirArchivo'
 
 const num = (v: unknown): number => {
   const n = Number(v)
@@ -306,20 +306,15 @@ export const etiquetaDocumento = (t: string | null | undefined): string =>
 /** Un número escrito a la venezolana o con punto: «1.234,56» o «1234.56». */
 export const leerMonto = (s: string): number => aNumero(s) ?? 0
 
-/** Abre un comprobante o el QR de pago en otra pestaña (dirección firmada de diez minutos). */
-export async function abrirArchivoPago(path: string): Promise<void> {
-  try {
-    window.open(await urlArchivoPago(path), '_blank', 'noopener')
-  } catch (e) {
-    toast(mensajeDe(e, 'No se pudo abrir el archivo'), 'error')
-  }
+/**
+ * Abre un comprobante o el QR de pago en otra pestaña, sin enseñar la
+ * dirección del almacén (ver `abrirArchivo.ts`).
+ */
+export function abrirArchivoPago(path: string, nombre?: string | null): Promise<void> {
+  return abrirDeAlmacen(BUCKET_PAGOS, path, nombre, 'Comprobante de pago')
 }
 
 /** Abre una foto o la factura / nota de entrega de una recepción (fase 4). */
-export async function abrirArchivoRecepcion(path: string): Promise<void> {
-  try {
-    window.open(await urlArchivoRecepcion(path), '_blank', 'noopener')
-  } catch (e) {
-    toast(mensajeDe(e, 'No se pudo abrir el archivo'), 'error')
-  }
+export function abrirArchivoRecepcion(path: string, nombre?: string | null): Promise<void> {
+  return abrirDeAlmacen(BUCKET_RECEPCIONES, path, nombre, 'Documento de recepción')
 }

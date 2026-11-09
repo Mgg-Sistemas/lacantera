@@ -10,6 +10,7 @@ import {
   MAXIMO_DE_ARCHIVOS,
   TIPOS_ADMITIDOS,
   abrirFotoDeCarga,
+  bajarFotoDeCarga,
   miniaturaDeFotoDeCarga,
   repararMiniatura,
   problemaDelArchivo,
@@ -19,6 +20,7 @@ import {
   type FotoDeCarga,
   type OrigenDeCarga,
 } from '@/lib/api/fotosDeCarga'
+import { abrirArchivo, nombreLegible } from '@/lib/abrirArchivo'
 
 /*
   LAS FOTOS DEL CAMIÓN, EN DOS SITIOS.
@@ -180,15 +182,13 @@ function Miniatura({ foto }: { foto: FotoDeCarga }) {
     }
   }, [foto.path, esPdf])
 
+  // Sin la dirección del almacén en la barra; la ventana se abre en el clic
+  // para que el navegador no la bloquee (ver `abrirArchivo.ts`).
   const abrir = async () => {
-    // Se abre la ventana antes de descargar: si no, el navegador la toma por
-    // una ventana emergente y la bloquea.
-    const ventana = window.open('', '_blank')
     try {
-      const u = await abrirFotoDeCarga(foto.path)
-      if (ventana) ventana.location.href = u
+      await abrirArchivo(() => bajarFotoDeCarga(foto.path), nombreLegible(foto.path, foto.nombre, 'Foto de carga'))
     } catch {
-      ventana?.close()
+      // La miniatura sigue ahí; si no abrió, se puede volver a pulsar.
     }
   }
 

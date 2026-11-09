@@ -10,11 +10,13 @@ import { fechaHora } from '@/lib/formato'
 import {
   MAXIMO_COMPROBANTES,
   abrirComprobante,
+  bajarComprobante,
   miniaturaDeComprobante,
   useQuitarComprobante,
   useSubirComprobantes,
   type ComprobantePago,
 } from '@/lib/api/pagosBancarios'
+import { abrirArchivo, nombreLegible } from '@/lib/abrirArchivo'
 
 /*
   LOS COMPROBANTES DE UN PAGO: la captura del pago móvil, la transferencia, el
@@ -51,15 +53,13 @@ function Miniatura({ c }: { c: ComprobantePago }) {
   }, [c.path, esPdf])
 
   const [falla, setFalla] = useState(false)
+  // Sin la dirección del almacén en la barra; la ventana se abre en el clic
+  // para que el navegador no la bloquee (ver `abrirArchivo.ts`).
   const abrir = async () => {
-    // La ventana se abre antes de descargar: si no, el navegador la bloquea.
-    const ventana = window.open('', '_blank')
     try {
-      const u = await abrirComprobante(c.path)
-      if (ventana) ventana.location.href = u
+      await abrirArchivo(() => bajarComprobante(c.path), nombreLegible(c.path, c.nombre, 'Comprobante'))
       setFalla(false)
     } catch {
-      ventana?.close()
       setFalla(true)
     }
   }

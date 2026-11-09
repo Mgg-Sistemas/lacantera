@@ -329,9 +329,14 @@ export async function miniaturaDeComprobante(path: string): Promise<string> {
   return data.signedUrl
 }
 
-/** El archivo entero, para abrirlo. Una URL de objeto que hay que revocar al terminar. */
-export async function abrirComprobante(path: string): Promise<string> {
+/** El archivo entero, tal cual. Para abrirlo con `abrirArchivo` sin enseñar su dirección. */
+export async function bajarComprobante(path: string): Promise<Blob> {
   const { data, error } = await supabase.storage.from(DEPOSITO_COMPROBANTES).download(path)
   if (error || !data) throw new Error('No se pudo abrir el comprobante.')
-  return URL.createObjectURL(data)
+  return data
+}
+
+/** El archivo entero, para pintarlo. Una URL de objeto que hay que revocar al terminar. */
+export async function abrirComprobante(path: string): Promise<string> {
+  return URL.createObjectURL(await bajarComprobante(path))
 }

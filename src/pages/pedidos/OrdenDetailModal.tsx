@@ -11,8 +11,8 @@ import { useEmpresa, empresaDelPapel } from '@/lib/api/empresa'
 import { useTasaVigente } from '@/lib/api/tasas'
 import { leerFirmasEncendidas } from '@/lib/api/firmas'
 import {
-  urlAdjuntoOferta,
-  urlImagen,
+  BUCKET_OFERTAS,
+  BUCKET_PEDIDOS,
   useAnularOc,
   useAprobarOc,
   useCambiarModalidad,
@@ -95,6 +95,7 @@ import {
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { armarOrdenCompraPdf, armarSolicitudCotizacionPdf, armarSolicitudPedidoPdf } from '@/lib/ficha/pedidosPdf'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
+import { abrirDeAlmacen } from '@/lib/abrirArchivo'
 import { comoNumero } from '@/lib/formato'
 import { ModalWhatsappCompra } from '@/pages/compras/ModalWhatsappCompra'
 import { ConfirmDialog, MotivoModal } from './Dialogos'
@@ -470,13 +471,11 @@ export function OrdenDetailModal({
     }
   }
 
-  async function verImagen(path: string, deOferta = false) {
-    try {
-      window.open(await (deOferta ? urlAdjuntoOferta(path) : urlImagen(path)), '_blank', 'noopener')
-    } catch (e) {
-      toast(mensajeDe(e, 'No se pudo abrir la imagen'), 'error')
-    }
-  }
+  // Sin la dirección del almacén en la barra (ver `abrirArchivo.ts`).
+  const verImagen = (path: string, deOferta = false, nombre?: string) =>
+    deOferta
+      ? abrirDeAlmacen(BUCKET_OFERTAS, path, nombre, 'Adjunto de la oferta')
+      : abrirDeAlmacen(BUCKET_PEDIDOS, path, nombre, `Imagen de ${o.codigo}`)
 
   async function onCambiarModalidad() {
     const a = o.modalidad_pago === 'usd' ? 'bs' : 'usd'
@@ -740,7 +739,7 @@ export function OrdenDetailModal({
         </Button>
       ) : null}
       {o.factura_path && (permisos.compras || permisos.recibe_almacen) ? (
-        <Button variant="ghost" onClick={() => void abrirArchivoRecepcion(o.factura_path!)}>
+        <Button variant="ghost" onClick={() => void abrirArchivoRecepcion(o.factura_path!, o.factura_nombre)}>
           {o.estado === 'finalizada' ? '📎 Ver factura / soporte' : '📎 Ver soporte adjunto'}
         </Button>
       ) : null}
@@ -853,7 +852,7 @@ export function OrdenDetailModal({
             <Fila k="Imágenes de referencia">
               <div className="flex flex-wrap gap-1.5">
                 {o.imagenes.map((a, i) => (
-                  <Button key={a.path} size="sm" variant="ghost" onClick={() => void verImagen(a.path)}>
+                  <Button key={a.path} size="sm" variant="ghost" onClick={() => void verImagen(a.path, false, a.filename)}>
                     📷 Ver imagen{o.imagenes.length > 1 ? ` ${i + 1}` : ''}
                   </Button>
                 ))}
@@ -990,7 +989,7 @@ export function OrdenDetailModal({
                 </div>
               ) : null}
               {o.pago_qr_path ? (
-                <Button size="sm" variant="ghost" onClick={() => void abrirArchivoPago(o.pago_qr_path!)}>
+                <Button size="sm" variant="ghost" onClick={() => void abrirArchivoPago(o.pago_qr_path!, o.pago_qr_nombre)}>
                   📷 Ver QR / imagen de pago
                 </Button>
               ) : null}
@@ -1098,7 +1097,7 @@ export function OrdenDetailModal({
           ) : null}
           {o.factura_path ? (
             <Fila k={o.factura_tipo === 'nota_entrega' ? 'Nota de entrega' : 'Factura'}>
-              <Button size="sm" variant="ghost" onClick={() => void abrirArchivoRecepcion(o.factura_path!)}>
+              <Button size="sm" variant="ghost" onClick={() => void abrirArchivoRecepcion(o.factura_path!, o.factura_nombre)}>
                 📎 {o.factura_nombre ?? 'Ver'}
               </Button>
             </Fila>
@@ -1120,7 +1119,7 @@ export function OrdenDetailModal({
               {o.oferta_motivo ? <div>{o.oferta_motivo}</div> : null}
               <div className="flex flex-wrap gap-1">
                 {(o.oferta_motivo_adjuntos ?? []).map((a) => (
-                  <Button key={a.path} size="sm" variant="ghost" onClick={() => void verImagen(a.path, true)}>
+                  <Button key={a.path} size="sm" variant="ghost" onClick={() => void verImagen(a.path, true, a.filename)}>
                     📎 {a.filename}
                   </Button>
                 ))}

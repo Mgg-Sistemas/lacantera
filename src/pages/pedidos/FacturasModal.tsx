@@ -92,7 +92,7 @@ export function FacturasModal({ servicio: s, onClose }: { servicio: ServicioDire
         <div className="mb-4 space-y-1">
           {actuales.map((a) => (
             <div key={a.path} className="border-hairline flex items-center justify-between gap-2 rounded-[6px] border px-2 py-1">
-              <Button size="sm" variant="ghost" title="Ver factura" onClick={() => void abrirArchivoDirecto(a.path)}>
+              <Button size="sm" variant="ghost" title="Ver factura" onClick={() => void abrirArchivoDirecto(a.path, a.filename)}>
                 📎 {a.filename}
               </Button>
               <span className="flex items-center gap-2">
