@@ -1,11 +1,9 @@
-import { Fragment, useMemo, useState } from 'react'
-import type { ReactNode } from 'react'
+import { Fragment, useState } from 'react'
 import {
   Archive,
   ArchiveRestore,
   ChevronRight,
   KeyRound,
-  Search,
   Plus,
   ShieldCheck,
   Trash2,
@@ -38,7 +36,7 @@ import {
   useArchivarUsuario,
   useDesarchivarUsuario,
   useMisAcciones,
-  useAsignarRoles,
+  useAsignarRol,
   useCambiarClave,
   useCrearRol,
   useCrearUsuario,
@@ -51,14 +49,8 @@ import {
   usePermisos,
   useRoles,
   useAcciones,
-  useAutorizaciones,
-  useAutorizarVarias,
-  useRetirarAutorizacion,
-  useRestricciones,
-  useAccionesRestringibles,
-  useRestringirVarias,
-  useLevantarRestriccion,
   useAccionesDeLosRoles,
+  useRolIncluye,
   useMarcarAccion,
   useUsuarios,
   useFichasDeLasCuentas,
@@ -66,8 +58,6 @@ import {
 } from '@/lib/api/usuarios'
 import type {
   AccionDelSistema,
-  AutorizacionDelSistema,
-  RestriccionDelSistema,
   Nivel,
   RolSistema,
   UsuarioSistema,
@@ -109,6 +99,7 @@ function Casilla({
 function TarjetaRol({
   rol,
   usuarios,
+  incluye,
   niveles,
   marcadas,
   accionesPorModulo,
@@ -123,6 +114,8 @@ function TarjetaRol({
 }: {
   rol: RolSistema
   usuarios: number
+  /** Los nombres de los roles a los que equivale (un rol que junta varios). */
+  incluye: string[]
   niveles: Map<string, Nivel>
   /** Las acciones que este rol tiene marcadas. */
   marcadas: Set<string>
@@ -206,6 +199,39 @@ function TarjetaRol({
     return nivel !== 'NINGUNO'
   }
 
+  /*
+    ACCIONES ESPECIALES (la dueña, 09/11/2026: «todo se manejará por la matriz»).
+
+    Lo que antes se extendía o se restringía a una persona ahora es una casilla
+    del rol. En un rol por módulo entero, el nivel ya abre buena parte de las
+    acciones; aquí van las que su nivel NO abre en los módulos a los que llega:
+    aprobar, firmar, las que ningún nivel concede. Marcarlas se la da a todos
+    los que tienen este rol.
+  */
+  const deTelefono = new Set<string>(PANTALLAS_DE_TELEFONO.map((p) => p.accion))
+  const especialesPorModulo = rol.a_la_medida
+    ? []
+    : modulos
+        .map((m) => {
+          const nivel = niveles.get(m.codigo) ?? 'NINGUNO'
+          const lista = (accionesPorModulo.get(m.codigo) ?? []).filter(
+            (a) =>
+              !deTelefono.has(a.codigo) &&
+              !(a.nivel_equivalente && alcanza(nivel, a.nivel_equivalente)),
+          )
+          return { modulo: m, nivel, lista }
+        })
+        .filter(
+          (g) =>
+            g.lista.length > 0 &&
+            (g.nivel !== 'NINGUNO' || g.lista.some((a) => marcadas.has(a.codigo))),
+        )
+  const especialesMarcadas = especialesPorModulo.reduce(
+    (n, g) => n + g.lista.filter((a) => marcadas.has(a.codigo)).length,
+    0,
+  )
+  const [verEspeciales, setVerEspeciales] = useState(false)
+
   const visibles = modulos.filter((m) => tieneAlgo(m.codigo) || abiertos.includes(m.codigo))
   const cerrados = modulos.filter((m) => !tieneAlgo(m.codigo) && !abiertos.includes(m.codigo))
 
@@ -226,6 +252,11 @@ function TarjetaRol({
               {rol.solo_telefono ? <Chip tone="warning">Solo teléfono</Chip> : null}
             </div>
             <p className="text-ink/55 mt-1.5 text-xs">{rol.descripcion}</p>
+            {incluye.length > 0 ? (
+              <p className="text-ink/45 mt-1 text-xs">
+                Cuenta como: <span className="text-ink/65">{incluye.join(' · ')}</span>
+              </p>
+            ) : null}
             <p className="text-ink/45 mt-1 text-xs">
               {usuarios === 0
                 ? 'Sin usuarios asignados'
@@ -405,6 +436,59 @@ function TarjetaRol({
         </div>
       ) : null}
 
+      {especialesPorModulo.length > 0 ? (
+        <div className="border-hairline border-t px-5 py-3">
+          <button
+            type="button"
+            onClick={() => setVerEspeciales((v) => !v)}
+            aria-expanded={verEspeciales}
+            className="text-ink/70 hover:text-ink/90 flex w-full items-center gap-1.5 text-left text-xs font-medium tracking-wider uppercase"
+          >
+            <ChevronRight
+              className={cn('size-3.5 transition-transform', verEspeciales && 'rotate-90')}
+            />
+            ⭐ Acciones especiales
+            <span className="text-ink/45 tabular ml-auto font-normal normal-case">
+              {especialesMarcadas} marcada{especialesMarcadas === 1 ? '' : 's'}
+            </span>
+          </button>
+          {verEspeciales ? (
+            <div className="mt-2 space-y-3">
+              <p className="text-ink/50 text-xs">
+                Lo que su nivel en el módulo no abre. Marcada, la tienen todos los usuarios con este
+                rol.
+              </p>
+              {especialesPorModulo.map((g) => (
+                <div key={g.modulo.codigo}>
+                  <span className="text-ink/60 block text-2xs font-medium tracking-wider uppercase">
+                    {g.modulo.nombre}
+                  </span>
+                  <div className="mt-1 space-y-1.5">
+                    {g.lista.map((a) => (
+                      <label key={a.codigo} className="flex cursor-pointer items-start gap-2.5">
+                        <input
+                          type="checkbox"
+                          checked={marcadas.has(a.codigo)}
+                          disabled={!editable || intocable}
+                          onChange={(e) => onAccion(a.codigo, e.target.checked)}
+                          className="accent-royal-600 mt-0.5 size-4 shrink-0 cursor-pointer disabled:cursor-not-allowed"
+                        />
+                        <span className="min-w-0">
+                          <span className="text-ink/85 block text-sm">{a.nombre}</span>
+                          {a.dice ? (
+                            <span className="text-ink/50 block text-xs">{a.dice}</span>
+                          ) : null}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
       {/*
         PANTALLAS DE TELÉFONO Y RESPALDO, COMO EN MGG.
 
@@ -541,6 +625,7 @@ function PestanaRoles({ editable }: { editable: boolean }) {
   const { data: modulosTodos } = useModulos()
   const acciones = useAcciones()
   const accionesDeRoles = useAccionesDeLosRoles()
+  const rolIncluye = useRolIncluye()
   const marcarAccion = useMarcarAccion()
   const crearRol = useCrearRol()
   const guardarRol = useGuardarRol()
@@ -602,6 +687,15 @@ function PestanaRoles({ editable }: { editable: boolean }) {
   const sinCatalogo = (modulosTodos ?? []).filter(
     (m) => !esModuloEnObra(m.codigo) && (accionesPorModulo.get(m.codigo) ?? []).length === 0,
   ).length
+
+  const nombreDeRol = (codigo: string) =>
+    (roles.data ?? []).find((r) => r.codigo === codigo)?.nombre ?? codigo
+  const incluyePorRol = new Map<string, string[]>()
+  for (const ri of rolIncluye.data ?? []) {
+    const lista = incluyePorRol.get(ri.rol) ?? []
+    lista.push(nombreDeRol(ri.incluye))
+    incluyePorRol.set(ri.rol, lista)
+  }
 
   const cuentaPorRol = new Map<string, number>()
   for (const u of usuarios.data ?? []) {
@@ -724,6 +818,7 @@ function PestanaRoles({ editable }: { editable: boolean }) {
             key={r.codigo}
             rol={r}
             usuarios={cuentaPorRol.get(r.codigo) ?? 0}
+            incluye={incluyePorRol.get(r.codigo) ?? []}
             niveles={nivelesPorRol.get(r.codigo) ?? new Map()}
             marcadas={marcadasPorRol.get(r.codigo) ?? new Set()}
             accionesPorModulo={accionesPorModulo}
@@ -981,18 +1076,17 @@ function PestanaRoles({ editable }: { editable: boolean }) {
               justo lo que no se quiere al crear un rol.
 
               Así que el alta ya no pregunta: se nace con niveles, que es como
-              funcionan los diez roles de la casa, y lo fino de cada persona se
-              ajusta donde corresponde, en permisos extendidos y restringidos.
-              La clase detallada sigue existiendo para el caso raro —hay roles
-              que de verdad la necesitan— pero se elige al EDITAR, a sabiendas.
+              funcionan los roles de la casa, y lo fino se ajusta en la misma
+              matriz, con sus acciones especiales (desde el 09/11/2026 no hay
+              permisos por persona: todo es del rol). La clase detallada sigue
+              existiendo para el caso raro, pero se elige al EDITAR, a sabiendas.
             */}
             {edicion.nuevo ? (
               <p className="border-hairline text-ink/55 rounded-card border border-dashed p-3 text-xs leading-relaxed">
                 <span className="text-ink/75 font-medium">Nace con niveles por módulo:</span>{' '}
-                ninguno, lectura, escritura o control total, como los roles de siempre. Lo que una
-                persona concreta necesite de más o de menos no se arregla en el rol, sino en{' '}
-                <span className="text-ink/75">Permisos extendidos</span> y{' '}
-                <span className="text-ink/75">Permisos restringidos</span>.
+                ninguno, lectura, escritura o control total, como los roles de siempre. Lo que su
+                nivel no abre se marca en sus{' '}
+                <span className="text-ink/75">⭐ Acciones especiales</span>.
               </p>
             ) : (
               <div className="border-hairline rounded-card border p-3.5">
@@ -1035,8 +1129,9 @@ function PestanaRoles({ editable }: { editable: boolean }) {
                     </span>
                     <span className="text-ink/50 block text-xs leading-relaxed">
                       Se marca una por una cada cosa que puede hacer, y la escalera del módulo
-                      deja de valer. Para quitarle o prestarle algo suelto a UNA persona no hace
-                      falta esto: eso son los permisos extendidos y restringidos.
+                      deja de valer: lo que no esté marcado no lo hace por ningún camino. Para
+                      darle algo que su nivel no abre no hace falta esto: basta con sus acciones
+                      especiales.
                     </span>
                   </span>
                 </label>
@@ -1070,7 +1165,8 @@ const usuarioVacio = {
   cargo: '',
   cedula: '',
   telefono: '',
-  roles: ['BASICO'] as string[],
+  /** Un usuario, un rol (la dueña, 09/11/2026). */
+  rol: 'BASICO',
 }
 
 function PestanaUsuarios({ editable }: { editable: boolean }) {
@@ -1089,7 +1185,7 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
   const roles = useRoles()
   const crear = useCrearUsuario()
   const guardarPerfil = useGuardarPerfil()
-  const asignarRoles = useAsignarRoles()
+  const asignarRol = useAsignarRol()
   const activar = useActivarUsuario()
   const archivar = useArchivarUsuario()
   const desarchivar = useDesarchivarUsuario()
@@ -1098,8 +1194,7 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
 
   /*
     Archivar no es solo del administrador: es una casilla —
-    USUARIOS.ARCHIVAR_USUARIO— que se marca en un rol o se presta por permiso
-    extendido. Por eso no cuelga de `editable`, que es ADMIN literal: quien
+    USUARIOS.ARCHIVAR_USUARIO— que se marca en la matriz del rol. Por eso no cuelga de `editable`, que es ADMIN literal: quien
     tenga la casilla ve el botón aunque el resto de la pantalla le salga en solo
     lectura. El administrador la tiene siempre, porque pasa por encima de todas.
   */
@@ -1147,7 +1242,7 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
             cargo: u.cargo ?? '',
             cedula: u.cedula ?? '',
             telefono: u.telefono ?? '',
-            roles: u.roles,
+            rol: u.roles[0] ?? '',
             nuevo: false,
           }
         : { ...usuarioVacio, nuevo: true },
@@ -1157,8 +1252,8 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
     if (!edicion) return
     setError(null)
 
-    if (edicion.roles.length === 0) {
-      setError('Asigne al menos un rol. Un usuario sin roles no puede hacer nada.')
+    if (!edicion.rol) {
+      setError('Elija su rol. Un usuario sin rol no puede hacer nada.')
       return
     }
 
@@ -1179,8 +1274,8 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
       { id: edicion.id!, nombre: edicion.nombre, cargo: edicion.cargo, cedula: edicion.cedula, telefono: edicion.telefono },
       {
         onSuccess: () =>
-          asignarRoles.mutate(
-            { id: edicion.id!, roles: edicion.roles },
+          asignarRol.mutate(
+            { id: edicion.id!, rol: edicion.rol },
             {
               onSuccess: () => setEdicion(null),
               onError: (e: Error) => setError(e.message),
@@ -1190,18 +1285,6 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
       },
     )
   }
-
-  const alternarRol = (codigo: string) =>
-    setEdicion((e) =>
-      e
-        ? {
-            ...e,
-            roles: e.roles.includes(codigo)
-              ? e.roles.filter((r) => r !== codigo)
-              : [...e.roles, codigo],
-          }
-        : e,
-    )
 
   const nombreDeRol = (codigo: string) =>
     roles.data?.find((r) => r.codigo === codigo)?.nombre ?? codigo
@@ -1267,16 +1350,15 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
       ) : (
         <Card flush>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[880px] text-sm">
+            <table className="w-full min-w-[760px] text-sm">
               <thead>
                 <tr className="text-ink/45 border-hairline border-b text-left text-xs">
                   <th className="px-5 py-3 font-medium">Usuario</th>
                   <th className="px-3 py-3 font-medium">Nombre</th>
-                  <th className="px-3 py-3 font-medium">Cargo</th>
                   {apartado === 'en_uso' ? (
                     <>
                       <th className="px-3 py-3 font-medium">Ficha de personal</th>
-                      <th className="px-3 py-3 font-medium">Roles</th>
+                      <th className="px-3 py-3 font-medium">Rol</th>
                     </>
                   ) : (
                     <>
@@ -1307,7 +1389,6 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
                       ) : null}
                     </td>
                     <td className="text-ink/85 px-3 py-3 font-medium">{u.nombre}</td>
-                    <td className="text-ink/60 px-3 py-3">{u.cargo ?? '—'}</td>
                     {apartado === 'archivados' ? (
                       <>
                         <td className="text-ink/60 px-3 py-3">
@@ -1343,17 +1424,13 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
                           <FichaDeLaCuenta ficha={fichaPorPerfil.get(u.id)} />
                         </td>
                         <td className="px-3 py-3">
-                          <div className="flex flex-wrap gap-1">
-                            {u.roles.length === 0 ? (
-                              <span className="text-ink/40">Sin roles</span>
-                            ) : (
-                              u.roles.map((r) => (
-                                <Chip key={r} tone={r === 'ADMIN' ? 'safety' : 'neutral'}>
-                                  {nombreDeRol(r)}
-                                </Chip>
-                              ))
-                            )}
-                          </div>
+                          {u.roles.length === 0 ? (
+                            <span className="text-ink/40">Sin rol</span>
+                          ) : (
+                            <Chip tone={u.roles[0] === 'ADMIN' ? 'safety' : 'neutral'}>
+                              {nombreDeRol(u.roles[0])}
+                            </Chip>
+                          )}
                         </td>
                         <td className="px-5 py-3 text-right">
                           <div className="flex items-center justify-end gap-2">
@@ -1445,7 +1522,7 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
         titulo={edicion?.nuevo ? 'Nuevo usuario' : 'Editar usuario'}
         descripcion={
           edicion?.nuevo
-            ? 'Los roles deciden a qué llega. Se pueden cambiar después.'
+            ? 'Su rol decide a qué llega. Se puede cambiar después.'
             : 'El nombre de usuario no cambia.'
         }
         ancho="lg"
@@ -1555,19 +1632,25 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
               />
             </div>
 
+            {/* Un solo rol por usuario (la dueña, 09/11/2026): sus permisos son
+                la matriz de ese rol, en «Roles y permisos». */}
             <fieldset>
-              <legend className="text-ink/70 mb-2 text-sm font-medium">Roles</legend>
+              <legend className="text-ink/70 mb-2 text-sm font-medium">Rol</legend>
               <div className="grid gap-1.5 sm:grid-cols-2">
                 {(roles.data ?? []).map((r) => (
                   <label
                     key={r.codigo}
-                    className="hover:bg-ink/4 flex cursor-pointer items-start gap-2.5 rounded-[6px] p-2 transition-colors"
+                    className={cn(
+                      'hover:bg-ink/4 flex cursor-pointer items-start gap-2.5 rounded-[6px] p-2 transition-colors',
+                      edicion.rol === r.codigo && 'bg-royal-600/8',
+                    )}
                   >
                     <input
-                      type="checkbox"
-                      checked={edicion.roles.includes(r.codigo)}
-                      onChange={() => alternarRol(r.codigo)}
-                      className="accent-royal-600 mt-0.5 size-4 shrink-0 rounded"
+                      type="radio"
+                      name="rol-del-usuario"
+                      checked={edicion.rol === r.codigo}
+                      onChange={() => cambiar({ rol: r.codigo })}
+                      className="accent-royal-600 mt-0.5 size-4 shrink-0"
                     />
                     <span className="min-w-0">
                       <span className="text-ink/85 block text-sm font-medium">{r.nombre}</span>
@@ -1838,1252 +1921,11 @@ function PestanaUsuarios({ editable }: { editable: boolean }) {
 }
 
 // ---------------------------------------------------------------------------
-// La ficha recogida de una persona, común a las dos pestañas de permisos
-//
-// Christopher, 05/10/2026: «que cada persona sea un retráctil o contraíble con
-// todos los permisos acomodados por módulo, y que yo pueda ver los permisos
-// organizados, no una lista inmensa».
-//
-// Las dos pestañas —lo extendido y lo restringido— se leen igual y por eso
-// comparten esta pieza: cerrada dice de quién es, cuántos permisos vigentes
-// tiene y en qué módulos; abierta, los permisos agrupados. Dos componentes
-// gemelos se separarían a la primera semana, como ya pasó con otras parejas de
-// esta pantalla.
-// ---------------------------------------------------------------------------
-
-/** Los permisos de alguien, en grupos por módulo y en el orden en que llegaron. */
-function porModuloDe<T extends { modulo: string; modulo_nombre: string }>(filas: T[]) {
-  const mapa = new Map<string, { codigo: string; nombre: string; filas: T[] }>()
-  for (const f of filas) {
-    const g = mapa.get(f.modulo) ?? { codigo: f.modulo, nombre: f.modulo_nombre, filas: [] }
-    g.filas.push(f)
-    mapa.set(f.modulo, g)
-  }
-  return [...mapa.values()]
-}
-
-function FichaDePersona({
-  nombre,
-  chip,
-  modulos,
-  cuantos,
-  abierta,
-  /** Abierta porque se está buscando o porque es la única: no se deja cerrar. */
-  fija,
-  onAlternar,
-  children,
-}: {
-  nombre: string
-  chip: { texto: string; tono: 'success' | 'warning' | 'neutral' }
-  modulos: string[]
-  cuantos: number
-  abierta: boolean
-  fija: boolean
-  onAlternar: () => void
-  children: ReactNode
-}) {
-  return (
-    <Card flush className="overflow-hidden">
-      <button
-        type="button"
-        onClick={fija ? undefined : onAlternar}
-        aria-expanded={abierta}
-        className={cn(
-          'flex w-full items-start gap-2.5 px-4 py-3 text-left',
-          !fija && 'hover:bg-ink/3 cursor-pointer transition-colors',
-        )}
-      >
-        {fija ? (
-          <span className="mt-0.5 size-4 shrink-0" />
-        ) : (
-          <ChevronRight
-            className={cn(
-              'text-ink/40 mt-0.5 size-4 shrink-0 transition-transform',
-              abierta && 'rotate-90',
-            )}
-          />
-        )}
-        <span className="min-w-0 flex-1">
-          <span className="flex flex-wrap items-center gap-2">
-            <span className="text-ink/85 font-medium">{nombre}</span>
-            <Chip tone={chip.tono}>{chip.texto}</Chip>
-          </span>
-          {/* Cerrada, esta línea es toda la ficha: en qué módulos y cuántos.
-              Sin ella habría que abrir una por una para saber dónde mirar. */}
-          <span className="text-ink/45 mt-0.5 block text-xs">
-            {cuantos} permiso{cuantos === 1 ? '' : 's'} · {modulos.join(' · ')}
-          </span>
-        </span>
-      </button>
-      {abierta ? <div className="border-hairline border-t">{children}</div> : null}
-    </Card>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Autorizaciones: lo que se le extiende a una persona por encima de su rol
-//
-// La líder: «Coloca que Jesmary pueda aprobar las órdenes marcando un check que
-// diga: Autorizada bajo autorización del gerente general».
-//
-// Christopher lo que hay detrás: «en usuarios, se pueda extender permisos que
-// no competen a un rol, bajo una justificación». Por PERSONA y no por rol — el
-// rol dice lo que compete al puesto; esto es lo que se le presta a alguien
-// concreto mientras el gerente está de viaje, o para siempre si así se decide.
-//
-// La pestaña la manejan administración y la gerencia. Es la única de esta
-// pantalla que el gerente general puede usar de verdad: las otras dos exigen el
-// rol de administrador en la base, y a él le contestan que no.
-// ---------------------------------------------------------------------------
-
-function PestanaAutorizaciones({ gestionable }: { gestionable: boolean }) {
-  const autorizaciones = useAutorizaciones()
-  const usuarios = useUsuarios()
-  const acciones = useAcciones()
-  const conceder = useAutorizarVarias()
-  const retirar = useRetirarAutorizacion()
-
-  const [abierto, setAbierto] = useState(false)
-  const [retirando, setRetirando] = useState<AutorizacionDelSistema | null>(null)
-  const [motivoRetiro, setMotivoRetiro] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [forma, setForma] = useState({
-    usuario_id: '',
-    // Varias, y no una. Lo pidió Christopher: «en vez de agregar uno por uno,
-    // la opción de marcar varios».
-    acciones: [] as string[],
-    motivo: '',
-    desde: '',
-    hasta: '',
-  })
-  const [busca, setBusca] = useState('')
-  /** El buscador de la lista, que no es el del modal: aquí se busca lo ya dado. */
-  const [filtro, setFiltro] = useState('')
-  /** Qué personas están desplegadas. Todas empiezan recogidas. */
-  const [abiertas, setAbiertas] = useState<string[]>([])
-  /** Qué módulos están abiertos en el catálogo del modal. */
-  const [modulosAbiertos, setModulosAbiertos] = useState<string[]>([])
-  /** Lo que la base dejó fuera y por qué, para decirlo al cerrar. */
-  const [omitidas, setOmitidas] = useState<{ accion: string; motivo: string }[]>([])
-
-  const limpiar = () => {
-    setForma({
-      usuario_id: '',
-      acciones: [],
-      motivo: '',
-      desde: '',
-      hasta: '',
-    })
-    setBusca('')
-    setError(null)
-  }
-
-  const marcar = (codigo: string) =>
-    setForma((f) => ({
-      ...f,
-      acciones: f.acciones.includes(codigo)
-        ? f.acciones.filter((x) => x !== codigo)
-        : [...f.acciones, codigo],
-    }))
-
-  /*
-    Solo las casillas que se pueden prestar.
-
-    Las dos de repartir permisos las rechaza la base, así que ofrecerlas sería
-    enseñar una puerta para que reviente al pulsarla. Y el respaldo tampoco
-    entra: su casilla está apagada.
-  */
-  const NO_SE_PRESTAN = ['USUARIOS.DAR_PERMISOS', 'USUARIOS.ASIGNAR_ROLES']
-  const prestables = (acciones.data ?? []).filter((a) => !NO_SE_PRESTAN.includes(a.codigo))
-
-  /*
-    Ciento cincuenta casillas en catorce módulos no caben en una lista pelada.
-
-    Se filtran por lo que se escriba —nombre, módulo o lo que la casilla dice—
-    y se agrupan por módulo, que es como la gente las busca: «lo de compras».
-    El orden de los módulos es el que traiga el catálogo; reordenarlo aquí haría
-    que esta pantalla y la matriz de permisos no se parecieran.
-  */
-  const porModulo = useMemo(() => {
-    const q = busca.trim().toLowerCase()
-    const cabe = (a: (typeof prestables)[number]) =>
-      !q ||
-      a.nombre.toLowerCase().includes(q) ||
-      (a.modulo_nombre ?? '').toLowerCase().includes(q) ||
-      (a.dice ?? '').toLowerCase().includes(q)
-
-    const mapa = new Map<string, typeof prestables>()
-    for (const a of prestables) {
-      if (!cabe(a)) continue
-      const clave = a.modulo_nombre ?? a.modulo
-      mapa.set(clave, [...(mapa.get(clave) ?? []), a])
-    }
-    return [...mapa.entries()]
-  }, [prestables, busca])
-
-  /*
-    MARCAR TODAS DE UNA VEZ.
-
-    Christopher, 18/09/2026: «que pueda seleccionar todos los permisos de una
-    vez». Marca las que se ven: sin buscar son todas; buscando «compras», las
-    de compras. Así el mismo botón sirve para «todo» y para «todo lo de esto».
-
-    Lo que la persona ya tiene por su rol no se filtra aquí: la base lo deja
-    fuera y lo dice, y el aviso de abajo lo resume en una línea.
-  */
-  const visibles = porModulo.flatMap(([, lista]) => lista.map((a) => a.codigo))
-  const todasMarcadas =
-    visibles.length > 0 && visibles.every((c) => forma.acciones.includes(c))
-  const marcarVarias = (codigos: string[], marcadas: boolean) =>
-    setForma((f) => ({
-      ...f,
-      acciones: marcadas
-        ? [...new Set([...f.acciones, ...codigos])]
-        : f.acciones.filter((x) => !codigos.includes(x)),
-    }))
-
-  // Las que ya tenía por su rol no son un problema: no hacía falta prestarlas.
-  const porSuRol = omitidas.filter((o) => o.motivo.includes('por su rol'))
-  const otrasOmitidas = omitidas.filter((o) => !o.motivo.includes('por su rol'))
-
-  const opcionesPersona = (usuarios.data ?? [])
-    .filter((u) => u.activo)
-    .map((u) => ({
-      valor: u.id,
-      etiqueta: u.nombre,
-      detalle: u.cargo ?? u.usuario,
-    }))
-
-  const guardar = () => {
-    setError(null)
-    setOmitidas([])
-    conceder.mutate(
-      {
-        usuario_id: forma.usuario_id,
-        acciones: forma.acciones,
-        motivo: forma.motivo,
-        desde: forma.desde || null,
-        hasta: forma.hasta || null,
-      },
-      {
-        onSuccess: (r) => {
-          /*
-            Si alguna se quedo fuera, el modal NO se cierra: se enseña cuales y
-            por que. Cerrar diciendo «listo» habiendo extendido tres de cinco es
-            como no decirlo — y las dos que faltan se descubren el dia que
-            alguien no puede hacer lo que creia que podia.
-          */
-          if (r?.omitidas?.length) {
-            setOmitidas(r.omitidas)
-            setForma((f) => ({ ...f, acciones: [] }))
-            return
-          }
-          setAbierto(false)
-          setOmitidas([])
-          limpiar()
-        },
-        onError: (e: Error) => setError(e.message),
-      },
-    )
-  }
-
-  if (autorizaciones.isPending) return <Cargando />
-  if (autorizaciones.error) return <ErrorDeCarga error={autorizaciones.error} />
-
-  /*
-    BUSCAR ENTRE LO YA EXTENDIDO.
-
-    Christopher, 21/09/2026. Con una docena de permisos prestados la lista ya
-    no se lee de un vistazo, y lo que se busca es siempre lo mismo: «qué tiene
-    fulano» o «quién puede aprobar compras». Por eso filtra por persona,
-    casilla, módulo, quién lo extendió y el motivo escrito.
-  */
-  const filas = autorizaciones.data ?? []
-  const q = filtro.trim().toLowerCase()
-  const coinciden = q
-    ? filas.filter((a) =>
-        [a.a_nombre, a.accion_nombre, a.modulo_nombre, a.por_nombre, a.motivo].some((t) =>
-          (t ?? '').toLowerCase().includes(q),
-        ),
-      )
-    : filas
-  const vivas = coinciden.filter((a) => a.vigente)
-  const pasadas = coinciden.filter((a) => !a.vigente)
-
-  /*
-    AGRUPADO POR PERSONA, Y RECOGIDO.
-
-    Christopher, 05/10/2026: «me sale el nombre de cada persona repetido
-    varias veces; mejor que salga la persona con los permisos extendidos que
-    tiene» y, al verlo agrupado pero abierto, «que no sea una lista enorme,
-    que cada persona sea un retráctil con los permisos acomodados por
-    módulo».
-
-    Así que una ficha por persona, CERRADA, que dice de un vistazo cuántos
-    permisos vigentes tiene y en qué módulos. Se abre la que se quiera mirar
-    y sus permisos salen agrupados por módulo. Van primero las personas con
-    algo vigente, porque la pregunta de siempre es «qué tiene fulano hoy».
-  */
-  const porPersona = new Map<string, AutorizacionDelSistema[]>()
-  for (const a of [...vivas, ...pasadas]) {
-    porPersona.set(a.a_usuario, [...(porPersona.get(a.a_usuario) ?? []), a])
-  }
-
-  /*
-    BUSCAR ABRE LO QUE ENCUENTRA. Quien escribe «aprobar compras» quiere ver
-    el permiso, no la ficha cerrada de quien lo tiene; y con una sola persona
-    en pantalla no hay nada que ordenar, así que tampoco se recoge.
-  */
-  const abrirTodas = q !== '' || porPersona.size === 1
-
-  return (
-    <>
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <p className="text-ink/60 max-w-[62ch] text-sm">
-          Un permiso que no le compete a alguien por su puesto, prestado por un tiempo o de forma
-          indefinida. Lo que se firme usándolo queda diciendo de quién era la autoridad.
-        </p>
-        {gestionable ? (
-          <Button icon={<Plus />} onClick={() => setAbierto(true)}>
-            Extender un permiso
-          </Button>
-        ) : null}
-      </div>
-
-      {filas.length > 0 ? (
-        <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-          <div className="min-w-[16rem] flex-1">
-            <Input
-              label="Buscar"
-              ocultarEtiqueta
-              icon={<Search />}
-              placeholder="Por persona, casilla, módulo, quién lo dio o el motivo"
-              value={filtro}
-              onChange={(e) => setFiltro(e.target.value)}
-            />
-          </div>
-          <span className="text-ink/45 text-xs">
-            {q ? `${coinciden.length} de ${filas.length}` : `${filas.length} en total`}
-            {vivas.length > 0 ? ` · ${vivas.length} vigente${vivas.length === 1 ? '' : 's'}` : ''}
-          </span>
-        </div>
-      ) : null}
-
-      {filas.length === 0 ? (
-        <Vacio
-          titulo="Sin permisos extendidos"
-          descripcion="Un permiso extendido autoriza a una persona algo que su rol no incluye —por ejemplo, una orden urgente con el gerente ausente—, con su justificación."
-        />
-      ) : coinciden.length === 0 ? (
-        <p className="text-ink/45 py-8 text-center text-sm">
-          Ningún permiso extendido coincide con «{filtro.trim()}».
-        </p>
-      ) : (
-        <div className="space-y-2.5">
-          {[...porPersona.values()].map((suyas) => {
-            const vigentes = suyas.filter((a) => a.vigente).length
-            const abierta = abrirTodas || abiertas.includes(suyas[0].a_usuario)
-            return (
-              <FichaDePersona
-                key={suyas[0].a_usuario}
-                nombre={suyas[0].a_nombre}
-                chip={
-                  vigentes > 0
-                    ? { texto: `${vigentes} vigente${vigentes === 1 ? '' : 's'}`, tono: 'success' }
-                    : { texto: 'Nada vigente', tono: 'neutral' }
-                }
-                modulos={porModuloDe(suyas).map((g) => g.nombre)}
-                cuantos={suyas.length}
-                abierta={abierta}
-                fija={abrirTodas}
-                onAlternar={() =>
-                  setAbiertas((xs) =>
-                    xs.includes(suyas[0].a_usuario)
-                      ? xs.filter((x) => x !== suyas[0].a_usuario)
-                      : [...xs, suyas[0].a_usuario],
-                  )
-                }
-              >
-                {porModuloDe(suyas).map((g) => (
-                  <div key={g.codigo}>
-                    <p className="text-ink/45 bg-ink/2 text-2xs px-4 py-1.5 font-medium tracking-wider uppercase">
-                      {g.nombre}
-                    </p>
-                    <ul className="divide-hairline divide-y">
-                      {g.filas.map((a) => (
-                        <li key={a.id} className={cn('px-4 py-2.5', !a.vigente && 'opacity-60')}>
-                          <div className="flex flex-wrap items-start justify-between gap-2">
-                            <div className="min-w-0 flex-1">
-                              <p className="text-ink/80 text-sm">
-                                {a.accion_nombre}
-                                {!a.vigente ? (
-                                  <span className="text-ink/45 ml-2 text-xs">
-                                    {a.revocada_en ? 'Retirada' : 'Fuera de fecha'}
-                                  </span>
-                                ) : null}
-                              </p>
-                              <p className="text-ink/60 mt-1 text-sm italic">«{a.motivo}»</p>
-                              <p className="text-ink/50 mt-1 text-xs">
-                                Bajo autorización de{' '}
-                                <span className="text-ink/70">{a.por_nombre}</span>
-                                {' · desde '}
-                                {fecha(a.desde)}
-                                {a.hasta ? ` hasta ${fecha(a.hasta)}` : ' · sin fecha de fin'}
-                              </p>
-                              {a.revocada_en ? (
-                                <p className="text-ink/45 mt-1 text-xs">
-                                  Retirada por {a.revocada_nombre ?? '—'} el {fecha(a.revocada_en)}
-                                  {a.revocada_motivo ? ` · ${a.revocada_motivo}` : ''}
-                                </p>
-                              ) : null}
-                            </div>
-                            {gestionable && a.vigente ? (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-danger border-danger/30 shrink-0"
-                                onClick={() => {
-                                  setRetirando(a)
-                                  setMotivoRetiro('')
-                                }}
-                              >
-                                Retirar
-                              </Button>
-                            ) : null}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </FichaDePersona>
-            )
-          })}
-        </div>
-      )}
-
-      {/* ---------------- Extender ---------------- */}
-      <Modal
-        abierto={abierto}
-        onCerrar={() => {
-          setAbierto(false)
-          limpiar()
-        }}
-        titulo="Extender un permiso"
-        descripcion="Se le presta a una persona concreta una cosa concreta. Todo lo que firme con ella va a decir que fue bajo su autorización."
-        acciones={
-          <>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setAbierto(false)
-                limpiar()
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button
-              disabled={
-                conceder.isPending ||
-                !forma.usuario_id ||
-                forma.acciones.length === 0 ||
-                forma.motivo.trim().length < 5
-              }
-              onClick={guardar}
-            >
-              {forma.acciones.length > 1
-                ? `Extender las ${forma.acciones.length}`
-                : 'Extender'}
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-4">
-          <SelectBuscable
-            label="Usuario"
-            opciones={opcionesPersona}
-            valor={forma.usuario_id}
-            onCambio={(v: string) => setForma((f) => ({ ...f, usuario_id: v }))}
-            vacio="Seleccione a la persona"
-          />
-
-          {/*
-            DE UNA EN UNA A MARCAR VARIAS.
-
-            Antes era un buscador de una sola casilla, y prestarle cuatro cosas
-            a la misma persona eran cuatro pasadas por el mismo formulario,
-            escribiendo la misma justificación cada vez.
-
-            Se conserva el buscador —con ciento cincuenta casillas hace falta—
-            pero ahora filtra una lista de marcar, agrupada por módulo.
-          */}
-          <div>
-            <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-              <span className="text-ink/80 text-sm font-medium">Permisos</span>
-              <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                {visibles.length > 0 && !todasMarcadas ? (
-                  <button
-                    type="button"
-                    className="text-royal-600 dark:text-royal-300 text-xs underline"
-                    onClick={() => marcarVarias(visibles, true)}
-                  >
-                    {busca.trim()
-                      ? `Marcar las ${visibles.length} que se ven`
-                      : `Marcar todas (${visibles.length})`}
-                  </button>
-                ) : null}
-                {forma.acciones.length > 0 ? (
-                  <button
-                    type="button"
-                    className="text-royal-600 dark:text-royal-300 text-xs underline"
-                    onClick={() => setForma((f) => ({ ...f, acciones: [] }))}
-                  >
-                    {forma.acciones.length} marcada{forma.acciones.length === 1 ? '' : 's'} ·
-                    quitar todas
-                  </button>
-                ) : null}
-              </span>
-            </div>
-
-            <Input
-              label="Buscar"
-              ocultarEtiqueta
-              icon={<Search />}
-              placeholder="Filtre por casilla o por módulo"
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-            />
-
-            {/*
-              LOS MÓDULOS, PLEGADOS.
-
-              Son dieciocho módulos y unas 180 casillas: abiertos de golpe, la
-              caja era un rollo en el que había que desplazarse a ciegas. Cada
-              módulo dice cuántas tiene marcadas de cuántas, se abre el que se
-              va a repartir, y «todo el módulo» sigue a mano sin abrirlo.
-              Buscando, se abre lo que coincide: quien escribe «aprobar» quiere
-              ver las casillas, no los módulos que las contienen.
-            */}
-            <div className="border-hairline rounded-card divide-hairline mt-2 max-h-72 divide-y overflow-y-auto border">
-              {porModulo.length === 0 ? (
-                <p className="text-ink/45 p-3 text-sm">Sin resultados.</p>
-              ) : (
-                porModulo.map(([modulo, lista]) => {
-                  const codigos = lista.map((a) => a.codigo)
-                  const cuantas = codigos.filter((c) => forma.acciones.includes(c)).length
-                  const todoElModulo = cuantas === codigos.length
-                  const desplegado = busca.trim() !== '' || modulosAbiertos.includes(modulo)
-                  return (
-                    <div key={modulo}>
-                      <div className="bg-canvas flex items-center justify-between gap-2 px-3 py-1.5">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setModulosAbiertos((xs) =>
-                              xs.includes(modulo) ? xs.filter((x) => x !== modulo) : [...xs, modulo],
-                            )
-                          }
-                          aria-expanded={desplegado}
-                          className="text-ink/60 hover:text-ink/85 flex min-w-0 items-center gap-1.5"
-                        >
-                          <ChevronRight
-                            className={cn(
-                              'size-3.5 shrink-0 transition-transform',
-                              desplegado && 'rotate-90',
-                            )}
-                          />
-                          <span className="text-2xs truncate tracking-wide uppercase">{modulo}</span>
-                          <span
-                            className={cn(
-                              'text-2xs tabular shrink-0',
-                              cuantas > 0 ? 'text-royal-600 dark:text-royal-300' : 'text-ink/35',
-                            )}
-                          >
-                            {cuantas}/{codigos.length}
-                          </span>
-                        </button>
-                        <button
-                          type="button"
-                          className="text-royal-600 dark:text-royal-300 text-2xs shrink-0 underline"
-                          onClick={() => marcarVarias(codigos, !todoElModulo)}
-                        >
-                          {todoElModulo ? 'quitar el módulo' : 'todo el módulo'}
-                        </button>
-                      </div>
-                      {desplegado
-                        ? lista.map((a) => (
-                            <label
-                              key={a.codigo}
-                              className="hover:bg-ink/4 flex cursor-pointer items-start gap-2.5 px-3 py-2 pl-8"
-                            >
-                              <input
-                                type="checkbox"
-                                className="accent-royal-600 mt-0.5 size-4 shrink-0"
-                                checked={forma.acciones.includes(a.codigo)}
-                                onChange={() => marcar(a.codigo)}
-                              />
-                              <span className="min-w-0">
-                                <span className="text-ink/85 block text-sm">{a.nombre}</span>
-                                {a.dice ? (
-                                  <span className="text-ink/45 block text-xs">{a.dice}</span>
-                                ) : null}
-                              </span>
-                            </label>
-                          ))
-                        : null}
-                    </div>
-                  )
-                })
-              )}
-            </div>
-            <p className="text-ink/45 mt-1.5 text-xs">
-              Solo puede extender lo que usted mismo puede hacer. La misma justificación vale para
-              todas las que marque; las que ya tenga por su rol se saltan solas.
-            </p>
-          </div>
-
-          {/*
-            Lo que la base dejó fuera. No es un error —las demás sí entraron—
-            pero tampoco se puede callar: son casillas que alguien creyó haber
-            extendido.
-          */}
-          {omitidas.length > 0 ? (
-            <div className="border-warning/30 bg-warning-soft rounded-card border p-3">
-              <p className="text-ink/80 text-sm font-medium">
-                {omitidas.length === 1
-                  ? 'Una no entró:'
-                  : `${omitidas.length} no entraron:`}
-              </p>
-              {/*
-                Con «marcar todas» las que ya tenía por su rol son decenas, y
-                listarlas una a una taparía las que de verdad hay que leer.
-              */}
-              {porSuRol.length > 0 ? (
-                <p className="text-ink/70 mt-1.5 text-xs">
-                  {porSuRol.length === 1
-                    ? 'Una ya la tenía por su rol'
-                    : `${porSuRol.length} ya las tenía por su rol`}
-                  : no hacía falta extenderlas.
-                </p>
-              ) : null}
-              {otrasOmitidas.length > 0 ? (
-                <ul className="text-ink/70 mt-1.5 max-h-40 space-y-1 overflow-y-auto text-xs">
-                  {otrasOmitidas.map((o) => (
-                    <li key={o.accion}>
-                      <strong>{o.accion}</strong> — {o.motivo}
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </div>
-          ) : null}
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Input
-              label="Desde"
-              type="date"
-              value={forma.desde}
-              onChange={(e) => setForma((f) => ({ ...f, desde: e.target.value }))}
-              hint="Vacío, desde hoy."
-            />
-            <Input
-              label="Hasta"
-              type="date"
-              value={forma.hasta}
-              onChange={(e) => setForma((f) => ({ ...f, hasta: e.target.value }))}
-              hint="Vacío, indefinida."
-            />
-          </div>
-
-          <Textarea
-            label="Justificación"
-            value={forma.motivo}
-            onChange={(e) => setForma((f) => ({ ...f, motivo: e.target.value }))}
-            rows={3}
-            hint="Por qué hace falta."
-          />
-
-          {error ? <ErrorDeCarga error={new Error(error)} /> : null}
-        </div>
-      </Modal>
-
-      {/* ---------------- Retirar ---------------- */}
-      <Modal
-        abierto={!!retirando}
-        onCerrar={() => setRetirando(null)}
-        titulo="Retirar el permiso"
-        descripcion={
-          retirando
-            ? `${retirando.a_nombre} deja de poder «${retirando.accion_nombre}» en el acto. Lo que ya firmó con este permiso no se toca: sigue diciendo que fue bajo su autorización.`
-            : ''
-        }
-        acciones={
-          <>
-            <Button variant="ghost" onClick={() => setRetirando(null)}>
-              Cancelar
-            </Button>
-            <Button
-              className="bg-danger hover:bg-danger/90"
-              disabled={retirar.isPending}
-              onClick={() =>
-                retirando &&
-                retirar.mutate(
-                  { id: retirando.id, motivo: motivoRetiro },
-                  {
-                    onSuccess: () => setRetirando(null),
-                    onError: (e: Error) => setError(e.message),
-                  },
-                )
-              }
-            >
-              Retirar
-            </Button>
-          </>
-        }
-      >
-        <Textarea
-          label="Motivo"
-          value={motivoRetiro}
-          onChange={(e) => setMotivoRetiro(e.target.value)}
-          rows={2}
-        />
-      </Modal>
-    </>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Restricciones: lo que se le quita a una persona aunque su rol se lo dé
-//
-// Christopher, 16/09/2026, al repartir quién aprueba: hay quien solicita
-// salidas, compras y ventas sin poder aprobarlas, y eso «se debe manejar tal
-// como se intenta, mediante permisos». Y enseguida: «así como hay permisos
-// extendidos, deberían haber permisos reducidos o revocados».
-//
-// Es la otra cara de la pestaña de arriba, y tiene su misma forma a propósito:
-// quien sabe extender sabe restringir. La diferencia está en qué se ofrece:
-// solo las casillas que la base pregunta por su nombre, porque una restricción
-// que no frena es peor que ninguna.
-// ---------------------------------------------------------------------------
-
-function PestanaRestricciones({ gestionable }: { gestionable: boolean }) {
-  const restricciones = useRestricciones()
-  const usuarios = useUsuarios()
-  const acciones = useAcciones()
-  const restringibles = useAccionesRestringibles()
-  const restringir = useRestringirVarias()
-  const levantar = useLevantarRestriccion()
-
-  const [abierto, setAbierto] = useState(false)
-  const [levantando, setLevantando] = useState<RestriccionDelSistema | null>(null)
-  const [motivoLevantar, setMotivoLevantar] = useState('')
-  const [errorLevantar, setErrorLevantar] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [forma, setForma] = useState({
-    usuario_id: '',
-    acciones: [] as string[],
-    motivo: '',
-    desde: '',
-    hasta: '',
-  })
-  const [busca, setBusca] = useState('')
-  /** El buscador de la lista, que no es el del modal: aquí se busca lo ya quitado. */
-  const [filtro, setFiltro] = useState('')
-  /** Qué personas están desplegadas. Todas empiezan recogidas. */
-  const [abiertas, setAbiertas] = useState<string[]>([])
-  /** Qué módulos están abiertos en el catálogo del modal. */
-  const [modulosAbiertos, setModulosAbiertos] = useState<string[]>([])
-  const [omitidas, setOmitidas] = useState<{ accion: string; motivo: string }[]>([])
-
-  const limpiar = () => {
-    setForma({ usuario_id: '', acciones: [], motivo: '', desde: '', hasta: '' })
-    setBusca('')
-    setError(null)
-    setOmitidas([])
-  }
-
-  const marcar = (codigo: string) =>
-    setForma((f) => ({
-      ...f,
-      acciones: f.acciones.includes(codigo)
-        ? f.acciones.filter((x) => x !== codigo)
-        : [...f.acciones, codigo],
-    }))
-
-  /*
-    Solo las que la base pregunta por su nombre, agrupadas por módulo.
-
-    Las demás las decide el nivel que el rol da en el módulo. Ofrecerlas sería
-    dejar que alguien restrinja algo que la base sigue permitiendo y se vaya
-    creyendo que quedó cerrado.
-  */
-  const porModulo = useMemo(() => {
-    const codigos = new Set(restringibles.data ?? [])
-    const q = busca.trim().toLowerCase()
-    const mapa = new Map<string, AccionDelSistema[]>()
-    for (const a of acciones.data ?? []) {
-      if (!codigos.has(a.codigo)) continue
-      const cabe =
-        !q ||
-        a.nombre.toLowerCase().includes(q) ||
-        (a.modulo_nombre ?? '').toLowerCase().includes(q) ||
-        (a.dice ?? '').toLowerCase().includes(q)
-      if (!cabe) continue
-      const clave = a.modulo_nombre ?? a.modulo
-      mapa.set(clave, [...(mapa.get(clave) ?? []), a])
-    }
-    return [...mapa.entries()]
-  }, [acciones.data, restringibles.data, busca])
-
-  // Al administrador no se le restringe nada, así que ni se ofrece.
-  const opcionesPersona = (usuarios.data ?? [])
-    .filter((u) => u.activo && !u.roles.includes('ADMIN'))
-    .map((u) => ({
-      valor: u.id,
-      etiqueta: u.nombre,
-      detalle: u.cargo ?? u.usuario,
-    }))
-
-  const guardar = () => {
-    setError(null)
-    setOmitidas([])
-    restringir.mutate(
-      {
-        usuario_id: forma.usuario_id,
-        acciones: forma.acciones,
-        motivo: forma.motivo,
-        desde: forma.desde || null,
-        hasta: forma.hasta || null,
-      },
-      {
-        onSuccess: (r) => {
-          // Igual que al extender: si alguna no entró, el modal no se cierra y
-          // dice cuál y por qué.
-          if (r?.omitidas?.length) {
-            setOmitidas(r.omitidas)
-            setForma((f) => ({ ...f, acciones: [] }))
-            return
-          }
-          setAbierto(false)
-          limpiar()
-        },
-        onError: (e: Error) => setError(e.message),
-      },
-    )
-  }
-
-  if (restricciones.isPending) return <Cargando />
-  if (restricciones.error) return <ErrorDeCarga error={restricciones.error} />
-
-  /*
-    BUSCAR ENTRE LO YA QUITADO, igual que entre lo ya extendido: Christopher,
-    05/10/2026, «lo que hiciste en permisos extendidos lo haces en permisos
-    restringidos». Mismos campos: persona, casilla, módulo, quién la puso y el
-    motivo escrito.
-  */
-  const filas = restricciones.data ?? []
-  const q = filtro.trim().toLowerCase()
-  const coinciden = q
-    ? filas.filter((r) =>
-        [r.a_nombre, r.accion_nombre, r.modulo_nombre, r.por_nombre, r.motivo].some((t) =>
-          (t ?? '').toLowerCase().includes(q),
-        ),
-      )
-    : filas
-  const vivas = coinciden.filter((r) => r.vigente)
-  const pasadas = coinciden.filter((r) => !r.vigente)
-
-  // Agrupado por persona y recogido, como los extendidos: la misma pieza y la
-  // misma lectura. Primero quien tiene alguna vigente.
-  const porPersona = new Map<string, RestriccionDelSistema[]>()
-  for (const r of [...vivas, ...pasadas]) {
-    porPersona.set(r.a_usuario, [...(porPersona.get(r.a_usuario) ?? []), r])
-  }
-  // Buscar abre lo que encuentra, y con una sola persona no hay nada que recoger.
-  const abrirTodas = q !== '' || porPersona.size === 1
-
-  const estado = (r: RestriccionDelSistema) =>
-    r.vigente
-      ? { texto: 'Vigente', tono: 'warning' as const }
-      : r.levantada_en
-        ? { texto: 'Levantada', tono: 'neutral' as const }
-        : r.a_es_administrador
-          ? { texto: 'No aplica: es administrador', tono: 'neutral' as const }
-          : { texto: 'Fuera de fecha', tono: 'neutral' as const }
-
-  return (
-    <>
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <p className="text-ink/60 max-w-[62ch] text-sm">
-          Algo que el rol de una persona le da y ella no debe poder hacer: solicitar sin aprobar,
-          por ejemplo. Se le quita a ella sola, por un tiempo o sin fecha de fin, y manda también
-          sobre lo que se le haya extendido.
-        </p>
-        {gestionable ? (
-          <Button icon={<Plus />} onClick={() => setAbierto(true)}>
-            Restringir un permiso
-          </Button>
-        ) : null}
-      </div>
-
-      {filas.length > 0 ? (
-        <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-          <div className="min-w-[16rem] flex-1">
-            <Input
-              label="Buscar"
-              ocultarEtiqueta
-              icon={<Search />}
-              placeholder="Por persona, casilla, módulo, quién la puso o el motivo"
-              value={filtro}
-              onChange={(e) => setFiltro(e.target.value)}
-            />
-          </div>
-          <span className="text-ink/45 text-xs">
-            {q ? `${coinciden.length} de ${filas.length}` : `${filas.length} en total`}
-            {vivas.length > 0 ? ` · ${vivas.length} vigente${vivas.length === 1 ? '' : 's'}` : ''}
-          </span>
-        </div>
-      ) : null}
-
-      {filas.length === 0 ? (
-        <Vacio
-          titulo="Sin permisos restringidos"
-          descripcion="Un permiso restringido retira a una persona algo que su rol incluye, con su justificación. El resto del rol no se ve afectado."
-        />
-      ) : coinciden.length === 0 ? (
-        <p className="text-ink/45 py-8 text-center text-sm">
-          Ningún permiso restringido coincide con «{filtro.trim()}».
-        </p>
-      ) : (
-        <div className="space-y-2.5">
-          {[...porPersona.values()].map((suyas) => {
-            const vigentes = suyas.filter((r) => r.vigente).length
-            const abierta = abrirTodas || abiertas.includes(suyas[0].a_usuario)
-            return (
-              <FichaDePersona
-                key={suyas[0].a_usuario}
-                nombre={suyas[0].a_nombre}
-                chip={
-                  vigentes > 0
-                    ? { texto: `${vigentes} vigente${vigentes === 1 ? '' : 's'}`, tono: 'warning' }
-                    : { texto: 'Nada vigente', tono: 'neutral' }
-                }
-                modulos={porModuloDe(suyas).map((g) => g.nombre)}
-                cuantos={suyas.length}
-                abierta={abierta}
-                fija={abrirTodas}
-                onAlternar={() =>
-                  setAbiertas((xs) =>
-                    xs.includes(suyas[0].a_usuario)
-                      ? xs.filter((x) => x !== suyas[0].a_usuario)
-                      : [...xs, suyas[0].a_usuario],
-                  )
-                }
-              >
-                {porModuloDe(suyas).map((g) => (
-                  <div key={g.codigo}>
-                    <p className="text-ink/45 bg-ink/2 text-2xs px-4 py-1.5 font-medium tracking-wider uppercase">
-                      {g.nombre}
-                    </p>
-                    <ul className="divide-hairline divide-y">
-                      {g.filas.map((r) => {
-                        const e = estado(r)
-                        return (
-                          <li key={r.id} className={cn('px-4 py-2.5', !r.vigente && 'opacity-60')}>
-                            <div className="flex flex-wrap items-start justify-between gap-2">
-                              <div className="min-w-0 flex-1">
-                                <p className="text-ink/80 text-sm">
-                                  No puede: {r.accion_nombre}
-                                  {!r.vigente ? (
-                                    <span className="text-ink/45 ml-2 text-xs">{e.texto}</span>
-                                  ) : null}
-                                </p>
-                                <p className="text-ink/60 mt-1 text-sm italic">«{r.motivo}»</p>
-                                <p className="text-ink/50 mt-1 text-xs">
-                                  Restringida por{' '}
-                                  <span className="text-ink/70">{r.por_nombre}</span>
-                                  {' · desde '}
-                                  {fecha(r.desde)}
-                                  {r.hasta ? ` hasta ${fecha(r.hasta)}` : ' · sin fecha de fin'}
-                                </p>
-                                {r.levantada_en ? (
-                                  <p className="text-ink/45 mt-1 text-xs">
-                                    Levantada por {r.levantada_nombre ?? '—'} el{' '}
-                                    {fecha(r.levantada_en)}
-                                    {r.levantada_motivo ? ` · ${r.levantada_motivo}` : ''}
-                                  </p>
-                                ) : null}
-                              </div>
-                              {gestionable && !r.levantada_en ? (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="shrink-0"
-                                  onClick={() => {
-                                    setLevantando(r)
-                                    setMotivoLevantar('')
-                                    setErrorLevantar(null)
-                                  }}
-                                >
-                                  Levantar
-                                </Button>
-                              ) : null}
-                            </div>
-                          </li>
-                        )
-                      })}
-                    </ul>
-                  </div>
-                ))}
-              </FichaDePersona>
-            )
-          })}
-        </div>
-      )}
-
-      {/* ---------------- Restringir ---------------- */}
-      <Modal
-        abierto={abierto}
-        onCerrar={() => {
-          setAbierto(false)
-          limpiar()
-        }}
-        titulo="Restringir un permiso"
-        descripcion="Se le quita a una persona concreta algo que su rol le daría. Si lo tenía extendido, se le retira en el mismo paso."
-        acciones={
-          <>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setAbierto(false)
-                limpiar()
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button
-              disabled={
-                restringir.isPending ||
-                !forma.usuario_id ||
-                forma.acciones.length === 0 ||
-                forma.motivo.trim().length < 5
-              }
-              onClick={guardar}
-            >
-              {forma.acciones.length > 1
-                ? `Restringir las ${forma.acciones.length}`
-                : 'Restringir'}
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-4">
-          <SelectBuscable
-            label="Usuario"
-            opciones={opcionesPersona}
-            valor={forma.usuario_id}
-            onCambio={(v: string) => setForma((f) => ({ ...f, usuario_id: v }))}
-            vacio="Seleccione a la persona"
-            hint="Los administradores no aparecen: a ellos no se les restringe nada. Si no deben poder algo, se les quita el rol."
-          />
-
-          <div>
-            <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-              <span className="text-ink/80 text-sm font-medium">Permisos</span>
-              {forma.acciones.length > 0 ? (
-                <button
-                  type="button"
-                  className="text-royal-600 dark:text-royal-300 text-xs underline"
-                  onClick={() => setForma((f) => ({ ...f, acciones: [] }))}
-                >
-                  {forma.acciones.length} marcada{forma.acciones.length === 1 ? '' : 's'} · quitar
-                  todas
-                </button>
-              ) : null}
-            </div>
-
-            <Input
-              label="Buscar"
-              ocultarEtiqueta
-              icon={<Search />}
-              placeholder="Filtre por casilla o por módulo"
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-            />
-
-            {/* Plegado por módulo, igual que al extender: aquí son menos
-                casillas —solo las que la base pregunta por su nombre— pero se
-                lee con la misma cabeza. */}
-            <div className="border-hairline rounded-card divide-hairline mt-2 max-h-72 divide-y overflow-y-auto border">
-              {restringibles.isPending || acciones.isPending ? (
-                <p className="text-ink/45 p-3 text-sm">Cargando las casillas…</p>
-              ) : porModulo.length === 0 ? (
-                <p className="text-ink/45 p-3 text-sm">Sin resultados.</p>
-              ) : (
-                porModulo.map(([modulo, lista]) => {
-                  const cuantas = lista.filter((a) => forma.acciones.includes(a.codigo)).length
-                  const desplegado = busca.trim() !== '' || modulosAbiertos.includes(modulo)
-                  return (
-                    <div key={modulo}>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setModulosAbiertos((xs) =>
-                            xs.includes(modulo) ? xs.filter((x) => x !== modulo) : [...xs, modulo],
-                          )
-                        }
-                        aria-expanded={desplegado}
-                        className="bg-canvas text-ink/60 hover:text-ink/85 flex w-full items-center gap-1.5 px-3 py-1.5"
-                      >
-                        <ChevronRight
-                          className={cn(
-                            'size-3.5 shrink-0 transition-transform',
-                            desplegado && 'rotate-90',
-                          )}
-                        />
-                        <span className="text-2xs truncate tracking-wide uppercase">{modulo}</span>
-                        <span
-                          className={cn(
-                            'text-2xs tabular shrink-0',
-                            cuantas > 0 ? 'text-royal-600 dark:text-royal-300' : 'text-ink/35',
-                          )}
-                        >
-                          {cuantas}/{lista.length}
-                        </span>
-                      </button>
-                      {desplegado
-                        ? lista.map((a) => (
-                            <label
-                              key={a.codigo}
-                              className="hover:bg-ink/4 flex cursor-pointer items-start gap-2.5 px-3 py-2 pl-8"
-                            >
-                              <input
-                                type="checkbox"
-                                className="accent-royal-600 mt-0.5 size-4 shrink-0"
-                                checked={forma.acciones.includes(a.codigo)}
-                                onChange={() => marcar(a.codigo)}
-                              />
-                              <span className="min-w-0">
-                                <span className="text-ink/85 block text-sm">{a.nombre}</span>
-                                {a.dice ? (
-                                  <span className="text-ink/45 block text-xs">{a.dice}</span>
-                                ) : null}
-                              </span>
-                            </label>
-                          ))
-                        : null}
-                    </div>
-                  )
-                })
-              )}
-            </div>
-            <p className="text-ink/45 mt-1.5 text-xs">
-              Aparecen las casillas que el sistema comprueba una por una. Lo demás depende del nivel
-              que el rol da en cada módulo: para quitarlo, se le cambia el rol. La misma
-              justificación vale para todas las que marque.
-            </p>
-          </div>
-
-          {omitidas.length > 0 ? (
-            <div className="border-warning/30 bg-warning-soft rounded-card border p-3">
-              <p className="text-ink/80 text-sm font-medium">
-                {omitidas.length === 1 ? 'Una no entró:' : `${omitidas.length} no entraron:`}
-              </p>
-              <ul className="text-ink/70 mt-1.5 space-y-1 text-xs">
-                {omitidas.map((o) => (
-                  <li key={o.accion}>
-                    <strong>{o.accion}</strong> — {o.motivo}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Input
-              label="Desde"
-              type="date"
-              value={forma.desde}
-              onChange={(e) => setForma((f) => ({ ...f, desde: e.target.value }))}
-              hint="Vacío, desde hoy."
-            />
-            <Input
-              label="Hasta"
-              type="date"
-              value={forma.hasta}
-              onChange={(e) => setForma((f) => ({ ...f, hasta: e.target.value }))}
-              hint="Vacío, sin fecha de fin."
-            />
-          </div>
-
-          <Textarea
-            label="Justificación"
-            value={forma.motivo}
-            onChange={(e) => setForma((f) => ({ ...f, motivo: e.target.value }))}
-            rows={3}
-            hint="Por qué no debe poder hacerlo. Lo lee también la propia persona."
-          />
-
-          {error ? <ErrorDeCarga error={new Error(error)} /> : null}
-        </div>
-      </Modal>
-
-      {/* ---------------- Levantar ---------------- */}
-      <Modal
-        abierto={!!levantando}
-        onCerrar={() => setLevantando(null)}
-        titulo="Levantar la restricción"
-        descripcion={
-          levantando
-            ? `${levantando.a_nombre} vuelve a poder «${levantando.accion_nombre}» si su rol o un permiso extendido se lo dan.`
-            : ''
-        }
-        acciones={
-          <>
-            <Button variant="ghost" onClick={() => setLevantando(null)}>
-              Cancelar
-            </Button>
-            <Button
-              disabled={levantar.isPending || motivoLevantar.trim().length < 5}
-              onClick={() =>
-                levantando &&
-                levantar.mutate(
-                  { id: levantando.id, motivo: motivoLevantar },
-                  {
-                    onSuccess: () => setLevantando(null),
-                    onError: (e: Error) => setErrorLevantar(e.message),
-                  },
-                )
-              }
-            >
-              Levantar
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-3">
-          <Textarea
-            label="Motivo"
-            value={motivoLevantar}
-            onChange={(e) => setMotivoLevantar(e.target.value)}
-            rows={2}
-            hint="Obligatorio: se restringió con una razón, y devolverlo también la lleva."
-          />
-          {errorLevantar ? <ErrorDeCarga error={new Error(errorLevantar)} /> : null}
-        </div>
-      </Modal>
-    </>
-  )
-}
-
-// ---------------------------------------------------------------------------
 // Pantalla
 // ---------------------------------------------------------------------------
 
 export function Usuarios() {
-  const [pestana, setPestana] = useState<
-    'usuarios' | 'roles' | 'autorizaciones' | 'restricciones'
-  >('usuarios')
+  const [pestana, setPestana] = useState<'usuarios' | 'roles'>('usuarios')
   const { puede, isPending } = useMisRoles()
 
   // Administrar usuarios exige ADMIN en la base. Sin él la pantalla se lee,
@@ -3092,17 +1934,10 @@ export function Usuarios() {
   const editable = puede('ADMIN')
 
   /*
-    Las autorizaciones y las restricciones las manejan administración Y la
-    gerencia.
-
-    Es lo único de esta pantalla que el gerente general puede usar de verdad: la
-    matriz le da el módulo entero, pero las funciones de usuarios y roles exigen
-    el rol de administrador y le contestan que no. Aquí no, porque
-    `autorizar_accion` y `restringir_accion` admiten a los dos — y tiene
-    sentido, ya que la autoridad que se invoca es suya.
+    Ya no hay «Permisos extendidos» ni «Permisos restringidos» (la dueña,
+    09/11/2026): «todo se manejará por la matriz». Lo que una persona puede
+    hacer es la matriz de su único rol.
   */
-  const gestionaAutorizaciones = puede('ADMIN', 'GERENTE_GENERAL')
-
   return (
     <>
       <PageHeader
@@ -3125,8 +1960,6 @@ export function Usuarios() {
           [
             { id: 'usuarios', etiqueta: 'Usuarios' },
             { id: 'roles', etiqueta: 'Roles y permisos' },
-            { id: 'autorizaciones', etiqueta: 'Permisos extendidos' },
-            { id: 'restricciones', etiqueta: 'Permisos restringidos' },
           ] as const
         ).map((p) => (
           <button
@@ -3148,12 +1981,8 @@ export function Usuarios() {
 
       {pestana === 'usuarios' ? (
         <PestanaUsuarios editable={editable} />
-      ) : pestana === 'roles' ? (
-        <PestanaRoles editable={editable} />
-      ) : pestana === 'autorizaciones' ? (
-        <PestanaAutorizaciones gestionable={gestionaAutorizaciones} />
       ) : (
-        <PestanaRestricciones gestionable={gestionaAutorizaciones} />
+        <PestanaRoles editable={editable} />
       )}
     </>
   )

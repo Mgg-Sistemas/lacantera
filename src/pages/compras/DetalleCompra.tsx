@@ -72,12 +72,11 @@ import { ModalCambiarMetodo } from './ModalCambiarMetodo'
 import { ModalRecepcion } from './ModalRecepcion'
 import { ModalEditarOrden } from './ModalEditarOrden'
 import { PapelesDeCompra } from './PapelesDeCompra'
-import { usePapelesDeCompra, useRespaldarAutorizacion } from '@/lib/api/papelesDeCompra'
+import { usePapelesDeCompra } from '@/lib/api/papelesDeCompra'
 import { useFacturasDeOrden } from '@/lib/api/facturasCompra'
-import { SoltarArchivo } from '@/components/SoltarArchivo'
 import { ModalRegistrarPago } from '@/pages/tesoreria/ModalRegistrarPago'
 import { usePerfiles, useMisRoles, useArticulos, CONDICIONES_PAGO } from '@/lib/api/catalogo'
-import { useMisAcciones, useMisAutorizaciones } from '@/lib/api/usuarios'
+import { useMisAcciones } from '@/lib/api/usuarios'
 import {
   ordenVigente,
   useAprobarCompra,
@@ -885,8 +884,6 @@ export function DetalleCompra() {
   */
   const [leerOrdenEn, setLeerOrdenEn] = useState('')
   const [rehaciendoOrden, setRehaciendoOrden] = useState(false)
-  // Se marca a mano cada vez: no se recuerda de una aprobacion a la siguiente.
-  const [bajoAutorizacion, setBajoAutorizacion] = useState(false)
   /*
     La firma de quien aprueba, marcada de entrada: «todo pdf creado por defecto
     debe salir como mínimo la firma de quien autoriza». Se desmarca si no se
@@ -902,7 +899,6 @@ export function DetalleCompra() {
     camino.
   */
   const [cualAprobar, setCualAprobar] = useState<number | null>(null)
-  const [respaldo, setRespaldo] = useState<File | null>(null)
   /*
     UNA COMPRA DEL HISTÓRICO SE MIRA, NO SE TOCA.
 
@@ -917,7 +913,6 @@ export function DetalleCompra() {
   const { puede: tieneAccion } = useMisAcciones()
   const puede = (...roles: Parameters<typeof tieneRol>) => !enHistorico && tieneRol(...roles)
   const alcanza = (accion: string) => !enHistorico && tieneAccion(accion)
-  const misAutorizaciones = useMisAutorizaciones()
 
   /*
     FLUJO NUEVO (06/11/2026). Aprueba solo quien está en la lista de
@@ -972,7 +967,6 @@ export function DetalleCompra() {
   const declarar = useDeclararComprobante()
   const eliminarCotizacion = useEliminarCotizacion()
   const aprobar = useAprobarCompra()
-  const respaldar = useRespaldarAutorizacion()
   const devolver = useDevolverACotizacion()
   const devolverPago = useDevolverInstruccion()
   const cancelarOrden = useCancelarOrden()
@@ -1488,7 +1482,6 @@ export function DetalleCompra() {
     «Devolver a compras» y la base le decía que no.
   */
   const puedeDevolver = alcanza('COMPRAS.DEVOLVER_A_COTIZACION')
-  const autorizaAprobar = misAutorizaciones.de('COMPRAS.APROBAR_COMPRA')
   const puedeCambiarMetodo = alcanza('COMPRAS.CAMBIAR_METODO_PAGO')
 
   return (
@@ -2345,64 +2338,6 @@ export function DetalleCompra() {
                         .
                       </p>
                     )}
-                    {/*
-                      El check que pidio la lider, y solo cuando es verdad.
-
-                      A quien le compete aprobar no se le pide que declare nada.
-                      A quien lo hace con un permiso extendido si, y con el
-                      nombre de quien se lo extendio delante: es lo que va a
-                      quedar impreso en la orden, y quien lo firma tiene que
-                      haberlo leido antes de pulsar.
-                    */}
-                    {autorizaAprobar ? (
-                      <label
-                        className={cn(
-                          'mb-3 flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm',
-                          bajoAutorizacion ? 'border-warning/30 bg-warning-soft' : 'border-hairline',
-                        )}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={bajoAutorizacion}
-                          onChange={(e) => setBajoAutorizacion(e.target.checked)}
-                          className="accent-royal-600 mt-0.5 size-4 shrink-0"
-                        />
-                        <span className="text-ink/80">
-                          Autorizada bajo autorización del gerente general
-                          <span className="text-ink/50 mt-0.5 block text-xs">
-                            {autorizaAprobar.por_nombre} se lo autorizó
-                            {autorizaAprobar.hasta ? ` hasta el ${fecha(autorizaAprobar.hasta)}` : ''}
-                            . Va a quedar escrito en la orden.
-                          </span>
-                        </span>
-                      </label>
-                    ) : null}
-                    {/*
-                      El respaldo, y SOLO para quien aprueba con permiso
-                      extendido.
-
-                      Lo acotó Christopher: a quien le compete aprobar por su
-                      puesto no se le pide que certifique nada, así que el campo
-                      no existe para él. Aparece donde la acción la toma alguien
-                      con un permiso especial, que es de quien puede hacer falta
-                      saber en qué se apoyó.
-
-                      Es opcional y por eso no bloquea el botón. Se sube DESPUÉS
-                      de aprobar porque los papeles cuelgan de la orden y la
-                      orden nace al aprobar: antes no hay dónde colgarlo.
-                    */}
-                    {autorizaAprobar ? (
-                      <SoltarArchivo
-                        valor={respaldo}
-                        onCambio={setRespaldo}
-                        acepta="application/pdf,image/*"
-                        tope={10 * 1024 * 1024}
-                        etiqueta="Respaldo de la autorización"
-                        pista="La captura de WhatsApp, el correo o el PDF donde el gerente autorizó esta compra. PDF o foto, hasta 10 MB."
-                        deshabilitado={aprobar.isPending || respaldar.isPending}
-                        className="mb-3"
-                      />
-                    ) : null}
                     {tengoFirma ? (
                       <label className="border-hairline mb-3 flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm">
                         <input
@@ -2476,8 +2411,6 @@ export function DetalleCompra() {
                       icon={<BadgeCheck />}
                       disabled={
                         aprobarOrden.isPending ||
-                        respaldar.isPending ||
-                        (!!autorizaAprobar && !bajoAutorizacion) ||
                         // Con varias propuestas no se aprueba a ciegas. La base
                         // lo rechaza igual; esto evita el viaje.
                         (propuestas.length > 1 && cualAprobar === null) ||
@@ -2486,7 +2419,7 @@ export function DetalleCompra() {
                       }
                       onClick={() => {
                         void (async () => {
-                          const ordenId = await aprobarOrden.mutateAsync({
+                          await aprobarOrden.mutateAsync({
                             solicitud_id: compra.id,
                             cotizacion_id: cualAprobar,
                             con_firma: tengoFirma && conMiFirma,
@@ -2507,16 +2440,6 @@ export function DetalleCompra() {
                             setAvisoPendiente({ estado: CUENTA_ABIERTA, referencia: '' })
                           }
                           setDecision(DECISION_VACIA)
-                          /*
-                            Si el archivo falla, la compra YA está aprobada: eso
-                            no se deshace y no se disimula. Se dice, y el papel
-                            se sube desde la tarjeta de papeles de la orden, que
-                            ya se lo ofrece a quien aprobó con permiso especial.
-                          */
-                          if (respaldo && ordenId) {
-                            await respaldar.mutateAsync({ orden_id: ordenId, archivo: respaldo })
-                            setRespaldo(null)
-                          }
                         })()
                       }}
                     >
@@ -2918,24 +2841,6 @@ export function DetalleCompra() {
             {enviar.error ? <ErrorDeCarga error={enviar.error} className="mt-3" /> : null}
             {confirmar.error ? <ErrorDeCarga error={confirmar.error} className="mt-3" /> : null}
             {aprobar.error ? <ErrorDeCarga error={aprobar.error} className="mt-3" /> : null}
-            {/*
-              El respaldo falla APARTE de la aprobación, y se dice aparte.
-
-              Ver solo el error del archivo, con el botón de aprobar ya
-              desaparecido, deja a quien lo lee sin saber si la compra se aprobó
-              o no. Se aprobó: eso va primero, y el fallo del papel después, con
-              dónde volver a intentarlo.
-            */}
-            {respaldar.error ? (
-              <div className="mt-3">
-                <p className="text-ink/70 mb-2 text-sm">
-                  La compra <strong className="text-ink/85">quedó aprobada</strong>, pero el
-                  respaldo no llegó a subir. Vuelva a subirlo en «Papeles recibidos», dentro de la
-                  orden.
-                </p>
-                <ErrorDeCarga error={respaldar.error} />
-              </div>
-            ) : null}
           </Card>
 
           <Card className="order-last lg:order-none">

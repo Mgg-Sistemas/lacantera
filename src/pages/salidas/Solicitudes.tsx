@@ -462,14 +462,6 @@ export function Solicitudes() {
             </Ayuda>
           </div>
 
-          {/* Se dice, en vez de dejar que lo descubra buscando un botón que no está. */}
-          {comoApruebo?.restringida ? (
-            <p className="text-ink/60 mb-3 text-sm">
-              Aprobar salidas se le restringió: puede solicitarlas y cancelar las suyas, y las aprueba
-              quien tenga ese permiso.
-            </p>
-          ) : null}
-
           {/* Filtros encima del tablero (MGG) y el conmutador «▦ Kanban / ☰ Lista». */}
           <div className="mb-3 flex flex-wrap items-end gap-3">
             <Select
