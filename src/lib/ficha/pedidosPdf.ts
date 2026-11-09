@@ -25,7 +25,6 @@ import {
 } from '@/lib/pagos'
 import {
   ETIQUETA_ALMACEN,
-  SEDE_ALMACEN,
   cantidadSolicitada,
   etiquetaEstado,
   estadoRevision,
@@ -33,8 +32,8 @@ import {
   fmtCant,
   marcaDeAlmacen,
   repartoRenglon,
-  resumenRevision,
   seRevisa,
+  skuDe,
   solicitaDe,
 } from '@/lib/pedidos'
 
@@ -55,22 +54,28 @@ import {
     - SIN «TRASLADOS ENTRE ALMACENES»: un solo almacén revisa (decisión de la
       dueña, 07/11/2026). En su lugar, la solicitud de salida por la que
       entrega el almacén general.
+    - EL SKU DE CADA RENGLÓN, el mismo que enseña la pantalla: el código del
+      inventario o, en un renglón de nombre general, su GEN-… (la dueña,
+      09/11/2026: «no muestra código en PDF, pero muestra código GEN en
+      modal»).
 */
 
 const COLUMNAS: Columna[] = [
   { titulo: '#', ancho: 10 },
-  { titulo: 'Producto', ancho: 90 },
+  { titulo: 'SKU', ancho: 28 },
+  { titulo: 'Producto', ancho: 62 },
   { titulo: 'Cantidad', ancho: 25, alDerecha: true },
   { titulo: 'Unidad', ancho: 25 },
 ]
 
 const COLUMNAS_REVISION: Columna[] = [
   { titulo: '#', ancho: 8 },
-  { titulo: 'Producto', ancho: 62 },
-  { titulo: 'Cantidad', ancho: 20, alDerecha: true },
-  { titulo: 'Unidad', ancho: 18 },
+  { titulo: 'SKU', ancho: 24 },
+  { titulo: 'Producto', ancho: 44 },
+  { titulo: 'Cantidad', ancho: 18, alDerecha: true },
+  { titulo: 'Unidad', ancho: 16 },
   { titulo: ETIQUETA_ALMACEN, ancho: 22, alDerecha: true },
-  { titulo: 'A Compras', ancho: 20, alDerecha: true },
+  { titulo: 'A Compras', ancho: 18, alDerecha: true },
 ]
 
 export async function armarSolicitudPedidoPdf(o: Orden, empresa: EmpresaPapel): Promise<ArchivoArmado> {
@@ -120,13 +125,13 @@ export async function armarSolicitudPedidoPdf(o: Orden, empresa: EmpresaPapel): 
 
   y = seccion(doc, y, `${servicio ? 'Servicios solicitados' : 'Productos solicitados'} (${items.length})`)
   if (!items.length) {
-    y = tabla(doc, y, COLUMNAS, [['', 'Sin productos', '', '']])
+    y = tabla(doc, y, COLUMNAS, [['', '', 'Sin productos', '', '']])
   } else if (!tieneRevision) {
     y = tabla(
       doc,
       y,
       COLUMNAS,
-      items.map((it, i) => [String(i + 1), it.nombre, fmtCant(cantidadSolicitada(it)), it.unidad ?? '']),
+      items.map((it, i) => [String(i + 1), skuDe(it), it.nombre, fmtCant(cantidadSolicitada(it)), it.unidad ?? '']),
     )
   } else {
     y = tabla(
@@ -149,6 +154,7 @@ export async function armarSolicitudPedidoPdf(o: Orden, empresa: EmpresaPapel): 
             : 'sin responder'
         return [
           String(i + 1),
+          skuDe(it),
           it.nombre,
           fmtCant(cantidadSolicitada(it)),
           it.unidad ?? '',
@@ -159,60 +165,11 @@ export async function armarSolicitudPedidoPdf(o: Orden, empresa: EmpresaPapel): 
     )
   }
 
-  if (tieneRevision) {
-    y = seccion(doc, y, 'Revisión de almacén')
-    const rev = o.revision_sedes?.[SEDE_ALMACEN]
-    y = tabla(
-      doc,
-      y,
-      [
-        { titulo: 'Sede', ancho: 32 },
-        { titulo: 'Estado', ancho: 28 },
-        { titulo: 'Confirmó', ancho: 34 },
-        { titulo: 'Fecha', ancho: 26 },
-        { titulo: 'Nota', ancho: 30 },
-      ],
-      [
-        [
-          ETIQUETA_ALMACEN,
-          conf.confirmada ? 'Confirmó' : conf.revisados > 0 ? `En curso (${conf.revisados}/${conf.total})` : 'Pendiente',
-          rev?.confirmada_por_nombre ?? '—',
-          rev?.confirmada_en ? fechaHoraVE(rev.confirmada_en) : '—',
-          rev?.nota ?? '—',
-        ],
-      ],
-    )
-  }
-
-  if (cerrada) {
-    const { tiene, falta } = resumenRevision(o.items ?? [])
-    y = seccion(doc, y, 'Reparto')
-    const filas = [
-      ...tiene.map((r) => [`Entrega ${ETIQUETA_ALMACEN}`, r.nombre, `${fmtCant(r.cantidad)} ${r.unidad}`.trim()]),
-      ...falta.map((r) => ['Va a Compras', r.nombre, `${fmtCant(r.cantidad)} ${r.unidad}`.trim()]),
-    ]
-    y = tabla(
-      doc,
-      y,
-      [
-        { titulo: 'Origen', ancho: 45 },
-        { titulo: 'Producto', ancho: 75 },
-        { titulo: 'Cantidad', ancho: 30, alDerecha: true },
-      ],
-      filas.length ? filas : [['—', 'Sin productos', '']],
-    )
-
-    if (o.salida_almacen_numero) {
-      y = etiquetaValor(doc, y, [['Solicitud de salida', o.salida_almacen_numero]], { columnas: 1 })
-    }
-
-    if (o.nota_almacen?.trim()) {
-      y = seccion(doc, y, 'Nota de almacén')
-      doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor('#333333')
-      const lineas = doc.splitTextToSize(o.nota_almacen.trim(), 150) as string[]
-      doc.text(lineas, 30, y, { lineHeightFactor: 1.45 })
-    }
-  }
+  /*
+    SOLO LOS PRODUCTOS SOLICITADOS (la dueña, 09/11/2026: «acá solo deja
+    productos solicitados; lo demás quitalo»). La revisión del almacén, el
+    reparto y su nota se ven en la orden, no en el papel.
+  */
 
   pieDePagina(doc, `Solicitud de Pedido ${o.codigo} · ${fechaLarga(new Date())}`)
   doc.setProperties({ title: `Solicitud de Pedido ${o.codigo}` })
@@ -297,7 +254,7 @@ export async function armarSolicitudCotizacionPdf(o: Orden, empresa: EmpresaPape
     items.length
       ? items.map((it, i) => [
           String(i + 1),
-          it.general && !it.articulo_id ? '—' : it.sku,
+          skuDe(it),
           [it.nombre, [it.marca, it.modelo].filter(Boolean).join(' · ')].filter(Boolean).join('\n'),
           it.unidad ?? '',
           fmtCant(it.cantidad),
@@ -468,7 +425,7 @@ export async function armarOrdenCompraPdf(o: Orden, empresa: EmpresaPapel, d: Da
       { titulo: 'Subtotal', ancho: 17, alDerecha: true },
     ],
     items.map((it) => [
-      it.general && !it.articulo_id ? '—' : it.sku,
+      skuDe(it),
       [
         it.nombre,
         it.articulo_nombre && it.articulo_nombre !== it.nombre ? `(inventario: ${it.articulo_nombre})` : '',

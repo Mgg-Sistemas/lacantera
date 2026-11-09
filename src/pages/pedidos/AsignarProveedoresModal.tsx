@@ -51,6 +51,11 @@ export function AsignarProveedoresModal({
   // sku → oferta a la que se asignó en esta sesión.
   const [asign, setAsign] = useState<Map<string, number>>(new Map())
   const [modalidades, setModalidades] = useState<Map<number, Modalidad>>(new Map())
+  /*
+    Solo lo que este proveedor cotizó (la dueña, 09/11/2026): un producto sin
+    precio en su oferta es uno que no tiene, y se le asigna a otro proveedor.
+  */
+  const [soloConPrecio, setSoloConPrecio] = useState(true)
 
   const tomados = useMemo(() => skusTomados(hijas), [hijas])
   const hijaDeSku = useMemo(() => {
@@ -237,6 +242,16 @@ export function AsignarProveedoresModal({
               </div>
             ) : null}
 
+            <label className="inline-flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="accent-royal-600 size-4"
+                checked={soloConPrecio}
+                onChange={(e) => setSoloConPrecio(e.target.checked)}
+              />
+              Ver solo los productos que {ofertaSel ? nombre(ofertaSel) : 'este proveedor'} cotizó con precio
+            </label>
+
             <div className="border-hairline overflow-x-auto rounded-[6px] border">
               <table className="w-full min-w-[760px] text-[0.84rem]">
                 <thead className="bg-ink/4 text-ink/55 text-left text-xs">
@@ -252,7 +267,16 @@ export function AsignarProveedoresModal({
                   </tr>
                 </thead>
                 <tbody>
-                  {opItems.map((it) => {
+                  {opItems
+                    .filter(
+                      (it) =>
+                        !soloConPrecio ||
+                        !ofertaSel ||
+                        asign.get(it.sku) === ofertaSel.id ||
+                        precioEn(ofertaSel, it.sku, 'bs') > 0 ||
+                        precioEn(ofertaSel, it.sku, 'usd') > 0,
+                    )
+                    .map((it) => {
                     const bloqueado = tomados.has(it.sku)
                     const asignadoA = asign.get(it.sku)
                     const aOtro = asignadoA != null && asignadoA !== ofertaSel?.id

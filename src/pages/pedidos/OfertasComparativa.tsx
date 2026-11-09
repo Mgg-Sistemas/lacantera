@@ -6,7 +6,7 @@ import { Vacio } from '@/components/ui/Estado'
 import { cn } from '@/lib/cn'
 import type { Proveedor } from '@/lib/api/catalogo'
 import {
-  urlAdjuntoOferta,
+  BUCKET_OFERTAS,
   useEliminarOferta,
   type EstadisticaProveedor,
   type Oferta,
@@ -26,6 +26,7 @@ import {
   type ScoredOferta,
 } from '@/lib/ofertas'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
+import { abrirDeAlmacen } from '@/lib/abrirArchivo'
 import { ConfirmDialog } from './Dialogos'
 
 /*
@@ -96,13 +97,8 @@ export function OfertasComparativa({
   const proveedorVivoEnHermana = (provId: number) =>
     hijas.some((h) => h.id !== orden.id && h.proveedor_id === provId && !['cancelada', 'anulada', 'desistida_proveedor'].includes(h.estado))
 
-  async function verAdjunto(path: string) {
-    try {
-      window.open(await urlAdjuntoOferta(path), '_blank', 'noopener')
-    } catch (e) {
-      toast(mensajeDe(e, 'No se pudo abrir el adjunto'), 'error')
-    }
-  }
+  // Sin la dirección del almacén en la barra (ver `abrirArchivo.ts`).
+  const verAdjunto = (path: string, nombre?: string) => abrirDeAlmacen(BUCKET_OFERTAS, path, nombre, 'Adjunto de la oferta')
 
   return (
     <Card className="mt-5">
@@ -259,7 +255,7 @@ export function OfertasComparativa({
                         {o.adjuntos?.length ? (
                           <div className="flex flex-col gap-1">
                             {o.adjuntos.map((a, i) => (
-                              <Button key={a.path} size="sm" variant="ghost" onClick={() => void verAdjunto(a.path)}>
+                              <Button key={a.path} size="sm" variant="ghost" onClick={() => void verAdjunto(a.path, a.filename)}>
                                 📎 {o.adjuntos.length > 1 ? (i === 0 ? 'Ver 1' : `Ver ${i + 1}`) : 'Ver'}
                               </Button>
                             ))}

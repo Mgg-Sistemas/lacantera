@@ -1,5 +1,5 @@
-import { urlArchivoDirecto, type Orden, type ServicioDirecto } from '@/lib/api/pedidos'
-import { mensajeDe, toast } from '@/lib/avisosFlotantes'
+import { BUCKET_SERVICIOS_DIRECTOS, type Orden, type ServicioDirecto } from '@/lib/api/pedidos'
+import { abrirDeAlmacen } from '@/lib/abrirArchivo'
 
 /*
   UN SERVICIO DIRECTO VISTO COMO ORDEN, PARA LAS CUENTAS DEL PAGO
@@ -49,11 +49,7 @@ export function ordenDesdeDirecto(s: ServicioDirecto): Orden {
   } as unknown as Orden
 }
 
-/** Abre un archivo del servicio directo (factura, QR, comprobante) en otra pestaña. */
-export async function abrirArchivoDirecto(path: string): Promise<void> {
-  try {
-    window.open(await urlArchivoDirecto(path), '_blank', 'noopener')
-  } catch (e) {
-    toast(mensajeDe(e, 'No se pudo abrir el archivo'), 'error')
-  }
+/** Abre un archivo del servicio directo (factura, QR, comprobante) en otra pestaña, sin su dirección. */
+export function abrirArchivoDirecto(path: string, nombre?: string | null): Promise<void> {
+  return abrirDeAlmacen(BUCKET_SERVICIOS_DIRECTOS, path, nombre, 'Archivo del servicio')
 }

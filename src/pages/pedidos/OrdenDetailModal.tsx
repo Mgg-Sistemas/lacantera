@@ -4,6 +4,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Chip } from '@/components/ui/Chip'
+import { Estrellas } from '@/components/ui/Estrellas'
 import { Visor } from '@/components/Visor'
 import { cn } from '@/lib/cn'
 import { useArticulos, useProveedores } from '@/lib/api/catalogo'
@@ -11,8 +12,8 @@ import { useEmpresa, empresaDelPapel } from '@/lib/api/empresa'
 import { useTasaVigente } from '@/lib/api/tasas'
 import { leerFirmasEncendidas } from '@/lib/api/firmas'
 import {
-  urlAdjuntoOferta,
-  urlImagen,
+  BUCKET_OFERTAS,
+  BUCKET_PEDIDOS,
   useAnularOc,
   useAprobarOc,
   useCambiarModalidad,
@@ -32,7 +33,7 @@ import {
   type Recepcion,
 } from '@/lib/api/pedidos'
 import {
-  CALIDAD_LABEL,
+  CALIDAD_ESTRELLAS,
   ETIQUETA_ALMACEN,
   ESTADOS,
   claseEvento,
@@ -42,7 +43,7 @@ import {
   fmtCant,
   money,
   esRecibible,
-  estrellas,
+  PUNTUALIDAD_LABEL,
   progresoRecepcion,
   puedeFinalizarse,
   recibidoDe,
@@ -95,6 +96,7 @@ import {
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { armarOrdenCompraPdf, armarSolicitudCotizacionPdf, armarSolicitudPedidoPdf } from '@/lib/ficha/pedidosPdf'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
+import { abrirDeAlmacen } from '@/lib/abrirArchivo'
 import { comoNumero } from '@/lib/formato'
 import { ModalWhatsappCompra } from '@/pages/compras/ModalWhatsappCompra'
 import { ConfirmDialog, MotivoModal } from './Dialogos'
@@ -103,10 +105,10 @@ import { AgregarOfertaModal } from './AgregarOfertaModal'
 import { AceptarOfertaModal } from './AceptarOfertaModal'
 import { AsignarProveedoresModal } from './AsignarProveedoresModal'
 import { EditarOcModal } from './EditarOcModal'
-import { ChatOC } from './ChatOC'
 import { DocumentoRetencionesModal, MetodoPagoModal } from './MetodoPagoModal'
 import { AbonoModal, CreditoModal, MarcarPagadaModal } from './PagoModales'
 import { RecibirOrdenModal } from './RecibirOrdenModal'
+import { DevolucionesDeOrden } from './DevolucionesDeOrden'
 import { ComprobanteOcModal, FinalizarPedidoModal, RecepcionesDeOrdenModal } from './FinalizarPedidoModal'
 import { ServicioRealizadoModal } from './ServicioRealizadoModal'
 
@@ -470,13 +472,11 @@ export function OrdenDetailModal({
     }
   }
 
-  async function verImagen(path: string, deOferta = false) {
-    try {
-      window.open(await (deOferta ? urlAdjuntoOferta(path) : urlImagen(path)), '_blank', 'noopener')
-    } catch (e) {
-      toast(mensajeDe(e, 'No se pudo abrir la imagen'), 'error')
-    }
-  }
+  // Sin la dirección del almacén en la barra (ver `abrirArchivo.ts`).
+  const verImagen = (path: string, deOferta = false, nombre?: string) =>
+    deOferta
+      ? abrirDeAlmacen(BUCKET_OFERTAS, path, nombre, 'Adjunto de la oferta')
+      : abrirDeAlmacen(BUCKET_PEDIDOS, path, nombre, `Imagen de ${o.codigo}`)
 
   async function onCambiarModalidad() {
     const a = o.modalidad_pago === 'usd' ? 'bs' : 'usd'
@@ -739,20 +739,17 @@ export function OrdenDetailModal({
           📥 Ver recepción
         </Button>
       ) : null}
-      {o.factura_path && (permisos.compras || permisos.recibe_almacen) ? (
-        <Button variant="ghost" onClick={() => void abrirArchivoRecepcion(o.factura_path!)}>
-          {o.estado === 'finalizada' ? '📎 Ver factura / soporte' : '📎 Ver soporte adjunto'}
+      {/*
+        Finalizada (la dueña, 09/11/2026: «muchos botones»): la factura en un
+        solo botón —verla si está, cargarla si falta— y nada de avisos.
+      */}
+      {o.estado === 'finalizada' && o.factura_path && (permisos.compras || permisos.recibe_almacen) ? (
+        <Button variant="ghost" onClick={() => void abrirArchivoRecepcion(o.factura_path!, o.factura_nombre)}>
+          📎 Ver factura
         </Button>
       ) : null}
-      {o.estado === 'finalizada' && canManageProcurement ? (
-        <Button onClick={() => setSub({ kind: 'comprobante' })}>
-          {o.factura_path ? '📎 Reemplazar factura / nota' : '📎 Cargar factura / nota de entrega'}
-        </Button>
-      ) : null}
-      {o.estado === 'finalizada' && permisos.compras ? (
-        <Button variant="ghost" onClick={() => setAvisoPaso({ tipo: 'finalizada' })}>
-          💬 Aviso de finalizado
-        </Button>
+      {o.estado === 'finalizada' && !o.factura_path && canManageProcurement ? (
+        <Button onClick={() => setSub({ kind: 'comprobante' })}>📎 Cargar factura / nota de entrega</Button>
       ) : null}
       {puedeFinalizarse(o) && canManageProcurement ? (
         <Button title="Confirmá que se recibió todo y evaluá al proveedor" onClick={() => setSub({ kind: 'finalizar' })}>
@@ -853,7 +850,7 @@ export function OrdenDetailModal({
             <Fila k="Imágenes de referencia">
               <div className="flex flex-wrap gap-1.5">
                 {o.imagenes.map((a, i) => (
-                  <Button key={a.path} size="sm" variant="ghost" onClick={() => void verImagen(a.path)}>
+                  <Button key={a.path} size="sm" variant="ghost" onClick={() => void verImagen(a.path, false, a.filename)}>
                     📷 Ver imagen{o.imagenes.length > 1 ? ` ${i + 1}` : ''}
                   </Button>
                 ))}
@@ -990,7 +987,7 @@ export function OrdenDetailModal({
                 </div>
               ) : null}
               {o.pago_qr_path ? (
-                <Button size="sm" variant="ghost" onClick={() => void abrirArchivoPago(o.pago_qr_path!)}>
+                <Button size="sm" variant="ghost" onClick={() => void abrirArchivoPago(o.pago_qr_path!, o.pago_qr_nombre)}>
                   📷 Ver QR / imagen de pago
                 </Button>
               ) : null}
@@ -1098,7 +1095,7 @@ export function OrdenDetailModal({
           ) : null}
           {o.factura_path ? (
             <Fila k={o.factura_tipo === 'nota_entrega' ? 'Nota de entrega' : 'Factura'}>
-              <Button size="sm" variant="ghost" onClick={() => void abrirArchivoRecepcion(o.factura_path!)}>
+              <Button size="sm" variant="ghost" onClick={() => void abrirArchivoRecepcion(o.factura_path!, o.factura_nombre)}>
                 📎 {o.factura_nombre ?? 'Ver'}
               </Button>
             </Fila>
@@ -1110,8 +1107,13 @@ export function OrdenDetailModal({
           ) : null}
           {evaluacion ? (
             <Fila k="Evaluación del proveedor">
-              <span className="text-warning">{estrellas(evaluacion.calidad)}</span> {CALIDAD_LABEL[evaluacion.calidad] ?? evaluacion.calidad} ·{' '}
-              {textoPuntualidad(evaluacion.puntualidad_dias)}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <Estrellas soloLectura size="sm" label="Calidad" value={evaluacion.calidad} etiquetas={CALIDAD_ESTRELLAS} />
+                {evaluacion.puntualidad != null ? (
+                  <Estrellas soloLectura size="sm" label="Puntualidad" value={evaluacion.puntualidad} etiquetas={PUNTUALIDAD_LABEL} />
+                ) : null}
+              </div>
+              <div className="text-ink/60 text-xs">🕒 {textoPuntualidad(evaluacion.puntualidad_dias)}</div>
               {evaluacion.comentario ? <div className="text-ink/60 text-xs">📝 {evaluacion.comentario}</div> : null}
             </Fila>
           ) : null}
@@ -1120,7 +1122,7 @@ export function OrdenDetailModal({
               {o.oferta_motivo ? <div>{o.oferta_motivo}</div> : null}
               <div className="flex flex-wrap gap-1">
                 {(o.oferta_motivo_adjuntos ?? []).map((a) => (
-                  <Button key={a.path} size="sm" variant="ghost" onClick={() => void verImagen(a.path, true)}>
+                  <Button key={a.path} size="sm" variant="ghost" onClick={() => void verImagen(a.path, true, a.filename)}>
                     📎 {a.filename}
                   </Button>
                 ))}
@@ -1482,6 +1484,8 @@ export function OrdenDetailModal({
         </div>
         {aviso ? <p className="text-warning mt-1 text-xs">⚠ {aviso}</p> : null}
 
+        {o.oc_codigo ? <DevolucionesDeOrden orden={o} puedeDecidir={canManageProcurement} /> : null}
+
         <h4 className="text-ink/85 mt-6 mb-2 font-semibold">Historial</h4>
         {historial.length === 0 ? (
           <p className="text-ink/50 text-sm">Sin eventos registrados.</p>
@@ -1514,7 +1518,6 @@ export function OrdenDetailModal({
           </ol>
         )}
 
-        <ChatOC orden={o} yo={yo} />
       </Modal>
 
       {porEliminar ? (

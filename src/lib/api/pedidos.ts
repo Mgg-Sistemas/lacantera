@@ -83,6 +83,8 @@ export interface ItemOrden {
   // La recepción (fase 4), en la unidad de compra.
   /** Lo recibido, acumulado entre todas las recepciones. */
   cantidad_recibida?: number | null
+  /** Lo que ya no se espera de esta OC: se devolvió y se recotizó o descartó. */
+  cantidad_devuelta?: number | null
   /** La marca con la que llegó, si es otra. */
   marca_recibida?: string | null
   nota_marca?: string | null
@@ -502,6 +504,36 @@ export function useAgregarUnidad() {
   return useMutation({
     mutationFn: (nombre: string) => rpc<string>('compras_agregar_unidad_solicitante', { p_nombre: nombre }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['pedidos', 'unidades'] }),
+  })
+}
+
+/** La ficha que devuelve «+ No está en inventario» con categoría. */
+export interface FichaDesdeSolicitud {
+  id: number
+  codigo: string
+  nombre: string
+  unidad: string
+  categoria: string
+  /** Falso: ya había una con ese nombre en la categoría y se devolvió esa. */
+  creada: boolean
+}
+
+/**
+ * «+ No está en inventario» con categoría (la dueña, 09/11/2026): crea la
+ * ficha en el catálogo con el código siguiente de la categoría (REP-0001…) o
+ * devuelve la que ya se llama así en esa categoría. El renglón entra entonces
+ * como un producto del inventario, con su código, en el modal y en los PDF.
+ */
+export function useFichaDesdeSolicitud() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (d: { nombre: string; categoria: string; unidad: string }) =>
+      rpc<FichaDesdeSolicitud>('compras_ficha_desde_solicitud', {
+        p_nombre: d.nombre,
+        p_categoria: d.categoria,
+        p_unidad: d.unidad,
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['articulos'] }),
   })
 }
 
@@ -1122,6 +1154,56 @@ export interface Recepcion {
   recibida_por: string
   recibida_por_nombre: string | null
   recibida_en: string
+  /** Lo que no entró completo en esta recepción, con su motivo (09/11/2026). */
+  no_entraron?: Array<{ sku: string; nombre: string; cantidad: number; unidad: string | null; motivo: string; nota?: string | null }>
+}
+
+/** Un producto que el almacén no recibió por cambio, equivocación o defecto; lo decide Compras. */
+export interface Devolucion {
+  id: number
+  orden_id: number
+  recepcion_id: number | null
+  sku: string
+  nombre: string
+  cantidad: number | string
+  unidad: string | null
+  precio: number | string | null
+  motivo: 'cambio' | 'equivocacion' | 'defectuoso'
+  nota: string | null
+  estado: 'pendiente' | 'cambio_proveedor' | 'recotizada' | 'descartada'
+  decision_nota: string | null
+  nueva_orden_id: number | null
+  creada_por_nombre: string | null
+  creada_en: string
+  resuelta_por_nombre: string | null
+  resuelta_en: string | null
+}
+
+export function useDevoluciones(ordenId: number | null) {
+  return useQuery({
+    queryKey: ['compras-devoluciones', ordenId],
+    enabled: ordenId != null,
+    queryFn: async () =>
+      desenvolver<Devolucion[]>(
+        await supabase.from('compras_devoluciones').select('*').eq('orden_id', ordenId!).order('id'),
+      ),
+  })
+}
+
+export function useResolverDevolucion() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (d: { id: number; decision: 'cambio_proveedor' | 'recotizar' | 'descartar'; nota: string | null }) =>
+      rpc<{ nueva_codigo: string | null; cerro_recepcion: boolean; estado_orden: string }>('compras_resolver_devolucion', {
+        p_id: d.id,
+        p_decision: d.decision,
+        p_nota: d.nota,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['pedidos'] })
+      void qc.invalidateQueries({ queryKey: ['compras-devoluciones'] })
+    },
+  })
 }
 
 /** La evaluación del proveedor al finalizar (MGG `evaluaciones_recepcion`). */
@@ -1130,6 +1212,8 @@ export interface Evaluacion {
   orden_id: number
   proveedor_id: number
   calidad: number
+  /** 1 a 5 estrellas (09/11/2026); null en las evaluaciones anteriores. */
+  puntualidad: number | null
   puntualidad_dias: number
   fecha_prometida: string | null
   fecha_recibido: string | null
@@ -1214,6 +1298,9 @@ export interface DatosRecepcion {
     nota_marca?: string | null
     sin_inventario?: boolean
     ficha?: FichaRecepcion | null
+    /** Por qué no entra lo que falta de este renglón. */
+    motivo?: 'no_llego' | 'cambio' | 'equivocacion' | 'defectuoso'
+    nota_motivo?: string | null
   }>
   nota: string | null
   sin_inventario: boolean
@@ -1233,6 +1320,8 @@ export interface ResultadoRecepcion {
   cerrada: boolean
   valor: number
   recibido_total: number
+  /** Productos que quedaron para cambiar o devolver (los decide Compras). */
+  devoluciones?: number
 }
 
 export function useRecibirOrden() {
@@ -1243,7 +1332,7 @@ export function useRecibirOrden() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['pedidos'] })
       // Entró al inventario de ALM-GEN, y quizá una ficha nueva al catálogo.
-      for (const k of ['existencias', 'existencias-totales', 'movimientos', 'articulos']) {
+      for (const k of ['existencias', 'existencias-totales', 'movimientos', 'articulos', 'compras-devoluciones']) {
         void qc.invalidateQueries({ queryKey: [k] })
       }
     },
@@ -1252,6 +1341,8 @@ export function useRecibirOrden() {
 
 export interface DatosFinalizar {
   calidad: number
+  /** 1 a 5 estrellas. */
+  puntualidad?: number
   puntualidad_dias: number
   fecha_prometida: string | null
   fecha_recibido: string | null

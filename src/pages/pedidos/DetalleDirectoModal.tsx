@@ -159,7 +159,7 @@ export function DetalleDirectoModal({
               </div>
             ) : null}
             {s.pago_qr_path ? (
-              <Button size="sm" variant="ghost" onClick={() => void abrirArchivoDirecto(s.pago_qr_path!)}>
+              <Button size="sm" variant="ghost" onClick={() => void abrirArchivoDirecto(s.pago_qr_path!, s.pago_qr_nombre)}>
                 📷 Ver QR / imagen de pago
               </Button>
             ) : null}
@@ -179,7 +179,7 @@ export function DetalleDirectoModal({
                 {s.pago_nota ? <div className="text-ink/60 text-xs">📝 {s.pago_nota}</div> : null}
                 {s.pago_comprobante_path ? (
                   <div>
-                    <Button size="sm" variant="ghost" onClick={() => void abrirArchivoDirecto(s.pago_comprobante_path!)}>
+                    <Button size="sm" variant="ghost" onClick={() => void abrirArchivoDirecto(s.pago_comprobante_path!, s.pago_comprobante_nombre)}>
                       📎 {s.pago_comprobante_nombre ?? 'Comprobante de pago'}
                     </Button>
                   </div>
@@ -228,7 +228,7 @@ export function DetalleDirectoModal({
         <div className="space-y-1">
           {s.facturas.map((a) => (
             <div key={a.path} className="border-hairline flex items-center justify-between gap-2 rounded-[6px] border px-2 py-1">
-              <Button size="sm" variant="ghost" title="Ver factura" onClick={() => void abrirArchivoDirecto(a.path)}>
+              <Button size="sm" variant="ghost" title="Ver factura" onClick={() => void abrirArchivoDirecto(a.path, a.filename)}>
                 📎 {a.filename}
               </Button>
               <span className="text-ink/45 text-xs">{fechaHoraVE(a.at)}</span>

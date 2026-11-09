@@ -144,6 +144,7 @@ const EVENTOS: Record<string, string> = {
   metodo_pago_corregido: 'Método de pago corregido',
   // 08/11/2026: el IVA de la factura y la tasa BCV de las retenciones en Bs.
   datos_fiscales: 'IVA de la factura / tasa de las retenciones',
+  devolucion_decidida: 'Compras decidió sobre un producto devuelto',
   oc_aprobada: 'Confirmada pagar',
   anticipo: 'Pago anticipado',
   abono: 'Abono registrado (crédito)',
@@ -305,6 +306,18 @@ function extraPago(h: EventoHistorial): string {
       if (h.monto_a_pagar != null) partes.push(`a pagar ${usd(h.monto_a_pagar)}`)
       if (h.saldo != null) partes.push(`saldo ${usd(h.saldo)}`)
       break
+    case 'devolucion_decidida':
+      if (typeof h.producto === 'string') partes.push(`${h.producto} ${fmtCant(h.cantidad as number)}${h.unidad ? ` ${h.unidad}` : ''}`)
+      if (typeof h.motivo === 'string') partes.push(h.motivo)
+      partes.push(
+        h.decision === 'recotizar'
+          ? `se vuelve a cotizar${h.nueva_sp ? ` en ${h.nueva_sp}` : ''}`
+          : h.decision === 'descartar'
+            ? 'no se repone'
+            : 'lo cambia el proveedor',
+      )
+      if (typeof h.nota === 'string') partes.push(h.nota)
+      break
     case 'datos_fiscales':
       partes.push(Number(h.iva_factura) > 0 ? `IVA de la factura ${usd(h.iva_factura)}` : 'sin IVA de la factura')
       if (Number(h.tasa) > 0) partes.push(`tasa BCV ${Number(h.tasa).toLocaleString('es-VE')}`)
@@ -341,6 +354,33 @@ export const CALIDAD_LABEL: Record<number, string> = {
   2: '2 · Deficiente',
   1: '1 · Muy mala',
 }
+
+/** La calidad en estrellas: «Excelente» (CALIDAD_LABEL sin el número). */
+export const CALIDAD_ESTRELLAS: Record<number, string> = Object.fromEntries(
+  Object.entries(CALIDAD_LABEL).map(([n, t]) => [n, t.replace(/^\d+\s*·\s*/, '')]),
+)
+
+/** La puntualidad en estrellas (la dueña, 09/11/2026). */
+export const PUNTUALIDAD_LABEL: Record<number, string> = {
+  5: 'A tiempo o antes',
+  4: 'Un día tarde',
+  3: 'Algo tarde (2-3 días)',
+  2: 'Tarde (4-7 días)',
+  1: 'Muy tarde (más de 7 días)',
+}
+
+/** Las estrellas que sugieren los días (+ adelantado, − atrasado). */
+export function estrellasPorDias(dias: number): number {
+  const d = Math.round(num(dias))
+  if (d >= 0) return 5
+  if (d === -1) return 4
+  if (d >= -3) return 3
+  if (d >= -7) return 2
+  return 1
+}
+
+/** Los días que se guardan cuando solo hay estrellas (sin fechas). */
+export const DIAS_POR_ESTRELLAS: Record<number, number> = { 5: 0, 4: -1, 3: -3, 2: -7, 1: -15 }
 
 /** «★★★★☆». */
 export const estrellas = (n: number): string => {
@@ -393,6 +433,21 @@ function extraRecepcion(h: EventoHistorial): string {
         )
       }
       if (h.recibido_total != null) partes.push(`recibido ${money(h.recibido_total as number)}`)
+      const noEntraron = Array.isArray(h.no_entraron)
+        ? (h.no_entraron as Array<{ nombre?: string; cantidad?: number; unidad?: string; motivo?: string }>)
+        : []
+      if (noEntraron.length) {
+        partes.push(
+          `no entró: ${noEntraron
+            .map(
+              (r) =>
+                `${r.nombre ?? ''} ${fmtCant(r.cantidad)}${r.unidad ? ` ${r.unidad}` : ''} (${
+                  MOTIVO_NO_ENTRA[r.motivo as MotivoNoEntra] ?? r.motivo ?? ''
+                })`,
+            )
+            .join(', ')}`,
+        )
+      }
       const faltan = Array.isArray(h.faltan) ? (h.faltan as Array<{ nombre?: string; falta?: number; unidad?: string }>) : []
       if (faltan.length) {
         partes.push(
@@ -407,6 +462,7 @@ function extraRecepcion(h: EventoHistorial): string {
     }
     case 'evaluacion':
       if (h.calidad != null) partes.push(`${estrellas(h.calidad as number)} ${CALIDAD_LABEL[num(h.calidad)] ?? h.calidad}`)
+      if (h.puntualidad != null) partes.push(`🕒 ${estrellas(h.puntualidad as number)} ${PUNTUALIDAD_LABEL[num(h.puntualidad)] ?? ''}`.trim())
       if (h.puntualidad_dias != null) partes.push(textoPuntualidad(h.puntualidad_dias as number))
       if (typeof h.comentario === 'string' && h.comentario.trim()) partes.push(h.comentario)
       break
@@ -432,7 +488,18 @@ function extraRecepcion(h: EventoHistorial): string {
 export const recibidoDe = (it: ItemOrden): number => num(it.cantidad_recibida)
 
 /** Lo que falta por llegar de un renglón. */
-export const faltaDe = (it: ItemOrden): number => Math.max(r4(num(it.cantidad) - recibidoDe(it)), 0)
+/** Lo que ya no se espera: se devolvió y Compras lo recotizó o lo descartó (09/11/2026). */
+export const devueltaDe = (it: ItemOrden): number => num(it.cantidad_devuelta)
+export const faltaDe = (it: ItemOrden): number => Math.max(r4(num(it.cantidad) - recibidoDe(it) - devueltaDe(it)), 0)
+
+/** Por qué un producto no entró en la recepción (09/11/2026). */
+export type MotivoNoEntra = 'no_llego' | 'cambio' | 'equivocacion' | 'defectuoso'
+export const MOTIVO_NO_ENTRA: Record<MotivoNoEntra, string> = {
+  no_llego: 'No llegó (queda pendiente)',
+  cambio: 'Lo va a cambiar el proveedor',
+  equivocacion: 'Equivocación en la compra',
+  defectuoso: 'Vino defectuoso',
+}
 
 /** La unidad en que se cuenta al recibir: la de compra (BULTO) o la de uso. */
 export const unidadRecepcion = (it: ItemOrden): string => (it.unidad_compra || it.unidad || '').trim()
@@ -495,6 +562,14 @@ const r4 = (n: number) => Math.round(n * 10000) / 10000
 /** Cantidad en formato venezolano, sin ceros de sobra (2 · 0,5 · 1.250). */
 export const fmtCant = (n: number | string | null | undefined): string =>
   num(n).toLocaleString('es-VE', { maximumFractionDigits: 3 })
+
+/**
+ * El SKU de un renglón tal como lo enseña la pantalla: el código del
+ * inventario o, en uno de nombre general, su GEN-…. Los PDF lo escribían «—»
+ * en los generales y la dueña lo vio (09/11/2026): lo que dice el modal es lo
+ * que va en el papel.
+ */
+export const skuDe = (it: { sku?: string | null }): string => it.sku?.trim() || '—'
 
 /** dd/mm/aaaa hh:mm en hora de Caracas. */
 export function fechaHoraVE(iso?: string | null): string {
