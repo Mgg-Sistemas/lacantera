@@ -103,7 +103,7 @@ import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { armarOrdenCompraPdf, armarSolicitudCotizacionPdf, armarSolicitudPedidoPdf } from '@/lib/ficha/pedidosPdf'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
 import { abrirDeAlmacen } from '@/lib/abrirArchivo'
-import { comoNumero } from '@/lib/formato'
+import { comoNumero, fecha as fechaCorta } from '@/lib/formato'
 import { ModalWhatsappCompra } from '@/pages/compras/ModalWhatsappCompra'
 import { ConfirmDialog, MotivoModal } from './Dialogos'
 import { AprobarOcModal } from './AprobarOcModal'
@@ -868,6 +868,8 @@ export function OrdenDetailModal({
         ancho="lg"
         acciones={buttons}
       >
+        <CadenaDeCompra o={o} madre={madre} />
+
         {o.urgente ? (
           <div className="border-danger bg-danger/8 text-danger mb-3 rounded-[6px] border px-3 py-2 text-sm font-bold">
             🚨 ORDEN URGENTE — solicitud marcada como prioritaria.
@@ -1882,5 +1884,89 @@ export function OrdenDetailModal({
         descripcion={empresaDelPapel(empresa).razonSocial}
       />
     </>
+  )
+}
+
+/*
+  LOS PAPELES DE LA COMPRA, ENCADENADOS (la dueña, 10/11/2026: «esto lo quiero
+  en compras también», sobre la cadena cotización → despacho → nota de
+  entrega → factura del detalle de Ventas). Solicitud → OC → pago →
+  recepción → factura, con la etapa en que está resaltada.
+*/
+type PasoCompra = 'sp' | 'oc' | 'pago' | 'recepcion' | 'factura'
+const PASO_DE: Partial<Record<EstadoOrden, PasoCompra>> = {
+  revision_almacen: 'sp',
+  atendida_almacen: 'sp',
+  pendiente: 'sp',
+  aprobada: 'sp',
+  asignada: 'sp',
+  oc_creada: 'oc',
+  oc_aprobada: 'oc',
+  confirmada_metodo: 'pago',
+  cuenta_abierta: 'pago',
+  por_recibir: 'recepcion',
+  pagada: 'recepcion',
+  recibida: 'factura',
+  finalizada: 'factura',
+}
+
+function CadenaDeCompra({ o, madre }: { o: Orden; madre: Orden }) {
+  const servicio = o.clase === 'servicio'
+  const abonado = Number(o.abonado_total ?? 0)
+  const parcial = !o.recibida_en && (o.recibido_total != null || progresoRecepcion(o).parcial)
+  const papeles: { paso: PasoCompra; tipo: string; valor: string | null }[] = [
+    { paso: 'sp', tipo: servicio ? 'Solicitud de servicio' : 'Solicitud de pedido', valor: madre.codigo },
+    { paso: 'oc', tipo: servicio ? 'Orden de servicio' : 'Orden de compra', valor: o.oc_codigo },
+    {
+      paso: 'pago',
+      tipo: 'Pago',
+      valor: o.pagada_en
+        ? `Pagada · ${fechaCorta(o.pagada_en)}`
+        : abonado > 0
+          ? `Abonado ${money(abonado)}`
+          : o.estado === 'cuenta_abierta'
+            ? 'Crédito'
+            : null,
+    },
+    {
+      paso: 'recepcion',
+      tipo: servicio ? 'Servicio realizado' : 'Recepción',
+      valor: o.recibida_en ? fechaCorta(o.recibida_en) : parcial ? 'Parcial' : null,
+    },
+    {
+      paso: 'factura',
+      tipo: o.factura_tipo === 'nota_entrega' ? 'Nota de entrega' : 'Factura',
+      valor: o.finalizada_en ? `Finalizada · ${fechaCorta(o.finalizada_en)}` : o.factura_path ? 'Cargada' : null,
+    },
+  ]
+  const actual = PASO_DE[o.estado] ?? null
+  const cerrada = o.estado === 'cancelada' || o.estado === 'anulada' || o.estado === 'desistida_proveedor'
+  return (
+    <div className="mb-3 flex flex-wrap items-center gap-1.5">
+      {papeles.map((p, i) => (
+        <span key={p.paso} className="flex items-center gap-1.5">
+          {i ? <span className="text-ink/35">→</span> : null}
+          <span
+            className={cn(
+              'grid rounded-[7px] border px-2 py-1 text-[11px]',
+              p.paso === actual
+                ? o.estado === 'finalizada'
+                  ? 'border-success bg-success/8'
+                  : 'border-royal-600 bg-royal-600/8'
+                : 'border-hairline bg-ink/2',
+              !p.valor && 'opacity-45',
+            )}
+          >
+            <span className="text-ink/55">{p.tipo}</span>
+            <span className="font-mono font-semibold">{p.valor ?? '—'}</span>
+          </span>
+        </span>
+      ))}
+      {cerrada ? (
+        <span className="border-danger bg-danger/8 text-danger ml-1 rounded-[7px] border px-2 py-1 text-[11px] font-semibold">
+          {o.estado === 'anulada' ? '🚫 Anulada' : o.estado === 'cancelada' ? '🚫 Cancelada' : '🚫 Proveedor desistió'}
+        </span>
+      ) : null}
+    </div>
   )
 }
