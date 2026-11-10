@@ -70,7 +70,8 @@ export function ModalFacturaDirecta({
     hacen su solicitud y luego otro usuario con permisos aprueba». Ya no hay
     emisión directa, tampoco para quien tiene la casilla: la emite otro.
   */
-  const emite = false
+  // UNA SOLA APROBACIÓN, AL DESPACHAR (la dueña, 10/11/2026): la factura se emite.
+  const emite = true
   const enviar = useEnviarDirectaAAutorizar()
   const ivaPorDefecto = useIvaPorDefecto()
   const alicuotaVigente = useAlicuotaIva()

@@ -81,14 +81,26 @@ export function DetalleVentaModal({
         </>
       ) : null}
       {t.etapa === 'despachada' && t.tipo === 'NE' ? (
-        <Button variant="outline" onClick={() => wa('Despacho aprobado', textoDespachoAprobado(t, empresa))}>
-          💬 Reporte del despacho
-        </Button>
+        <>
+          {/* Facturar es de quien factura, y solo una nota lista: con cliente,
+              con precios y que no sea de respaldo. */}
+          {permisos?.facturar && t.facturable !== false && t.cliente && !(t.precios_pendientes ?? 0) && t.estado_doc === 'DESPACHADA' ? (
+            <Button onClick={() => navegar(`/app/facturacion?notas=${t.id}`)}>🧾 Facturar esta nota</Button>
+          ) : null}
+          <Button variant="outline" onClick={() => wa('Despacho aprobado', textoDespachoAprobado(t, empresa))}>
+            💬 Reporte del despacho
+          </Button>
+        </>
       ) : null}
       {t.etapa === 'facturada' ? (
-        <Button variant="outline" onClick={() => wa('Factura', textoFacturada(t, empresa))}>
-          💬 WhatsApp de la factura
-        </Button>
+        <>
+          {permisos?.cobrar ? (
+            <Button onClick={() => navegar(`/app/facturacion?factura=${encodeURIComponent(t.numero)}`)}>💵 Registrar cobro</Button>
+          ) : null}
+          <Button variant="outline" onClick={() => wa('Factura', textoFacturada(t, empresa))}>
+            💬 WhatsApp de la factura
+          </Button>
+        </>
       ) : null}
       {debe ? (
         <Button variant="outline" onClick={() => wa('Recordatorio de cobro', textoRecordatorio(t, empresa))}>

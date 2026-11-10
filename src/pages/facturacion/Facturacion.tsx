@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router'
 import { Banknote, Printer, Receipt } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card, CardHeader } from '@/components/ui/Card'
@@ -18,7 +19,6 @@ import { CasillaIgtf } from '@/pages/ventas/CasillaIgtf'
 import { IGTF_POR_DEFECTO, tributoElegido, useIvaPorDefecto } from '@/pages/ventas/ivaPorDefecto'
 import { ModalFacturaDirecta } from './FacturaDirecta'
 import { useMiPerfil, useMisAcciones } from '@/lib/api/usuarios'
-import { FacturasPorAutorizar } from './PorAutorizar'
 import { armarDocumento } from '@/lib/ficha/ventaPdf'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import {
@@ -45,6 +45,9 @@ import {
 } from '@/pages/ventas/filas'
 import { densidadesDeArticulos } from '@/lib/api/catalogo'
 import { useMetodosPago, nombreDe } from '@/lib/api/metodosPago'
+import type { TarjetaVenta } from '@/lib/api/ventasTablero'
+import { textoCobro, textoFacturada } from '@/lib/ficha/ventasWhatsapp'
+import { ModalWhatsappCompra } from '@/pages/compras/ModalWhatsappCompra'
 
 const TONO: Record<string, 'royal' | 'success' | 'neutral'> = {
   EMITIDA: 'royal',
@@ -97,7 +100,11 @@ export function Facturacion() {
     hacen su solicitud y luego otro usuario con permisos aprueba». Ya no hay
     emisión directa, tampoco para quien tiene la casilla: la emite otro.
   */
-  const emite = false
+  /*
+    UNA SOLA APROBACIÓN, AL DESPACHAR (la dueña, 10/11/2026): «Facturada (no
+    necesita autorización, solo al despachar)». La factura se emite aquí.
+  */
+  const emite = true
   const enviar = useEnviarNotasAAutorizar()
   const porAutorizar = useFacturasPorAutorizar()
   // Una nota que ya está en una factura por autorizar no entra en otra.
@@ -116,6 +123,9 @@ export function Facturacion() {
   const [anulando, setAnulando] = useState<FacturaVenta | null>(null)
   const [motivo, setMotivo] = useState('')
   const [pdf, setPdf] = useState<PdfArmado | null>(null)
+  const [ws, setWs] = useState<{ titulo: string; texto: string } | null>(null)
+  const [avisarCobro, setAvisarCobro] = useState(false)
+  const [avisarFactura, setAvisarFactura] = useState<number | null>(null)
 
   const [elegidas, setElegidas] = useState<number[]>([])
   const [condicion, setCondicion] = useState('')
@@ -139,6 +149,82 @@ export function Facturacion() {
 
   const renglonesDetalle = useRenglones('factura_venta_renglones', 'factura_id', detalleId)
   const cobros = useCobros(detalleId)
+
+  /*
+    DESDE EL TABLERO DE VENTAS (10/11/2026): `?factura=FAC-…` abre esa factura
+    y `?notas=ID` abre «Emitir factura» con esa nota marcada.
+  */
+  const [parametros, setParametros] = useSearchParams()
+  const facturaPedida = parametros.get('factura')
+  const notaPedida = Number(parametros.get('notas')) || null
+  useEffect(() => {
+    if (notaPedida) {
+      setElegidas([notaPedida])
+      setEmitiendo(true)
+      setParametros({}, { replace: true })
+      return
+    }
+    if (!facturaPedida || !data) return
+    const f = data.find((x) => x.numero === facturaPedida)
+    if (f) setDetalleId(f.id)
+    setParametros({}, { replace: true })
+  }, [facturaPedida, notaPedida, data, setParametros])
+
+  /** La factura como la ve el tablero, para armar sus mensajes. */
+  const comoTarjeta = (f: FacturaVenta): TarjetaVenta => ({
+    clave: `FAC-${f.id}`,
+    tipo: 'FAC',
+    id: f.id,
+    numero: f.numero,
+    etapa: f.estado === 'EMITIDA' ? 'facturada' : f.estado === 'COBRADA' ? 'cobrada' : 'anulada',
+    estado_doc: f.estado,
+    cliente_id: f.cliente_id,
+    cliente: f.cliente,
+    rif: f.cliente_rif,
+    at: null,
+    moneda: f.moneda,
+    total: Number(f.total),
+    total_usd: Number(f.total_usd),
+    total_bs: Number(f.total_bs),
+    iva: Number(f.iva),
+    igtf: Number(f.igtf),
+    saldo_usd: Number(f.saldo_usd),
+    numero_control: f.numero_control,
+    condicion: f.condicion_pago,
+    vence_el: f.vence_el,
+    vencida: f.dias_vencida > 0,
+    motivo: f.motivo_anulacion,
+    resumen:
+      f.id === detalleId
+        ? (renglonesDetalle.data ?? []).map((r) => `${r.descripcion} · ${Number(r.cantidad)} ${r.unidad}`).join(' · ')
+        : null,
+    cadena: { fac: f.numero },
+  })
+
+  // Emitida, en cuanto la factura llega a la lista sale su WhatsApp.
+  useEffect(() => {
+    if (avisarFactura === null || !detalle || detalle.id !== avisarFactura || renglonesDetalle.isPending) return
+    setAvisarFactura(null)
+    setWs({ titulo: `Avisar por WhatsApp · factura ${detalle.numero}`, texto: textoFacturada(comoTarjeta(detalle), empresaDelPapel(empresa).razonSocial) })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [avisarFactura, detalle, renglonesDetalle.isPending])
+
+  // Registrado un cobro, en cuanto llega a la lista sale su WhatsApp.
+  useEffect(() => {
+    if (!avisarCobro || !detalle || !cobros.data?.length) return
+    const ultimo = [...cobros.data].sort((a, b) => String(b.registrado_en).localeCompare(String(a.registrado_en)))[0]
+    setAvisarCobro(false)
+    setWs({
+      titulo: `Avisar por WhatsApp · cobro de ${detalle.numero}`,
+      texto: textoCobro(
+        comoTarjeta(detalle),
+        { metodo: ultimo.metodo, referencia: ultimo.referencia, monto: dinero(ultimo.moneda, Number(ultimo.monto)) },
+        Number(detalle.saldo_usd),
+        empresaDelPapel(empresa).razonSocial,
+      ),
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [avisarCobro, cobros.data, detalle])
 
   // La que se dejó como solo respaldo de una nota de salida no se cobra: no se ofrece.
   const notas = (porFacturar.data ?? []).filter((n) => n.facturable !== false)
@@ -255,9 +341,6 @@ export function Facturacion() {
         }
       />
 
-      {/* Lo que espera autorización va antes que lo emitido: es lo único aquí
-          que está esperando a alguien. */}
-      <FacturasPorAutorizar onEmitida={setDetalleId} />
 
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}
@@ -373,8 +456,11 @@ export function Facturacion() {
                     alicuota_iva: alicuotaFactura,
                     alicuota_igtf: igtfFactura.vale,
                   }
-                  if (emite) await facturar.mutateAsync(factura)
-                  else
+                  if (emite) {
+                    const id = await facturar.mutateAsync(factura)
+                    setDetalleId(id)
+                    setAvisarFactura(id)
+                  } else
                     await enviar.mutateAsync({
                       ...factura,
                       total_estimado: baseElegida + ivaElegido + igtfElegido,
@@ -563,6 +649,17 @@ export function Facturacion() {
               >
                 Imprimir
               </Button>
+              <Button
+                variant="outline"
+                onClick={() =>
+                  setWs({
+                    titulo: `Avisar por WhatsApp · factura ${detalle.numero}`,
+                    texto: textoFacturada(comoTarjeta(detalle), empresaDelPapel(empresa).razonSocial),
+                  })
+                }
+              >
+                💬 WhatsApp
+              </Button>
               {detalle.estado === 'EMITIDA' ? (
                 <>
                   <Button
@@ -708,7 +805,7 @@ export function Facturacion() {
           onCerrar={() => setCobrando(null)}
           onListo={() => {
             setCobrando(null)
-            setDetalleId(null)
+            setAvisarCobro(true)
           }}
         />
       ) : null}
@@ -762,6 +859,7 @@ export function Facturacion() {
         nombreArchivo={pdf?.nombre ?? ""}
         titulo="Factura"
       />
+      {ws ? <ModalWhatsappCompra titulo={ws.titulo} texto={ws.texto} onCerrar={() => setWs(null)} /> : null}
     </>
   )
 }
