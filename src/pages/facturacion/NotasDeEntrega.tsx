@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { useMonedasUsables, useTasaVigente } from '@/lib/api/tasas'
 import { Check, Combine, FileText, MessageCircle, Pencil, Printer, Truck, X } from 'lucide-react'
 import { CatalogoTransporte } from '@/components/CatalogoTransporte'
@@ -44,7 +44,6 @@ import {
   useAprobarDespacho,
   useCancelarDespacho,
   useClientes,
-  useMarcarNotaCobrada,
   useMarcarNotaPendientePorCobrar,
   useNotasEntrega,
   leerNotaEntregaPorNumero,
@@ -189,7 +188,7 @@ export function NotasDeEntrega() {
   const { data: yo } = useMiPerfil()
   const despachar = useSolicitarDespacho()
   const anular = useAnularNota()
-  const marcarCobrada = useMarcarNotaCobrada()
+  const navegar = useNavigate()
   const marcarPendiente = useMarcarNotaPendientePorCobrar()
   const [marcandoPendiente, setMarcandoPendiente] = useState<NotaEntrega | null>(null)
   const [fechaPagoNueva, setFechaPagoNueva] = useState('')
@@ -1929,28 +1928,20 @@ export function NotasDeEntrega() {
           ) : null}
 
           {/*
-            PENDIENTE POR COBRAR: EL ÚNICO BOTÓN QUE LE HACE FALTA.
-            Christopher, 12/10/2026: marcarla como cobrada apaga el
-            recordatorio. No reversa nada, no hay nada que reversar.
+            PENDIENTE POR COBRAR. Desde el 10/11/2026 (la dueña) una nota sin
+            factura se da por pagada con la Conciliación de pagos: el pago
+            bancario se enlaza a la nota y el tablero de ventas la pasa a
+            «Cobrada». «Marcar como cobrada» a mano ya no se ofrece.
           */}
           {detalle.pendiente_por_cobrar && !detalle.cobrada_en && puedeDespachar ? (
             <div className="border-hairline mt-3 flex flex-wrap items-center justify-between gap-2 rounded-[6px] border p-3 text-sm">
               <span className="text-ink/70">
                 Pendiente por cobrar, vence el {fecha(detalle.fecha_pago!)}.
               </span>
-              <Button
-                size="sm"
-                variant="outline"
-                icon={<Check />}
-                disabled={marcarCobrada.isPending}
-                onClick={() => marcarCobrada.mutate({ id: detalle.id })}
-              >
-                {marcarCobrada.isPending ? 'Guardando…' : 'Marcar como cobrada'}
+              <Button size="sm" variant="outline" icon={<Check />} onClick={() => navegar('/app/ventas/registros-de-pagos')}>
+                🏦 Registrar el pago en la conciliación
               </Button>
             </div>
-          ) : null}
-          {marcarCobrada.error ? (
-            <ErrorDeCarga error={marcarCobrada.error} className="mt-2" />
           ) : null}
 
           {/*
