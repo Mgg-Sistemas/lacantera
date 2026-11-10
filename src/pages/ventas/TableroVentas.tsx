@@ -45,6 +45,21 @@ const ACENTO: Record<Tono, string> = {
 /** Cuántas tarjetas se pintan por columna antes de «ver más». */
 const TOPE = 25
 
+/*
+  LOS INDICADORES FILTRAN (la dueña, 10/11/2026: «que estas tarjetas sean
+  interactivas, al darle click que muestre solo la tarjeta seleccionada»).
+  Tocar uno deja en el tablero solo lo que cuenta; tocarlo otra vez lo quita.
+*/
+type Foco = 'cot' | 'aprobar' | 'despachada' | 'porcobrar' | 'vencidas'
+const esVencida = (t: TarjetaVenta) => !!t.vencida && (t.etapa === 'despachada' || t.etapa === 'facturada')
+const FOCOS: Record<Foco, { titulo: string; etapas: EtapaVenta[]; solo?: (t: TarjetaVenta) => boolean }> = {
+  cot: { titulo: 'Cotizaciones abiertas', etapas: ['cot'] },
+  aprobar: { titulo: 'Despachos por aprobar', etapas: ['aprobar'] },
+  despachada: { titulo: 'Despachadas por cobrar', etapas: ['despachada'] },
+  porcobrar: { titulo: 'Por cobrar', etapas: ['despachada', 'facturada'] },
+  vencidas: { titulo: 'Vencidas', etapas: ['despachada', 'facturada'], solo: esVencida },
+}
+
 export function TableroVentas() {
   const [dias, setDias] = useState('30')
   const [busca, setBusca] = useState('')
@@ -63,6 +78,19 @@ export function TableroVentas() {
     filtradas.forEach((t) => m.get(t.etapa)?.push(t))
     return m
   }, [filtradas])
+  const [foco, setFoco] = useState<Foco | null>(null)
+  const columnas = foco ? COLUMNAS.filter((c) => FOCOS[foco].etapas.includes(c.etapa)) : COLUMNAS
+  const itemsDe = (etapa: EtapaVenta) => {
+    const items = porEtapa.get(etapa) ?? []
+    const solo = foco ? FOCOS[foco].solo : undefined
+    return solo ? items.filter(solo) : items
+  }
+  const etapaVista = columnas.some((c) => c.etapa === etapaTel) ? etapaTel : (columnas[0]?.etapa ?? etapaTel)
+  function enfocar(f: Foco) {
+    const nuevo = foco === f ? null : f
+    setFoco(nuevo)
+    if (nuevo) setEtapaTel(FOCOS[nuevo].etapas[0])
+  }
   const tarjeta = abierta ? (data ?? []).find((t) => t.clave === abierta) ?? null : null
   const [aprobando, setAprobando] = useState<TarjetaVenta | null>(null)
   const [ws, setWs] = useState<{ titulo: string; texto: string } | null>(null)
@@ -91,7 +119,10 @@ export function TableroVentas() {
   const porCobrar = (data ?? [])
     .filter((t) => t.etapa === 'despachada' || t.etapa === 'facturada')
     .reduce((s, t) => s + Number(t.saldo_usd ?? 0), 0)
-  const vencidas = (data ?? []).filter((t) => (t.etapa === 'despachada' || t.etapa === 'facturada') && t.vencida).length
+  const vencidas = (data ?? []).filter(esVencida).length
+  const indicador = (f: Foco, valor: string, alerta?: boolean) => (
+    <Indicador titulo={FOCOS[f].titulo} valor={valor} alerta={alerta} activo={foco === f} onClick={() => enfocar(f)} />
+  )
 
   const acciones = (
     <div className="flex flex-wrap gap-2">
@@ -118,11 +149,26 @@ export function TableroVentas() {
 
       {permisos?.montos !== false ? (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-          <Indicador titulo="Cotizaciones abiertas" valor={String(porEtapa.get('cot')?.length ?? 0)} />
-          <Indicador titulo="Despachos por aprobar" valor={String(porEtapa.get('aprobar')?.length ?? 0)} />
-          <Indicador titulo="Despachadas por cobrar" valor={String(porEtapa.get('despachada')?.length ?? 0)} />
-          <Indicador titulo="Por cobrar" valor={dolares(porCobrar)} />
-          <Indicador titulo="Vencidas" valor={String(vencidas)} alerta={vencidas > 0} />
+          {indicador('cot', String(porEtapa.get('cot')?.length ?? 0))}
+          {indicador('aprobar', String(porEtapa.get('aprobar')?.length ?? 0))}
+          {indicador('despachada', String(porEtapa.get('despachada')?.length ?? 0))}
+          {indicador('porcobrar', dolares(porCobrar))}
+          {indicador('vencidas', String(vencidas), vencidas > 0)}
+        </div>
+      ) : null}
+
+      {foco ? (
+        <div className="bg-royal-600/8 border-royal-600/30 flex flex-wrap items-center gap-2 rounded-[10px] border px-3 py-2 text-sm">
+          <span>
+            Mostrando solo: <strong>{FOCOS[foco].titulo}</strong>
+          </span>
+          <button
+            type="button"
+            onClick={() => setFoco(null)}
+            className="text-royal-700 dark:text-royal-300 ml-auto text-sm font-medium hover:underline"
+          >
+            ✕ Ver todo el tablero
+          </button>
         </div>
       ) : null}
 
@@ -159,34 +205,41 @@ export function TableroVentas() {
       ) : enTelefono ? (
         <div className="space-y-3">
           <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
-            {COLUMNAS.map((c) => (
+            {columnas.map((c) => (
               <button
                 key={c.etapa}
                 type="button"
-                aria-pressed={etapaTel === c.etapa}
+                aria-pressed={etapaVista === c.etapa}
                 onClick={() => setEtapaTel(c.etapa)}
                 className={cn(
                   'shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold',
-                  etapaTel === c.etapa ? 'bg-royal-600 border-royal-600 text-white' : 'border-hairline bg-surface text-ink/70',
+                  etapaVista === c.etapa ? 'bg-royal-600 border-royal-600 text-white' : 'border-hairline bg-surface text-ink/70',
                 )}
               >
-                {c.titulo} · {porEtapa.get(c.etapa)?.length ?? 0}
+                {c.titulo} · {itemsDe(c.etapa).length}
               </button>
             ))}
           </div>
           <Lista
-            tarjetas={porEtapa.get(etapaTel) ?? []}
-            tope={completas.has(etapaTel) ? null : TOPE}
-            onVerMas={() => setCompletas(new Set(completas).add(etapaTel))}
+            tarjetas={itemsDe(etapaVista)}
+            tope={completas.has(etapaVista) ? null : TOPE}
+            onVerMas={() => setCompletas(new Set(completas).add(etapaVista))}
             onAbrir={setAbierta}
           />
         </div>
       ) : (
         <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-3">
-          {COLUMNAS.map((c) => {
-            const items = porEtapa.get(c.etapa) ?? []
+          {columnas.map((c) => {
+            const items = itemsDe(c.etapa)
             return (
-              <section key={c.etapa} className="bg-ink/3 border-hairline flex w-72 shrink-0 flex-col rounded-[10px] border" aria-label={c.titulo}>
+              <section
+                key={c.etapa}
+                className={cn(
+                  'bg-ink/3 border-hairline flex shrink-0 flex-col rounded-[10px] border',
+                  foco ? 'min-w-72 flex-1' : 'w-72',
+                )}
+                aria-label={c.titulo}
+              >
                 <header className="px-3 pt-2.5 pb-1">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-ink/70 flex items-center gap-2 text-xs font-semibold tracking-wide uppercase">
@@ -202,6 +255,7 @@ export function TableroVentas() {
                   tope={completas.has(c.etapa) ? null : TOPE}
                   onVerMas={() => setCompletas(new Set(completas).add(c.etapa))}
                   onAbrir={setAbierta}
+                  rejilla={!!foco && columnas.length === 1}
                 />
               </section>
             )
@@ -244,12 +298,34 @@ export function TableroVentas() {
   )
 }
 
-function Indicador({ titulo, valor, alerta }: { titulo: string; valor: string; alerta?: boolean }) {
+function Indicador({
+  titulo,
+  valor,
+  alerta,
+  activo,
+  onClick,
+}: {
+  titulo: string
+  valor: string
+  alerta?: boolean
+  activo: boolean
+  onClick: () => void
+}) {
   return (
-    <div className="border-hairline bg-surface rounded-[10px] border px-3 py-2">
+    <button
+      type="button"
+      aria-pressed={activo}
+      onClick={onClick}
+      title={activo ? 'Ver todo el tablero' : `Ver solo: ${titulo.toLowerCase()}`}
+      className={cn(
+        'bg-surface rounded-[10px] border px-3 py-2 text-left transition-colors',
+        'hover:border-royal-600/50 focus-visible:outline-royal-600 focus-visible:outline-2 focus-visible:outline-offset-2',
+        activo ? 'border-royal-600 ring-royal-600 bg-royal-600/8 ring-1' : 'border-hairline',
+      )}
+    >
       <div className="text-ink/50 text-[11px] font-semibold tracking-wide uppercase">{titulo}</div>
       <div className={cn('font-titular text-lg font-bold tabular-nums', alerta && 'text-danger')}>{valor}</div>
-    </div>
+    </button>
   )
 }
 
@@ -258,18 +334,26 @@ function Lista({
   tope,
   onVerMas,
   onAbrir,
+  rejilla,
 }: {
   tarjetas: TarjetaVenta[]
   tope: number | null
   onVerMas: () => void
   onAbrir: (clave: string) => void
+  /** Una sola columna a lo ancho: las tarjetas en rejilla. */
+  rejilla?: boolean
 }) {
   const visibles = tope ? tarjetas.slice(0, tope) : tarjetas
   const sobran = tarjetas.length - visibles.length
   return (
-    <div className="flex flex-col gap-2 px-2 pb-2">
+    <div
+      className={cn(
+        'gap-2 px-2 pb-2',
+        rejilla ? 'grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'flex flex-col',
+      )}
+    >
       {tarjetas.length === 0 ? (
-        <div className="text-ink/40 border-ink/10 rounded-[8px] border border-dashed px-3 py-4 text-center text-xs">
+        <div className="text-ink/40 border-ink/10 col-span-full rounded-[8px] border border-dashed px-3 py-4 text-center text-xs">
           Sin documentos en esta etapa
         </div>
       ) : (
@@ -278,7 +362,7 @@ function Lista({
       {sobran > 0 ? (
         <button
           type="button"
-          className="text-royal-700 dark:text-royal-300 px-2 py-1 text-left text-xs font-medium hover:underline"
+          className="text-royal-700 dark:text-royal-300 col-span-full px-2 py-1 text-left text-xs font-medium hover:underline"
           onClick={onVerMas}
         >
           + {sobran} más

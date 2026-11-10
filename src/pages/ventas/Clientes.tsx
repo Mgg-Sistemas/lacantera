@@ -608,7 +608,7 @@ function ModalReportePorCobrar({
       abierto
       onCerrar={onCerrar}
       titulo="Reporte de cuentas por cobrar"
-      descripcion="Los clientes que deben por notas de entrega, de quien más debe a quien menos."
+      descripcion="Relación de clientes con saldo pendiente en notas de entrega, ordenada de mayor a menor saldo."
       acciones={
         <>
           <Button variant="ghost" onClick={onCerrar}>
@@ -622,21 +622,39 @@ function ModalReportePorCobrar({
     >
       <p className={`text-sm ${salen.length === 0 ? 'text-warning font-medium' : 'text-ink/65'}`}>
         {salen.length === 0
-          ? 'No hay notas vencidas: no hay nada que informar.'
-          : `Saldrán ${salen.length} cliente${salen.length === 1 ? '' : 's'} con ${notas} nota${notas === 1 ? '' : 's'}.`}
+          ? 'No existen notas vencidas para incluir en el reporte.'
+          : `Se incluirán ${salen.length} cliente${salen.length === 1 ? '' : 's'} con ${notas} nota${notas === 1 ? '' : 's'}.`}
       </p>
       <div className="mt-5 space-y-3">
+        {/*
+          QUÉ REPORTE: los dos a la vista, para elegir de un toque (09/11/2026:
+          «que se pueda elegir, con resumen + detalle y solo resumen»).
+        */}
+        <div role="radiogroup" aria-label="Qué reporte" className="grid gap-2 sm:grid-cols-2">
+          {[
+            { valor: true, titulo: 'Resumen + detalle', texto: 'Saldo consolidado por cliente y desglose de cada nota con su estatus de vencimiento.' },
+            { valor: false, titulo: 'Solo resumen', texto: 'Formato consolidado con una fila por cliente, sin desglose de notas.' },
+          ].map((o) => (
+            <button
+              key={o.titulo}
+              type="button"
+              role="radio"
+              aria-checked={conDetalle === o.valor}
+              onClick={() => setConDetalle(o.valor)}
+              className={`rounded-[6px] border p-3 text-left transition-colors ${
+                conDetalle === o.valor ? 'border-royal-600 bg-royal-600/10' : 'border-hairline hover:bg-ink/3'
+              }`}
+            >
+              <span className="text-ink/85 block text-sm font-medium">{o.titulo}</span>
+              <span className="text-ink/55 mt-0.5 block text-xs">{o.texto}</span>
+            </button>
+          ))}
+        </div>
         <Interruptor
           encendido={soloVencidas}
           onCambio={setSoloVencidas}
           etiqueta="Solo las notas vencidas"
-          detalle="Deja fuera las que todavía no llegan a su fecha de pago."
-        />
-        <Interruptor
-          encendido={conDetalle}
-          onCambio={setConDetalle}
-          etiqueta="Incluir el detalle de notas de cada cliente"
-          detalle="Apagado, el papel lleva solo una fila por cliente."
+          detalle="Incluye únicamente las notas cuya fecha de vencimiento ha transcurrido."
         />
         <Interruptor encendido={conLogo} onCambio={setConLogo} etiqueta="Con logo" />
       </div>
