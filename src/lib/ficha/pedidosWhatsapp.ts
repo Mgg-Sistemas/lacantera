@@ -537,3 +537,28 @@ export function mensajeRevisionAlmacen(o: Orden): string {
   }
   return partes.join('\n')
 }
+
+/**
+ * Cancelada, anulada o con el proveedor desistido: el aviso con su motivo
+ * (10/11/2026: el «💬 WhatsApp» de la lista y del histórico de Compras).
+ */
+export function textoOrdenCerrada(o: Orden, d: { proveedor: string; empresa: string }): string {
+  const anulada = o.estado === 'anulada'
+  const cancelada = o.estado === 'cancelada'
+  const como = anulada ? 'ANULADA' : cancelada ? 'CANCELADA' : 'PROVEEDOR DESISTIÓ'
+  const motivo = (anulada ? o.motivo_anulacion : cancelada ? o.motivo_cancelacion : null)?.trim()
+  const por = anulada ? o.anulada_por_nombre : cancelada ? o.cancelada_por_nombre : null
+  const en = anulada ? o.anulada_en : cancelada ? o.cancelada_en : null
+  const L: string[] = []
+  L.push(`🚫 *${o.oc_codigo ? 'OC' : 'PEDIDO'} ${como}: ${o.oc_codigo ?? o.codigo}*`)
+  if (o.oc_codigo) L.push(`🧾 *Pedido:* ${o.codigo}`)
+  if (d.proveedor) L.push(`🏭 *Proveedor:* ${d.proveedor}`)
+  const solicita = (quienSolicita(o) ?? '').trim()
+  if (solicita) L.push(`🙋 *Solicita:* ${solicita}`)
+  if (motivo) L.push(`📝 *Motivo:* ${motivo}`)
+  if (por) L.push(`👤 *Por:* ${por}`)
+  if (en) L.push(`📅 *Fecha:* ${fechaHoraVE(en)}`)
+  L.push(`💵 *Total:* ${montoTxt(o.total, '$')}`)
+  L.push(`🏢 *${d.empresa.toUpperCase()}*`)
+  return L.join('\n')
+}

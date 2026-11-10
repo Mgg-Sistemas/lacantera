@@ -19,6 +19,7 @@ import { textoDespachoAprobado, textoDespachoNoAprobado } from '@/lib/ficha/vent
 import { ModalWhatsappCompra } from '@/pages/compras/ModalWhatsappCompra'
 import { DetalleVentaModal } from './DetalleVentaModal'
 import { AprobarDespachoModal } from './AprobarDespachoModal'
+import { HistoricoVentas } from './HistoricoVentas'
 
 /*
   TABLERO DE VENTAS (la dueña, 10/11/2026: «así como se tiene compras, quiero
@@ -42,8 +43,12 @@ const ACENTO: Record<Tono, string> = {
   neutral: 'bg-ink/40',
 }
 
-/** Cuántas tarjetas se pintan por columna antes de «ver más». */
-const TOPE = 25
+/*
+  DIEZ POR COLUMNA, CON SCROLL (la dueña, 10/11/2026: «que sea con un scroll,
+  solo mostrar las primeras 10, las demás pasan a un histórico vista tipo lista
+  buscable»). «+ n más» abre el histórico de esa columna.
+*/
+const TOPE = 10
 
 /*
   LOS INDICADORES FILTRAN (la dueña, 10/11/2026: «que estas tarjetas sean
@@ -65,7 +70,7 @@ export function TableroVentas() {
   const [busca, setBusca] = useState('')
   const [abierta, setAbierta] = useState<string | null>(null)
   const [etapaTel, setEtapaTel] = useState<EtapaVenta>('aprobar')
-  const [completas, setCompletas] = useState<Set<EtapaVenta>>(new Set())
+  const [historico, setHistorico] = useState<EtapaVenta | null>(null)
   const enTelefono = useMediaQuery('(max-width: 767px)')
   const { data, isPending, error } = useVentasTablero(Number(dias))
   const { data: permisos } = usePermisosVentas()
@@ -222,8 +227,8 @@ export function TableroVentas() {
           </div>
           <Lista
             tarjetas={itemsDe(etapaVista)}
-            tope={completas.has(etapaVista) ? null : TOPE}
-            onVerMas={() => setCompletas(new Set(completas).add(etapaVista))}
+            tope={TOPE}
+            onVerMas={() => setHistorico(etapaVista)}
             onAbrir={setAbierta}
           />
         </div>
@@ -252,8 +257,8 @@ export function TableroVentas() {
                 </header>
                 <Lista
                   tarjetas={items}
-                  tope={completas.has(c.etapa) ? null : TOPE}
-                  onVerMas={() => setCompletas(new Set(completas).add(c.etapa))}
+                  tope={TOPE}
+                  onVerMas={() => setHistorico(c.etapa)}
                   onAbrir={setAbierta}
                   rejilla={!!foco && columnas.length === 1}
                 />
@@ -262,6 +267,17 @@ export function TableroVentas() {
           })}
         </div>
       )}
+
+      {historico ? (
+        <HistoricoVentas
+          titulo={`${COLUMNAS.find((c) => c.etapa === historico)?.titulo ?? ''}${foco ? ` · ${FOCOS[foco].titulo}` : ''}`}
+          tarjetas={itemsDe(historico)}
+          empresa={empresa}
+          onAbrir={setAbierta}
+          onWhatsapp={(titulo, texto) => setWs({ titulo, texto })}
+          onCerrar={() => setHistorico(null)}
+        />
+      ) : null}
 
       {tarjeta ? (
         <DetalleVentaModal
@@ -349,7 +365,7 @@ function Lista({
     <div
       className={cn(
         'gap-2 px-2 pb-2',
-        rejilla ? 'grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'flex flex-col',
+        rejilla ? 'grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'flex max-h-[70vh] flex-col overflow-y-auto',
       )}
     >
       {tarjetas.length === 0 ? (
@@ -365,7 +381,7 @@ function Lista({
           className="text-royal-700 dark:text-royal-300 col-span-full px-2 py-1 text-left text-xs font-medium hover:underline"
           onClick={onVerMas}
         >
-          + {sobran} más
+          + {sobran} más · ver en el histórico →
         </button>
       ) : null}
     </div>

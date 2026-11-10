@@ -68,8 +68,10 @@ import { CierreDiarioModal } from './CierreDiarioModal'
   recibido, la recepción parcial y si está lista para finalizar. Las demás
   pestañas están en su sitio con un aviso de la fase en que llegan.
 
-  El tope de 10 tarjetas por columna de la pestaña OC lleva, como en MGG, al
-  Histórico (fase 5b), con el estado de la columna ya marcado.
+  El tope de 10 tarjetas por columna lleva, como en MGG, al Histórico (fase
+  5b), con el estado de la columna ya marcado. Desde el 10/11/2026 vale en
+  todas las pestañas y columnas, con scroll (la dueña: «solo mostrar las
+  primeras 10, las demás pasan a un histórico»).
 
   QUIÉN VE QUÉ. Pedir lo puede cualquiera (06/11/2026). Quien no lleva Compras
   es el «soloSolicitud» de MGG: no ve pestañas ni filtros de OC, solo sus
@@ -129,7 +131,7 @@ const PESTANAS: { scope: Scope; label: string; title: string }[] = [
 
 type ModalKind =
   | { kind: 'none' }
-  | { kind: 'detail'; ordenId: number }
+  | { kind: 'detail'; ordenId: number; alAbrir?: 'pdf' | 'whatsapp' }
   | { kind: 'create' }
   | { kind: 'create-servicio' }
   | { kind: 'mercado' }
@@ -273,14 +275,18 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
   useEffect(() => {
     const id = searchParams.get('detalle')
     if (!id || !pedidos.isSuccess) return
+    // `&accion=pdf|whatsapp`: el «📄 PDF» / «💬 WhatsApp» del Histórico.
+    const accion = searchParams.get('accion')
+    const alAbrir = accion === 'pdf' || accion === 'whatsapp' ? accion : undefined
     const next = new URLSearchParams(searchParams)
     next.delete('detalle')
+    next.delete('accion')
     setSearchParams(next, { replace: true })
     const o = ordenes.find((x) => String(x.id) === id)
     if (!o) toast('Esa orden no existe o fue eliminada.', 'warning')
     else if (soloSolicitud && (o.clase === 'servicio' || !ESTADOS_FASES_SP.has(o.estado)))
       toast('Esa orden ya está en Compras: no la puedes abrir.', 'warning')
-    else setModal({ kind: 'detail', ordenId: o.id })
+    else setModal({ kind: 'detail', ordenId: o.id, alAbrir })
   }, [searchParams, setSearchParams, pedidos.isSuccess, ordenes, soloSolicitud])
 
   function switchScope(next: Scope) {
@@ -461,7 +467,8 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
               cols={kanbanCols}
               columna={columna}
               hijasDe={hijasDe}
-              tope={scope === 'oc' ? TOPE_COLUMNA_OC : null}
+              // El Histórico es de Compras: quien solo pide ve todas las suyas.
+              tope={permisos.compras ? TOPE_COLUMNA_OC : null}
               proveedor={nombreProveedor}
               noLeidos={noLeidos.data}
               onOpen={(id) => setModal({ kind: 'detail', ordenId: id })}
@@ -474,7 +481,7 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
               canManageProcurement={canManageProcurement}
               proveedor={nombreProveedor}
               noLeidos={noLeidos.data}
-              onView={(id) => setModal({ kind: 'detail', ordenId: id })}
+              onView={(id, alAbrir) => setModal({ kind: 'detail', ordenId: id, alAbrir })}
               onApprove={(o) => setModal({ kind: 'approve', orden: o })}
             />
           )}
@@ -483,8 +490,9 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
 
       {modal.kind === 'detail' && currentDetail ? (
         <OrdenDetailModal
-          key={currentDetail.id}
+          key={`${currentDetail.id}-${modal.kind === 'detail' ? (modal.alAbrir ?? '') : ''}`}
           orden={currentDetail}
+          alAbrir={modal.kind === 'detail' ? modal.alAbrir : undefined}
           ordenes={ordenes}
           permisos={permisos}
           onAbrir={(id) => setModal({ kind: 'detail', ordenId: id })}
@@ -651,7 +659,7 @@ function OrdenesTable({
   canManageProcurement: boolean
   proveedor: NombreProveedor
   noLeidos: Map<number, number> | undefined
-  onView: (id: number) => void
+  onView: (id: number, alAbrir?: 'pdf' | 'whatsapp') => void
   onApprove: (o: Orden) => void
 }) {
   if (!ordenes.length) {
@@ -718,6 +726,17 @@ function OrdenesTable({
                   <Button size="sm" variant="ghost" onClick={() => onView(o.id)}>
                     Ver
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    title={o.oc_codigo ? 'PDF de la OC' : 'PDF de la Orden de Pedido'}
+                    onClick={() => onView(o.id, 'pdf')}
+                  >
+                    📄 PDF
+                  </Button>
+                  <Button size="sm" variant="ghost" title="Mensaje de WhatsApp de esta etapa" onClick={() => onView(o.id, 'whatsapp')}>
+                    💬 WhatsApp
+                  </Button>
                   {canManageProcurement && o.estado === 'pendiente' ? (
                     <Button size="sm" className="bg-success hover:bg-success ml-1 hover:brightness-95" onClick={() => onApprove(o)}>
                       Aprobar
@@ -753,7 +772,7 @@ function KanbanBoard({
   /** La columna de cada estado (la SP repartida va con las aprobadas). */
   columna: (estado: EstadoOrden) => EstadoOrden
   hijasDe: Map<number, Orden[]>
-  /** Pestaña OC: 10 tarjetas por columna salvo «Pendiente (cargar ofertas)». */
+  /** 10 tarjetas por columna, con scroll; las demás, en el Histórico (la dueña, 10/11/2026). */
   tope: number | null
   proveedor: NombreProveedor
   noLeidos: Map<number, number> | undefined
@@ -772,7 +791,7 @@ function KanbanBoard({
       {cols.map((col) => {
         const items = byState.get(col.key) ?? []
         const acento = ACENTO_COLUMNA[col.key]
-        const limite = tope && col.key !== 'aprobada' ? tope : null
+        const limite = tope
         const visibles = limite ? items.slice(0, limite) : items
         const sobran = items.length - visibles.length
         return (
@@ -790,7 +809,7 @@ function KanbanBoard({
               </span>
               <span className="bg-ink/8 text-ink/65 rounded-full px-2 py-0.5 text-xs font-medium">{items.length}</span>
             </header>
-            <div className="flex flex-col gap-2 px-2 pb-2">
+            <div className="flex max-h-[70vh] flex-col gap-2 overflow-y-auto px-2 pb-2">
               {items.length === 0 ? (
                 <div className="text-ink/40 border-ink/10 rounded-[8px] border border-dashed px-3 py-4 text-center text-xs">
                   Sin órdenes

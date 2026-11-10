@@ -32,7 +32,7 @@ import { armarDetallePedidoPdf } from '@/lib/ficha/reportesComprasPdf'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { dinero } from '@/lib/formato'
 import { mensajeDe } from '@/lib/avisosFlotantes'
-import { EstadoBadge } from './OrdenDetailModal'
+import { EstadoBadge, OrdenDetailModal } from './OrdenDetailModal'
 import { MaterialesDemandaModal } from './MaterialesDemandaModal'
 
 /*
@@ -215,6 +215,14 @@ function HistoricoPedidos() {
   const [hasta, setHasta] = useState('')
   const [recientes, setRecientes] = useState(true)
   const [detalle, setDetalle] = useState<Orden | null>(null)
+  /*
+    «📄 PDF» y «💬 WhatsApp» de cada fila (la dueña, 10/11/2026: «desde la
+    vista de tabla e histórico, tendrá sus respectivos PDF y mensaje de
+    WhatsApp»): abren la ficha de la orden aquí mismo, con eso ya puesto.
+  */
+  const [ficha, setFicha] = useState<{ id: number; alAbrir?: 'pdf' | 'whatsapp' } | null>(null)
+  const permisosQ = usePermisosPedidos()
+  const ordenFicha = ficha ? ((pedidos.data ?? []).find((o) => o.id === ficha.id) ?? null) : null
 
   const proveedor = useMemo(() => {
     const m = new Map<number, string>()
@@ -435,7 +443,7 @@ function HistoricoPedidos() {
         </Card>
       ) : (
         <Card flush className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-sm">
+          <table className="w-full min-w-[1080px] text-sm">
             <thead className="text-ink/55 border-hairline border-b text-left text-xs">
               <tr>
                 <th className="px-4 py-2.5 font-medium">OP</th>
@@ -446,6 +454,7 @@ function HistoricoPedidos() {
                 <th className="px-4 py-2.5 font-medium">Estado</th>
                 <th className="px-4 py-2.5 font-medium">Fecha solicitud</th>
                 <th className="px-4 py-2.5 font-medium">OC emitida</th>
+                <th className="px-4 py-2.5" />
               </tr>
             </thead>
             <tbody>
@@ -469,6 +478,24 @@ function HistoricoPedidos() {
                     </td>
                     <td className="text-ink/55 px-4 py-2.5 text-xs">{fechaHoraVE(f.orden.creado_en)}</td>
                     <td className="text-ink/55 px-4 py-2.5 text-xs">{f.orden.oc_creada_en ? fechaHoraVE(f.orden.oc_creada_en) : '—'}</td>
+                    <td className="px-4 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        title={f.orden.oc_codigo ? 'PDF de la OC' : 'PDF de la Orden de Pedido'}
+                        onClick={() => setFicha({ id: f.orden.id, alAbrir: 'pdf' })}
+                      >
+                        📄 PDF
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        title="Mensaje de WhatsApp de esta etapa"
+                        onClick={() => setFicha({ id: f.orden.id, alAbrir: 'whatsapp' })}
+                      >
+                        💬 WhatsApp
+                      </Button>
+                    </td>
                   </tr>
                 ) : (
                   <tr
@@ -489,6 +516,7 @@ function HistoricoPedidos() {
                     </td>
                     <td className="text-ink/55 px-4 py-2.5 text-xs">{fechaHoraVE(f.sd.creado_en)}</td>
                     <td className="text-ink/55 px-4 py-2.5 text-xs">—</td>
+                    <td className="px-4 py-2.5" />
                   </tr>
                 ),
               )}
@@ -496,6 +524,21 @@ function HistoricoPedidos() {
           </table>
         </Card>
       )}
+
+      {ordenFicha && ficha && permisosQ.data ? (
+        <OrdenDetailModal
+          key={`${ordenFicha.id}-${ficha.alAbrir ?? ''}`}
+          orden={ordenFicha}
+          ordenes={pedidos.data ?? []}
+          permisos={permisosQ.data}
+          alAbrir={ficha.alAbrir}
+          onAbrir={(id) => setFicha({ id })}
+          onClose={() => setFicha(null)}
+          onApprove={() => void navigate(`/app/pedidos?detalle=${ordenFicha.id}`)}
+          onEditar={() => void navigate(`/app/pedidos?detalle=${ordenFicha.id}`)}
+          onCancel={() => void navigate(`/app/pedidos?detalle=${ordenFicha.id}`)}
+        />
+      ) : null}
 
       {detalle ? (
         <PedidoDetalleModal orden={detalle} proveedorNombre={proveedor(detalle.proveedor_id)} onClose={() => setDetalle(null)} />

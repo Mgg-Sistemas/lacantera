@@ -263,6 +263,8 @@ export function NotasDeEntrega() {
   */
   const [parametros, setParametros] = useSearchParams()
   const notaPedida = parametros.get('nota')
+  const pidePdf = parametros.get('pdf') === '1'
+  const [pdfAlAbrir, setPdfAlAbrir] = useState(false)
   /*
     DESDE EL TABLERO DE VENTAS (10/11/2026): `?pedir=1` abre «Pedir despacho»
     y `?cotizacion=ID` lo abre ya con el cliente, la moneda y los renglones de
@@ -317,14 +319,17 @@ export function NotasDeEntrega() {
     const abrirla = async () => {
       const laNota = data.find((n) => n.numero === notaPedida) ?? (await leerNotaEntregaPorNumero(notaPedida))
       if (!vigente) return
-      if (laNota) setDetalle(laNota)
+      if (laNota) {
+        setDetalle(laNota)
+        if (pidePdf) setPdfAlAbrir(true)
+      }
       setParametros({}, { replace: true })
     }
     void abrirla().catch(() => setParametros({}, { replace: true }))
     return () => {
       vigente = false
     }
-  }, [notaPedida, data, setParametros])
+  }, [notaPedida, pidePdf, data, setParametros])
   /*
     COMPLETAR LA QUE NACIÓ DE UNA NOTA DE SALIDA. Christopher, 21/09/2026: nace
     con lo mismo que la salida —sin precios, y sin cliente si el destino no
@@ -557,6 +562,14 @@ export function NotasDeEntrega() {
       }),
     )
   }
+
+  // `&pdf=1` (histórico del tablero de ventas): al abrir el documento, su PDF.
+  useEffect(() => {
+    if (!pdfAlAbrir || !detalle || !renglonesDetalle.isSuccess) return
+    setPdfAlAbrir(false)
+    void imprimir(detalle)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pdfAlAbrir, detalle, renglonesDetalle.isSuccess])
 
   /*
     IMPRIMIR NOTAS: CADA UNA COMPLETA, NO UN RESUMEN.

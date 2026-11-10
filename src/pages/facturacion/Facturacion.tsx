@@ -157,6 +157,8 @@ export function Facturacion() {
   const [parametros, setParametros] = useSearchParams()
   const facturaPedida = parametros.get('factura')
   const notaPedida = Number(parametros.get('notas')) || null
+  const pidePdf = parametros.get('pdf') === '1'
+  const [pdfAlAbrir, setPdfAlAbrir] = useState(false)
   useEffect(() => {
     if (notaPedida) {
       setElegidas([notaPedida])
@@ -166,9 +168,12 @@ export function Facturacion() {
     }
     if (!facturaPedida || !data) return
     const f = data.find((x) => x.numero === facturaPedida)
-    if (f) setDetalleId(f.id)
+    if (f) {
+      setDetalleId(f.id)
+      if (pidePdf) setPdfAlAbrir(true)
+    }
     setParametros({}, { replace: true })
-  }, [facturaPedida, notaPedida, data, setParametros])
+  }, [facturaPedida, notaPedida, pidePdf, data, setParametros])
 
   /** La factura como la ve el tablero, para armar sus mensajes. */
   const comoTarjeta = (f: FacturaVenta): TarjetaVenta => ({
@@ -323,6 +328,14 @@ export function Facturacion() {
       }),
     )
   }
+
+  // `&pdf=1` (histórico del tablero de ventas): al abrir el documento, su PDF.
+  useEffect(() => {
+    if (!pdfAlAbrir || !detalle || !renglonesDetalle.isSuccess) return
+    setPdfAlAbrir(false)
+    void imprimir(detalle)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pdfAlAbrir, detalle, renglonesDetalle.isSuccess])
 
   return (
     <>
