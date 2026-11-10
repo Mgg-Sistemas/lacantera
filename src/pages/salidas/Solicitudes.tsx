@@ -22,7 +22,7 @@ import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { usePerfiles } from '@/lib/api/catalogo'
-import { useMisPermisos } from '@/lib/api/usuarios'
+import { useMiPerfil, useMisPermisos } from '@/lib/api/usuarios'
 import { useSesion } from '@/lib/sesion'
 import { useMiFirma } from '@/lib/api/firmas'
 import { nombreDeGrupo, useGruposDeSalida } from '@/lib/api/inventario'
@@ -41,8 +41,10 @@ import {
 import type { SolicitudDeSalida } from '@/lib/api/salidas'
 import { ModalSalida } from './ModalSalida'
 import { ModalReporteSalida } from './ModalReporteSalida'
+import { textoSalidaAprobada, textoSalidaPedida, textoSalidaRechazada } from '@/lib/ficha/salidasWhatsapp'
+import { ModalWhatsappCompra } from '@/pages/compras/ModalWhatsappCompra'
+import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
 import { useNotaDeSalida } from './NotaDeSalida'
-import { useEmpresa } from '@/lib/api/empresa'
 import { fechaHora } from '@/lib/formato'
 import { enCastellano } from '@/lib/castellano'
 import { CabeceraSalidas } from './CabeceraSalidas'
@@ -127,6 +129,14 @@ export function Solicitudes() {
   const { data: miFirma } = useMiFirma()
   const tengoFirma = miFirma?.usar === true
   const [aprobando, setAprobando] = useState<SolicitudDeSalida | null>(null)
+  /*
+    WHATSAPP EN CADA PASO (la dueña, 10/11/2026): pedida, aprobada y no
+    aprobada; la entregada ya tiene su «Reporte» con fotos.
+  */
+  const [ws, setWs] = useState<{ titulo: string; texto: string } | null>(null)
+  const { data: datosEmpresa } = useEmpresa()
+  const { data: yo } = useMiPerfil()
+  const miNombre = yo?.nombre ?? '—'
   const [conMiFirma, setConMiFirma] = useState(true)
 
   const { data: solicitudes, isPending, error } = useSolicitudesDeSalida(TOPE_TABLERO)
@@ -237,6 +247,15 @@ export function Solicitudes() {
       } else {
         await cancelar.mutateAsync({ id: cerrando.s.id, motivo })
       }
+      setWs({
+        titulo: `Avisar por WhatsApp · ${cerrando.s.numero} ${cerrando.como === 'RECHAZAR' ? 'no aprobada' : 'cancelada'}`,
+        texto: textoSalidaRechazada(cerrando.s, {
+          motivo: motivo.trim(),
+          pide: nombreDe(cerrando.s.pedida_por),
+          cancelada: cerrando.como !== 'RECHAZAR',
+          empresa: empresaDelPapel(datosEmpresa).razonSocial,
+        }),
+      })
       setCerrando(null)
       setMotivo('')
     } catch (e) {
@@ -266,7 +285,14 @@ export function Solicitudes() {
               }
               aprobar.mutate(
                 { id: s.id, con_firma: false },
-                { onError: (e) => setFallo(enCastellano(e)) },
+                { onSuccess: () =>
+                  setWs({
+                    titulo: `Avisar por WhatsApp · ${s.numero} aprobada`,
+                    texto: textoSalidaAprobada(
+                      { ...s, aprobada_en: new Date().toISOString() },
+                      { aprobo: miNombre, para: paraQuien(s), empresa: empresaDelPapel(datosEmpresa).razonSocial },
+                    ),
+                  }), onError: (e) => setFallo(enCastellano(e)) },
               )
             }}
           >
@@ -309,6 +335,31 @@ export function Solicitudes() {
             onClick={() => setVerReporteSalida({ s, notaSalida: s.nota_salida! })}
           >
             Reporte
+          </Button>
+        ) : s.estado === 'PEDIDA' || s.estado === 'APROBADA' || s.estado === 'RECHAZADA' || s.estado === 'CANCELADA' ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            icon={<MessageCircle />}
+            onClick={() => {
+              const empresa = empresaDelPapel(datosEmpresa).razonSocial
+              setWs({
+                titulo: `Avisar por WhatsApp · ${s.numero}`,
+                texto:
+                  s.estado === 'PEDIDA'
+                    ? textoSalidaPedida(s, { pide: nombreDe(s.pedida_por), para: paraQuien(s), empresa })
+                    : s.estado === 'APROBADA'
+                      ? textoSalidaAprobada(s, { aprobo: nombreDe(s.aprobada_por), para: paraQuien(s), empresa })
+                      : textoSalidaRechazada(s, {
+                          motivo: s.cierre_motivo ?? '—',
+                          pide: nombreDe(s.pedida_por),
+                          cancelada: s.estado === 'CANCELADA',
+                          empresa,
+                        }),
+              })
+            }}
+          >
+            WhatsApp
           </Button>
         ) : null}
 
@@ -694,6 +745,8 @@ export function Solicitudes() {
         }}
       />
 
+      {ws ? <ModalWhatsappCompra titulo={ws.titulo} texto={ws.texto} onCerrar={() => setWs(null)} /> : null}
+
       {cerrando ? (
         <Modal
           abierto
@@ -749,7 +802,18 @@ export function Solicitudes() {
                   aprobar.mutate(
                     { id: aprobando.id, con_firma: conMiFirma },
                     {
-                      onSuccess: () => setAprobando(null),
+                      onSuccess: () => {
+                        const SOL = aprobando
+                        setAprobando(null)
+                        if (SOL) (() =>
+                  setWs({
+                    titulo: `Avisar por WhatsApp · ${SOL.numero} aprobada`,
+                    texto: textoSalidaAprobada(
+                      { ...SOL, aprobada_en: new Date().toISOString() },
+                      { aprobo: miNombre, para: paraQuien(SOL), empresa: empresaDelPapel(datosEmpresa).razonSocial },
+                    ),
+                  }))()
+                      },
                       onError: (e) => {
                         setAprobando(null)
                         setFallo(enCastellano(e))

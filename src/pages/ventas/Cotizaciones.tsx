@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router'
 import { useMonedasUsables } from '@/lib/api/tasas'
 import { FileText, Plus, Printer } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
@@ -74,6 +75,25 @@ export function Cotizaciones() {
 
   const [nueva, setNueva] = useState(false)
   const [detalle, setDetalle] = useState<CotizacionVenta | null>(null)
+  const navegar = useNavigate()
+  /*
+    DESDE EL TABLERO DE VENTAS: `?nueva=1` abre «Nueva cotización» y
+    `?cotizacion=COT-…` abre esa. El parámetro se quita al abrir.
+  */
+  const [parametros, setParametros] = useSearchParams()
+  const pideNueva = parametros.get('nueva')
+  const pideCotizacion = parametros.get('cotizacion')
+  useEffect(() => {
+    if (pideNueva) {
+      setNueva(true)
+      setParametros({}, { replace: true })
+      return
+    }
+    if (!pideCotizacion || !data) return
+    const q = data.find((c) => c.numero === pideCotizacion)
+    if (q) setDetalle(q)
+    setParametros({}, { replace: true })
+  }, [pideNueva, pideCotizacion, data, setParametros])
   const [pdf, setPdf] = useState<PdfArmado | null>(null)
 
   const [clienteId, setClienteId] = useState('')
@@ -470,14 +490,11 @@ export function Cotizaciones() {
                   >
                     La rechazó
                   </Button>
-                  <Button
-                    disabled={cerrar.isPending}
-                    onClick={async () => {
-                      await cerrar.mutateAsync({ id: detalle.id, estado: 'ACEPTADA' })
-                      setDetalle(null)
-                    }}
-                  >
-                    La aceptó
+                  {/* «La aceptó» terminaba ahí (10/11/2026): ahora la
+                      cotización aceptada se despacha, y al aprobarse el
+                      despacho queda aceptada sola. */}
+                  <Button onClick={() => navegar(`/app/facturacion/notas-entrega?cotizacion=${detalle.id}`)}>
+                    🚚 Despachar esta cotización
                   </Button>
                 </>
               ) : null}
