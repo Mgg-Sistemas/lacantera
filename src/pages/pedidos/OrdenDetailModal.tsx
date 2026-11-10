@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
@@ -81,6 +81,7 @@ import {
   textoOcAprobada,
   textoOcNoSePagara,
   textoOrdenAprobacion,
+  textoOrdenCerrada,
   textoOrdenPagada,
   textoOrdenPago,
   type CotizacionMensaje,
@@ -215,6 +216,7 @@ export function OrdenDetailModal({
   onEditar,
   onCancel,
   onAbrir,
+  alAbrir,
 }: {
   orden: Orden
   /** Todas las que se ven: de aquí salen la madre y sus sub-OC. */
@@ -226,6 +228,8 @@ export function OrdenDetailModal({
   onCancel: () => void
   /** Abrir otra orden (la madre o una sub-OC). */
   onAbrir: (id: number) => void
+  /** «📄 PDF» / «💬 WhatsApp» de la lista o del histórico: se abre con eso ya puesto. */
+  alAbrir?: 'pdf' | 'whatsapp'
 }) {
   const yo = permisos.yo
   const canManageProcurement = permisos.gestiona
@@ -263,11 +267,12 @@ export function OrdenDetailModal({
   const ofertasQ = useOfertas(permisos.compras ? [madre.id] : [])
   const ofertas = useMemo(() => ofertasQ.data ?? [], [ofertasQ.data])
   const { data: stats } = useEstadisticasProveedores(permisos.compras)
-  const { data: proveedores } = useProveedores(false)
+  const { data: proveedores, isFetched: proveedoresListos } = useProveedores(false)
   const proveedorDe = (id: number | null | undefined) => (id ? proveedores?.find((p) => p.id === id) : undefined)
   const prov = proveedorDe(o.proveedor_id)
   const { data: tasa } = useTasaVigente()
-  const { data: evaluacion } = useEvaluacionDeOrden(o.id, permisos.compras && o.estado === 'finalizada')
+  const evaluacionQ = useEvaluacionDeOrden(o.id, permisos.compras && o.estado === 'finalizada')
+  const evaluacion = evaluacionQ.data
   // Un servicio no lo recibe el almacén: Compras confirma que se prestó (MGG «🔧 Servicio realizado»).
   const recibible = permisos.recibe_almacen === true && !esServicio && esRecibible(o)
   const servicioRealizable =
@@ -456,6 +461,59 @@ export function OrdenDetailModal({
                   texto: textoFinalizada(o, evaluacion ?? null, datosMensaje),
                 }
               : { titulo: `Avisar por WhatsApp · abono a OC ${o.oc_codigo ?? o.codigo}`, texto: textoAbono(o, avisoPaso.abono, datosMensaje) }
+
+  /*
+    DESDE LA LISTA Y EL HISTÓRICO (la dueña, 10/11/2026: «desde la vista de
+    tabla e histórico, tendrá sus respectivos PDF y mensaje de WhatsApp»): el
+    PDF de la OC (o el de la OP, si aún no hay OC) y el mensaje de su etapa.
+  */
+  function mensajeDeEtapa(): { titulo: string; texto: string } {
+    const oc = o.oc_codigo ?? o.codigo
+    switch (o.estado) {
+      case 'oc_aprobada':
+        return { titulo: `Avisar por WhatsApp · OC ${oc} aprobada`, texto: textoOcAprobada(o, datosMensaje) }
+      case 'confirmada_metodo':
+      case 'cuenta_abierta':
+        return { titulo: `Avisar para pagar · ${oc}`, texto: textoPago() }
+      case 'por_recibir':
+      case 'pagada':
+      case 'recibida':
+        return o.pagada_en
+          ? { titulo: `Avisar por WhatsApp · OC ${oc} PAGADA`, texto: textoOrdenPagada(o, datosMensaje) }
+          : { titulo: `Avisar por WhatsApp · OC ${oc} aprobada`, texto: textoOcAprobada(o, datosMensaje) }
+      case 'finalizada':
+        return { titulo: `Avisar por WhatsApp · ${oc} FINALIZADA`, texto: textoFinalizada(o, evaluacion ?? null, datosMensaje) }
+      case 'cancelada':
+      case 'anulada':
+      case 'desistida_proveedor':
+        return { titulo: `Avisar por WhatsApp · ${oc}`, texto: textoOrdenCerrada(o, datosMensaje) }
+      default:
+        return {
+          titulo: `Avisar para aprobar · ${oc}`,
+          texto: textoOrdenAprobacion(o, {
+            proveedor: prov?.nombre ?? '',
+            condicion: o.condiciones_pago ? labelCondicionPago(o.condiciones_pago) : null,
+            empresa: empresaNombre,
+            cotizaciones: cotizacionesMensaje(),
+            tasaBs: tasa ? Number(tasa.tasa) : null,
+          }),
+        }
+    }
+  }
+  const [porAbrir, setPorAbrir] = useState(alAbrir ?? null)
+  const listoAlAbrir =
+    !!empresa &&
+    proveedoresListos &&
+    (!permisos.compras || ofertasQ.isFetched) &&
+    (porAbrir !== 'whatsapp' || o.estado !== 'finalizada' || !permisos.compras || evaluacionQ.isFetched)
+  useEffect(() => {
+    if (!porAbrir || !listoAlAbrir) return
+    setPorAbrir(null)
+    if (porAbrir === 'whatsapp') setMensajeWs(mensajeDeEtapa())
+    else if (o.oc_codigo) pdfOc()
+    else void armarPdf(`Solicitud de Pedido ${o.codigo}`, () => armarSolicitudPedidoPdf(o, empresaDelPapel(empresa)))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [porAbrir, listoAlAbrir])
 
   // «✔ Aprobar OC» abre la ventana con «¿Se pagará esta OC?» (09/11/2026).
   const [aprobando, setAprobando] = useState(false)

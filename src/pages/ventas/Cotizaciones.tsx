@@ -83,6 +83,8 @@ export function Cotizaciones() {
   const [parametros, setParametros] = useSearchParams()
   const pideNueva = parametros.get('nueva')
   const pideCotizacion = parametros.get('cotizacion')
+  const pidePdf = parametros.get('pdf') === '1'
+  const [pdfAlAbrir, setPdfAlAbrir] = useState(false)
   useEffect(() => {
     if (pideNueva) {
       setNueva(true)
@@ -91,9 +93,12 @@ export function Cotizaciones() {
     }
     if (!pideCotizacion || !data) return
     const q = data.find((c) => c.numero === pideCotizacion)
-    if (q) setDetalle(q)
+    if (q) {
+      setDetalle(q)
+      if (pidePdf) setPdfAlAbrir(true)
+    }
     setParametros({}, { replace: true })
-  }, [pideNueva, pideCotizacion, data, setParametros])
+  }, [pideNueva, pideCotizacion, pidePdf, data, setParametros])
   const [pdf, setPdf] = useState<PdfArmado | null>(null)
 
   const [clienteId, setClienteId] = useState('')
@@ -221,6 +226,14 @@ export function Cotizaciones() {
       }),
     )
   }
+
+  // `&pdf=1` (histórico del tablero de ventas): al abrir el documento, su PDF.
+  useEffect(() => {
+    if (!pdfAlAbrir || !detalle || !renglonesDetalle.isSuccess) return
+    setPdfAlAbrir(false)
+    void imprimir(detalle)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pdfAlAbrir, detalle, renglonesDetalle.isSuccess])
 
   return (
     <>

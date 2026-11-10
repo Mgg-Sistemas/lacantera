@@ -1,5 +1,6 @@
 import type { EtapaVenta, TarjetaVenta } from '@/lib/api/ventasTablero'
 import { dolares, dinero, fecha } from '@/lib/formato'
+import { textoAnulada, textoCotizacion, textoDespachoAprobado, textoDespachoPorAprobar, textoFacturada, textoFinalizada } from '@/lib/ficha/ventasWhatsapp'
 
 /*
   LO QUE NO ES PANTALLA DEL TABLERO DE VENTAS: columnas, etiquetas, chips y
@@ -128,4 +129,26 @@ export function coincide(t: TarjetaVenta, q: string): boolean {
     .toLowerCase()
     .split(/\s+/)
     .every((p) => h.includes(p))
+}
+
+/** El PDF del documento: se abre en su pantalla con el papel de siempre. El despacho por aprobar no tiene papel todavía. */
+export function pdfDe(t: TarjetaVenta): string | null {
+  return t.tipo === 'SD' ? null : `${rutaDe(t).ruta}&pdf=1`
+}
+
+/** El WhatsApp de la etapa en que está la venta (el mismo del detalle). */
+export function whatsappDe(t: TarjetaVenta, empresa: string): { titulo: string; texto: string } {
+  const [titulo, texto] =
+    t.etapa === 'cot'
+      ? ['Cotización', textoCotizacion(t, empresa)]
+      : t.etapa === 'aprobar'
+        ? ['Despacho por aprobar', textoDespachoPorAprobar(t, empresa)]
+        : t.etapa === 'despachada'
+          ? ['Despacho aprobado', textoDespachoAprobado(t, empresa)]
+          : t.etapa === 'facturada'
+            ? ['Factura', textoFacturada(t, empresa)]
+            : t.etapa === 'cobrada'
+              ? ['Venta finalizada', textoFinalizada(t, empresa)]
+              : ['Anulación', textoAnulada(t, empresa)]
+  return { titulo: `${titulo} · ${t.numero}`, texto }
 }
