@@ -330,8 +330,8 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
             <Button onClick={() => setModal({ kind: 'create' })}>+ Nueva solicitud</Button>
           ) : (
             <div className="flex flex-wrap gap-2">
-              <Link to="/app/pedidos/historico" title="Ver histórico filtrable de órdenes">
-                <Button variant="ghost">⌕ Histórico</Button>
+              <Link to="/app/pedidos/historico" title="Todas las órdenes, en lista y con buscador, con su PDF y su WhatsApp">
+                <Button variant="outline">📚 Ver histórico</Button>
               </Link>
               <Button variant="ghost" onClick={() => setModal({ kind: 'reporte' })}>
                 📊 Reporte por renglón

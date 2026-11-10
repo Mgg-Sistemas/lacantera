@@ -6,7 +6,9 @@ import { Chip } from '@/components/ui/Chip'
 import { Button } from '@/components/ui/Button'
 import { fechaHora } from '@/lib/formato'
 import type { TarjetaVenta } from '@/lib/api/ventasTablero'
-import { TIPO_DOC, chipsDe, coincide, montoDe, pdfDe, whatsappDe } from './ventasTablero'
+import { cn } from '@/lib/cn'
+import type { EtapaVenta } from '@/lib/api/ventasTablero'
+import { COLUMNAS, TIPO_DOC, chipsDe, coincide, montoDe, pdfDe, whatsappDe } from './ventasTablero'
 
 /*
   EL HISTÓRICO DE UNA COLUMNA (la dueña, 10/11/2026: «que sea con un scroll,
@@ -27,9 +29,12 @@ export function HistoricoVentas({
   onAbrir,
   onWhatsapp,
   onCerrar,
+  todas,
 }: {
   titulo: string
   tarjetas: TarjetaVenta[]
+  /** «📚 Ver histórico» del tablero: todas las columnas, con filtro por etapa. */
+  todas?: boolean
   empresa: string
   onAbrir: (clave: string) => void
   onWhatsapp: (titulo: string, texto: string) => void
@@ -37,7 +42,11 @@ export function HistoricoVentas({
 }) {
   const navegar = useNavigate()
   const [busca, setBusca] = useState('')
-  const filas = useMemo(() => tarjetas.filter((t) => coincide(t, busca.trim())), [tarjetas, busca])
+  const [etapa, setEtapa] = useState<EtapaVenta | null>(null)
+  const filas = useMemo(
+    () => tarjetas.filter((t) => (!etapa || t.etapa === etapa) && coincide(t, busca.trim())),
+    [tarjetas, busca, etapa],
+  )
 
   return (
     <Modal
@@ -60,6 +69,24 @@ export function HistoricoVentas({
           onChange={(e) => setBusca(e.target.value)}
           autoFocus
         />
+        {todas ? (
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Etapa">
+            {[{ etapa: null, titulo: 'Todas' } as { etapa: EtapaVenta | null; titulo: string }, ...COLUMNAS].map((c) => (
+              <button
+                key={c.etapa ?? 'todas'}
+                type="button"
+                aria-pressed={etapa === c.etapa}
+                onClick={() => setEtapa(c.etapa)}
+                className={cn(
+                  'rounded-full border px-3 py-1 text-xs font-semibold',
+                  etapa === c.etapa ? 'bg-royal-600 border-royal-600 text-white' : 'border-hairline bg-surface text-ink/70',
+                )}
+              >
+                {c.titulo} · {c.etapa ? tarjetas.filter((t) => t.etapa === c.etapa).length : tarjetas.length}
+              </button>
+            ))}
+          </div>
+        ) : null}
         <div className="text-ink/55 text-xs">
           {filas.length === tarjetas.length ? `${filas.length} en la lista` : `${filas.length} de ${tarjetas.length} coinciden`}
         </div>
@@ -76,6 +103,7 @@ export function HistoricoVentas({
                   <th className="px-3 py-2 font-medium">Cliente</th>
                   <th className="px-3 py-2 font-medium">Producto</th>
                   <th className="px-3 py-2 text-right font-medium">Monto</th>
+                  {todas ? <th className="px-3 py-2 font-medium">Etapa</th> : null}
                   <th className="px-3 py-2 font-medium">Estado</th>
                   <th className="px-3 py-2 font-medium">Fecha</th>
                   <th className="px-3 py-2" />
@@ -110,6 +138,11 @@ export function HistoricoVentas({
                         {monto ? monto.texto : ''}
                         {monto?.etiqueta ? <div className="text-ink/50 font-sans text-[11px]">{monto.etiqueta}</div> : null}
                       </td>
+                      {todas ? (
+                        <td className="text-ink/70 px-3 py-2 text-xs whitespace-nowrap">
+                          {COLUMNAS.find((c) => c.etapa === t.etapa)?.titulo ?? '—'}
+                        </td>
+                      ) : null}
                       <td className="px-3 py-2">
                         <span className="flex flex-wrap gap-1">
                           {chipsDe(t).map((c, i) => (
