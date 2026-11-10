@@ -262,7 +262,7 @@ const CompraDirecta = pagina(() =>
   import('@/pages/compras/CompraDirecta').then((m) => ({ default: m.CompraDirecta })),
 )
 const TableroVentas = pagina(() =>
-  import('@/pages/ventas/Tablero').then((m) => ({ default: m.TableroVentas })),
+  import('@/pages/ventas/TableroVentas').then((m) => ({ default: m.TableroVentas })),
 )
 const ClientesVenta = pagina(() =>
   import('@/pages/ventas/Clientes').then((m) => ({ default: m.Clientes })),
