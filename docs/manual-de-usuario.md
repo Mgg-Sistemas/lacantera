@@ -2944,7 +2944,9 @@ Cada paso tiene su mensaje, con sus emojis, al estilo de MGG. **Ninguno sale sol
 
 ## 10. Ventas
 
-Ventas es el camino del material hacia afuera: a quién se le vende, a cuánto, y qué se le ofrece antes de mandar el camión. El menú **Ventas** tiene cuatro pantallas: **Tablero**, **Clientes**, **Lista de precios** y **Cotizaciones**.
+Ventas es el camino del material hacia afuera: a quién se le vende, a cuánto, y qué se le ofrece antes de mandar el camión. El menú **Ventas** tiene cinco pantallas: **Tablero**, **Clientes**, **Lista de precios**, **Cotizaciones** y **Conciliación de Pagos**.
+
+**Desde el 10/11/2026 la venta se sigue en un tablero, como las compras.** **Ventas › Tablero** pone cada venta en su columna —cotización, despacho por aprobar, despachada, facturada, cobrada— y desde su tarjeta se hace el paso que sigue y se manda su WhatsApp (10.2).
 
 El despacho se hace en **Facturación › Notas de entrega**, y la factura y el cobro en **Facturación › Facturas**. La nota de entrega se cuenta aquí (10.6) porque es el paso de la venta que saca el material del patio; la factura, el cobro y las notas de crédito, en el capítulo 21.
 
@@ -2966,12 +2968,14 @@ Ventas toca dos módulos y dos casillas, y conviene no confundirlos.
 | Vender por debajo del mínimo, o dar un renglón sin cargo | La casilla de **vender bajo el mínimo** (13.1) |
 | Ver **Facturación › Notas de entrega** | El módulo **Facturación** |
 | Pedir un despacho, completar una nota, ponerle sus camiones, enlazarla a una factura | **Facturación** en escritura |
-| Aprobar o no aprobar un despacho | La casilla **Aprobar los despachos** (13.1) |
+| Aprobar o no aprobar un despacho | Los **administradores** y quien esté en **Usuarios autorizados** con **Aprobar despachos** |
 | Cancelar un despacho que espera aprobación | Quien lo pidió |
 | Anular una nota de entrega, o soltarla de una factura | **Facturación** en control total |
 | Corregir una nota entera con **Editar** | El rol **Administrador** |
 
-Dos reglas que no dependen de ningún permiso: **quien pide un despacho no lo aprueba**, aunque tenga la casilla, y **solo quien lo pidió lo cancela**. Las dos las impone el sistema.
+Dos reglas que no dependen de ningún permiso: **quien pide un despacho no lo aprueba** (salvo un administrador), y **solo quien lo pidió lo cancela**. Las dos las impone el sistema.
+
+**Una sola aprobación por venta: la del despacho.** La factura ya no pasa por «Por autorizar»: quien tiene **Facturación** en escritura la emite.
 
 **Cuando le falta permiso, el mensaje dice qué falta.** Si es un nivel sobre el módulo, verá «Su usuario no tiene acceso a ….»; si es una casilla, «Su usuario no tiene permiso para ….». Si llega sin detalle, «Su usuario no tiene permiso para esta acción.» En los tres casos se pide a la administración, o lo hace quien lo tenga.
 
@@ -2979,14 +2983,37 @@ Una cosa más, que vale para todas las pantallas del módulo: **lo que se escrib
 
 ### 10.2 El circuito de una venta
 
-Esta es la sección que hay que leer aunque no se lea ninguna otra. Del cliente al cobro son seis pasos; dos son opcionales.
+Esta es la sección que hay que leer aunque no se lea ninguna otra.
 
-1. **Se registra el cliente.** **Ventas › Clientes › Nuevo cliente**. Sin cliente no se cotiza, no se despacha y no se factura. Hacen falta la **Identificación** —el RIF de una empresa o la cédula de una persona sin RIF— y la **Razón social**; el **Domicilio fiscal** se imprime en la factura.
-2. **Se le pone precio a lo que se vende.** **Ventas › Lista de precios**. Cada producto lleva, por cada unidad en que se vende, un **precio de lista** y un **precio mínimo**, que es el suelo. Un producto sin precio en esa unidad se puede vender igual, a **precio acordado**.
-3. **Se cotiza, si hace falta.** **Ventas › Cotizaciones › Nueva cotización**. Nace en **Enviada**, y desde el detalle se cierra con **La aceptó** o con **La rechazó**. Una cotización no compromete existencias.
-4. **Se pide el despacho.** **Facturación › Notas de entrega › Pedir despacho**. Hacen falta el cliente, el patio, al menos un renglón completo y los datos del transporte: **el nombre del chofer, su cédula y la placa del vehículo**. El pedido queda **Por aprobar** y **no rebaja nada todavía**.
-5. **Otra persona lo aprueba.** Pulsa **Aprobar** en la tarjeta del despacho. En ese momento el sistema comprueba que haya material y tasa del día, **nace la nota de entrega en Despachada y el material sale del patio**. Este es el paso que descuenta el patio.
-6. **Se factura y se cobra, si se factura.** En **Facturación › Facturas**, con **Facturar notas**: se marcan una o varias notas despachadas del mismo cliente y la misma moneda, y la factura se envía a autorizar. La nota pasa a **Facturada** cuando la factura se emite, y el cobro se registra en la factura. Todo eso está en el capítulo 21 (21.2).
+#### El tablero
+
+**Ventas › Tablero** tiene seis columnas, como el de Compras. Cada tarjeta es una venta, con sus papeles encadenados (cotización → despacho → nota de entrega → factura):
+
+| Columna | Qué hay | Lo que sigue |
+| --- | --- | --- |
+| **Cotizaciones** | Las enviadas que todavía no se despachan | **🚚 Despachar esta cotización** |
+| **Despacho por aprobar** | Los despachos pedidos | **✔ Aprobar despacho** («¿Se despacha?») |
+| **Despachada · por cobrar** | Las notas de entrega sin factura que no se han pagado | **🧾 Facturar esta nota**, o el pago en la **Conciliación de Pagos** |
+| **Facturada · por cobrar** | Las facturas con saldo | **💵 Registrar cobro** |
+| **Cobrada** | Las pagadas (por cobro o por conciliación) | **💬 Venta finalizada** |
+| **Anuladas · no aprobadas** | Lo cerrado, con su motivo | — |
+
+Las columnas de cobradas y anuladas enseñan los últimos 7, 30 o 90 días. En el teléfono se elige la columna arriba y salen sus tarjetas en una sola fila.
+
+#### Los pasos
+
+1. **Se registra el cliente** y **se le pone precio a lo que se vende** (10.3 y 10.4).
+2. **Se cotiza, si hace falta.** **+ Nueva cotización**. La cotización no es obligatoria: se puede despachar sin ella.
+3. **Se pide el despacho.** **🚚 Pedir despacho**, o **🚚 Despachar esta cotización** desde la cotización, que trae el cliente, la moneda y los renglones ya puestos y deja el despacho enlazado a ella. Hacen falta el patio y los datos del transporte: **el nombre del chofer, su cédula y la placa**. El pesaje de la romana y la guía se eligen como siempre. El pedido queda **Por aprobar** y **no rebaja nada todavía**.
+4. **Lo aprueba quien está autorizado.** **✔ Aprobar despacho** pregunta **«¿Se despacha?»**:
+   - **SÍ**: nace la nota de entrega y el material sale del patio.
+   - **NO, por ahora**: con su motivo (⏳ cliente con deuda vencida, 💳 sin cupo de crédito, ⛰ no hay material, 📝 otro). Sigue por aprobar con el motivo a la vista y se le avisa a quien lo pidió.
+   - **🚫 No procede**: con su justificación; el despacho queda no aprobado.
+5. **Se cobra.** Una nota sin factura se da por pagada con la **Conciliación de Pagos**: al enlazar el pago bancario que la cubre, la tarjeta pasa a **Cobrada**. Si se factura (**🧾 Facturar esta nota**), la factura se emite al momento —ya no se envía a autorizar— y el cobro se registra en ella (21.2).
+
+#### Los mensajes de WhatsApp
+
+Cada paso tiene su mensaje listo para copiar o abrir en WhatsApp, desde la tarjeta: **cotización**, **despacho por aprobar**, **despacho aprobado** (con la nota de entrega), **despacho no aprobado** (con el motivo), **factura**, **cobro o abono**, **recordatorio de cobro**, **venta finalizada** y **anulación**. Al aprobar, al no aprobar, al emitir la factura y al registrar un cobro el mensaje se abre solo.
 
 **Las vueltas atrás.** Todas dejan rastro y piden motivo:
 
@@ -2994,12 +3021,6 @@ Esta es la sección que hay que leer aunque no se lea ninguna otra. Del cliente 
 - **Cancelar** un despacho que espera aprobación lo retira. Lo hace quien lo pidió.
 - **Anular una nota Despachada** devuelve el material al patio con un reverso, y la nota queda **Anulada**, a la vista.
 - **Una nota Facturada no se anula desde la nota**: primero se anula la factura, y sus notas vuelven a quedar despachadas, sin factura (21.2).
-
-**Los dos papeles del camión.** El pesaje de la romana y la guía de movilización se eligen de una lista al pedir el despacho, y los dos son opcionales. Al elegir el pesaje, los pesos y la placa se traen de la báscula; al aprobarse el despacho, el ticket y la guía quedan gastados en ese viaje, y si la nota se anula vuelven a quedar libres. El detalle está en el capítulo 8.
-
-**La cotización aceptada no se convierte en despacho.** No hay botón que la pase a nota de entrega. Aunque el cliente haya aceptado, al pedir el despacho hay que volver a elegir el cliente y volver a cargar los renglones.
-
-**Una cotización no se anula desde la pantalla.** Solo se cierra como **Aceptada** o como **Rechazada**. Una oferta que se cayó se cierra con **La rechazó**.
 
 ### 10.3 Clientes
 
@@ -3353,7 +3374,7 @@ El PDF sale con la cabecera de la casa, como los demás, **pero el rótulo NOTA 
 
 ### 10.7 Facturación
 
-La factura se hace en **Facturación › Facturas**: sobre las notas de entrega despachadas, con **Facturar notas**, o sin nota, con **Factura sin nota**. Toda factura se envía a autorizar y la emite otro usuario. Está en el capítulo 21 (21.2).
+La factura se hace en **Facturación › Facturas**: sobre las notas de entrega despachadas, con **Facturar notas**, o sin nota, con **Factura sin nota**. Desde el 10/11/2026 la factura se emite al momento, sin autorización: la única aprobación de la venta es la del despacho. Está en el capítulo 21 (21.2).
 
 ### 10.8 Notas de crédito
 
@@ -6888,7 +6909,7 @@ La pantalla lo resume: **Facturas contra notas de entrega —una, o todas las de
 
 Arriba, dos botones: **Factura sin nota** y **Facturar notas**, que dice cuántas esperan —**Facturar notas (3 sin factura)**— y está apagado cuando no hay ninguna. Las notas que se ofrecen son las **Despachadas** que se pueden facturar; las que se generaron como solo respaldo de una nota de salida no aparecen (10.10).
 
-Debajo, si las hay, la tarjeta de las **facturas por autorizar** (ver más abajo), y después la lista.
+Debajo, la lista de facturas.
 
 | Columna | Qué muestra |
 | --- | --- |
@@ -6901,20 +6922,11 @@ Debajo, si las hay, la tarjeta de las **facturas por autorizar** (ver más abajo
 
 Si todavía no hay ninguna, **Sin facturas emitidas**, con el botón que toque: **Facturar notas** si hay notas esperando, o **Factura sin nota** si no.
 
-#### Toda factura pasa por autorización
+#### La factura se emite al momento
 
-**Nadie emite una factura de un solo paso.** Quien la prepara la envía a autorizar, y otra persona con la casilla **Autorizar y emitir facturas** la emite o la rechaza. Mientras espera, **todavía no es una factura**: lleva un número **PRE-2026-0001**, no gasta número de control, no toca el patio, no entra al libro de ventas y nadie debe nada por ella.
+**Desde el 10/11/2026 la venta lleva una sola aprobación: la del despacho** (10.2). La factura ya no pasa por «Por autorizar»: quien tiene **Facturación** en escritura pulsa **Emitir la factura** y sale en ese momento, con su número de control, la fecha y la tasa de ese día. Al emitirse se abre la factura con su mensaje de WhatsApp, y al registrar un cobro sale el del cobro o abono.
 
-La tarjeta de las facturas por autorizar va arriba de todo en **Facturación › Facturas**, y cada uno ve lo suyo:
-
-- **Quien puede autorizar** ve todas las que esperan, con el cliente, de qué notas sale o cuántos renglones lleva, quién la preparó y lo que suma. La tarjeta lo advierte: **Todavía no son facturas: no tienen número de control ni tocaron el patio. Al autorizarla se emite con la tasa de hoy.** En bolívares, el total puede no ser el que vio quien la preparó.
-  - **Autorizar y emitir** la emite en ese momento, con la fecha y la tasa de ese día.
-  - **Rechazar** pide el motivo: **No se emite nada. Quien la preparó lee el motivo y, si hace falta, prepara otra.**
-- **Quien la preparó** ve las suyas con el chip **Esperando autorización**, y puede retirarla con **Retirar** mientras espera: **Deja de esperar autorización. Sus notas de entrega vuelven a quedar libres para otra factura.** Durante una semana sigue viendo qué pasó con ella: **Emitida**, con el número de la factura que salió, **Rechazada**, con el motivo, o **Retirada**.
-
-**Una nota de entrega que está en una factura por autorizar no entra en otra.** En la lista de notas sale apagada, con **por autorizar en PRE-2026-0001**.
-
-**Si al autorizar algo ya no cuadra** —el patio no alcanza, el cliente pasó su límite de crédito—, **no se emite nada** y la factura sigue por autorizar, para rechazarla con el motivo.
+**Si al emitir algo no cuadra** —el patio no alcanza, el cliente pasó su límite de crédito—, **no se emite nada** y el aviso dice qué falta.
 
 #### Preparar una factura de notas de entrega
 
@@ -7472,6 +7484,8 @@ El gerente general y el administrador hacen de respaldo en todos los pasos de lo
 El **📜 Historial** y los traslados se leen, además, con el permiso de Inventario. Quien tiene uno suele tener el otro; si a alguien le salen esas dos pantallas vacías teniendo Salidas y traslados, es lo primero que hay que mirar.
 
 ### 26.2 Salidas
+
+**WhatsApp en cada paso (10/11/2026).** Cada solicitud tiene su botón **WhatsApp**: por aprobar, aprobada, no aprobada o cancelada (con el motivo). Al aprobarla y al no aprobarla el mensaje se abre solo; la entregada sigue con su **Reporte**, con fotos.
 
 **Operación › Salidas y traslados › ↘ Salidas › 🗂 Solicitudes**
 

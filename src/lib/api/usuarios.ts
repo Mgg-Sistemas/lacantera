@@ -460,6 +460,8 @@ export interface UsuarioAutorizado {
   activo: boolean
   aprobar_oc: boolean
   aprobar_salidas: boolean
+  /** Aprueba despachos de ventas (10/11/2026: una sola aprobación por venta). */
+  aprobar_despachos: boolean
   /** Su firma (PNG en data URL), o nulo si no tiene. */
   firma: string | null
 }
@@ -476,16 +478,18 @@ function invalidarAutorizados(qc: ReturnType<typeof useQueryClient>) {
   // Quién aprueba se lee también en compras y en salidas.
   void qc.invalidateQueries({ queryKey: ['compras'] })
   void qc.invalidateQueries({ queryKey: ['salidas'] })
+  void qc.invalidateQueries({ queryKey: ['ventas'] })
 }
 
 export function useGuardarAutorizado() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (v: { usuario_id: string; aprobar_oc: boolean; aprobar_salidas: boolean }) =>
+    mutationFn: (v: { usuario_id: string; aprobar_oc: boolean; aprobar_salidas: boolean; aprobar_despachos: boolean }) =>
       rpc('guardar_usuario_autorizado', {
         p_usuario: v.usuario_id,
         p_aprobar_oc: v.aprobar_oc,
         p_aprobar_salidas: v.aprobar_salidas,
+        p_aprobar_despachos: v.aprobar_despachos,
       }),
     onSuccess: () => invalidarAutorizados(qc),
   })
