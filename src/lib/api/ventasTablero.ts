@@ -1,5 +1,40 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { rpc } from './rpc'
+import { supabase } from '@/lib/supabase'
+import { desenvolver, rpc } from './rpc'
+
+/** Lo que «Despachar esta cotización» le pone al pedido de despacho. */
+export interface CotizacionParaDespacho {
+  id: number
+  numero: string
+  cliente_id: number
+  moneda: string
+  renglones: Array<{
+    articulo_id: number | null
+    descripcion: string
+    cantidad: number
+    unidad: string
+    precio_unitario: number
+    exento_iva: boolean
+    condicion: string | null
+    descuento_pct: number | null
+    descuento_unitario: number | null
+    motivo_condicion: string | null
+  }>
+}
+
+export async function leerCotizacionParaDespacho(id: number): Promise<CotizacionParaDespacho> {
+  const c = desenvolver<{ id: number; numero: string; cliente_id: number; moneda: string }>(
+    await supabase.from('cotizaciones_venta').select('id, numero, cliente_id, moneda').eq('id', id).single(),
+  )
+  const renglones = desenvolver<CotizacionParaDespacho['renglones']>(
+    await supabase
+      .from('cotizacion_venta_renglones')
+      .select('articulo_id, descripcion, cantidad, unidad, precio_unitario, exento_iva, condicion, descuento_pct, descuento_unitario, motivo_condicion')
+      .eq('cotizacion_id', id)
+      .order('linea'),
+  )
+  return { ...c, renglones }
+}
 
 /*
   EL TABLERO DE VENTAS (la dueña, 10/11/2026: «así como se tiene compras»).

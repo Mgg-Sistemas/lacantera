@@ -30,20 +30,19 @@ import {
   aquí. Quitar a alguien no toca lo que ya aprobó.
 */
 
-type Podra = 'OC' | 'SALIDAS' | 'AMBAS'
+type Permiso = 'aprobar_oc' | 'aprobar_salidas' | 'aprobar_despachos'
 
-const PODRA: { valor: Podra; etiqueta: string; dice: string }[] = [
-  { valor: 'OC', etiqueta: 'Aprobar órdenes de compra', dice: 'Solo firma y aprueba las órdenes de compra.' },
-  { valor: 'SALIDAS', etiqueta: 'Aprobar salidas', dice: 'Solo aprueba las solicitudes de salida del almacén.' },
-  { valor: 'AMBAS', etiqueta: 'Ambas opciones', dice: 'Aprueba órdenes de compra y salidas.' },
+const PERMISOS: { clave: Permiso; etiqueta: string; dice: string }[] = [
+  { clave: 'aprobar_oc', etiqueta: 'Aprobar órdenes de compra', dice: 'Firma y aprueba las órdenes de compra.' },
+  { clave: 'aprobar_salidas', etiqueta: 'Aprobar salidas', dice: 'Aprueba las solicitudes de salida del almacén.' },
+  // 10/11/2026: la venta lleva una sola aprobación, al despachar.
+  { clave: 'aprobar_despachos', etiqueta: 'Aprobar despachos', dice: 'Aprueba los despachos de ventas («¿Se despacha?»).' },
 ]
 
-const resumen = (a: Pick<UsuarioAutorizado, 'aprobar_oc' | 'aprobar_salidas'>) =>
-  a.aprobar_oc && a.aprobar_salidas
-    ? 'Aprueba compras y salidas'
-    : a.aprobar_oc
-      ? 'Aprueba órdenes de compra'
-      : 'Aprueba salidas'
+const resumen = (a: Pick<UsuarioAutorizado, Permiso>) => {
+  const que = [a.aprobar_oc && 'compras', a.aprobar_salidas && 'salidas', a.aprobar_despachos && 'despachos'].filter(Boolean)
+  return que.length ? `Aprueba ${que.join(', ').replace(/, ([^,]*)$/, ' y $1')}` : 'Sin permisos'
+}
 
 export function UsuariosAutorizados({ editable }: { editable: boolean }) {
   const lista = useUsuariosAutorizados()
@@ -55,7 +54,7 @@ export function UsuariosAutorizados({ editable }: { editable: boolean }) {
 
   const [agregando, setAgregando] = useState(false)
   const [nuevo, setNuevo] = useState('')
-  const [podra, setPodra] = useState<Podra>('AMBAS')
+  const [podra, setPodra] = useState<Record<Permiso, boolean>>({ aprobar_oc: true, aprobar_salidas: true, aprobar_despachos: false })
   const [quitando, setQuitando] = useState<UsuarioAutorizado | null>(null)
   const [firmando, setFirmando] = useState<UsuarioAutorizado | null>(null)
   const [firma, setFirma] = useState<{ imagen: string; origen: OrigenDeFirma } | null>(null)
@@ -64,27 +63,29 @@ export function UsuariosAutorizados({ editable }: { editable: boolean }) {
   const ya = new Set((lista.data ?? []).map((a) => a.usuario_id))
   const candidatos = (usuarios.data ?? []).filter((u) => u.activo && !u.archivado_en && !ya.has(u.id))
 
-  const cambiar = (a: UsuarioAutorizado, oc: boolean, salidas: boolean) => {
+  const cambiar = (a: UsuarioAutorizado, clave: Permiso, valor: boolean) => {
     setAviso(null)
-    if (!oc && !salidas) {
+    const v = { aprobar_oc: a.aprobar_oc, aprobar_salidas: a.aprobar_salidas, aprobar_despachos: a.aprobar_despachos, [clave]: valor }
+    if (!v.aprobar_oc && !v.aprobar_salidas && !v.aprobar_despachos) {
       setAviso('Debe quedar al menos una opción. Para quitarle todo, use «Quitar».')
       return
     }
-    guardar.mutate(
-      { usuario_id: a.usuario_id, aprobar_oc: oc, aprobar_salidas: salidas },
-      { onError: (e: Error) => setAviso(e.message) },
-    )
+    guardar.mutate({ usuario_id: a.usuario_id, ...v }, { onError: (e: Error) => setAviso(e.message) })
   }
 
   const autorizar = () => {
     if (!nuevo) return
+    if (!podra.aprobar_oc && !podra.aprobar_salidas && !podra.aprobar_despachos) {
+      setAviso('Marque al menos una opción.')
+      return
+    }
     guardar.mutate(
-      { usuario_id: nuevo, aprobar_oc: podra !== 'SALIDAS', aprobar_salidas: podra !== 'OC' },
+      { usuario_id: nuevo, ...podra },
       {
         onSuccess: () => {
           setAgregando(false)
           setNuevo('')
-          setPodra('AMBAS')
+          setPodra({ aprobar_oc: true, aprobar_salidas: true, aprobar_despachos: false })
         },
         onError: (e: Error) => setAviso(e.message),
       },
@@ -101,8 +102,9 @@ export function UsuariosAutorizados({ editable }: { editable: boolean }) {
           </h3>
           <p className="text-ink/55 mt-1 text-xs leading-relaxed">
             Solo estos usuarios —y los administradores— pueden{' '}
-            <strong className="text-ink/75 font-medium">aprobar órdenes de compra</strong> y/o{' '}
-            <strong className="text-ink/75 font-medium">aprobar salidas</strong>. Su firma se
+            <strong className="text-ink/75 font-medium">aprobar órdenes de compra</strong>,{' '}
+            <strong className="text-ink/75 font-medium">aprobar salidas</strong> y{' '}
+            <strong className="text-ink/75 font-medium">aprobar despachos</strong>. Su firma se
             estampa en lo que aprueben. Lo ya aprobado no cambia.
           </p>
         </div>
@@ -134,6 +136,9 @@ export function UsuariosAutorizados({ editable }: { editable: boolean }) {
                 <th className="px-2 py-2 text-center font-medium tracking-wider uppercase">
                   Aprobar salidas
                 </th>
+                <th className="px-2 py-2 text-center font-medium tracking-wider uppercase">
+                  Aprobar despachos
+                </th>
                 <th className="px-2 py-2 font-medium tracking-wider uppercase">Firma</th>
                 {editable ? <th /> : null}
               </tr>
@@ -153,7 +158,7 @@ export function UsuariosAutorizados({ editable }: { editable: boolean }) {
                       type="checkbox"
                       checked={a.aprobar_oc}
                       disabled={!editable || guardar.isPending}
-                      onChange={(e) => cambiar(a, e.target.checked, a.aprobar_salidas)}
+                      onChange={(e) => cambiar(a, 'aprobar_oc', e.target.checked)}
                       aria-label={`${a.nombre} aprueba órdenes de compra`}
                       className="accent-royal-600 size-4 cursor-pointer disabled:cursor-not-allowed disabled:opacity-45"
                     />
@@ -163,8 +168,18 @@ export function UsuariosAutorizados({ editable }: { editable: boolean }) {
                       type="checkbox"
                       checked={a.aprobar_salidas}
                       disabled={!editable || guardar.isPending}
-                      onChange={(e) => cambiar(a, a.aprobar_oc, e.target.checked)}
+                      onChange={(e) => cambiar(a, 'aprobar_salidas', e.target.checked)}
                       aria-label={`${a.nombre} aprueba salidas`}
+                      className="accent-royal-600 size-4 cursor-pointer disabled:cursor-not-allowed disabled:opacity-45"
+                    />
+                  </td>
+                  <td className="px-2 py-2.5 text-center">
+                    <input
+                      type="checkbox"
+                      checked={a.aprobar_despachos}
+                      disabled={!editable || guardar.isPending}
+                      onChange={(e) => cambiar(a, 'aprobar_despachos', e.target.checked)}
+                      aria-label={`${a.nombre} aprueba despachos`}
                       className="accent-royal-600 size-4 cursor-pointer disabled:cursor-not-allowed disabled:opacity-45"
                     />
                   </td>
@@ -232,7 +247,7 @@ export function UsuariosAutorizados({ editable }: { editable: boolean }) {
 
       <p className="text-ink/45 mt-3 text-xs">
         <Chip tone="royal">Administrador</Chip>{' '}
-        aprueba siempre órdenes de compra y salidas, sin estar en la lista.
+        aprueba siempre órdenes de compra, salidas y despachos, sin estar en la lista.
       </p>
 
       {aviso ? (
@@ -269,13 +284,12 @@ export function UsuariosAutorizados({ editable }: { editable: boolean }) {
           <fieldset>
             <legend className="text-ink/70 mb-2 text-sm font-medium">Podrá:</legend>
             <div className="space-y-2.5">
-              {PODRA.map((o) => (
-                <label key={o.valor} className="flex cursor-pointer items-start gap-2.5">
+              {PERMISOS.map((o) => (
+                <label key={o.clave} className="flex cursor-pointer items-start gap-2.5">
                   <input
-                    type="radio"
-                    name="podra"
-                    checked={podra === o.valor}
-                    onChange={() => setPodra(o.valor)}
+                    type="checkbox"
+                    checked={podra[o.clave]}
+                    onChange={(e) => setPodra({ ...podra, [o.clave]: e.target.checked })}
                     className="accent-royal-600 mt-0.5 size-4 shrink-0 cursor-pointer"
                   />
                   <span>
@@ -318,7 +332,7 @@ export function UsuariosAutorizados({ editable }: { editable: boolean }) {
       >
         <p className="text-ink/70 text-sm">
           <strong className="uppercase">{quitando?.nombre}</strong> ya no podrá aprobar órdenes de
-          compra ni salidas. Lo que ya aprobó se conserva con su firma. ¿Continuar?
+          compra, salidas ni despachos. Lo que ya aprobó se conserva con su firma. ¿Continuar?
         </p>
       </Modal>
 

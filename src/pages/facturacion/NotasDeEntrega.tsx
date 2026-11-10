@@ -93,6 +93,7 @@ import {
   type FilaRenglon,
 } from '@/pages/ventas/filas'
 import { TablaRenglones, Totales } from '@/pages/ventas/Cotizaciones'
+import { leerCotizacionParaDespacho } from '@/lib/api/ventasTablero'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { useDesenlazarNota, useEnlazarNotaAFactura, useFacturas } from '@/lib/api/facturacion'
 import { enCastellano, porQueNoSubio } from '@/lib/castellano'
@@ -263,6 +264,54 @@ export function NotasDeEntrega() {
   */
   const [parametros, setParametros] = useSearchParams()
   const notaPedida = parametros.get('nota')
+  /*
+    DESDE EL TABLERO DE VENTAS (10/11/2026): `?pedir=1` abre «Pedir despacho»
+    y `?cotizacion=ID` lo abre ya con el cliente, la moneda y los renglones de
+    esa cotización («🚚 Despachar esta cotización»). El despacho queda
+    enlazado a ella: al aprobarse, la cotización pasa a aceptada.
+  */
+  const [desdeCotizacion, setDesdeCotizacion] = useState<{ id: number; numero: string } | null>(null)
+  const pedirDespacho = parametros.get('pedir')
+  const cotizacionPedida = Number(parametros.get('cotizacion')) || null
+  useEffect(() => {
+    if (!pedirDespacho && !cotizacionPedida) return
+    let vigente = true
+    setParametros({}, { replace: true })
+    if (!cotizacionPedida) {
+      setNuevo(true)
+      return
+    }
+    void leerCotizacionParaDespacho(cotizacionPedida)
+      .then((c) => {
+        if (!vigente) return
+        setDesdeCotizacion({ id: c.id, numero: c.numero })
+        setClienteId(String(c.cliente_id))
+        setMoneda(c.moneda)
+        setFilas(
+          c.renglones.length
+            ? c.renglones.map((r) => ({
+                ...filaVacia(),
+                articulo_id: r.articulo_id ? String(r.articulo_id) : '',
+                descripcion: r.descripcion,
+                cantidad: String(r.cantidad),
+                unidad: r.unidad,
+                precio: String(r.precio_unitario),
+                exento: r.exento_iva,
+                condicion: (r.condicion ?? '') as FilaRenglon['condicion'],
+                descuentoEn: r.descuento_unitario != null && r.descuento_pct == null ? 'MONTO' : 'PORCENTAJE',
+                descuento:
+                  r.descuento_pct != null ? String(r.descuento_pct) : r.descuento_unitario != null ? String(r.descuento_unitario) : '',
+                motivo: r.motivo_condicion ?? '',
+              }))
+            : [filaVacia()],
+        )
+        setNuevo(true)
+      })
+      .catch(() => setNuevo(true))
+    return () => {
+      vigente = false
+    }
+  }, [pedirDespacho, cotizacionPedida, setParametros])
   useEffect(() => {
     if (!notaPedida || !data) return
     let vigente = true
@@ -471,6 +520,7 @@ export function NotasDeEntrega() {
   }
 
   const limpiar = () => {
+    setDesdeCotizacion(null)
     setClienteId('')
     setMoneda('USD')
     setChoferId('')
@@ -1173,7 +1223,7 @@ export function NotasDeEntrega() {
             setNuevo(false)
             limpiar()
           }}
-          titulo="Pedir despacho"
+          titulo={desdeCotizacion ? `Pedir despacho · desde ${desdeCotizacion.numero}` : 'Pedir despacho'}
           descripcion="No rebaja nada todavía. Al aprobarlo quien tiene el permiso, nace la nota de entrega y el material sale del patio."
           acciones={
             <>
@@ -1226,6 +1276,7 @@ export function NotasDeEntrega() {
                     renglones: aRenglones(filasEfectivas),
                     moneda,
                     alicuota_iva: 0,
+                    cotizacion_id: desdeCotizacion?.id ?? null,
                     vehiculo,
                     vehiculo_descripcion: vehiculoDespElegido ? null : nuevoVehiculo.trim() || null,
                     chofer,

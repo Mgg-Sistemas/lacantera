@@ -12,7 +12,13 @@ import { dolares } from '@/lib/formato'
 import { relTime } from '@/lib/pedidos'
 import { usePermisosVentas, useVentasTablero, type EtapaVenta, type TarjetaVenta } from '@/lib/api/ventasTablero'
 import { COLUMNAS, chipsDe, coincide, montoDe, type Tono } from './ventasTablero'
+import { useQueryClient } from '@tanstack/react-query'
+import { rpc } from '@/lib/api/rpc'
+import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
+import { textoDespachoAprobado, textoDespachoNoAprobado } from '@/lib/ficha/ventasWhatsapp'
+import { ModalWhatsappCompra } from '@/pages/compras/ModalWhatsappCompra'
 import { DetalleVentaModal } from './DetalleVentaModal'
+import { AprobarDespachoModal } from './AprobarDespachoModal'
 
 /*
   TABLERO DE VENTAS (la dueña, 10/11/2026: «así como se tiene compras, quiero
@@ -48,6 +54,7 @@ export function TableroVentas() {
   const enTelefono = useMediaQuery('(max-width: 767px)')
   const { data, isPending, error } = useVentasTablero(Number(dias))
   const { data: permisos } = usePermisosVentas()
+  const qc = useQueryClient()
 
   const filtradas = useMemo(() => (data ?? []).filter((t) => coincide(t, busca.trim())), [data, busca])
   const porEtapa = useMemo(() => {
@@ -57,6 +64,29 @@ export function TableroVentas() {
     return m
   }, [filtradas])
   const tarjeta = abierta ? (data ?? []).find((t) => t.clave === abierta) ?? null : null
+  const [aprobando, setAprobando] = useState<TarjetaVenta | null>(null)
+  const [ws, setWs] = useState<{ titulo: string; texto: string } | null>(null)
+  const { data: datosEmpresa } = useEmpresa()
+  const empresa = empresaDelPapel(datosEmpresa).razonSocial
+
+  /** Aprobado: se busca la nota de entrega que nació para armar su WhatsApp. */
+  async function alAprobar(sd: TarjetaVenta) {
+    setAprobando(null)
+    try {
+      const fresco = await qc.fetchQuery({
+        queryKey: ['ventas', 'tablero', Number(dias)],
+        queryFn: () => rpc<TarjetaVenta[]>('ventas_tablero', { p_dias: Number(dias) }),
+        staleTime: 0,
+      })
+      const ne = fresco.find((x) => x.tipo === 'NE' && x.cadena.sd === sd.numero)
+      setWs({
+        titulo: `Despacho aprobado · ${ne?.numero ?? sd.numero}`,
+        texto: textoDespachoAprobado(ne ?? sd, empresa),
+      })
+    } catch {
+      setWs({ titulo: `Despacho aprobado · ${sd.numero}`, texto: textoDespachoAprobado(sd, empresa) })
+    }
+  }
 
   const porCobrar = (data ?? [])
     .filter((t) => t.etapa === 'despachada' || t.etapa === 'facturada')
@@ -179,7 +209,37 @@ export function TableroVentas() {
         </div>
       )}
 
-      {tarjeta ? <DetalleVentaModal tarjeta={tarjeta} permisos={permisos} onCerrar={() => setAbierta(null)} /> : null}
+      {tarjeta ? (
+        <DetalleVentaModal
+          tarjeta={tarjeta}
+          permisos={permisos}
+          empresa={empresa}
+          onCerrar={() => setAbierta(null)}
+          onAprobar={(t) => {
+            setAbierta(null)
+            setAprobando(t)
+          }}
+          onWhatsapp={(titulo, texto) => setWs({ titulo, texto })}
+        />
+      ) : null}
+
+      {aprobando ? (
+        <AprobarDespachoModal
+          tarjeta={aprobando}
+          onCerrar={() => setAprobando(null)}
+          onAprobado={() => void alAprobar(aprobando)}
+          onNoAprobado={(motivo, noProcede) => {
+            const sd = aprobando
+            setAprobando(null)
+            setWs({
+              titulo: `Despacho no aprobado · ${sd.numero}`,
+              texto: textoDespachoNoAprobado(sd, motivo, noProcede, empresa),
+            })
+          }}
+        />
+      ) : null}
+
+      {ws ? <ModalWhatsappCompra titulo={ws.titulo} texto={ws.texto} onCerrar={() => setWs(null)} /> : null}
     </div>
   )
 }

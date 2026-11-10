@@ -7,6 +7,15 @@ import { cn } from '@/lib/cn'
 import { bolivares, dinero, dolares, fecha } from '@/lib/formato'
 import { fechaHoraVE } from '@/lib/pedidos'
 import type { PermisosVentas, TarjetaVenta } from '@/lib/api/ventasTablero'
+import {
+  textoAnulada,
+  textoCotizacion,
+  textoDespachoAprobado,
+  textoDespachoPorAprobar,
+  textoFacturada,
+  textoFinalizada,
+  textoRecordatorio,
+} from '@/lib/ficha/ventasWhatsapp'
 import { COLUMNAS, TIPO_DOC, chipsDe, condicionTxt, rutaDe, textoNoDespacho } from './ventasTablero'
 
 /*
@@ -21,14 +30,22 @@ import { COLUMNAS, TIPO_DOC, chipsDe, condicionTxt, rutaDe, textoNoDespacho } fr
 export function DetalleVentaModal({
   tarjeta: t,
   permisos,
+  empresa,
   onCerrar,
+  onAprobar,
+  onWhatsapp,
   acciones,
   extra,
 }: {
   tarjeta: TarjetaVenta
   permisos: PermisosVentas | undefined
+  /** La razón social, para el pie de los mensajes. */
+  empresa: string
   onCerrar: () => void
-  /** Botones propios de la etapa (fases siguientes). */
+  /** «✔ Aprobar despacho»: la ventana vive en el tablero (la tarjeta cambia de columna). */
+  onAprobar: (t: TarjetaVenta) => void
+  onWhatsapp: (titulo: string, texto: string) => void
+  /** Botones propios de fases siguientes. */
   acciones?: ReactNode
   extra?: ReactNode
 }) {
@@ -36,6 +53,60 @@ export function DetalleVentaModal({
   const col = COLUMNAS.find((c) => c.etapa === t.etapa)
   const ir = rutaDe(t)
   const chips = chipsDe(t)
+  const debe = (t.etapa === 'despachada' || t.etapa === 'facturada') && Number(t.saldo_usd ?? 0) > 0.01
+  const wa = (titulo: string, texto: string) => onWhatsapp(`${titulo} · ${t.numero}`, texto)
+
+  const deEtapa = (
+    <>
+      {t.etapa === 'cot' ? (
+        <>
+          {permisos?.despachar ? (
+            <Button onClick={() => navegar(`/app/facturacion/notas-entrega?cotizacion=${t.id}`)}>🚚 Despachar esta cotización</Button>
+          ) : null}
+          <Button variant="outline" onClick={() => wa('Cotización', textoCotizacion(t, empresa))}>
+            💬 WhatsApp de la cotización
+          </Button>
+        </>
+      ) : null}
+      {t.etapa === 'aprobar' ? (
+        <>
+          {permisos?.aprueba_despacho ? (
+            <Button className="bg-success hover:bg-success hover:brightness-95" onClick={() => onAprobar(t)}>
+              ✔ Aprobar despacho
+            </Button>
+          ) : null}
+          <Button variant="outline" onClick={() => wa('Despacho por aprobar', textoDespachoPorAprobar(t, empresa))}>
+            💬 WhatsApp para aprobar
+          </Button>
+        </>
+      ) : null}
+      {t.etapa === 'despachada' && t.tipo === 'NE' ? (
+        <Button variant="outline" onClick={() => wa('Despacho aprobado', textoDespachoAprobado(t, empresa))}>
+          💬 Reporte del despacho
+        </Button>
+      ) : null}
+      {t.etapa === 'facturada' ? (
+        <Button variant="outline" onClick={() => wa('Factura', textoFacturada(t, empresa))}>
+          💬 WhatsApp de la factura
+        </Button>
+      ) : null}
+      {debe ? (
+        <Button variant="outline" onClick={() => wa('Recordatorio de cobro', textoRecordatorio(t, empresa))}>
+          🔔 Recordar cobro
+        </Button>
+      ) : null}
+      {t.etapa === 'cobrada' ? (
+        <Button variant="outline" onClick={() => wa('Venta finalizada', textoFinalizada(t, empresa))}>
+          💬 Venta finalizada
+        </Button>
+      ) : null}
+      {t.etapa === 'anulada' ? (
+        <Button variant="outline" onClick={() => wa('Anulación', textoAnulada(t, empresa))}>
+          💬 WhatsApp de la anulación
+        </Button>
+      ) : null}
+    </>
+  )
 
   const papeles: { tipo: string; numero: string | null | undefined }[] = [
     { tipo: 'Cotización', numero: t.cadena.cot },
@@ -54,6 +125,7 @@ export function DetalleVentaModal({
       ancho="lg"
       acciones={
         <>
+          {deEtapa}
           {acciones}
           <Button variant="outline" onClick={() => navegar(ir.ruta)}>
             {ir.etiqueta}
