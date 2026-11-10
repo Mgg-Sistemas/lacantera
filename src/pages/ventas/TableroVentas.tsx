@@ -70,7 +70,8 @@ export function TableroVentas() {
   const [busca, setBusca] = useState('')
   const [abierta, setAbierta] = useState<string | null>(null)
   const [etapaTel, setEtapaTel] = useState<EtapaVenta>('aprobar')
-  const [historico, setHistorico] = useState<EtapaVenta | null>(null)
+  // Una columna («+ n más») o «todas» («📚 Ver histórico», la dueña, 10/11/2026).
+  const [historico, setHistorico] = useState<EtapaVenta | 'todas' | null>(null)
   const enTelefono = useMediaQuery('(max-width: 767px)')
   const { data, isPending, error } = useVentasTablero(Number(dias))
   const { data: permisos } = usePermisosVentas()
@@ -131,6 +132,9 @@ export function TableroVentas() {
 
   const acciones = (
     <div className="flex flex-wrap gap-2">
+      <Button variant="outline" title="Todas las ventas, en lista y con buscador, con su PDF y su WhatsApp" onClick={() => setHistorico('todas')}>
+        📚 Ver histórico
+      </Button>
       {permisos?.cotizar ? (
         <Link to="/app/ventas/cotizaciones?nueva=1">
           <Button variant="outline">+ Nueva cotización</Button>
@@ -270,8 +274,13 @@ export function TableroVentas() {
 
       {historico ? (
         <HistoricoVentas
-          titulo={`${COLUMNAS.find((c) => c.etapa === historico)?.titulo ?? ''}${foco ? ` · ${FOCOS[foco].titulo}` : ''}`}
-          tarjetas={itemsDe(historico)}
+          titulo={
+            historico === 'todas'
+              ? `Ventas de los últimos ${dias} días y lo pendiente`
+              : `${COLUMNAS.find((c) => c.etapa === historico)?.titulo ?? ''}${foco ? ` · ${FOCOS[foco].titulo}` : ''}`
+          }
+          tarjetas={historico === 'todas' ? (data ?? []) : itemsDe(historico)}
+          todas={historico === 'todas'}
           empresa={empresa}
           onAbrir={setAbierta}
           onWhatsapp={(titulo, texto) => setWs({ titulo, texto })}
