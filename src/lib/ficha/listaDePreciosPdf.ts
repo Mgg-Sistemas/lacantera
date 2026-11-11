@@ -123,33 +123,29 @@ function cabecera(
 
   const razon = d.empresa.razonSocial || EMPRESA.razonSocial
   const rifFormateado = documento(d.empresa.rif || EMPRESA.rif)
-  const actividad = (d.empresa.actividad || EMPRESA.actividad).toUpperCase()
   const contacto = correoInstitucional(d.empresa)
   const domicilio = domicilioInstitucional(d.empresa).toUpperCase()
 
   doc.setFont('helvetica', 'bold').setFontSize(14.5).setTextColor(MARCA)
-  doc.text(recortar(doc, razon, 145), x, y + 5.5)
+  doc.text(recortar(doc, razon, 145), x, y + 6.5)
 
-  doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(ROTULO)
-  doc.text(recortar(doc, actividad, 145), x, y + 10.2)
-
-  doc.setFont('helvetica', 'bold').setFontSize(8.2).setTextColor(TINTA)
+  doc.setFont('helvetica', 'bold').setFontSize(8.4).setTextColor(TINTA)
   const txtRif = `RIF: ${rifFormateado}`
-  doc.text(txtRif, x, y + 14.8)
+  doc.text(txtRif, x, y + 12.2)
   const wRif = doc.getTextWidth(txtRif)
   doc.setFont('helvetica', 'normal').setTextColor(GRIS)
-  doc.text('  ·  ', x + wRif, y + 14.8)
+  doc.text('  ·  ', x + wRif, y + 12.2)
   const wSep = doc.getTextWidth('  ·  ')
   doc.setFont('helvetica', 'normal').setTextColor(ROTULO)
-  doc.text(recortar(doc, contacto, 145 - wRif - wSep), x + wRif + wSep, y + 14.8)
+  doc.text(recortar(doc, contacto, 145 - wRif - wSep), x + wRif + wSep, y + 12.2)
 
-  doc.setFont('helvetica', 'bold').setFontSize(7.6).setTextColor(GRIS)
-  doc.text(recortar(doc, domicilio, 145), x, y + 19.2)
+  doc.setFont('helvetica', 'bold').setFontSize(7.8).setTextColor(GRIS)
+  doc.text(recortar(doc, domicilio, 145), x, y + 17.2)
 
   // Tarjeta de control a la derecha
   const W = 96
   const ALTO_CAB = 7.2
-  const ALTO_CUERPO = 19.8
+  const ALTO_CUERPO = 15.6
   const xr = DER - W
 
   doc.setFillColor(FILA_ALTERNA).setDrawColor(MARCA).setLineWidth(0.35)
@@ -159,31 +155,25 @@ function cabecera(
   doc.setFont('helvetica', 'bold').setFontSize(9.2).setTextColor('#ffffff')
   doc.text('LISTA OFICIAL DE PRECIOS', xr + W / 2, y + 4.9, { align: 'center' })
 
-  const soloFecha = d.momento.toLocaleDateString('es-VE', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
   const rubrosTxt = `${cantidadProductos} ${cantidadProductos === 1 ? 'material comercializable' : 'materiales comercializables'}`
   const monedaTxt =
     mostrarBs && tasaNum
       ? `USD y Bs. (Tasa Bs ${fmtTasa.format(tasaNum)})`
       : 'Dólares (USD) · Ref. BCV'
 
-  const filasControl: Array<{ etq: string; val: string; destacado?: boolean }> = [
-    { etq: 'VIGENTE DESDE', val: soloFecha, destacado: true },
+  const filasControl: Array<{ etq: string; val: string }> = [
     { etq: 'RUBROS EN CATÁLOGO', val: rubrosTxt },
     { etq: 'MONEDA DE COTIZACIÓN', val: monedaTxt },
     { etq: 'FECHA DE EMISIÓN', val: fechaLarga(d.momento) },
   ]
 
-  let yc = y + ALTO_CAB + 4.1
+  let yc = y + ALTO_CAB + 4.2
   for (const f of filasControl) {
     doc.setFont('helvetica', 'bold').setFontSize(6.8).setTextColor(GRIS)
     doc.text(f.etq, xr + 3.5, yc)
-    doc.setFont('helvetica', 'bold').setFontSize(7.6).setTextColor(f.destacado ? MARCA : TINTA)
+    doc.setFont('helvetica', 'bold').setFontSize(7.6).setTextColor(TINTA)
     doc.text(recortar(doc, f.val, W - 40), xr + W - 3.5, yc, { align: 'right' })
-    yc += 4.4
+    yc += 4.6
   }
 
   const yl = y + ALTO_CAB + ALTO_CUERPO + 3
@@ -203,13 +193,8 @@ function cabeceraCorta(doc: Doc, logo: string, d: DatosListaDePrecios): number {
   doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(GRIS)
   doc.text(`RIF: ${rifFormateado} · ${correoInstitucional(d.empresa)}`, x, y + 8.6)
 
-  const soloFecha = d.momento.toLocaleDateString('es-VE', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
   doc.setFont('helvetica', 'bold').setFontSize(7.8).setTextColor(ROTULO)
-  doc.text(`Vigente: ${soloFecha}`, DER, y + 6.5, { align: 'right' })
+  doc.text(fechaLarga(d.momento), DER, y + 6.5, { align: 'right' })
 
   const yl = y + 12
   doc.setDrawColor(MARCA).setLineWidth(0.45).line(IZQ, yl, DER, yl)
