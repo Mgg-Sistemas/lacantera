@@ -160,3 +160,55 @@ export function useInformeGastosPorCategoria(desde: string | null, hasta: string
       }),
   })
 }
+
+/** Qué es cada documento del informe de gastos y ventas. */
+export type TipoDeDocumentoDelInforme = 'GASTO' | 'GASTO_ANULADO' | 'VENTA' | 'POR_COBRAR' | 'COMPRA'
+
+/**
+ * Un documento del informe de gastos o del comparativo con las ventas
+ * (10/11/2026), en su moneda original y con su equivalente en Bs y en $.
+ */
+export interface DocumentoDelInforme {
+  tipo: TipoDeDocumentoDelInforme
+  id: number
+  numero: string | null
+  fecha: string
+  contraparte: string
+  documento: string | null
+  categoria: string | null
+  categoria_nombre: string | null
+  detalle: string | null
+  moneda: string
+  monto: number
+  tasa: number | null
+  total_bs: number | null
+  total_usd: number | null
+}
+
+/**
+ * Los documentos de un rango para los reportes PDF de Gastos: los gastos
+ * siempre; las notas de entrega despachadas si se compara con las ventas; las
+ * órdenes pagadas de Compras si se piden. La base cierra la puerta a quien no
+ * ve Ventas/Facturación o Compras, con un mensaje claro.
+ */
+export async function traerInformeGastosYVentas(a: {
+  desde: string
+  hasta: string
+  conVentas: boolean
+  conCompras: boolean
+}): Promise<DocumentoDelInforme[]> {
+  const filas = await rpc<DocumentoDelInforme[]>('informe_gastos_y_ventas', {
+    p_desde: a.desde,
+    p_hasta: a.hasta,
+    p_con_ventas: a.conVentas,
+    p_con_compras: a.conCompras,
+  })
+  // Los numeric llegan como número o como texto según el tamaño: se fijan aquí.
+  return (filas ?? []).map((f) => ({
+    ...f,
+    monto: Number(f.monto ?? 0),
+    tasa: f.tasa == null ? null : Number(f.tasa),
+    total_bs: f.total_bs == null ? null : Number(f.total_bs),
+    total_usd: f.total_usd == null ? null : Number(f.total_usd),
+  }))
+}

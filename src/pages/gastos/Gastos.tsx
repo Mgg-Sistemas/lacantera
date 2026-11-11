@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { BarChart3, Plus, Receipt, Search, X } from 'lucide-react'
+import { BarChart3, FileText, Plus, Receipt, Search, X } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Chip } from '@/components/ui/Chip'
@@ -27,6 +27,7 @@ import {
   type GastoFactura,
 } from '@/lib/api/gastos'
 import { dinero, fecha } from '@/lib/formato'
+import { ReportesDeGastos } from './ReportesDeGastos'
 
 /*
   GASTOS: EL HISTORIAL DE FACTURAS, CON SU CATEGORÍA Y SU FOTO.
@@ -148,6 +149,8 @@ export function Gastos() {
   const [pidiendoInforme, setPidiendoInforme] = useState(false)
   const [rangoInforme, setRangoInforme] = useState<Rango>(SIN_RANGO)
   const informe = useInformeGastosPorCategoria(rangoInforme.desde || null, rangoInforme.hasta || null)
+  // Los reportes PDF: informe de gastos y comparativo con las ventas (10/11/2026).
+  const [pidiendoReportes, setPidiendoReportes] = useState(false)
 
   const filtrados = useMemo(() => {
     const texto = buscado.trim().toLowerCase()
@@ -233,6 +236,9 @@ export function Gastos() {
           <>
             <Button variant="outline" icon={<BarChart3 />} onClick={() => setPidiendoInforme(true)}>
               Informe por categoría
+            </Button>
+            <Button variant="outline" icon={<FileText />} onClick={() => setPidiendoReportes(true)}>
+              Reportes PDF
             </Button>
             {puedeEscribir ? (
               <Button icon={<Plus />} onClick={abrirRegistro}>
@@ -587,6 +593,10 @@ export function Gastos() {
             ) : null}
           </div>
         </Modal>
+      ) : null}
+
+      {pidiendoReportes ? (
+        <ReportesDeGastos categorias={categorias ?? []} onCerrar={() => setPidiendoReportes(false)} />
       ) : null}
     </>
   )
