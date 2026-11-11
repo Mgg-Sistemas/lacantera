@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { useMonedasUsables } from '@/lib/api/tasas'
 import { Building2, Plus, Printer, Search } from 'lucide-react'
 import { Interruptor } from '@/components/ui/Interruptor'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Visor } from '@/components/Visor'
 import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
 import { useMiPerfil } from '@/lib/api/usuarios'
@@ -74,7 +75,8 @@ export function Clientes() {
   const deudaDe = useMemo(() => new Map(deudores.map((d) => [d.clave, d])), [deudores])
   const [soloDeudores, setSoloDeudores] = useState(false)
   const [viendoDeuda, setViendoDeuda] = useState<ClienteQueDebe | null>(null)
-  const [pidiendoReporte, setPidiendoReporte] = useState(false)
+  // null: cerrado; '': todos los clientes; si no, la clave del cliente (11/11/2026).
+  const [pidiendoReporte, setPidiendoReporte] = useState<string | null>(null)
   const [reporte, setReporte] = useState<ArchivoArmado | null>(null)
 
   const filtrados = useMemo(() => {
@@ -129,7 +131,7 @@ export function Clientes() {
               variant="outline"
               icon={<Printer />}
               disabled={deudores.length === 0}
-              onClick={() => setPidiendoReporte(true)}
+              onClick={() => setPidiendoReporte('')}
             >
               Reporte por cobrar
             </Button>
@@ -466,14 +468,24 @@ export function Clientes() {
         </Modal>
       ) : null}
 
-      {viendoDeuda ? <NotasQueDebe deuda={viendoDeuda} onCerrar={() => setViendoDeuda(null)} /> : null}
+      {viendoDeuda ? (
+        <NotasQueDebe
+          deuda={viendoDeuda}
+          onCerrar={() => setViendoDeuda(null)}
+          onPdf={() => {
+            setPidiendoReporte(viendoDeuda.clave)
+            setViendoDeuda(null)
+          }}
+        />
+      ) : null}
 
-      {pidiendoReporte ? (
+      {pidiendoReporte !== null ? (
         <ModalReportePorCobrar
           deudores={deudores}
-          onCerrar={() => setPidiendoReporte(false)}
+          clienteInicial={pidiendoReporte}
+          onCerrar={() => setPidiendoReporte(null)}
           onListo={(archivo) => {
-            setPidiendoReporte(false)
+            setPidiendoReporte(null)
             setReporte(archivo)
           }}
         />
@@ -484,7 +496,7 @@ export function Clientes() {
         onCerrar={() => setReporte(null)}
         blob={reporte?.blob ?? null}
         nombreArchivo={reporte?.nombre ?? ''}
-        titulo="Clientes con cuentas por cobrar"
+        titulo={reporte?.nombre.startsWith('cuenta-por-cobrar-') ? 'Estado de cuenta por cobrar' : 'Clientes con cuentas por cobrar'}
       />
     </>
   )
@@ -492,7 +504,16 @@ export function Clientes() {
 
 // ──────────────────────── lo que debe un cliente ────────────────────────────
 
-function NotasQueDebe({ deuda, onCerrar }: { deuda: ClienteQueDebe; onCerrar: () => void }) {
+function NotasQueDebe({
+  deuda,
+  onCerrar,
+  onPdf,
+}: {
+  deuda: ClienteQueDebe
+  onCerrar: () => void
+  /** Abre el reporte por cobrar con este cliente ya elegido (11/11/2026). */
+  onPdf: () => void
+}) {
   return (
     <Modal
       abierto
@@ -500,9 +521,14 @@ function NotasQueDebe({ deuda, onCerrar }: { deuda: ClienteQueDebe; onCerrar: ()
       titulo={deuda.cliente}
       descripcion="Notas de entrega por cobrar. Se cobran marcándolas en Facturación › Notas de entrega."
       acciones={
-        <Button variant="ghost" onClick={onCerrar}>
-          Cerrar
-        </Button>
+        <>
+          <Button variant="ghost" onClick={onCerrar}>
+            Cerrar
+          </Button>
+          <Button variant="outline" icon={<Printer />} onClick={onPdf}>
+            PDF de este cliente
+          </Button>
+        </>
       }
     >
       <div className="bg-ink/3 mb-4 rounded-lg px-4 py-3">
@@ -543,10 +569,13 @@ function NotasQueDebe({ deuda, onCerrar }: { deuda: ClienteQueDebe; onCerrar: ()
 
 function ModalReportePorCobrar({
   deudores,
+  clienteInicial,
   onCerrar,
   onListo,
 }: {
   deudores: ClienteQueDebe[]
+  /** '' para todos; si no, la clave del cliente que sale solo. */
+  clienteInicial: string
   onCerrar: () => void
   onListo: (a: ArchivoArmado) => void
 }) {
@@ -554,23 +583,39 @@ function ModalReportePorCobrar({
   const { data: yo } = useMiPerfil()
   const [conDetalle, setConDetalle] = useState(true)
   const [conLogo, setConLogo] = useState(true)
+  /*
+    UN CLIENTE O TODOS (11/11/2026): «un informe PDF de la cuenta por cobrar de
+    los clientes por individual, ejemplo solo las de Fundación Venezuela».
+    Con uno elegido, el papel es su estado de cuenta.
+  */
+  const [cliente, setCliente] = useState(clienteInicial)
   const [armando, setArmando] = useState(false)
   const [falla, setFalla] = useState<string | null>(null)
 
   // Sin «solo vencidas» desde el 11/11/2026: las cuentas por cobrar no vencen.
-  const salen = deudores
+  const elegido = cliente ? deudores.find((d) => d.clave === cliente) ?? null : null
+  const salen = elegido ? [elegido] : deudores
   const notas = salen.reduce((s, c) => s + c.notas.length, 0)
 
   const armar = async () => {
     setArmando(true)
     setFalla(null)
     try {
-      let nombre = `clientes-por-cobrar-${new Date().toISOString().slice(0, 10)}`
+      const hoy = new Date().toISOString().slice(0, 10)
+      const enArchivo = (s: string) =>
+        s
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '')
+      let nombre = elegido ? `cuenta-por-cobrar-${enArchivo(elegido.cliente)}-${hoy}` : `clientes-por-cobrar-${hoy}`
       if (!conDetalle) nombre += '-resumen'
       if (!conLogo) nombre += '-sin-logo'
       onListo(
         await armarReporteClientesPorCobrar({
           clientes: salen,
+          unCliente: elegido !== null,
           conDetalle,
           conLogo,
           nombreArchivo: `${nombre}.pdf`,
@@ -591,7 +636,7 @@ function ModalReportePorCobrar({
       abierto
       onCerrar={onCerrar}
       titulo="Reporte de cuentas por cobrar"
-      descripcion="Relación de clientes con saldo pendiente en notas de entrega, ordenada de mayor a menor saldo."
+      descripcion="De todos los clientes con saldo pendiente en notas de entrega, o el estado de cuenta de uno solo."
       acciones={
         <>
           <Button variant="ghost" onClick={onCerrar}>
@@ -606,8 +651,23 @@ function ModalReportePorCobrar({
       <p className={`text-sm ${salen.length === 0 ? 'text-warning font-medium' : 'text-ink/65'}`}>
         {salen.length === 0
           ? 'No hay notas por cobrar para incluir en el reporte.'
-          : `Se incluirán ${salen.length} cliente${salen.length === 1 ? '' : 's'} con ${notas} nota${notas === 1 ? '' : 's'}.`}
+          : elegido
+            ? `Estado de cuenta de ${elegido.cliente}: ${notas} nota${notas === 1 ? '' : 's'} por cobrar.`
+            : `Se incluirán ${salen.length} cliente${salen.length === 1 ? '' : 's'} con ${notas} nota${notas === 1 ? '' : 's'}.`}
       </p>
+      <div className="mt-4">
+        <SelectBuscable
+          label="Cliente"
+          vacio="Todos los clientes"
+          valor={cliente}
+          onCambio={setCliente}
+          opciones={deudores.map((d) => ({
+            valor: d.clave,
+            nombre: d.cliente,
+            detalle: `${d.rif ? `${documento(d.rif)} · ` : ''}${dolares(d.usd)} · ${d.notas.length} nota${d.notas.length === 1 ? '' : 's'}`,
+          }))}
+        />
+      </div>
       <div className="mt-5 space-y-3">
         {/*
           QUÉ REPORTE: los dos a la vista, para elegir de un toque (09/11/2026:
@@ -615,8 +675,16 @@ function ModalReportePorCobrar({
         */}
         <div role="radiogroup" aria-label="Qué reporte" className="grid gap-2 sm:grid-cols-2">
           {[
-            { valor: true, titulo: 'Resumen + detalle', texto: 'Saldo consolidado por cliente y desglose de cada nota por cobrar.' },
-            { valor: false, titulo: 'Solo resumen', texto: 'Formato consolidado con una fila por cliente, sin desglose de notas.' },
+            {
+              valor: true,
+              titulo: 'Resumen + detalle',
+              texto: elegido ? 'El total que debe y el desglose de cada nota por cobrar.' : 'Saldo consolidado por cliente y desglose de cada nota por cobrar.',
+            },
+            {
+              valor: false,
+              titulo: 'Solo resumen',
+              texto: elegido ? 'Solo el total que debe, sin desglose de notas.' : 'Formato consolidado con una fila por cliente, sin desglose de notas.',
+            },
           ].map((o) => (
             <button
               key={o.titulo}
