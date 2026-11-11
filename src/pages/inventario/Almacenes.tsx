@@ -21,6 +21,8 @@ import {
   useAlmacenes,
   useExistencias,
   useGuardarAlmacen,
+  useAsignarAlmacenPadre,
+  enArbol,
   usePropietarios,
 } from '@/lib/api/inventario'
 import type { Almacen, Existencia } from '@/lib/api/inventario'
@@ -80,6 +82,8 @@ const vacio = {
   responsable_id: '',
   capacidad: '',
   trabajos_a_la_vez: '',
+  /** Subalmacén de MGG (11/11/2026): el almacén del que cuelga; vacío = principal. */
+  padre_id: '',
 }
 
 /** Los que no entran en los valores ni en el kanban. */
@@ -96,6 +100,8 @@ export function Almacenes() {
   // sí aparecen los sitios que no guardan material.
   const { data, isPending, error } = useAlmacenes(false, true)
   const guardar = useGuardarAlmacen()
+  const asignarPadre = useAsignarAlmacenPadre()
+  const nombreDelAlmacen = (id?: number | null) => (data ?? []).find((x) => x.id === id)?.nombre ?? null
   const { data: propietarios } = usePropietarios()
   const { data: empleados } = useEmpleados(true)
   const existenciasQ = useExistencias()
@@ -141,6 +147,7 @@ export function Almacenes() {
             responsable_id: a.responsable_id ? String(a.responsable_id) : '',
             capacidad: a.capacidad ?? '',
             trabajos_a_la_vez: a.trabajos_a_la_vez ? String(a.trabajos_a_la_vez) : '',
+            padre_id: a.padre_id ? String(a.padre_id) : '',
           }
         : { ...vacio },
     )
@@ -178,9 +185,9 @@ export function Almacenes() {
 
   const kanban = useMemo(
     () =>
-      (data ?? [])
-        .filter((a) => !fuera(a))
-        .sort((a, b) => Number(b.activo) - Number(a.activo) || a.nombre.localeCompare(b.nombre, 'es')),
+      enArbol((data ?? []).filter((a) => !fuera(a)))
+        .map((x) => x.a)
+        .sort((a, b) => Number(b.activo) - Number(a.activo)),
     [data],
   )
   const tanques = (data ?? []).filter(fuera).length
@@ -411,7 +418,10 @@ export function Almacenes() {
                       />
                       <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
                         <div className="min-w-0">
-                          <p className="text-ink/90 font-semibold">▣ {a.nombre}</p>
+                          <p className="text-ink/90 font-semibold">{a.padre_id ? '↳' : '▣'} {a.nombre}</p>
+                          {a.padre_id && nombreDelAlmacen(a.padre_id) ? (
+                            <p className="text-ink/50 text-xs">Sección de {nombreDelAlmacen(a.padre_id)}</p>
+                          ) : null}
                           <p className="text-ink/45 text-xs">
                             <span className="font-mono">{a.codigo}</span> · {a.ubicacion || 'Sin ubicación'}
                           </p>
@@ -476,7 +486,7 @@ export function Almacenes() {
                     </tr>
                   </thead>
                   <tbody>
-                    {data.map((a) => {
+                    {enArbol(data).map(({ a, nivel }) => {
                       const v = valores.get(a.id) ?? VALOR_VACIO
                       const material = conMaterial(a)
                       return (
@@ -486,7 +496,8 @@ export function Almacenes() {
                           className="border-hairline hover:bg-ink/3 cursor-pointer border-b transition-colors last:border-0"
                         >
                           <td className="text-ink/60 px-5 py-3 font-mono text-xs">{a.codigo}</td>
-                          <td className="text-ink/85 px-3 py-3 font-medium">
+                          <td className="text-ink/85 px-3 py-3 font-medium" style={{ paddingLeft: `${0.75 + nivel * 1.25}rem` }}>
+                            {nivel ? <span className="text-ink/40 mr-1">↳</span> : null}
                             {a.nombre}
                             {a.recibe_compras ? (
                               <Chip tone="royal" className="ml-2">
@@ -559,6 +570,8 @@ export function Almacenes() {
         titulo="Reporte por almacenes"
       />
 
+      {asignarPadre.error ? <ErrorDeCarga error={asignarPadre.error} /> : null}
+
       {edicion ? (
         <Modal
           abierto
@@ -577,14 +590,16 @@ export function Almacenes() {
                   no significa «ponme otro», significa que se borró sin querer.
                 */
                 disabled={
-                  guardar.isPending || !edicion.nombre || (!!edicion.id && !edicion.codigo)
+                  guardar.isPending || asignarPadre.isPending || !edicion.nombre || (!!edicion.id && !edicion.codigo)
                 }
                 onClick={async () => {
                   // Los dos campos de tipo viajan como numero o como nada: la
                   // base rechaza una capacidad en un patio, y una cadena vacia
                   // no es cero.
-                  await guardar.mutateAsync({
+                  const idGuardado = await guardar.mutateAsync({
                     ...edicion,
+                    // El padre no viaja aquí: lo cuelga `asignar_almacen_padre`, abajo.
+                    padre_id: undefined,
                     capacidad: edicion.capacidad || null,
                     trabajos_a_la_vez: edicion.trabajos_a_la_vez
                       ? Number(edicion.trabajos_a_la_vez)
@@ -595,6 +610,12 @@ export function Almacenes() {
                       ? Number(edicion.responsable_id)
                       : null,
                   })
+                  const idAlmacen = edicion.id ?? idGuardado
+                  const padreAntes = (data ?? []).find((x) => x.id === idAlmacen)?.padre_id ?? null
+                  const padreNuevo = edicion.padre_id ? Number(edicion.padre_id) : null
+                  if (idAlmacen && padreNuevo !== padreAntes) {
+                    await asignarPadre.mutateAsync({ id: idAlmacen, padre_id: padreNuevo })
+                  }
                   setEdicion(null)
                 }}
               >
@@ -629,6 +650,18 @@ export function Almacenes() {
               onChange={(e) => cambiar({ tipo: e.target.value })}
               // «En camino» lo lleva el sistema y la base no deja crearlo.
               opciones={TIPOS_ALMACEN.filter((t) => t.valor !== 'TRANSITO')}
+            />
+            {/* SUBALMACENES DE MGG (11/11/2026): una sección, un estante o una
+                pila dentro de otro almacén. La base impide las vueltas. */}
+            <Select
+              label="Es sección de"
+              vacio="Ninguno: es un almacén principal"
+              hint="Para un subalmacén: la sección, el estante o la pila dentro de otro."
+              value={edicion.padre_id}
+              onChange={(e) => cambiar({ padre_id: e.target.value })}
+              opciones={(data ?? [])
+                .filter((x) => x.id !== edicion.id && x.activo && x.tipo !== 'TRANSITO')
+                .map((x) => ({ valor: String(x.id), etiqueta: x.nombre }))}
             />
 
             {/*

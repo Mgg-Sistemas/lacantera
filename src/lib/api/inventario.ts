@@ -49,6 +49,48 @@ export interface Almacen {
   capacidad?: string | null
   /** Cuantas ordenes aguanta a la vez. Solo en un taller. */
   trabajos_a_la_vez?: number | null
+  /** Subalmacén de MGG (11/11/2026): el almacén del que cuelga, o nulo. */
+  padre_id?: number | null
+}
+
+/** Colgar un almacén de otro, o soltarlo (nulo). La base impide las vueltas. */
+export function useAsignarAlmacenPadre() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (a: { id: number; padre_id: number | null }) =>
+      rpc('asignar_almacen_padre', { p_id: a.id, p_padre_id: a.padre_id }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['almacenes'] }),
+  })
+}
+
+/**
+ * Los almacenes en árbol: cada padre seguido de sus subalmacenes, con su
+ * profundidad para sangrar. Lo que cuelga de un almacén que no está en la
+ * lista sale arriba, como raíz.
+ */
+export function enArbol<T extends { id: number; nombre: string; padre_id?: number | null }>(
+  lista: T[],
+): { a: T; nivel: number }[] {
+  const ids = new Set(lista.map((x) => x.id))
+  const hijos = new Map<number | null, T[]>()
+  for (const x of lista) {
+    const p = x.padre_id && ids.has(x.padre_id) ? x.padre_id : null
+    hijos.set(p, [...(hijos.get(p) ?? []), x])
+  }
+  const out: { a: T; nivel: number }[] = []
+  const visto = new Set<number>()
+  const bajar = (p: number | null, nivel: number) => {
+    for (const x of (hijos.get(p) ?? []).sort((m, n) => m.nombre.localeCompare(n.nombre, 'es'))) {
+      if (visto.has(x.id)) continue
+      visto.add(x.id)
+      out.push({ a: x, nivel })
+      bajar(x.id, nivel + 1)
+    }
+  }
+  bajar(null, 0)
+  // Por si quedó algo fuera (no debería: la base impide las vueltas).
+  for (const x of lista) if (!visto.has(x.id)) out.push({ a: x, nivel: 0 })
+  return out
 }
 
 /*

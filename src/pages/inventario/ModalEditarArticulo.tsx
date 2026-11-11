@@ -16,6 +16,7 @@ import {
   useCategoriasDeInventario,
   useRenumerarArticulo,
   useEditarArticulo,
+  useGuardarFichaDeArticulo,
   usePresentacionesDeArticulo,
   usePresentaciones,
   useUnidades,
@@ -24,6 +25,8 @@ import type { Articulo } from '@/lib/api/catalogo'
 import { useMovimientos } from '@/lib/api/inventario'
 import { fecha } from '@/lib/formato'
 import { densidadEnPalabras, densidadLegible } from '@/lib/medidas'
+import { CamposFichaMgg } from './CamposFichaMgg'
+import { fichaDe, fichaParaGuardar, umbralValido } from './fichaMgg'
 
 /**
  * Corregir un artículo que ya existe, en cualquier pantalla desde la que haga
@@ -57,6 +60,8 @@ export function ModalEditarArticulo({
     [todos],
   )
   const editar = useEditarArticulo()
+  const guardarFicha = useGuardarFichaDeArticulo()
+  const [ficha, setFicha] = useState(() => fichaDe(articulo))
   const categorias = useCategoriasDeInventario()
   const opcionesCategoria = opcionesDeCategoria(categorias.data)
   const prefijoDeCategoria = (codigo: string) =>
@@ -121,6 +126,8 @@ export function ModalEditarArticulo({
           <Button
             disabled={
               editar.isPending ||
+              guardarFicha.isPending ||
+              !umbralValido(ficha) ||
               !form.nombre ||
               (hayHomonimo && !form.confirmado) ||
               (pideDensidad && !(densidadEscrita > 0)) ||
@@ -141,6 +148,7 @@ export function ModalEditarArticulo({
                 densidad_ton_m3: Number(form.densidad_ton_m3) > 0 ? Number(form.densidad_ton_m3) : null,
                 motivo_densidad: cambiaDensidad ? form.motivo_densidad.trim() : null,
               })
+              await guardarFicha.mutateAsync({ id: form.id, ...fichaParaGuardar(ficha) })
               onCerrar()
             }}
           >
@@ -329,6 +337,8 @@ export function ModalEditarArticulo({
           />
         </div>
 
+        <CamposFichaMgg className="sm:col-span-2" valor={ficha} onCambio={setFicha} />
+
         <Select
           label="Modo de entrega"
           className="sm:col-span-2"
@@ -383,6 +393,7 @@ export function ModalEditarArticulo({
       </div>
 
       {editar.error ? <ErrorDeCarga error={editar.error} className="mt-4" /> : null}
+      {guardarFicha.error ? <ErrorDeCarga error={guardarFicha.error} className="mt-4" /> : null}
     </Modal>
   )
 }

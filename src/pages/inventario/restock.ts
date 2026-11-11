@@ -14,8 +14,9 @@
     Clase C → 95 % – 100 %
 
   LO QUE CAMBIA RESPECTO DE MGG, Y POR QUÉ
-  - Aquí no existe `restock_pct` (el % propio de cada producto): no hay modo
-    «detallado» ni la estrella «★ {n}%». Manda siempre la política por clase.
+  - Desde el 11/11/2026 sí existe `restock_pct` (el % propio de cada producto,
+    como MGG): si el producto lo tiene, manda sobre el de su clase y la tabla
+    lo marca con «★ {n}%».
   - Un artículo sin stock mínimo (0) no se alerta. En MGG un producto en 0 con
     mínimo 0 cae en «reabastecer» (0 ≤ 0); aquí la mayoría del catálogo no
     tiene mínimo puesto y la tarjeta se llenaría de avisos que nadie puede
@@ -46,6 +47,8 @@ export interface ProductoParaRestock {
   minimo: number
   /** stock × precio; nulo si no se puede ver. */
   valor: number | null
+  /** % propio de reabastecimiento (ficha de MGG); nulo sigue la clase. */
+  restockPct?: number | null
 }
 
 /**
@@ -97,6 +100,8 @@ export interface Decoracion {
   _klass: AbcClass
   _threshold: number
   _pct: number
+  /** El % sale de la ficha del producto y no de su clase (MGG «★»). */
+  _pctPropio: boolean
   _needsRestock: boolean
   _critical: boolean
 }
@@ -110,7 +115,8 @@ export function decorate<T extends ProductoParaRestock>(
     productos
       .map((p) => {
         const klass = classMap.get(p.id) ?? 'C'
-        const pct = effectivePct(klass, policy)
+        const propio = p.restockPct != null && p.restockPct > 0
+        const pct = propio ? Number(p.restockPct) : effectivePct(klass, policy)
         const threshold = effectiveThreshold(p.minimo, pct)
         const conMinimo = p.minimo > 0
         return {
@@ -118,6 +124,7 @@ export function decorate<T extends ProductoParaRestock>(
           _klass: klass,
           _threshold: threshold,
           _pct: pct,
+          _pctPropio: propio,
           _needsRestock: conMinimo && p.stockAlerta <= threshold,
           _critical: conMinimo && p.stockAlerta < p.minimo,
         }

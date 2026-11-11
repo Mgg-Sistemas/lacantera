@@ -18,6 +18,7 @@ import {
   useArticulos,
   useCategoriasDeInventario,
   useCrearArticulo,
+  useGuardarFichaDeArticulo,
   useMisRoles,
   useTodasLasPresentaciones,
   useUnidades,
@@ -820,6 +821,9 @@ function FormNuevo({
   const [nombre, setNombre] = useState('')
   const [categoria, setCategoria] = useState('')
   const [unidad, setUnidad] = useState('')
+  // MGG: «Ubicación» (estante, pila) al dar de alta; se guarda en mayúsculas.
+  const [ubicacion, setUbicacion] = useState('')
+  const guardarFicha = useGuardarFichaDeArticulo()
   const [cantidad, setCantidad] = useState('')
   const [costo, setCosto] = useState('')
   const [sinValor, setSinValor] = useState(false)
@@ -860,6 +864,9 @@ function FormNuevo({
         confirmado: otraCosa,
       })
       const codigo = await leerCodigoDeArticulo(id).catch(() => `#${id}`)
+      if (ubicacion.trim()) {
+        await guardarFicha.mutateAsync({ id, ubicacion_fisica: ubicacion }).catch(() => undefined)
+      }
       if (cant > 0) {
         try {
           await entrada.mutateAsync({
@@ -954,6 +961,14 @@ function FormNuevo({
         value={unidad}
         onChange={(e) => setUnidad(e.target.value)}
         opciones={(unidades ?? []).map((u) => ({ valor: u.codigo, etiqueta: `${u.nombre} (${u.codigo})` }))}
+      />
+
+      <Input
+        maxLength={80}
+        label="Ubicación"
+        placeholder="Estante, pasillo o pila"
+        value={ubicacion}
+        onChange={(e) => setUbicacion(e.target.value.toUpperCase())}
       />
 
       <Input
