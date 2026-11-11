@@ -54,11 +54,12 @@ export default async function pruebaPagos(tx) {
   const ajenoVe = await debeFallar(tx, (sp) => sp`select * from public.listar_pagos_bancarios()`)
   comprobar(/ventas/i.test(ajenoVe ?? ''), 'quien no entra a Ventas no ve los pagos')
 
-  // Con el permiso prestado, sí.
+  // Con la casilla en su rol, sí. (Desde el 09/11/2026 ya no se presta por
+  // persona: la casilla va en el rol.)
   await comoDueno(tx)
   await tx`
-    insert into public.autorizaciones (accion, a_usuario, por_usuario, motivo)
-    values ('VENTAS.REGISTRAR_PAGOS', ${mira}, ${admin}, 'prueba')`
+    insert into public.rol_acciones (rol, accion, puesta_por)
+    values ('PRUEBA_PAGOS_VENTAS', 'VENTAS.REGISTRAR_PAGOS', ${admin})`
   await como(tx, mira)
 
   grupo('Registros de pagos · el estado dice la verdad')
@@ -84,6 +85,23 @@ export default async function pruebaPagos(tx) {
   comprobar((await estado()).estado === 'DIFERENCIA', 'el doble del monto no cuadra')
 
   const [{ enlace_id: enlace }] = await tx`select enlace_id from public.notas_de_pago_bancario(${pago})`
+
+  // 11/11/2026: cambiar el monto aplicado de una nota enlazada es casilla aparte.
+  const sinCasilla = await debeFallar(tx, (sp) => sp`select public.cambiar_monto_aplicado_pago(${enlace}, ${totalBs * 2})`)
+  comprobar(/permiso/i.test(sinCasilla ?? ''), 'registrar pagos no basta para cambiar el monto aplicado')
+  await comoDueno(tx)
+  await como(tx, mira)
+  const porLaOtraPuerta = await debeFallar(
+    tx,
+    (sp) => sp`select public.asociar_notas_a_pago_bancario(${pago}, ${sp.json([{ nota_id: nota.id, monto: totalBs * 2 }])})`,
+  )
+  comprobar(/permiso/i.test(porLaOtraPuerta ?? ''), 'ni volviendo a asociar la nota con otro monto')
+  await comoDueno(tx)
+  await tx`
+    insert into public.rol_acciones (rol, accion, puesta_por)
+    values ('PRUEBA_PAGOS_VENTAS', 'VENTAS.CAMBIAR_MONTO_APLICADO', ${admin})`
+  await como(tx, mira)
+
   await tx`select public.cambiar_monto_aplicado_pago(${enlace}, ${totalBs * 2})`
   comprobar((await estado()).estado === 'CUADRA', 'ajustando el monto aplicado vuelve a cuadrar')
   await comoDueno(tx)
@@ -180,7 +198,7 @@ export default async function pruebaPagos(tx) {
   // -------------------------------------------------------------------------
   grupo('Clientes · los que deben por notas de entrega')
 
-  // Una nota real se marca por cobrar con fecha vencida: todo se deshace al final.
+  // Una nota real se marca por cobrar con una fecha ya pasada: todo se deshace al final.
   await comoDueno(tx)
   await tx`update public.notas_entrega
               set pendiente_por_cobrar = true, fecha_pago = current_date - 3, cobrada_en = null
@@ -189,7 +207,7 @@ export default async function pruebaPagos(tx) {
   await como(tx, mira)
   const debe = await tx`select * from public.notas_por_cobrar_de_clientes() where nota_id = ${nota.id}`
   comprobar(debe.length === 1, 'quien entra a Ventas (sin ser admin) ve la nota por cobrar')
-  comprobar(debe[0]?.vencida === true, 'y sale vencida, porque su fecha de pago ya pasó')
+  comprobar(debe[0]?.vencida === false, 'y no sale vencida: las cuentas por cobrar no vencen (11/11/2026)')
   comprobar(Number(debe[0]?.total_bs) === Number(nota.total_bs), 'con el mismo total que la nota')
 
   await comoDueno(tx)

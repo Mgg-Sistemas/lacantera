@@ -55,14 +55,13 @@ const TOPE = 10
   interactivas, al darle click que muestre solo la tarjeta seleccionada»).
   Tocar uno deja en el tablero solo lo que cuenta; tocarlo otra vez lo quita.
 */
-type Foco = 'cot' | 'aprobar' | 'despachada' | 'porcobrar' | 'vencidas'
-const esVencida = (t: TarjetaVenta) => !!t.vencida && (t.etapa === 'despachada' || t.etapa === 'facturada')
+// Sin «Vencidas» desde el 11/11/2026: las cuentas por cobrar no vencen.
+type Foco = 'cot' | 'aprobar' | 'despachada' | 'porcobrar'
 const FOCOS: Record<Foco, { titulo: string; etapas: EtapaVenta[]; solo?: (t: TarjetaVenta) => boolean }> = {
   cot: { titulo: 'Cotizaciones abiertas', etapas: ['cot'] },
   aprobar: { titulo: 'Despachos por aprobar', etapas: ['aprobar'] },
   despachada: { titulo: 'Despachadas por cobrar', etapas: ['despachada'] },
   porcobrar: { titulo: 'Por cobrar', etapas: ['despachada', 'facturada'] },
-  vencidas: { titulo: 'Vencidas', etapas: ['despachada', 'facturada'], solo: esVencida },
 }
 
 export function TableroVentas() {
@@ -125,7 +124,6 @@ export function TableroVentas() {
   const porCobrar = (data ?? [])
     .filter((t) => t.etapa === 'despachada' || t.etapa === 'facturada')
     .reduce((s, t) => s + Number(t.saldo_usd ?? 0), 0)
-  const vencidas = (data ?? []).filter(esVencida).length
   const indicador = (f: Foco, valor: string, alerta?: boolean) => (
     <Indicador titulo={FOCOS[f].titulo} valor={valor} alerta={alerta} activo={foco === f} onClick={() => enfocar(f)} />
   )
@@ -157,12 +155,11 @@ export function TableroVentas() {
       />
 
       {permisos?.montos !== false ? (
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
           {indicador('cot', String(porEtapa.get('cot')?.length ?? 0))}
           {indicador('aprobar', String(porEtapa.get('aprobar')?.length ?? 0))}
           {indicador('despachada', String(porEtapa.get('despachada')?.length ?? 0))}
           {indicador('porcobrar', dolares(porCobrar))}
-          {indicador('vencidas', String(vencidas), vencidas > 0)}
         </div>
       ) : null}
 
@@ -402,7 +399,6 @@ const Tarjeta = memo(function Tarjeta({ t, onAbrir }: { t: TarjetaVenta; onAbrir
   const cadena = [t.cadena.cot, t.cadena.sd, t.cadena.ns, t.cadena.ne, t.cadena.fac].filter(
     (x, i, a): x is string => !!x && x !== t.numero && a.indexOf(x) === i,
   )
-  const vencida = t.vencida && (t.etapa === 'despachada' || t.etapa === 'facturada')
   return (
     <button
       type="button"
@@ -410,7 +406,6 @@ const Tarjeta = memo(function Tarjeta({ t, onAbrir }: { t: TarjetaVenta; onAbrir
       className={cn(
         'bg-surface border-hairline hover:border-royal-600/50 grid gap-1 rounded-[9px] border px-3 py-2.5 text-left shadow-sm',
         'focus-visible:outline-royal-600 focus-visible:outline-2 focus-visible:outline-offset-2',
-        vencida && 'border-danger',
       )}
     >
       <span className="font-mono text-xs font-semibold">{t.numero}</span>

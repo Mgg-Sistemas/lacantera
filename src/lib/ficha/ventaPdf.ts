@@ -123,7 +123,7 @@ export interface DatosDocumento {
    * marcada con ese compromiso de pago.
    */
   cuentaPorCobrar?: {
-    estado: 'POR_COBRAR' | 'VENCIDA' | 'COBRADA'
+    estado: 'POR_COBRAR' | 'COBRADA'
     fechaPago?: string | null
     cobradaEn?: string | null
   } | null
@@ -750,17 +750,15 @@ function totales(doc: Doc, d: DatosDocumento, y: number): number {
       doc.setDrawColor(HAIRLINE).setLineWidth(0.25)
       doc.line(x + 3.5, yCursor, DER - 3.5, yCursor)
 
-      const esVencida = d.cuentaPorCobrar.estado === 'VENCIDA'
+      // Sin «vencida» ni fecha de pago desde el 11/11/2026: solo por cobrar o cobrada.
       const esCobrada = d.cuentaPorCobrar.estado === 'COBRADA'
-      const colorEstado = esCobrada ? '#166534' : esVencida ? '#991b1b' : '#92400e'
-      const fondoPastilla = esCobrada ? '#dcfce7' : esVencida ? '#fee2e2' : '#fef3c7'
+      const colorEstado = esCobrada ? '#166534' : '#92400e'
+      const fondoPastilla = esCobrada ? '#dcfce7' : '#fef3c7'
       const fTexto = esCobrada
         ? d.cuentaPorCobrar.cobradaEn
           ? `Cobrada · ${fechaCorta(d.cuentaPorCobrar.cobradaEn)}`
           : 'Cobrada'
-        : esVencida
-          ? `Vencida · ${d.cuentaPorCobrar.fechaPago ? fechaCorta(d.cuentaPorCobrar.fechaPago) : '—'}`
-          : `Por cobrar · ${d.cuentaPorCobrar.fechaPago ? fechaCorta(d.cuentaPorCobrar.fechaPago) : '—'}`
+        : 'Por cobrar'
 
       doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(GRIS)
       doc.text('Cuenta por cobrar', x + 4.5, yCursor + 4.8)

@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router'
-import { Building2, CalendarClock, Coins } from 'lucide-react'
+import { Building2, Coins, FileText } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { Chip } from '@/components/ui/Chip'
@@ -13,19 +13,19 @@ import {
   type PorCobrarAProveedor,
 } from '@/lib/api/facturacion'
 import { useNotasEntrega } from '@/lib/api/ventas'
-import { hoyEnCaracas } from '@/lib/api/tasas'
 
 /**
  * Lo que deben los clientes.
  *
  * Se agrupa por cliente y no por factura porque así es como se cobra: no se
  * llama por "la factura 31", se llama a Constructora del Sur, que tiene tres
- * facturas y dos de ellas vencidas.
+ * facturas pendientes.
  *
- * LA ANTIGÜEDAD ES LO QUE SE MIRA PRIMERO. Una deuda de 400 $ de hace noventa
- * días es un problema distinto de una de 4.000 $ emitida ayer, y una lista
- * ordenada por monto las pone al revés. Por eso el orden es por vencimiento y
- * lo vencido se separa del resto con color.
+ * SIN VENCIMIENTO NI MORA (11/11/2026). Pedido: «que las cuentas por cobrar no
+ * tengan fecha de vencimiento, solo que queden en status pendiente por cobrar;
+ * quitar el estado vencido y los días de mora». Ya no hay columna «Vence» ni
+ * «Antigüedad», ni total vencido: cada documento está «Por cobrar» hasta que
+ * se cobra, y el orden es de quien más debe a quien menos.
  *
  * LAS NOTAS DE ENTREGA PENDIENTES POR COBRAR ENTRAN AL GRUPO DE SU CLIENTE
  * (20/10/2026). Christopher: «las notas de entrega que son cuentas por cobrar
@@ -45,11 +45,9 @@ interface RenglonPorCobrar {
   /** El número de control de la factura; la nota no tiene y lo dice. */
   detalle: string
   emitida: string
-  vence: string | null
   moneda: string
   total: string
   saldoUsd: number
-  diasVencida: number
 }
 
 interface Grupo {
@@ -59,16 +57,6 @@ interface Grupo {
   facturas: number
   notas: number
   usd: number
-  vencidoUsd: number
-  masVieja: number
-}
-
-const tramo = (dias: number) => {
-  if (dias <= 0) return 'Por vencer'
-  if (dias <= 30) return 'Hasta 30 días'
-  if (dias <= 60) return '31 a 60 días'
-  if (dias <= 90) return '61 a 90 días'
-  return 'Más de 90 días'
 }
 
 export function PorCobrar() {
@@ -110,8 +98,6 @@ export function PorCobrar() {
         facturas: 0,
         notas: 0,
         usd: 0,
-        vencidoUsd: 0,
-        masVieja: 0,
       }
       mapa.set(cliente, g)
       return g
@@ -119,8 +105,6 @@ export function PorCobrar() {
     const anotar = (g: Grupo, r: RenglonPorCobrar) => {
       g.renglones.push(r)
       g.usd += r.saldoUsd
-      if (r.diasVencida > 0) g.vencidoUsd += r.saldoUsd
-      g.masVieja = Math.max(g.masVieja, r.diasVencida)
     }
 
     for (const f of data ?? []) {
@@ -132,27 +116,14 @@ export function PorCobrar() {
         numero: f.numero,
         detalle: f.numero_control,
         emitida: f.fecha,
-        vence: f.vence_el,
         moneda: f.moneda,
         total: f.total,
         saldoUsd: Number(f.saldo_usd),
-        diasVencida: f.dias_vencida,
       })
     }
 
-    /*
-      La vencida se calcula aquí contra el día de Caracas, no con el reloj del
-      navegador: la vista trae la bandera pero no los días, y el tramo de
-      antigüedad se arma con días. Fechas AAAA-MM-DD: comparar las cadenas es
-      comparar los días.
-    */
-    const hoy = hoyEnCaracas()
     for (const n of notas.data ?? []) {
       if (!n.cliente || n.estado === 'ANULADA' || n.factura_id !== null) continue
-      const vencidaHace =
-        n.fecha_pago && n.fecha_pago < hoy
-          ? Math.round((Date.parse(hoy) - Date.parse(n.fecha_pago)) / 86_400_000)
-          : 0
       const g = grupoDe(n.cliente, n.cliente_rif ?? '')
       g.notas += 1
       anotar(g, {
@@ -161,25 +132,21 @@ export function PorCobrar() {
         numero: n.numero,
         detalle: 'Nota de entrega',
         emitida: n.fecha,
-        vence: n.fecha_pago,
         moneda: n.moneda,
         total: n.total,
         saldoUsd: Number(n.total_usd),
-        diasVencida: vencidaHace,
       })
     }
 
-    // Dentro del cliente, lo más vencido primero; entre clientes, quien lleva
-    // más tiempo debiendo y, a igualdad de días, quien más debe. Es el orden
-    // en el que se hacen las llamadas.
+    // Dentro del cliente, lo más viejo primero; entre clientes, quien más debe.
     for (const g of mapa.values()) {
-      g.renglones.sort((a, b) => b.diasVencida - a.diasVencida || b.saldoUsd - a.saldoUsd)
+      g.renglones.sort((a, b) => a.emitida.localeCompare(b.emitida) || b.saldoUsd - a.saldoUsd)
     }
-    return [...mapa.values()].sort((a, b) => b.masVieja - a.masVieja || b.usd - a.usd)
+    return [...mapa.values()].sort((a, b) => b.usd - a.usd)
   }, [data, notas.data])
 
   const total = grupos.reduce((s, g) => s + g.usd, 0) + proveedoresUsd
-  const vencido = grupos.reduce((s, g) => s + g.vencidoUsd, 0)
+  const documentos = grupos.reduce((s, g) => s + g.renglones.length, 0)
   const hayAlgo = grupos.length > 0 || deProveedores.length > 0
 
   return (
@@ -212,10 +179,10 @@ export function PorCobrar() {
               icon={<Coins />}
             />
             <StatCard
-              label="Vencido"
-              value={dolaresRedondos(vencido)}
-              tone={vencido > 0 ? 'danger' : 'success'}
-              icon={<CalendarClock />}
+              label="Documentos por cobrar"
+              value={String(documentos)}
+              tone="warning"
+              icon={<FileText />}
             />
             <StatCard
               label="Clientes con saldo"
@@ -241,11 +208,7 @@ export function PorCobrar() {
                   action={
                     <div className="text-right">
                       <p className="tabular text-ink/90 text-lg font-semibold">{dolares(g.usd)}</p>
-                      {g.vencidoUsd > 0 ? (
-                        <Chip tone="danger">{dolares(g.vencidoUsd)} vencido</Chip>
-                      ) : (
-                        <Chip tone="success">Sin vencidos</Chip>
-                      )}
+                      <Chip tone="warning">Por cobrar</Chip>
                     </div>
                   }
                 />
@@ -256,10 +219,9 @@ export function PorCobrar() {
                       <tr className="text-ink/45 border-hairline border-b text-left text-xs">
                         <th className="py-2 font-medium">Documento</th>
                         <th className="py-2 font-medium">Emitida</th>
-                        <th className="py-2 font-medium">Vence</th>
                         <th className="py-2 text-right font-medium">Total</th>
                         <th className="py-2 text-right font-medium">Saldo</th>
-                        <th className="py-2 text-right font-medium">Antigüedad</th>
+                        <th className="py-2 text-right font-medium">Estado</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -270,10 +232,6 @@ export function PorCobrar() {
                             <span className="text-ink/40 block text-xs">{r.detalle}</span>
                           </td>
                           <td className="text-ink/60 py-2 text-xs">{fecha(r.emitida)}</td>
-                          {/* La nota sin fecha de pago no vence: se dice, no se inventa. */}
-                          <td className="text-ink/60 py-2 text-xs">
-                            {r.vence ? fecha(r.vence) : 'Sin fecha de pago'}
-                          </td>
                           <td className="tabular text-ink/70 py-2 text-right">
                             {dinero(r.moneda, r.total)}
                           </td>
@@ -281,9 +239,7 @@ export function PorCobrar() {
                             {dolares(r.saldoUsd)}
                           </td>
                           <td className="py-2 text-right">
-                            <Chip tone={r.diasVencida > 0 ? 'danger' : 'neutral'}>
-                              {tramo(r.diasVencida)}
-                            </Chip>
+                            <Chip tone="warning">Por cobrar</Chip>
                           </td>
                         </tr>
                       ))}
@@ -320,7 +276,7 @@ export function PorCobrar() {
                             <th className="py-2 font-medium">Desde</th>
                             <th className="py-2 text-right font-medium">Original</th>
                             <th className="py-2 text-right font-medium">Pendiente</th>
-                            <th className="py-2 text-right font-medium">Antigüedad</th>
+                            <th className="py-2 text-right font-medium">Estado</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -337,7 +293,7 @@ export function PorCobrar() {
                                 {dinero(s.moneda, s.pendiente)}
                               </td>
                               <td className="py-2 text-right">
-                                <Chip tone={s.dias > 30 ? 'danger' : 'neutral'}>{tramo(s.dias)}</Chip>
+                                <Chip tone="warning">Por cobrar</Chip>
                               </td>
                             </tr>
                           ))}

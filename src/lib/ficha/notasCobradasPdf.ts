@@ -16,7 +16,6 @@ import {
 import { porcentaje } from '@/lib/antiguedadDeDeuda'
 import {
   agruparCuentasPagadasPorCliente,
-  diasDeMoraAlPagar,
   fechaCaracas,
   resumenDeCuentasPagadas,
   type NotaCobradaMinima,
@@ -55,7 +54,6 @@ const LIMITE = 266
 const PIE = 281
 
 const VERDE = '#15803d'
-const AMBAR_BARRA = '#f59e0b'
 
 interface Pastilla {
   fondo: string
@@ -64,7 +62,6 @@ interface Pastilla {
 }
 
 const P_PAGADA: Pastilla = { fondo: '#dcfce7', texto: '#166534', borde: '#4ade80' }
-const P_MORA: Pastilla = { fondo: '#fef3c7', texto: '#92400e', borde: '#f59e0b' }
 
 const decimal1 = new Intl.NumberFormat('es-VE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`
@@ -244,14 +241,12 @@ function cabeceraTablaClientes(doc: Doc, y: number): number {
 
 // ── Tabla de detalle de notas pagadas (suma exacta: 178 mm)
 const DET = {
-  nota: { x: IZQ, w: 25 },
-  emision: { x: IZQ + 25, w: 19 },
-  vence: { x: IZQ + 44, w: 20 },
-  pago: { x: IZQ + 64, w: 21 },
-  cumplimiento: { x: IZQ + 85, w: 23 },
-  orig: { x: IZQ + 108, w: 24 },
-  bs: { x: IZQ + 132, w: 25 },
-  usd: { x: IZQ + 157, w: 21 },
+  nota: { x: IZQ, w: 32 },
+  emision: { x: IZQ + 32, w: 24 },
+  pago: { x: IZQ + 56, w: 26 },
+  orig: { x: IZQ + 82, w: 32 },
+  bs: { x: IZQ + 114, w: 36 },
+  usd: { x: IZQ + 150, w: 28 },
 }
 
 function cabeceraTablaDetalle(doc: Doc, y: number): number {
@@ -262,9 +257,7 @@ function cabeceraTablaDetalle(doc: Doc, y: number): number {
   doc.setTextColor(TINTA)
   enUnaLinea(doc, 'NOTA', DET.nota.x + 2, yt, DET.nota.w - 3, 6.3, 'bold')
   enUnaLinea(doc, 'EMISIÓN', DET.emision.x + DET.emision.w / 2, yt, DET.emision.w - 2, 6.3, 'bold', 'center')
-  enUnaLinea(doc, 'VENCIMIENTO', DET.vence.x + DET.vence.w / 2, yt, DET.vence.w - 2, 6.3, 'bold', 'center')
   enUnaLinea(doc, 'FECHA DE PAGO', DET.pago.x + DET.pago.w / 2, yt, DET.pago.w - 2, 6.3, 'bold', 'center')
-  enUnaLinea(doc, 'CUMPLIMIENTO', DET.cumplimiento.x + DET.cumplimiento.w / 2, yt, DET.cumplimiento.w - 2, 6.3, 'bold', 'center')
   enUnaLinea(doc, 'MONTO ORIGINAL', DET.orig.x + DET.orig.w - 2, yt, DET.orig.w - 3, 6.3, 'bold', 'right')
   enUnaLinea(doc, 'TOTAL BS', DET.bs.x + DET.bs.w - 2, yt, DET.bs.w - 3, 6.3, 'bold', 'right')
   enUnaLinea(doc, 'TOTAL $', DET.usd.x + DET.usd.w - 2, yt, DET.usd.w - 3, 6.3, 'bold', 'right')
@@ -303,16 +296,11 @@ export async function armarReporteCuentasPagadas(d: DatosReporteCuentasPagadas):
     doc.text(`Equivalente en bolívares: ${dinero('VES', r.bs)}`, IZQ + 4, y + 18.5)
 
     doc.setFont('helvetica', 'bold').setFontSize(7.4).setTextColor(VERDE)
-    doc.text('CUMPLIMIENTO DE PAGO', DER - 4, y + 5.5, { align: 'right' })
+    doc.text('NOTAS PAGADAS', DER - 4, y + 5.5, { align: 'right' })
     doc.setTextColor('#111111')
-    enUnaLinea(doc, `${decimal1.format(r.pctEnPlazo)} % en plazo`, DER - 4, y + 13, 52, 13.5, 'bold', 'right')
+    enUnaLinea(doc, String(d.notas.length), DER - 4, y + 13, 52, 13.5, 'bold', 'right')
     doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(GRIS)
-    doc.text(
-      ajustar(doc, `${r.enPlazoCount} en vencimiento · ${r.conMoraCount} con mora`, 54),
-      DER - 4,
-      y + 18.5,
-      { align: 'right' },
-    )
+    doc.text(plural(grupos.length, 'cliente', 'clientes'), DER - 4, y + 18.5, { align: 'right' })
     y += ALTO + 4
   }
 
@@ -348,28 +336,15 @@ export async function armarReporteCuentasPagadas(d: DatosReporteCuentasPagadas):
       )
     }
 
-    // 2. Oportunidad de recaudación
-    x = tarjeta(1, VERDE, 'OPORTUNIDAD DE RECAUDACIÓN')
+    // 2. Promedio por nota (sin plazo ni mora desde el 11/11/2026)
+    x = tarjeta(1, VERDE, 'PROMEDIO PAGADO POR NOTA')
     doc.setTextColor('#1c1917')
-    enUnaLinea(doc, `${r.enPlazoCount} en plazo · ${r.conMoraCount} con mora`, x, y + 11.5, w - 7, 10.5, 'bold', 'left', 7.5)
-    const anchoBarra = w - 8
-    doc.setFillColor('#e7e5e4').rect(x, y + 14.2, anchoBarra, 2, 'F')
-    const frEnPlazo = d.notas.length > 0 ? r.enPlazoCount / d.notas.length : 0
-    if (frEnPlazo > 0) doc.setFillColor(VERDE).rect(x, y + 14.2, anchoBarra * frEnPlazo, 2, 'F')
-    if (frEnPlazo < 1 && d.notas.length > 0) {
-      doc.setFillColor(AMBAR_BARRA).rect(x + anchoBarra * frEnPlazo, y + 14.2, anchoBarra * (1 - frEnPlazo), 2, 'F')
-    }
-    doc.setTextColor(GRIS)
-    enUnaLinea(
-      doc,
-      `${dinero('USD', r.enPlazoUsd)} en plazo · ${dinero('USD', r.conMoraUsd)} mora`,
+    enUnaLinea(doc, dinero('USD', d.notas.length > 0 ? r.usd / d.notas.length : 0), x, y + 11.5, w - 7, 11, 'bold', 'left', 7.5)
+    doc.setFont('helvetica', 'normal').setFontSize(6.6).setTextColor(GRIS)
+    doc.text(
+      ajustar(doc, `${dinero('VES', d.notas.length > 0 ? r.bs / d.notas.length : 0)} en bolívares`, w - 7),
       x,
       y + 21,
-      w - 7,
-      6.5,
-      'normal',
-      'left',
-      5.5,
     )
 
     // 3. Moneda de emisión original
@@ -527,26 +502,10 @@ export async function armarReporteCuentasPagadas(d: DatosReporteCuentasPagadas):
 
         doc.setFont('helvetica', 'normal').setFontSize(6.9).setTextColor(TINTA)
         doc.text(fechaCorta(n.fecha), DET.emision.x + DET.emision.w / 2, yb, { align: 'center' })
-        doc.text(n.fecha_pago ? fechaCorta(n.fecha_pago) : '—', DET.vence.x + DET.vence.w / 2, yb, { align: 'center' })
 
         const diaPago = fechaCaracas(n.cobrada_en)
         doc.setFont('helvetica', 'bold').setFontSize(6.9).setTextColor('#1c1917')
         doc.text(diaPago ? fechaCorta(diaPago) : '—', DET.pago.x + DET.pago.w / 2, yb, { align: 'center' })
-
-        const mora = diasDeMoraAlPagar(n.fecha_pago, n.cobrada_en)
-        const textoCumpl = mora > 0 ? `${plural(mora, 'día', 'días')} de mora` : 'En plazo'
-        const estiloCumpl = mora > 0 ? P_MORA : P_PAGADA
-        doc.setFont('helvetica', 'bold').setFontSize(5.9)
-        const wp = Math.min(DET.cumplimiento.w - 2.5, doc.getTextWidth(textoCumpl) + 3)
-        pastilla(
-          doc,
-          textoCumpl,
-          DET.cumplimiento.x + DET.cumplimiento.w / 2 + wp / 2,
-          yb,
-          DET.cumplimiento.w - 2.5,
-          estiloCumpl,
-          5.9,
-        )
 
         doc.setTextColor(TINTA)
         enUnaLinea(doc, dinero(n.moneda, n.total), DET.orig.x + DET.orig.w - 2, yb, DET.orig.w - 3, 6.9, 'normal', 'right')
