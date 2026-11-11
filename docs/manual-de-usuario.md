@@ -3143,6 +3143,19 @@ Si el precio es por la otra unidad, la ventana explica cómo sale el material: *
 
 Para quitar un precio, el botón **Quitar el precio por** esa unidad, en la misma ventana.
 
+#### El PDF de precios para el cliente (11/11/2026)
+
+El botón **PDF de precios**, arriba a la derecha, arma una **hoja horizontal** para enviar al cliente: el membrete de la empresa, **Vigente desde** con la fecha del día, y una tabla con **Producto**, **Unidad** y **Precio**. No lleva el código interno ni el precio mínimo, que son de la casa, y **los productos sin precio no salen**.
+
+Antes de armarla, una ventana deja elegir:
+
+| Opción | Qué hace |
+| --- | --- |
+| **Incluir los datos para el pago** | Pone a la derecha el recuadro **Datos para el pago**: banco, titular, RIF, número de cuenta y moneda de **cada cuenta bancaria activa de Tesorería**. Si la cuenta cambia en Tesorería, el papel cambia solo. Apagado, no queda hueco |
+| **Incluir logo institucional** | Con o sin el logotipo |
+
+Lo puede armar quien vea Ventas o Facturación, aunque no vea Tesorería: del banco solo se le entrega lo que se le da a un cliente para pagar. Si no hay ninguna cuenta bancaria activa, el sistema lo dice en lugar de sacar el recuadro vacío.
+
 #### Qué no le deja el sistema
 
 **Poner o quitar precios exige el control total sobre Ventas**, porque es decidir a cuánto vende la empresa.

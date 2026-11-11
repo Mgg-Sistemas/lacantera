@@ -197,6 +197,23 @@ export function usePrecios() {
 }
 
 /**
+ * Una cuenta bancaria activa de Tesorería, con lo que se le da a un cliente
+ * para pagar (11/11/2026). La base la entrega a quien ve Ventas o Facturación.
+ */
+export interface CuentaParaPagos {
+  banco: string | null
+  numero_cuenta: string | null
+  titular: string | null
+  documento: string | null
+  moneda: string
+}
+
+/** Las cuentas para el PDF de la lista de precios; se piden al armarlo. */
+export async function traerCuentasParaPagos(): Promise<CuentaParaPagos[]> {
+  return (await rpc<CuentaParaPagos[]>('cuentas_para_recibir_pagos')) ?? []
+}
+
+/**
  * En qué unidades se puede vender un artículo.
  *
  * La suya siempre. La otra entre metros cúbicos y toneladas solo si tiene
