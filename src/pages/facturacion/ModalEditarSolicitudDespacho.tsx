@@ -85,9 +85,6 @@ export function ModalEditarSolicitudDespacho({
     solicitud.monto_bs_combinado != null ? String(Number(solicitud.monto_bs_combinado)) : '',
   )
   const [pendienteCobro, setPendienteCobro] = useState(solicitud.pendiente_por_cobrar)
-  const [fechaPago, setFechaPago] = useState(
-    solicitud.fecha_pago ? solicitud.fecha_pago.slice(0, 10) : '',
-  )
   const [filas, setFilas] = useState<FilaRenglon[]>(() =>
     solicitud.renglones.length > 0
       ? solicitud.renglones.map((r) => ({
@@ -146,7 +143,6 @@ export function ModalEditarSolicitudDespacho({
     incompletas ||
     faltaTransporte ||
     faltaElCombinado ||
-    (pendienteCobro && !fechaPago) ||
     aRenglones(filas).length === 0
 
   return (
@@ -183,7 +179,8 @@ export function ModalEditarSolicitudDespacho({
                 monto_usd_combinado: pagoCombinado ? combinadoUsd : null,
                 monto_bs_combinado: pagoCombinado ? Number(montoBsCombinado) || 0 : null,
                 pendiente_por_cobrar: pendienteCobro,
-                fecha_pago: pendienteCobro ? fechaPago : null,
+                // Sin fecha de pago desde el 11/11/2026: la base guarda la que tenía o la de hoy.
+                fecha_pago: null,
               })
               onCerrar()
             }}
@@ -400,26 +397,11 @@ export function ModalEditarSolicitudDespacho({
             type="checkbox"
             className="accent-royal-600 mt-0.5 size-4 shrink-0"
             checked={pendienteCobro}
-            onChange={(e) => {
-              setPendienteCobro(e.target.checked)
-              if (!e.target.checked) setFechaPago('')
-            }}
+            onChange={(e) => setPendienteCobro(e.target.checked)}
           />
           <span className="text-ink/80">Pendiente por cobrar</span>
         </label>
 
-        {pendienteCobro ? (
-          <div className="mt-3">
-            <Input
-              label="Fecha de pago"
-              type="date"
-              min={new Date().toISOString().slice(0, 10)}
-              value={fechaPago}
-              onChange={(e) => setFechaPago(e.target.value)}
-              hint={!fechaPago ? 'Hace falta para dejarla pendiente por cobrar.' : undefined}
-            />
-          </div>
-        ) : null}
       </div>
 
       {editar.error ? <ErrorDeCarga error={editar.error} className="mt-4" /> : null}

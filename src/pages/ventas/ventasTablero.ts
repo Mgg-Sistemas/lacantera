@@ -27,7 +27,8 @@ export const TIPO_DOC: Record<TarjetaVenta['tipo'], string> = {
 
 export const MOTIVO_NO_DESPACHO = {
   sin_cupo: { icono: '💳', label: 'Cliente sin cupo de crédito', corto: 'Sin cupo' },
-  deuda_vencida: { icono: '⏳', label: 'Cliente con deuda vencida', corto: 'Deuda vencida' },
+  // La clave se conserva (es la que guarda la base); el rótulo, sin «vencida» desde el 11/11/2026.
+  deuda_vencida: { icono: '⏳', label: 'Cliente con deuda pendiente', corto: 'Deuda pendiente' },
   sin_material: { icono: '⛰', label: 'No hay material en el patio', corto: 'Sin material' },
   otro: { icono: '📝', label: 'Otro', corto: 'No aprobado' },
 } as const
@@ -79,15 +80,13 @@ export function chipsDe(t: TarjetaVenta): ChipTablero[] {
     if (t.facturable === false) c.push({ tono: 'neutral', texto: 'Respaldo' })
     if (Number(t.aplicado) > 0) c.push({ tono: 'success', texto: `Abonado ${dolares(Number(t.aplicado))}` })
   }
-  if (t.pendiente_por_cobrar && t.fecha_pago && (t.etapa === 'despachada' || t.etapa === 'aprobar')) {
-    c.push(t.vencida ? { tono: 'danger', texto: `Venció el ${fecha(t.fecha_pago)}` } : { tono: 'warning', texto: `Cobrar el ${fecha(t.fecha_pago)}` })
+  // Las cuentas por cobrar no vencen (11/11/2026): solo «Por cobrar», sin fecha.
+  if (t.pendiente_por_cobrar && (t.etapa === 'despachada' || t.etapa === 'aprobar')) {
+    c.push({ tono: 'warning', texto: 'Por cobrar' })
   }
   if (t.tipo === 'FAC') {
     const cond = condicionTxt(t.condicion)
     if (cond) c.push({ tono: cond.startsWith('Crédito') ? 'warning' : 'neutral', texto: cond })
-    if (t.etapa === 'facturada' && t.vence_el) {
-      c.push(t.vencida ? { tono: 'danger', texto: `Vencida desde ${fecha(t.vence_el)}` } : { tono: 'warning', texto: `Vence ${fecha(t.vence_el)}` })
-    }
     if (t.etapa === 'facturada' && Number(t.cobrado) > 0) c.push({ tono: 'success', texto: `Cobrado ${dolares(Number(t.cobrado))}` })
   }
   if (t.etapa === 'anulada') c.push({ tono: 'danger', texto: etiquetaAnulada(t), titulo: t.motivo ?? undefined })

@@ -294,7 +294,8 @@ export function Facturacion() {
         numero: f.numero,
         fecha: f.fecha,
         numeroControl: f.numero_control,
-        vigencia: { rotulo: 'Vence el', fecha: f.vence_el },
+        // Sin «Vence el» desde el 11/11/2026: la condición (p. ej. crédito a 15 días) sí sale.
+        vigencia: null,
         condicionPago: CONDICIONES_PAGO.find((c) => c.valor === f.condicion_pago)?.etiqueta ?? null,
         contraparte: { nombre: f.cliente, rif: f.cliente_rif, direccion: f.cliente_direccion },
         moneda: f.moneda,
@@ -411,11 +412,6 @@ export function Facturacion() {
                     <td className="text-ink/70 px-3 py-3">{f.cliente}</td>
                     <td className="text-ink/60 px-3 py-3 text-xs">
                       {fecha(f.fecha)}
-                      {f.dias_vencida > 0 ? (
-                        <span className="text-danger block">vencida hace {f.dias_vencida} d</span>
-                      ) : f.dias_credito > 0 ? (
-                        <span className="block">vence {fecha(f.vence_el)}</span>
-                      ) : null}
                     </td>
                     <td className="tabular text-ink/85 px-3 py-3 text-right font-medium">
                       {dinero(f.moneda, f.total)}
@@ -703,9 +699,6 @@ export function Facturacion() {
             <Chip tone="neutral">
               {CONDICIONES_PAGO.find((c) => c.valor === detalle.condicion_pago)?.etiqueta}
             </Chip>
-            {detalle.dias_vencida > 0 ? (
-              <Chip tone="danger">Vencida hace {detalle.dias_vencida} días</Chip>
-            ) : null}
             {Number(detalle.retencion_iva) > 0 ? (
               <Chip tone="warning">Agente de retención</Chip>
             ) : null}

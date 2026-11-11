@@ -4,14 +4,7 @@ import { ajustar } from '@/lib/ficha/hoja'
 import { dinero, documento } from '@/lib/formato'
 import { FILA_ALTERNA, GRIS, HAIRLINE, MARCA, ROTULO, TINTA, fechaLarga, fechaCorta, type EmpresaPapel } from '@/lib/ficha/papel'
 import type { NotaPorCobrarDeCliente } from '@/lib/api/ventas'
-import {
-  ROTULO_DE_TRAMO,
-  antiguedadDeLaDeuda,
-  diasVencida,
-  porcentaje,
-  vencimientoMasViejo,
-  type TramoDeAtraso,
-} from '@/lib/antiguedadDeDeuda'
+import { porcentaje } from '@/lib/antiguedadDeDeuda'
 
 /*
   EL REPORTE DE LOS CLIENTES QUE DEBEN POR NOTAS DE ENTREGA (07/11/2026).
@@ -30,22 +23,23 @@ import {
   «Resumen + detalle» y «Solo resumen».
 
   Lo que se apaga en las opciones no deja rastro: sin detalle no hay sección
-  vacía, y «solo vencidas» se dice en el alcance porque cambia qué se cuenta.
+  vacía.
+
+  11/11/2026: SIN VENCIMIENTO NI MORA. «Que las cuentas por cobrar no tengan
+  fecha de vencimiento, solo que queden en status pendiente por cobrar». Fuera
+  la cartera vencida/al día, la antigüedad, el vencimiento más antiguo y el
+  indicador de mora: cada nota está «Por cobrar» hasta que se cobra.
 */
 
 type Doc = InstanceType<typeof import('jspdf').jsPDF>
-
-export { diasVencida }
 
 export interface ClienteQueDebe {
   clave: string
   cliente: string
   rif: string | null
   notas: NotaPorCobrarDeCliente[]
-  vencidas: number
   bs: number
   usd: number
-  usdVencido: number
 }
 
 /** Agrupa las notas por cliente, de quien más debe a quien menos. */
@@ -55,14 +49,10 @@ export function agruparPorCliente(notas: NotaPorCobrarDeCliente[]): ClienteQueDe
     const clave = n.cliente_id != null ? String(n.cliente_id) : 'sin-cliente'
     const g =
       grupos.get(clave) ??
-      ({ clave, cliente: n.cliente ?? 'Sin cliente', rif: n.rif, notas: [], vencidas: 0, bs: 0, usd: 0, usdVencido: 0 } as ClienteQueDebe)
+      ({ clave, cliente: n.cliente ?? 'Sin cliente', rif: n.rif, notas: [], bs: 0, usd: 0 } as ClienteQueDebe)
     g.notas.push(n)
     g.bs += Number(n.total_bs ?? 0)
     g.usd += Number(n.total_usd ?? 0)
-    if (n.vencida) {
-      g.vencidas += 1
-      g.usdVencido += Number(n.total_usd ?? 0)
-    }
     grupos.set(clave, g)
   }
   return Array.from(grupos.values()).sort((a, b) => b.usd - a.usd)
@@ -86,19 +76,13 @@ const ARRIBA = 16
 const LIMITE = 266
 const PIE = 281
 
-const ROJO_VENCIDO = '#b91c1c'
-const VERDE = '#15803d'
-const AMBAR = '#b45309'
 
 interface Pastilla {
   fondo: string
   texto: string
   borde: string
 }
-const P_VENCIDA: Pastilla = { fondo: '#fee2e2', texto: '#991b1b', borde: '#f87171' }
-const P_ATENCION: Pastilla = { fondo: '#fef3c7', texto: '#92400e', borde: '#f59e0b' }
-const P_AL_DIA: Pastilla = { fondo: '#dcfce7', texto: '#166534', borde: '#4ade80' }
-const P_NEUTRA: Pastilla = { fondo: '#e7e5e4', texto: '#44403c', borde: '#a8a29e' }
+const P_POR_COBRAR: Pastilla = { fondo: '#fef3c7', texto: '#92400e', borde: '#f59e0b' }
 
 const decimal1 = new Intl.NumberFormat('es-VE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`
@@ -140,14 +124,6 @@ function pastilla(doc: Doc, texto: string, xDer: number, yBase: number, anchoMax
   doc.roundedRect(xDer - w, yBase - 3.05, w, 4.2, 0.9, 0.9, 'FD')
   doc.setTextColor(p.texto)
   doc.text(ajustar(doc, texto, anchoMax - 2), xDer - w / 2, yBase, { align: 'center' })
-}
-
-function pastillaDeAtraso(n: NotaPorCobrarDeCliente, hoy: Date): { texto: string; estilo: Pastilla } {
-  if (!n.fecha_pago) return { texto: 'Sin fecha', estilo: P_NEUTRA }
-  if (!n.vencida) return { texto: 'Al día', estilo: P_AL_DIA }
-  const dias = diasVencida(n.fecha_pago, hoy)
-  const texto = dias === 0 ? 'Vence hoy' : plural(dias, 'día', 'días')
-  return { texto, estilo: dias <= 15 ? P_ATENCION : P_VENCIDA }
 }
 
 /** Membrete con logo y tarjeta de control. Devuelve dónde sigue la hoja. */
@@ -250,15 +226,14 @@ function tituloSeccion(doc: Doc, y: number, titulo: string, sub: string | null, 
 
 // ── Tabla por cliente (suma 178 mm)
 const COL = {
-  cliente: { x: IZQ, w: 54 },
-  notas: { x: IZQ + 54, w: 16 },
-  vence: { x: IZQ + 70, w: 26 },
-  bs: { x: IZQ + 96, w: 28 },
-  usd: { x: IZQ + 124, w: 22 },
-  pct: { x: IZQ + 146, w: 18 },
-  estado: { x: IZQ + 164, w: 14 },
+  cliente: { x: IZQ, w: 76 },
+  notas: { x: IZQ + 76, w: 16 },
+  bs: { x: IZQ + 92, w: 28 },
+  usd: { x: IZQ + 120, w: 22 },
+  pct: { x: IZQ + 142, w: 18 },
+  estado: { x: IZQ + 160, w: 18 },
 }
-const DIV_CLIENTES = [COL.notas.x, COL.vence.x, COL.bs.x, COL.usd.x, COL.pct.x, COL.estado.x]
+const DIV_CLIENTES = [COL.notas.x, COL.bs.x, COL.usd.x, COL.pct.x, COL.estado.x]
 
 function cabeceraTablaClientes(doc: Doc, y: number): number {
   const H = 7.6
@@ -269,7 +244,6 @@ function cabeceraTablaClientes(doc: Doc, y: number): number {
   doc.setFont('helvetica', 'bold').setFontSize(6.9).setTextColor('#FFFFFF')
   doc.text('CLIENTE / RIF', COL.cliente.x + 2, yt)
   doc.text('NOTAS', COL.notas.x + COL.notas.w / 2, yt, { align: 'center' })
-  doc.text('VENC. MÁS ANTIGUO', COL.vence.x + COL.vence.w / 2, yt, { align: 'center' })
   doc.text('TOTAL BS', COL.bs.x + COL.bs.w - 2, yt, { align: 'right' })
   doc.text('TOTAL $', COL.usd.x + COL.usd.w - 2, yt, { align: 'right' })
   doc.text('% SALDO', COL.pct.x + 2, yt)
@@ -279,13 +253,12 @@ function cabeceraTablaClientes(doc: Doc, y: number): number {
 
 // ── Tabla de detalle (suma 178 mm)
 const DET = {
-  nota: { x: IZQ, w: 28 },
-  fecha: { x: IZQ + 28, w: 22 },
-  vence: { x: IZQ + 50, w: 22 },
-  atraso: { x: IZQ + 72, w: 22 },
-  moneda: { x: IZQ + 94, w: 30 },
-  bs: { x: IZQ + 124, w: 30 },
-  usd: { x: IZQ + 154, w: 24 },
+  nota: { x: IZQ, w: 32 },
+  fecha: { x: IZQ + 32, w: 26 },
+  estatus: { x: IZQ + 58, w: 26 },
+  moneda: { x: IZQ + 84, w: 32 },
+  bs: { x: IZQ + 116, w: 34 },
+  usd: { x: IZQ + 150, w: 28 },
 }
 
 function cabeceraTablaDetalle(doc: Doc, y: number): number {
@@ -296,8 +269,7 @@ function cabeceraTablaDetalle(doc: Doc, y: number): number {
   doc.setFont('helvetica', 'bold').setFontSize(6.6).setTextColor(TINTA)
   doc.text('NOTA', DET.nota.x + 2, yt)
   doc.text('EMISIÓN', DET.fecha.x + DET.fecha.w / 2, yt, { align: 'center' })
-  doc.text('VENCIMIENTO', DET.vence.x + DET.vence.w / 2, yt, { align: 'center' })
-  doc.text('ESTATUS', DET.atraso.x + DET.atraso.w / 2, yt, { align: 'center' })
+  doc.text('ESTATUS', DET.estatus.x + DET.estatus.w / 2, yt, { align: 'center' })
   doc.text('MONTO ORIGINAL', DET.moneda.x + DET.moneda.w - 2, yt, { align: 'right' })
   doc.text('TOTAL BS', DET.bs.x + DET.bs.w - 2, yt, { align: 'right' })
   doc.text('TOTAL $', DET.usd.x + DET.usd.w - 2, yt, { align: 'right' })
@@ -313,10 +285,6 @@ export async function armarReporteClientesPorCobrar(d: DatosReporteClientesPorCo
   const todas = d.clientes.flatMap((c) => c.notas)
   const usd = d.clientes.reduce((s, c) => s + c.usd, 0)
   const bs = d.clientes.reduce((s, c) => s + c.bs, 0)
-  const usdVencido = d.clientes.reduce((s, c) => s + c.usdVencido, 0)
-  const vencidas = d.clientes.reduce((s, c) => s + c.vencidas, 0)
-  const alDia = todas.length - vencidas
-  const tramos = antiguedadDeLaDeuda(todas, d.momento)
 
   const nuevaHoja = () => {
     doc.addPage()
@@ -340,23 +308,19 @@ export async function armarReporteClientesPorCobrar(d: DatosReporteClientesPorCo
     doc.setFont('helvetica', 'normal').setFontSize(7.6).setTextColor(GRIS)
     doc.text(`Equivalente en bolívares: ${dinero('VES', bs)}`, IZQ + 4, y + 18.5)
 
-    doc.setFont('helvetica', 'bold').setFontSize(7.4).setTextColor(usdVencido > 0 ? ROJO_VENCIDO : VERDE)
-    doc.text(usdVencido > 0 ? 'MONTO VENCIDO' : 'SIN SALDO VENCIDO', DER - 4, y + 5.5, { align: 'right' })
-    enUnaLinea(doc, dinero('USD', usdVencido), DER - 4, y + 13, 50, 14, 'bold', 'right')
+    doc.setFont('helvetica', 'bold').setFontSize(7.4).setTextColor(ROTULO)
+    doc.text('NOTAS POR COBRAR', DER - 4, y + 5.5, { align: 'right' })
+    doc.setTextColor('#111111')
+    enUnaLinea(doc, String(todas.length), DER - 4, y + 13, 50, 14, 'bold', 'right')
     doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(GRIS)
-    doc.text(
-      `${decimal1.format(porcentaje(usdVencido, usd))} % del total · ${plural(vencidas, 'nota', 'notas')}`,
-      DER - 4,
-      y + 18.5,
-      { align: 'right' },
-    )
+    doc.text(plural(d.clientes.length, 'cliente', 'clientes'), DER - 4, y + 18.5, { align: 'right' })
     y += ALTO + 4
   }
 
-  // ── Tres tarjetas
+  // ── Dos tarjetas (sin cartera vencida ni antigüedad desde el 11/11/2026)
   {
     const GAP = 4
-    const w = (ANCHO - GAP * 2) / 3
+    const w = (ANCHO - GAP) / 2
     const H = 25
     const mayor = d.clientes[0]
     const tarjeta = (i: number, acento: string, tituloT: string) => {
@@ -384,34 +348,16 @@ export async function armarReporteClientesPorCobrar(d: DatosReporteClientesPorCo
       )
     }
 
-    // 2. Cartera
-    const acentoCartera = vencidas > 0 ? '#dc2626' : VERDE
-    x = tarjeta(1, acentoCartera, 'ESTADO DE LA CARTERA')
-    doc.setTextColor('#1c1917')
-    enUnaLinea(doc, `${vencidas} vencida${vencidas === 1 ? '' : 's'} · ${alDia} al día`, x, y + 11.5, w - 7, 11, 'bold', 'left', 8)
-    const anchoBarra = w - 8
-    doc.setFillColor('#e7e5e4').rect(x, y + 14.2, anchoBarra, 2, 'F')
-    const fr = todas.length > 0 ? vencidas / todas.length : 0
-    if (fr > 0) doc.setFillColor('#dc2626').rect(x, y + 14.2, anchoBarra * fr, 2, 'F')
-    if (fr < 1 && todas.length > 0) doc.setFillColor(VERDE).rect(x + anchoBarra * fr, y + 14.2, anchoBarra * (1 - fr), 2, 'F')
-    doc.setFont('helvetica', 'normal').setFontSize(6.6).setTextColor(GRIS)
-    doc.text(
-      ajustar(doc, `${dinero('USD', usdVencido)} vencido · ${dinero('USD', usd - usdVencido)} por vencer`, w - 7),
-      x,
-      y + 21,
-    )
-
-    // 3. Antigüedad
-    x = tarjeta(2, AMBAR, 'ANTIGÜEDAD DE SALDOS VENCIDOS')
-    const filas: TramoDeAtraso[] = ['D1_15', 'D16_30', 'D31_60', 'MAS_60']
-    filas.forEach((t, i) => {
-      const yy = y + 9.4 + i * 3.8
-      const rojo = t === 'MAS_60' && tramos[t].usd > 0
-      doc.setFont('helvetica', rojo ? 'bold' : 'normal').setFontSize(6.7).setTextColor(rojo ? ROJO_VENCIDO : TINTA)
-      doc.text(ROTULO_DE_TRAMO[t], x, yy)
-      doc.setFont('helvetica', 'bold')
-      doc.text(dinero('USD', tramos[t].usd), x + w - 8, yy, { align: 'right' })
-    })
+    // 2. Mayor saldo
+    x = tarjeta(1, P_POR_COBRAR.texto, 'MAYOR SALDO POR COBRAR')
+    if (mayor) {
+      doc.setTextColor('#1c1917')
+      enUnaLinea(doc, mayor.cliente, x, y + 11.5, w - 7, 11, 'bold', 'left', 7)
+      doc.setFont('helvetica', 'bold').setFontSize(6.9).setTextColor(TINTA)
+      doc.text(`${dinero('USD', mayor.usd)} · ${plural(mayor.notas.length, 'nota', 'notas')}`, x, y + 16.5)
+      doc.setFont('helvetica', 'normal').setFontSize(6.6).setTextColor(GRIS)
+      doc.text(dinero('VES', mayor.bs), x, y + 21)
+    }
     y += H + 6
   }
 
@@ -434,7 +380,7 @@ export async function armarReporteClientesPorCobrar(d: DatosReporteClientesPorCo
       yInicio = y
       y = cabeceraTablaClientes(doc, y)
     }
-    doc.setFillColor(c.vencidas > 0 && i % 2 === 0 ? '#fff8f8' : i % 2 === 1 ? FILA_ALTERNA : '#ffffff')
+    doc.setFillColor(i % 2 === 1 ? FILA_ALTERNA : '#ffffff')
     doc.rect(IZQ, y, ANCHO, H, 'F')
     doc.setDrawColor(HAIRLINE).setLineWidth(0.22)
     for (const x of DIV_CLIENTES) doc.line(x, y, x, y + H)
@@ -450,24 +396,6 @@ export async function armarReporteClientesPorCobrar(d: DatosReporteClientesPorCo
 
     doc.setFont('helvetica', 'bold').setFontSize(7.5).setTextColor(TINTA)
     doc.text(String(c.notas.length), COL.notas.x + COL.notas.w / 2, yb, { align: 'center' })
-    if (c.vencidas > 0) {
-      doc.setFont('helvetica', 'normal').setFontSize(6.2).setTextColor(ROJO_VENCIDO)
-      doc.text(`${c.vencidas} venc.`, COL.notas.x + COL.notas.w / 2, yb + 3.3, { align: 'center' })
-    }
-
-    const masVieja = vencimientoMasViejo(c.notas)
-    if (masVieja) {
-      doc.setFont('helvetica', 'normal').setFontSize(7.1).setTextColor(TINTA)
-      doc.text(fechaCorta(masVieja), COL.vence.x + COL.vence.w / 2, yb, { align: 'center' })
-      const dias = diasVencida(masVieja, d.momento)
-      doc.setFontSize(6.2).setTextColor(ROJO_VENCIDO)
-      doc.text(dias === 0 ? 'vence hoy' : `${plural(dias, 'día', 'días')} de atraso`, COL.vence.x + COL.vence.w / 2, yb + 3.3, {
-        align: 'center',
-      })
-    } else {
-      doc.setFont('helvetica', 'normal').setFontSize(7.1).setTextColor(GRIS)
-      doc.text('—', COL.vence.x + COL.vence.w / 2, yb, { align: 'center' })
-    }
 
     doc.setTextColor(TINTA)
     enUnaLinea(doc, dinero('VES', c.bs), COL.bs.x + COL.bs.w - 2, yb, COL.bs.w - 3.5, 7.2, 'normal', 'right')
@@ -481,7 +409,7 @@ export async function armarReporteClientesPorCobrar(d: DatosReporteClientesPorCo
     doc.setFont('helvetica', 'normal').setFontSize(6.3).setTextColor(GRIS)
     doc.text(`${decimal1.format(pct)} %`, COL.pct.x + 2, yb + 3.3)
 
-    pastilla(doc, c.vencidas > 0 ? 'Vencida' : 'Al día', COL.estado.x + COL.estado.w - 1.2, yb + 0.6, COL.estado.w - 2, c.vencidas > 0 ? P_VENCIDA : P_AL_DIA, 5.9)
+    pastilla(doc, 'Por cobrar', COL.estado.x + COL.estado.w - 1.2, yb + 0.6, COL.estado.w - 2, P_POR_COBRAR, 5.9)
     y += H
   })
   cerrarTabla(y)
@@ -491,7 +419,6 @@ export async function armarReporteClientesPorCobrar(d: DatosReporteClientesPorCo
     const filas: Array<[string, string, string]> = [
       [`TOTAL POR COBRAR (${plural(d.clientes.length, 'CLIENTE', 'CLIENTES')} · ${plural(todas.length, 'NOTA', 'NOTAS')})`, `${dinero('VES', bs)}   ·   ${dinero('USD', usd)}`, MARCA],
     ]
-    if (vencidas > 0) filas.push([`MONTO VENCIDO (${plural(vencidas, 'NOTA', 'NOTAS')})`, dinero('USD', usdVencido), ROJO_VENCIDO])
     const H = 2.6 + filas.length * 5.6
     if (y + H > LIMITE) y = nuevaHoja()
     doc.setFillColor('#faf8f6').setDrawColor(MARCA).setLineWidth(0.4).rect(IZQ, y, ANCHO, H, 'FD')
@@ -506,7 +433,7 @@ export async function armarReporteClientesPorCobrar(d: DatosReporteClientesPorCo
     y += H + 3.5
     doc.setFont('helvetica', 'italic').setFontSize(6.8).setTextColor(GRIS)
     doc.text(
-      'Montos en Bs y $ calculados con la tasa BCV vigente a la fecha de emisión de cada nota. Una nota se considera vencida cuando su fecha de pago ha transcurrido.',
+      'Montos en Bs y $ calculados con la tasa BCV vigente a la fecha de emisión de cada nota. Cada nota queda por cobrar hasta que se cobra.',
       IZQ,
       y + 1,
     )
@@ -517,7 +444,7 @@ export async function armarReporteClientesPorCobrar(d: DatosReporteClientesPorCo
   if (d.conDetalle && d.clientes.length > 0) {
     if (y + 40 > LIMITE) y = nuevaHoja()
     else y += 2
-    y = tituloSeccion(doc, y, 'Detalle de notas por cliente', 'Indicador de mora: ámbar hasta 15 días, rojo a partir de 16 días', '#dc2626')
+    y = tituloSeccion(doc, y, 'Detalle de notas por cliente', 'Notas pendientes por cobrar')
 
     for (const c of d.clientes) {
       // Que la franja del cliente no quede sola al pie de la hoja.
@@ -549,11 +476,9 @@ export async function armarReporteClientesPorCobrar(d: DatosReporteClientesPorCo
         enUnaLinea(doc, n.numero, DET.nota.x + 2, yb, DET.nota.w - 3, 7.4, 'bold')
         doc.setFont('helvetica', 'normal').setFontSize(7.1).setTextColor(TINTA)
         doc.text(fechaCorta(n.fecha), DET.fecha.x + DET.fecha.w / 2, yb, { align: 'center' })
-        doc.text(n.fecha_pago ? fechaCorta(n.fecha_pago) : '—', DET.vence.x + DET.vence.w / 2, yb, { align: 'center' })
-        const p = pastillaDeAtraso(n, d.momento)
         doc.setFont('helvetica', 'bold').setFontSize(6.1)
-        const wp = Math.min(DET.atraso.w - 3, doc.getTextWidth(p.texto) + 3)
-        pastilla(doc, p.texto, DET.atraso.x + DET.atraso.w / 2 + wp / 2, yb, DET.atraso.w - 3, p.estilo, 6.1)
+        const wp = Math.min(DET.estatus.w - 3, doc.getTextWidth('Por cobrar') + 3)
+        pastilla(doc, 'Por cobrar', DET.estatus.x + DET.estatus.w / 2 + wp / 2, yb, DET.estatus.w - 3, P_POR_COBRAR, 6.1)
         doc.setTextColor(TINTA)
         enUnaLinea(doc, dinero(n.moneda, n.total), DET.moneda.x + DET.moneda.w - 2, yb, DET.moneda.w - 3.5, 7.1, 'normal', 'right')
         enUnaLinea(doc, dinero('VES', n.total_bs ?? 0), DET.bs.x + DET.bs.w - 2, yb, DET.bs.w - 3.5, 7.1, 'normal', 'right')

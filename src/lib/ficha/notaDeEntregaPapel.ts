@@ -32,13 +32,8 @@ function datosDeNota(
     tipo: 'NOTA',
     numero: n.numero,
     fecha: n.fecha,
-    vigencia:
-      n.pendiente_por_cobrar && !n.cobrada_en && n.fecha_pago && n.estado !== 'ANULADA'
-        ? {
-            rotulo: n.vencida_por_cobrar ? 'Vencida el' : 'Fecha de pago',
-            fecha: n.fecha_pago,
-          }
-        : null,
+    // Sin fecha de pago en el papel desde el 11/11/2026: las cuentas por cobrar no vencen.
+    vigencia: null,
     contraparte: {
       nombre: n.cliente ?? 'CLIENTE POR CONCRETAR',
       rif: n.cliente_rif ?? '',
@@ -96,8 +91,7 @@ function datosDeNota(
     cuentaPorCobrar:
       n.pendiente_por_cobrar && n.estado !== 'ANULADA'
         ? {
-            estado: n.cobrada_en ? 'COBRADA' : n.vencida_por_cobrar ? 'VENCIDA' : 'POR_COBRAR',
-            fechaPago: n.fecha_pago,
+            estado: n.cobrada_en ? 'COBRADA' : 'POR_COBRAR',
             cobradaEn: n.cobrada_en,
           }
         : null,
