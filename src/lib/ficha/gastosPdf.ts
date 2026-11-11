@@ -169,7 +169,21 @@ export interface DatosDelComparativo extends DatosDeLosReportes {
   conPorCobrar: boolean
 }
 
-const NOMBRE_AGRUPAR: Record<Agrupacion, string> = { mes: 'Mes', semana: 'Semana', dia: 'Día' }
+/*
+  LA NÓMINA EN ESTOS PAPELES (11/11/2026). Llega como un gasto más, con la
+  categoría «NOMINA» (ver `ReportesDeGastos`): una línea por período, por lo
+  asignado más los aportes, fechada el día en que termina el período. Aquí
+  solo se explica al pie y se separa en el desglose por origen.
+*/
+const esNomina = (g: DocumentoDelInforme) => g.categoria === 'NOMINA'
+
+function notaDeNomina(gastos: DocumentoDelInforme[]): string {
+  const n = gastos.filter(esNomina).length
+  if (!n) return ''
+  return ` Incluye ${plural(n, 'nómina', 'nóminas')} en la categoría «Nómina»: lo asignado a los trabajadores más los aportes patronales, contado en el mes en que termina cada período y convertido con la tasa de la propia nómina.`
+}
+
+const NOMBRE_AGRUPAR: Record<Agrupacion, string> ={ mes: 'Mes', semana: 'Semana', dia: 'Día' }
 const ADJETIVO_AGRUPAR: Record<Agrupacion, string> = { mes: 'mensual', semana: 'semanal', dia: 'diaria' }
 
 /** Escribe en una sola línea reduciendo ligeramente la fuente antes de recortar. */
@@ -362,7 +376,9 @@ export async function armarInformeDeGastos(d: DatosDeLosReportes): Promise<Archi
     a.localeCompare(b),
   )
 
-  const proveedoresUnicos = new Set(gastos.map((g) => g.contraparte.trim().toUpperCase())).size
+  const proveedoresUnicos = new Set(
+    gastos.filter((g) => !esNomina(g)).map((g) => g.contraparte.trim().toUpperCase()),
+  ).size
   const usdDocs = gastos.filter((g) => g.moneda === 'USD')
   const vesDocs = gastos.filter((g) => g.moneda === 'VES')
   const otrasDocs = gastos.filter((g) => g.moneda !== 'USD' && g.moneda !== 'VES')
@@ -608,7 +624,8 @@ export async function armarInformeDeGastos(d: DatosDeLosReportes): Promise<Archi
 
   doc.setFont('helvetica', 'italic').setFontSize(6.8).setTextColor(GRIS)
   const notaPie = doc.splitTextToSize(
-    'Cada factura de gasto se convierte a su equivalente con la tasa BCV vigente a la fecha del documento. Los montos originales emitidos en bolívares y en dólares no se suman directamente entre sí.',
+    'Cada factura de gasto se convierte a su equivalente con la tasa BCV vigente a la fecha del documento. Los montos originales emitidos en bolívares y en dólares no se suman directamente entre sí.' +
+      notaDeNomina(gastos),
     ANCHO,
   ) as string[]
   doc.text(notaPie, IZQ, y - 1, { lineHeightFactor: 1.3 })
@@ -1210,7 +1227,9 @@ export async function armarComparativoGastosVentas(d: DatosDelComparativo): Prom
     })
     cerrarC(y)
 
-    const HC = d.conCompras ? 12.5 : 8
+    const nominas = gastos.filter(esNomina)
+    const conDesglose = d.conCompras || nominas.length > 0
+    const HC = conDesglose ? 12.5 : 8
     if (y + HC > LIMITE) y = nuevaHoja()
     doc.setFillColor('#faf8f6').setDrawColor(MARCA).setLineWidth(0.4).rect(IZQ, y, ANCHO, HC, 'FD')
     doc.setFont('helvetica', 'bold').setFontSize(7.4).setTextColor(MARCA)
@@ -1228,14 +1247,15 @@ export async function armarComparativoGastosVentas(d: DatosDelComparativo): Prom
       valVentas > 0 ? `   (${porcentajeTexto(tSalidas, tVentas, d.moneda)} de las ventas)` : ''
     }`
     enUnaLinea(doc, derCierre, DER - 3.5, y + 5.1, 78, 7.3, 'bold', 'right')
-    if (d.conCompras) {
+    if (conDesglose) {
+      const tNomina = sumar(nominas)
+      const tFacturas: Monto = { usd: tGastos.usd - tNomina.usd, bs: tGastos.bs - tNomina.bs }
+      const partes = [`Facturas de Gastos ${enLinea(tFacturas, d.moneda)}`]
+      if (nominas.length) partes.push(`Nómina ${enLinea(tNomina, d.moneda)}`)
+      if (d.conCompras) partes.push(`Órdenes de Compras ${enLinea(tCompras, d.moneda)}`)
       doc.setFont('helvetica', 'normal').setFontSize(6.6).setTextColor(GRIS)
       doc.text(
-        ajustar(
-          doc,
-          `Desglose por origen: Facturas de Gastos ${enLinea(tGastos, d.moneda)} · Órdenes de Compras ${enLinea(tCompras, d.moneda)}.`,
-          ANCHO - 7,
-        ),
+        ajustar(doc, `Desglose por origen: ${partes.join(' · ')}.`, ANCHO - 7),
         IZQ + 3.5,
         y + 10.1,
       )
@@ -1354,7 +1374,8 @@ export async function armarComparativoGastosVentas(d: DatosDelComparativo): Prom
   // Nota técnica BCV al pie del resumen
   doc.setFont('helvetica', 'italic').setFontSize(6.8).setTextColor(GRIS)
   const notaPie = doc.splitTextToSize(
-    'Montos equivalentes en Bs y $ calculados con la tasa BCV vigente a la fecha de emisión de cada nota de entrega o factura de gasto. Los importes originales en distintas monedas no se suman directamente entre sí.',
+    'Montos equivalentes en Bs y $ calculados con la tasa BCV vigente a la fecha de emisión de cada nota de entrega o factura de gasto. Los importes originales en distintas monedas no se suman directamente entre sí.' +
+      notaDeNomina(gastos),
     ANCHO,
   ) as string[]
   if (y + notaPie.length * 3.2 > LIMITE) y = nuevaHoja()
