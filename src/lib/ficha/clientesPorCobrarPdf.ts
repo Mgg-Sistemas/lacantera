@@ -70,7 +70,6 @@ export function agruparPorCliente(notas: NotaPorCobrarDeCliente[]): ClienteQueDe
 
 export interface DatosReporteClientesPorCobrar {
   clientes: ClienteQueDebe[]
-  alcance: Array<[string, string | null | undefined]>
   conDetalle: boolean
   conLogo: boolean
   nombreArchivo: string
@@ -190,7 +189,7 @@ function cabecera(doc: Doc, logo: string, d: DatosReporteClientesPorCobrar, nota
 
   const filas: Array<[string, string, boolean]> = [
     ['CORTE AL', fechaLarga(d.momento), false],
-    ['POR', d.emitidoPor || 'Sistema', false],
+    ['EMITIDO POR', d.emitidoPor || 'Sistema', false],
     ['REGISTROS', `${plural(d.clientes.length, 'cliente', 'clientes')} · ${plural(notas, 'nota', 'notas')}`, true],
   ]
   const CAB = 6.8
@@ -211,27 +210,13 @@ function cabecera(doc: Doc, logo: string, d: DatosReporteClientesPorCobrar, nota
     doc.setFont('helvetica', 'bold').setFontSize(6.8).setTextColor(GRIS)
     doc.text(`${et}:`, xCaja + 3, yf)
     doc.setTextColor(destacado ? MARCA : TINTA)
-    enUnaLinea(doc, val, DER - 3, yf, ANCHO_CAJA - 24, destacado ? 7.8 : 7.4, 'bold', 'right')
+    enUnaLinea(doc, val, DER - 3, yf, ANCHO_CAJA - 27, destacado ? 7.8 : 7.4, 'bold', 'right')
     yf += FILA
   })
 
   const regla = Math.max(bajo + 3.5, yc + alto + 3)
   doc.setDrawColor(MARCA).setLineWidth(0.7).line(IZQ, regla, DER, regla)
-
-  // Banda de alcance
-  const ya = regla + 2.5
-  const alcance = [
-    ...d.alcance.filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`),
-    'Montos en Bs y $ a la tasa BCV de la fecha de emisión de cada nota',
-  ].join(' · ')
-  doc.setFillColor(FILA_ALTERNA).setDrawColor(HAIRLINE).setLineWidth(0.25)
-  doc.roundedRect(IZQ, ya, ANCHO, 6.4, 1, 1, 'FD')
-  doc.setFillColor(ROTULO).rect(IZQ, ya, 1.8, 6.4, 'F')
-  doc.setFont('helvetica', 'bold').setFontSize(7.2).setTextColor(ROTULO)
-  doc.text('ALCANCE:', IZQ + 4.5, ya + 4.4)
-  doc.setFont('helvetica', 'normal').setFontSize(7.3).setTextColor(TINTA)
-  doc.text(ajustar(doc, alcance, ANCHO - 22), IZQ + 19, ya + 4.4)
-  return ya + 10
+  return regla + 4.5
 }
 
 /** Cabecera corta de las hojas 2 en adelante. */

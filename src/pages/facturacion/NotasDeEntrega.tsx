@@ -37,7 +37,9 @@ import { useAlmacenes, useExistencias } from '@/lib/api/inventario'
 import { useGuias, useTickets } from '@/lib/api/despachos'
 import { useVehiculos } from '@/lib/api/vehiculos'
 import { armarNotaDeEntrega, armarNotasDeEntrega } from '@/lib/ficha/notaDeEntregaPapel'
+import { armarReporteCuentasPagadas } from '@/lib/ficha/notasCobradasPdf'
 import { armarReporteNotasDeEntrega, type MaterialDespachado } from '@/lib/ficha/notasDeEntregaReportePdf'
+import { agruparCuentasPagadasPorCliente, fechaCaracas, filtrarNotasCobradas } from '@/lib/cuentasPagadasDeNotas'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import {
   useAnularNota,
@@ -45,6 +47,7 @@ import {
   useCancelarDespacho,
   useClientes,
   useMarcarNotaPendientePorCobrar,
+  useNotasCobradas,
   useNotasEntrega,
   leerNotaEntregaPorNumero,
   usePrecios,
@@ -166,7 +169,7 @@ export function NotasDeEntrega() {
   const [busca, setBusca] = useState('')
   const [estado, setEstado] = useState('')
   const [monedaFiltro, setMonedaFiltro] = useState('')
-  const [cobroFiltro, setCobroFiltro] = useState<'' | 'PENDIENTE' | 'VENCIDA'>('')
+  const [cobroFiltro, setCobroFiltro] = useState<'' | 'PENDIENTE' | 'VENCIDA' | 'COBRADA'>('')
   const [productoFiltro, setProductoFiltro] = useState('')
   const [rango, setRango] = useState<Rango>(SIN_RANGO)
   const { data, isPending, error } = useNotasEntrega({
@@ -362,6 +365,8 @@ export function NotasDeEntrega() {
   const [ocultarCobroReporte, setOcultarCobroReporte] = useState(false)
   const [sinPorCobrarReporte, setSinPorCobrarReporte] = useState(false)
   const [fallaReporte, setFallaReporte] = useState<string | null>(null)
+  const [pidiendoCuentasPagadas, setPidiendoCuentasPagadas] = useState(false)
+  const [reportePagadas, setReportePagadas] = useState<PdfArmado | null>(null)
   const [armandoLote, setArmandoLote] = useState(false)
   const [reporteWhatsapp, setReporteWhatsapp] = useState<string | null>(null)
   const [armandoWhatsapp, setArmandoWhatsapp] = useState(false)
@@ -621,7 +626,9 @@ export function NotasDeEntrega() {
           ? 'pendientes por cobrar'
           : cobroFiltro === 'VENCIDA'
             ? 'vencidas por cobrar'
-            : '',
+            : cobroFiltro === 'COBRADA'
+              ? 'cuentas por cobrar pagadas'
+              : '',
         productoFiltro
           ? `producto ${precios?.find((p) => String(p.articulo_id) === productoFiltro)?.nombre ?? productoFiltro}`
           : '',
@@ -682,15 +689,11 @@ export function NotasDeEntrega() {
     setArmandoReporte(true)
     try {
       const resumen = await resumenParaReporte(notasParaElReporte)
-      // Sacar notas cambia el alcance y se dice; ocultar el cobro no deja rastro en el papel.
       setReporte(
         await armarReporteNotasDeEntrega({
           empresa: empresaDelPapel(empresa),
           emitidoPor: yo?.nombre ?? '',
           momento: new Date(),
-          alcance: sinPorCobrarReporte
-            ? `${resumen.alcance} · sin las notas por cobrar ni vencidas`
-            : resumen.alcance,
           notas: notasParaElReporte,
           materiales: resumen.materiales,
           ocultarCobro: ocultarCobroReporte,
@@ -752,6 +755,13 @@ export function NotasDeEntrega() {
               }}
             >
               {armandoReporte ? 'Armando…' : 'Reporte Bs/$'}
+            </Button>
+            <Button
+              variant="outline"
+              icon={<Check />}
+              onClick={() => setPidiendoCuentasPagadas(true)}
+            >
+              Cuentas pagadas
             </Button>
             <Button
               variant="outline"
@@ -1089,11 +1099,12 @@ export function NotasDeEntrega() {
           <Select
             label="Cobro"
             value={cobroFiltro}
-            onChange={(e) => setCobroFiltro(e.target.value as '' | 'PENDIENTE' | 'VENCIDA')}
+            onChange={(e) => setCobroFiltro(e.target.value as '' | 'PENDIENTE' | 'VENCIDA' | 'COBRADA')}
             opciones={[
               { valor: '', etiqueta: 'Cualquiera' },
               { valor: 'PENDIENTE', etiqueta: 'Pendiente por cobrar' },
               { valor: 'VENCIDA', etiqueta: 'Vencidas' },
+              { valor: 'COBRADA', etiqueta: 'Cobradas' },
             ]}
           />
           {/*
@@ -1214,6 +1225,11 @@ export function NotasDeEntrega() {
                         {n.pendiente_por_cobrar && !n.cobrada_en ? (
                           <Chip tone={n.vencida_por_cobrar ? 'danger' : 'warning'}>
                             {n.vencida_por_cobrar ? 'Vencida' : 'Por cobrar'} · {fecha(n.fecha_pago!)}
+                          </Chip>
+                        ) : null}
+                        {n.pendiente_por_cobrar && n.cobrada_en && n.estado !== 'ANULADA' ? (
+                          <Chip tone="success">
+                            Cobrada · {fecha(fechaCaracas(n.cobrada_en) ?? n.cobrada_en)}
                           </Chip>
                         ) : null}
                       </div>
@@ -2358,6 +2374,24 @@ export function NotasDeEntrega() {
         titulo="Reporte de notas de entrega"
       />
 
+      {pidiendoCuentasPagadas ? (
+        <ModalReporteCuentasPagadas
+          onCerrar={() => setPidiendoCuentasPagadas(false)}
+          onListo={(archivo) => {
+            setPidiendoCuentasPagadas(false)
+            setReportePagadas(archivo)
+          }}
+        />
+      ) : null}
+
+      <Visor
+        abierto={reportePagadas !== null}
+        onCerrar={() => setReportePagadas(null)}
+        blob={reportePagadas?.blob ?? null}
+        nombreArchivo={reportePagadas?.nombre ?? ''}
+        titulo="Cuentas por cobrar pagadas"
+      />
+
       {reporteWhatsapp ? (
         <ModalReporteVentasWhatsapp
           texto={reporteWhatsapp}
@@ -2390,5 +2424,168 @@ export function NotasDeEntrega() {
         />
       ) : null}
     </>
+  )
+}
+
+// ─────────────── informe ejecutivo de cuentas por cobrar pagadas ──────────────
+
+function ModalReporteCuentasPagadas({
+  onCerrar,
+  onListo,
+}: {
+  onCerrar: () => void
+  onListo: (archivo: PdfArmado) => void
+}) {
+  const { data: cobradas, isPending, error } = useNotasCobradas(true)
+  const { data: empresa } = useEmpresa()
+  const { data: yo } = useMiPerfil()
+
+  const [conDetalle, setConDetalle] = useState(true)
+  const [rangoPago, setRangoPago] = useState<Rango>(SIN_RANGO)
+  const [clienteFiltro, setClienteFiltro] = useState('')
+  const [conLogo, setConLogo] = useState(true)
+  const [armando, setArmando] = useState(false)
+  const [falla, setFalla] = useState<string | null>(null)
+
+  const todosLosGrupos = agruparCuentasPagadasPorCliente(cobradas ?? [])
+  const opcionesClientes = [
+    { valor: '', etiqueta: 'Todos los clientes' },
+    ...[...todosLosGrupos]
+      .sort((a, b) => a.cliente.localeCompare(b.cliente, 'es'))
+      .map((g) => ({
+        valor: g.cliente_id != null ? String(g.cliente_id) : 'SIN_CLIENTE',
+        etiqueta: `${g.cliente}${g.rif ? ` · ${documento(g.rif)}` : ''} (${g.notas.length})`,
+      })),
+  ]
+
+  const notasElegidas = filtrarNotasCobradas(cobradas ?? [], {
+    desde: rangoPago.desde,
+    hasta: rangoPago.hasta,
+    clienteId: clienteFiltro,
+  })
+  const gruposElegidos = agruparCuentasPagadasPorCliente(notasElegidas)
+
+  const periodoTexto =
+    rangoPago.desde && rangoPago.hasta
+      ? `${fecha(rangoPago.desde)} — ${fecha(rangoPago.hasta)}`
+      : rangoPago.desde
+        ? `Desde ${fecha(rangoPago.desde)}`
+        : rangoPago.hasta
+          ? `Hasta ${fecha(rangoPago.hasta)}`
+          : undefined
+
+  const armar = async () => {
+    setArmando(true)
+    setFalla(null)
+    try {
+      const hoy = fechaCaracas(new Date().toISOString()) ?? new Date().toISOString().slice(0, 10)
+      let nombre = `cuentas-pagadas-${hoy}`
+      if (!conDetalle) nombre += '-resumen'
+      if (rangoPago.desde) nombre += `-desde-${rangoPago.desde}`
+      if (rangoPago.hasta) nombre += `-hasta-${rangoPago.hasta}`
+      if (!conLogo) nombre += '-sin-logo'
+
+      onListo(
+        await armarReporteCuentasPagadas({
+          notas: notasElegidas,
+          conDetalle,
+          conLogo,
+          periodoTexto,
+          nombreArchivo: `${nombre}.pdf`,
+          empresa: empresaDelPapel(empresa),
+          emitidoPor: yo?.nombre ?? '',
+          momento: new Date(),
+        }),
+      )
+    } catch (e) {
+      setFalla(enCastellano(e))
+    } finally {
+      setArmando(false)
+    }
+  }
+
+  return (
+    <Modal
+      abierto
+      onCerrar={onCerrar}
+      titulo="Reporte de cuentas por cobrar pagadas"
+      descripcion="Relación administrativa de notas de entrega registradas con condición de cobro pendiente cuya cancelación ya fue confirmada."
+      acciones={
+        <>
+          <Button variant="ghost" onClick={onCerrar}>
+            Cancelar
+          </Button>
+          <Button
+            icon={<Printer />}
+            disabled={isPending || armando || notasElegidas.length === 0}
+            onClick={() => void armar()}
+          >
+            {armando ? 'Generando…' : 'Generar PDF'}
+          </Button>
+        </>
+      }
+    >
+      {isPending ? <Cargando /> : null}
+      {error ? <ErrorDeCarga error={error} /> : null}
+
+      {!isPending && !error ? (
+        <>
+          <p className={`text-sm ${notasElegidas.length === 0 ? 'text-warning font-medium' : 'text-ink/65'}`}>
+            {notasElegidas.length === 0
+              ? (cobradas?.length ?? 0) === 0
+                ? 'No existen notas de entrega con cuenta por cobrar pagada registradas en el sistema.'
+                : 'No existen notas pagadas que coincidan con el período o cliente seleccionado.'
+              : `Se incluirán ${gruposElegidos.length} cliente${gruposElegidos.length === 1 ? '' : 's'} con ${notasElegidas.length} nota${notasElegidas.length === 1 ? '' : 's'} pagada${notasElegidas.length === 1 ? '' : 's'}.`}
+          </p>
+
+          <div className="mt-5 space-y-4">
+            <div role="radiogroup" aria-label="Modalidad del informe" className="grid gap-2 sm:grid-cols-2">
+              {[
+                {
+                  valor: true,
+                  titulo: 'Resumen + detalle',
+                  texto: 'Consolidado de recaudación por cliente y desglose de cada nota con su cumplimiento de pago.',
+                },
+                {
+                  valor: false,
+                  titulo: 'Solo resumen',
+                  texto: 'Formato ejecutivo consolidado con una fila por cliente, sin desglose individual de notas.',
+                },
+              ].map((o) => (
+                <button
+                  key={o.titulo}
+                  type="button"
+                  role="radio"
+                  aria-checked={conDetalle === o.valor}
+                  onClick={() => setConDetalle(o.valor)}
+                  className={`rounded-[6px] border p-3 text-left transition-colors ${
+                    conDetalle === o.valor ? 'border-royal-600 bg-royal-600/10' : 'border-hairline hover:bg-ink/3'
+                  }`}
+                >
+                  <span className="text-ink/85 block text-sm font-medium">{o.titulo}</span>
+                  <span className="text-ink/55 mt-0.5 block text-xs">{o.texto}</span>
+                </button>
+              ))}
+            </div>
+
+            <Select
+              label="Cliente"
+              value={clienteFiltro}
+              onChange={(e) => setClienteFiltro(e.target.value)}
+              opciones={opcionesClientes}
+            />
+
+            <div>
+              <p className="text-ink/70 mb-1.5 text-xs font-medium">Período de fecha efectiva de pago (opcional)</p>
+              <RangoDeFechas valor={rangoPago} onCambio={setRangoPago} />
+            </div>
+
+            <Interruptor encendido={conLogo} onCambio={setConLogo} etiqueta="Con logo" />
+          </div>
+        </>
+      ) : null}
+
+      {falla ? <ErrorDeCarga error={new Error(falla)} className="mt-4" /> : null}
+    </Modal>
   )
 }

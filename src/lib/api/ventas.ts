@@ -632,8 +632,8 @@ export interface FiltrosDeNotas {
   hasta?: string
   /** La moneda en la que se emitió la nota: «USD», «VES»… No el equivalente. */
   moneda?: string
-  /** «PENDIENTE»: todavía sin cobrar. «VENCIDA»: pendiente y ya pasó la fecha. */
-  cobro?: 'PENDIENTE' | 'VENCIDA' | ''
+  /** «PENDIENTE»: todavía sin cobrar. «VENCIDA»: pendiente y ya pasó la fecha. «COBRADA»: cuenta por cobrar ya pagada. */
+  cobro?: 'PENDIENTE' | 'VENCIDA' | 'COBRADA' | ''
   /** El articulo_id de un producto (categoría PRODUCTO): la nota lleva algún renglón de ese material. */
   producto?: string
 }
@@ -680,10 +680,36 @@ export function useNotasEntrega(filtros: string | FiltrosDeNotas = {}) {
       if (f.moneda) q = q.eq('moneda', f.moneda)
       if (f.cobro === 'PENDIENTE') q = q.eq('pendiente_por_cobrar', true).is('cobrada_en', null)
       if (f.cobro === 'VENCIDA') q = q.eq('vencida_por_cobrar', true)
+      if (f.cobro === 'COBRADA') {
+        q = q.eq('pendiente_por_cobrar', true).not('cobrada_en', 'is', null).neq('estado', 'ANULADA')
+      }
       if (f.producto) q = q.contains('articulos_ids', [Number(f.producto)])
       if (texto) q = q.or(COLUMNAS_QUE_SE_BUSCAN.map((c) => `${c}.ilike.%${texto}%`).join(','))
       return desenvolver<NotaEntrega[]>(await q)
     },
+  })
+}
+
+/**
+ * Todas las notas de entrega vigentes que tuvieron cuenta por cobrar y cuya
+ * cancelación ya fue confirmada (sin el tope de 200 filas de la lista general),
+ * para el informe ejecutivo de cuentas por cobrar pagadas.
+ */
+export function useNotasCobradas(habilitado = true) {
+  return useQuery({
+    queryKey: ['ventas', 'notas', 'cobradas-de-cuentas-por-cobrar'],
+    enabled: habilitado,
+    queryFn: async () =>
+      desenvolver<NotaEntrega[]>(
+        await supabase
+          .from('v_notas_entrega')
+          .select('*')
+          .eq('pendiente_por_cobrar', true)
+          .not('cobrada_en', 'is', null)
+          .neq('estado', 'ANULADA')
+          .order('cobrada_en', { ascending: false })
+          .order('id', { ascending: false }),
+      ),
   })
 }
 

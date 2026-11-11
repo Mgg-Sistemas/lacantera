@@ -587,7 +587,6 @@ function ModalReportePorCobrar({
       onListo(
         await armarReporteClientesPorCobrar({
           clientes: salen,
-          alcance: [['Notas', soloVencidas ? 'Solo las vencidas' : 'Todas las pendientes por cobrar']],
           conDetalle,
           conLogo,
           nombreArchivo: `${nombre}.pdf`,

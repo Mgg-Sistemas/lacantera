@@ -197,7 +197,6 @@ function cabeceraEjecutivaReporte(
     empresa: EmpresaPapel
     emitidoPor: string
     momento: Date
-    alcance: string
     totalNotas: number
     vigentes: number
     noFacturables: number
@@ -267,7 +266,7 @@ function cabeceraEjecutivaReporte(
   // Tarjeta de Control a la derecha
   const filasCaja = [
     { etiqueta: 'EMITIDO', valor: fechaLarga(d.momento), destacado: false },
-    { etiqueta: 'POR', valor: d.emitidoPor || 'Sistema', destacado: false },
+    { etiqueta: 'EMITIDO POR', valor: d.emitidoPor || 'Sistema', destacado: false },
     {
       etiqueta: 'REGISTROS',
       valor: valorRegistros,
@@ -306,7 +305,7 @@ function cabeceraEjecutivaReporte(
       f.valor,
       DER - 3,
       yFila,
-      ANCHO_CAJA - 22,
+      ANCHO_CAJA - 27,
       f.destacado ? 7.8 : 7.4,
       'bold',
       'right',
@@ -319,20 +318,7 @@ function cabeceraEjecutivaReporte(
   doc.setDrawColor(MARCA).setLineWidth(0.7)
   doc.line(IZQ, regla, DER, regla)
 
-  // Banda de alcance debajo de la línea divisoria
-  const yAlcance = regla + 2.5
-  doc.setFillColor(FILA_ALTERNA)
-  doc.setDrawColor(HAIRLINE).setLineWidth(0.25)
-  doc.roundedRect(IZQ, yAlcance, ANCHO_UTIL, 6.4, 1, 1, 'FD')
-  doc.setFillColor(ROTULO)
-  doc.rect(IZQ, yAlcance, 1.8, 6.4, 'F')
-
-  doc.setFont('helvetica', 'bold').setFontSize(7.2).setTextColor(ROTULO)
-  doc.text('ALCANCE DEL REPORTE:', IZQ + 4.5, yAlcance + 4.4)
-  doc.setFont('helvetica', 'normal').setFontSize(7.4).setTextColor(TINTA)
-  doc.text(ajustar(doc, d.alcance, ANCHO_UTIL - 42), IZQ + 38, yAlcance + 4.4)
-
-  return yAlcance + 9.5
+  return regla + 4.5
 }
 
 /**
@@ -343,7 +329,7 @@ function cabeceraContinuacion(
   doc: Doc,
   logo: string,
   razonSocial: string,
-  alcance: string,
+  momento: Date,
 ): number {
   const LADO = 12
   if (logo) doc.addImage(logo, 'PNG', IZQ, ARRIBA - 1, LADO, LADO)
@@ -361,7 +347,7 @@ function cabeceraContinuacion(
 
   doc.setFont('helvetica', 'normal').setFontSize(7.4).setTextColor(GRIS)
   doc.text(
-    ajustar(doc, `Alcance: ${alcance}`, 78),
+    `Emitido: ${fechaLarga(momento)}`,
     DER,
     ARRIBA + 6.5,
     { align: 'right' },
@@ -426,7 +412,7 @@ function pintarTarjetasResumen(
     ? [
         {
           acento: '#d97706',
-          titulo: 'NOTAS EN EL ALCANCE',
+          titulo: 'RESUMEN DE NOTAS',
           valor: `${resumen.vigentes} ${resumen.vigentes === 1 ? 'nota vigente' : 'notas vigentes'}`,
           linea1: `${resumen.pendientes} pendiente${resumen.pendientes === 1 ? '' : 's'} por completar`,
           linea2: 'Respaldo de Notas de Salida (NS)',
@@ -652,8 +638,6 @@ export async function armarReporteNotasDeEntrega(d: {
   empresa: EmpresaPapel
   emitidoPor: string
   momento: Date
-  /** «Las 12 notas marcadas», «Las 200 más recientes»… */
-  alcance: string
   notas: NotaEntrega[]
   /** Qué se despachó, ya sumado por artículo. */
   materiales?: MaterialDespachado[]
@@ -712,7 +696,6 @@ export async function armarReporteNotasDeEntrega(d: {
     empresa: d.empresa,
     emitidoPor: d.emitidoPor,
     momento: d.momento,
-    alcance: d.alcance,
     totalNotas: d.notas.length,
     vigentes: vigentes.length,
     noFacturables: notasRespaldo.length,
@@ -767,7 +750,7 @@ export async function armarReporteNotasDeEntrega(d: {
     doc.setFillColor('#ffffff')
     doc.rect(IZQ, y, ANCHO_UTIL, altoVacio, 'F')
     doc.setFont('helvetica', 'italic').setFontSize(8.5).setTextColor(GRIS)
-    doc.text('Sin notas de entrega registradas para este alcance.', IZQ + ANCHO_UTIL / 2, y + 7.2, {
+    doc.text('No existen notas de entrega registradas para generar el informe.', IZQ + ANCHO_UTIL / 2, y + 7.2, {
       align: 'center',
     })
     y += altoVacio
@@ -811,7 +794,7 @@ export async function armarReporteNotasDeEntrega(d: {
       if (y + altoFila > ABAJO - 14) {
         cerrarBordeTablaPlanilla(y)
         doc.addPage()
-        y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.alcance)
+        y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.momento)
         yInicioTabla = y
         y = cabeceraTablaPlanilla(doc, y)
       }
@@ -1064,7 +1047,7 @@ export async function armarReporteNotasDeEntrega(d: {
   const altoTotalPlanilla = 2.6 + filasTotales.length * 5.6
   if (y + altoTotalPlanilla > ABAJO - 14) {
     doc.addPage()
-    y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.alcance)
+    y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.momento)
   }
 
   doc.setFillColor('#faf8f6')
@@ -1126,7 +1109,7 @@ export async function armarReporteNotasDeEntrega(d: {
 
     if (y + 32 > ABAJO - 14) {
       doc.addPage()
-      y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.alcance)
+      y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.momento)
     }
 
     y = tituloSeccionEjecutiva(
@@ -1184,7 +1167,7 @@ export async function armarReporteNotasDeEntrega(d: {
       if (y + altoFila > ABAJO - 16) {
         cerrarTablaConv(y)
         doc.addPage()
-        y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.alcance)
+        y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.momento)
         yInicioConv = y
         y = pintarCabeceraConvenio(y)
       }
@@ -1300,14 +1283,14 @@ export async function armarReporteNotasDeEntrega(d: {
 
     if (y + 34 > ABAJO - 14) {
       doc.addPage()
-      y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.alcance)
+      y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.momento)
     }
 
     y = tituloSeccionEjecutiva(
       doc,
       y,
       'Resumen de cuentas por cobrar por cliente',
-      `${notasPorCobrar.length} ${notasPorCobrar.length === 1 ? 'nota pendiente' : 'notas pendientes'} de cobro en el alcance`,
+      `${notasPorCobrar.length} ${notasPorCobrar.length === 1 ? 'nota con saldo pendiente' : 'notas con saldo pendiente'} de cobro`,
       notasVencidas.length > 0 ? '#dc2626' : '#d97706',
     )
 
@@ -1356,7 +1339,7 @@ export async function armarReporteNotasDeEntrega(d: {
       if (y + altoFila > ABAJO - 16) {
         cerrarTablaCobro(y)
         doc.addPage()
-        y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.alcance)
+        y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.momento)
         yInicioCobro = y
         y = pintarCabeceraCobro(y)
       }
@@ -1463,7 +1446,7 @@ export async function armarReporteNotasDeEntrega(d: {
 
     if (y + 34 > ABAJO - 14) {
       doc.addPage()
-      y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.alcance)
+      y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.momento)
     }
 
     y = tituloSeccionEjecutiva(
@@ -1522,7 +1505,7 @@ export async function armarReporteNotasDeEntrega(d: {
       if (y + altoFila > ABAJO - 16) {
         cerrarTablaMat(y)
         doc.addPage()
-        y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.alcance)
+        y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.momento)
         yInicioMat = y
         y = pintarCabeceraMaterial(y)
       }
@@ -1626,7 +1609,7 @@ export async function armarReporteNotasDeEntrega(d: {
 
     doc.setFont('helvetica', 'italic').setFontSize(6.8).setTextColor(GRIS)
     const notaPieMaterial = doc.splitTextToSize(
-      'Suma el subtotal de cada renglón de las notas vigentes del alcance, convertido con la tasa de su propia nota. Si una nota incluye flete o descuento, la suma de renglones puede diferir del total de la planilla.',
+      'Suma el subtotal de cada renglón de las notas vigentes incluidas en el reporte, convertido con la tasa BCV de emisión de cada nota. Si una nota incluye flete o descuento, la suma de renglones puede diferir del total de la planilla.',
       ANCHO_UTIL,
     ) as string[]
     doc.text(notaPieMaterial, IZQ, y + 1.5, { lineHeightFactor: 1.3 })
