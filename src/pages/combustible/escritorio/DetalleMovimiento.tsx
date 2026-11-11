@@ -15,6 +15,7 @@ import {
   useCorregirMovimientoCombustible,
   useMarcarCuaderno,
   useMotivosDespacho,
+  usePersonasParaVale,
   type CorreccionMovimiento,
 } from '@/lib/api/combustible'
 import { useEmpresa } from '@/lib/api/empresa'
@@ -252,6 +253,7 @@ export function DetalleMovimiento({
   }
 
   const cat = (t: CatalogoCombustible['tipo']) => catalogos.filter((c) => c.tipo === t && (c.activo || c.valor === autorizado || c.valor === ubicacion))
+  const personas = usePersonasParaVale()
   const conOriginal = (lista: { valor: string; etiqueta: string }[], actual: string) =>
     actual && !lista.some((o) => o.valor === actual) ? [{ valor: actual, etiqueta: actual }, ...lista] : lista
 
@@ -402,7 +404,13 @@ export function DetalleMovimiento({
                 valor={autorizado}
                 onCambio={setAutorizado}
                 opciones={conOriginal(
-                  cat('autorizado').map((c) => ({ valor: c.valor, etiqueta: c.valor })),
+                  // Los empleados activos de Nómina, más los cargados a mano en el catálogo (11/11/2026).
+                  [
+                    ...(personas.data ?? []).map((p) => ({ valor: p.nombre, etiqueta: p.nombre })),
+                    ...cat('autorizado')
+                      .filter((c) => !(personas.data ?? []).some((p) => p.nombre.toUpperCase() === c.valor.toUpperCase()))
+                      .map((c) => ({ valor: c.valor, etiqueta: c.valor })),
+                  ],
                   autorizado,
                 )}
               />
