@@ -54,6 +54,11 @@ cp "$ENV" .env.local
 ESPERADO=$(git rev-parse --short=7 HEAD)
 
 echo "Construyendo $(git log -1 --format='%h %s' | cut -c1-80)"
+# TOPE DE MEMORIA DE LA CONSTRUCCION (Angelica, 10/11/2026): en el droplet de
+# 4 GB, el heap de Node llega como mucho a 3 GB y lo demas queda para nginx y
+# el sistema. Si el droplet cambia de tamano, este numero se revisa con el.
+export NODE_OPTIONS=--max-old-space-size=3072
+
 npm ci --silent --no-audit --no-fund
 npm run build --silent >/dev/null
 
