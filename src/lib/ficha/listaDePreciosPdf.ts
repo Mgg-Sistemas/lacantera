@@ -100,10 +100,6 @@ function recortar(doc: Doc, t: string, ancho: number): string {
   return s + '…'
 }
 
-function correoInstitucional(empresa: EmpresaPapel): string {
-  return empresa.contacto || EMPRESA.correo
-}
-
 function domicilioInstitucional(empresa: EmpresaPapel): string {
   return empresa.domicilio || 'Vargas - La Guaira'
 }
@@ -123,24 +119,20 @@ function cabecera(
 
   const razon = d.empresa.razonSocial || EMPRESA.razonSocial
   const rifFormateado = documento(d.empresa.rif || EMPRESA.rif)
-  const contacto = correoInstitucional(d.empresa)
+  const actividad = (d.empresa.actividad || EMPRESA.actividad).toUpperCase()
   const domicilio = domicilioInstitucional(d.empresa).toUpperCase()
 
   doc.setFont('helvetica', 'bold').setFontSize(14.5).setTextColor(MARCA)
-  doc.text(recortar(doc, razon, 145), x, y + 6.5)
+  doc.text(recortar(doc, razon, 145), x, y + 5.5)
 
-  doc.setFont('helvetica', 'bold').setFontSize(8.4).setTextColor(TINTA)
-  const txtRif = `RIF: ${rifFormateado}`
-  doc.text(txtRif, x, y + 12.2)
-  const wRif = doc.getTextWidth(txtRif)
-  doc.setFont('helvetica', 'normal').setTextColor(GRIS)
-  doc.text('  ·  ', x + wRif, y + 12.2)
-  const wSep = doc.getTextWidth('  ·  ')
-  doc.setFont('helvetica', 'normal').setTextColor(ROTULO)
-  doc.text(recortar(doc, contacto, 145 - wRif - wSep), x + wRif + wSep, y + 12.2)
+  doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(ROTULO)
+  doc.text(recortar(doc, actividad, 145), x, y + 10.2)
 
-  doc.setFont('helvetica', 'bold').setFontSize(7.8).setTextColor(GRIS)
-  doc.text(recortar(doc, domicilio, 145), x, y + 17.2)
+  doc.setFont('helvetica', 'bold').setFontSize(8.2).setTextColor(TINTA)
+  doc.text(`RIF: ${rifFormateado}`, x, y + 14.8)
+
+  doc.setFont('helvetica', 'bold').setFontSize(7.6).setTextColor(GRIS)
+  doc.text(recortar(doc, domicilio, 145), x, y + 19.2)
 
   // Tarjeta de control a la derecha
   const W = 96
@@ -191,7 +183,7 @@ function cabeceraCorta(doc: Doc, logo: string, d: DatosListaDePrecios): number {
   doc.setFont('helvetica', 'bold').setFontSize(10).setTextColor(MARCA)
   doc.text(`${razon} · LISTA OFICIAL DE PRECIOS`, x, y + 4.5)
   doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(GRIS)
-  doc.text(`RIF: ${rifFormateado} · ${correoInstitucional(d.empresa)}`, x, y + 8.6)
+  doc.text(`RIF: ${rifFormateado} · ${domicilioInstitucional(d.empresa)}`, x, y + 8.6)
 
   doc.setFont('helvetica', 'bold').setFontSize(7.8).setTextColor(ROTULO)
   doc.text(fechaLarga(d.momento), DER, y + 6.5, { align: 'right' })
@@ -217,8 +209,8 @@ function franjaEjecutiva(
 
   const razon = d.empresa.razonSocial || EMPRESA.razonSocial
   const rifFormateado = documento(d.empresa.rif || EMPRESA.rif)
+  const actividad = d.empresa.actividad || EMPRESA.actividad
   const domicilio = domicilioInstitucional(d.empresa)
-  const contacto = correoInstitucional(d.empresa)
 
   // Cálculo del resumen comercial
   const montos = filas.map((p) => Number(p.precio)).filter((n) => Number.isFinite(n) && n > 0)
@@ -252,8 +244,8 @@ function franjaEjecutiva(
       acento: MARCA,
       rotulo: 'DATOS INSTITUCIONALES DEL PROVEEDOR',
       principal: razon,
-      linea1: `RIF: ${rifFormateado} · Ubicación: ${domicilio}`,
-      linea2: `Atención comercial: ${contacto}`,
+      linea1: `RIF: ${rifFormateado} · Actividad: ${actividad}`,
+      linea2: `Ubicación: ${domicilio}`,
     },
     {
       x: IZQ + w1 + GAP,
@@ -333,7 +325,6 @@ function panelDerechoPagoYCondiciones(
   const cuentas = d.cuentas
   const razon = d.empresa.razonSocial || EMPRESA.razonSocial
   const rifEmpresa = documento(d.empresa.rif || EMPRESA.rif)
-  const contacto = correoInstitucional(d.empresa)
 
   const ALTO_CAB = 7.2
   const ALTO_TITULAR = 13.5
@@ -361,7 +352,7 @@ function panelDerechoPagoYCondiciones(
   doc.text(recortar(doc, cuentas[0]?.titular || razon, w - 7.6), x + 3.8, yt + 8.1)
   const rifTitular = cuentas[0]?.documento ? documento(cuentas[0].documento) : rifEmpresa
   doc.setFont('helvetica', 'bold').setFontSize(7.1).setTextColor(ROTULO)
-  doc.text(recortar(doc, `RIF: ${rifTitular} · Correo: ${contacto}`, w - 7.6), x + 3.8, yt + 11.7)
+  doc.text(recortar(doc, `RIF: ${rifTitular}`, w - 7.6), x + 3.8, yt + 11.7)
 
   // Listado de cuentas activas
   let yc = yt + ALTO_TITULAR + 2.5
@@ -421,8 +412,8 @@ function panelDerechoPagoYCondiciones(
       'Para autorizar el despacho es indispensable remitir el comprobante bancario con su referencia.',
     ],
     [
-      'Contacto oficial:',
-      `Atención comercial y cotizaciones a través de ${contacto}.`,
+      'Despacho en planta:',
+      'Cantidades expresadas según la unidad de comercialización seleccionada (M3 o TON).',
     ],
   ]
 

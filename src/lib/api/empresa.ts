@@ -399,15 +399,8 @@ export function empresaDelPapel(e: Empresa | null | undefined): EmpresaPapel {
     rif: e?.rif || EMPRESA.rif,
     actividad: EMPRESA.actividad,
     domicilio: DIRECCION_DEL_PAPEL,
-    /*
-      El correo se cae a la constante, como la razón social y el RIF de arriba.
-
-      Los dos campos de contacto llevaban vacíos en Configuración desde que
-      existe la pantalla, así que la línea salía siendo solo el RIF y ningún
-      papel enseñaba dónde escribir a la empresa. Con el respaldo, sale siempre
-      — y el día que alguien escriba el correo en Configuración, manda ese.
-    */
-    contacto: [e?.telefono, e?.correo || EMPRESA.correo].filter(Boolean).join(' · ') || null,
+    // Sin correo de la empresa en los PDFs (11/11/2026); solo teléfono si está cargado.
+    contacto: e?.telefono || null,
     imprenta:
       [
         e?.imprenta_nombre,

@@ -3145,13 +3145,13 @@ Para quitar un precio, el botón **Quitar el precio por** esa unidad, en la mism
 
 #### El PDF de precios para el cliente (11/11/2026)
 
-El botón **PDF de precios**, arriba a la derecha, emite la **Lista Oficial de Precios** en formato ejecutivo A4 horizontal para entregar al cliente: incluye el membrete institucional de **MINERÍA INTERNACIONAL TS, C.A.** (logotipo, razón social, RIF, correo electrónico corporativo y ubicación), una tarjeta de control con la cantidad de rubros, moneda de cotización y fecha de emisión, tres tarjetas ejecutivas superiores (*Datos institucionales del proveedor*, *Resumen de oferta comercial* y *Modalidad de facturación y pago*) y el catálogo numerado con **Ítem**, **Material / Producto**, **Unidad de medida** y **Precio unitario ($)**. No expone códigos internos ni precios mínimos, y **los productos sin precio no aparecen en el documento**.
+El botón **PDF de precios**, arriba a la derecha, emite la **Lista Oficial de Precios** en formato ejecutivo A4 horizontal para entregar al cliente: incluye el membrete institucional de **MINERÍA INTERNACIONAL TS, C.A.** (logotipo, razón social, actividad «Producción de agregados», RIF y ubicación), una tarjeta de control con la cantidad de rubros, moneda de cotización y fecha de emisión, tres tarjetas ejecutivas superiores (*Datos institucionales del proveedor*, *Resumen de oferta comercial* y *Modalidad de facturación y pago*) y el catálogo numerado con **Ítem**, **Material / Producto**, **Unidad de medida** y **Precio unitario ($)**. No expone códigos internos ni precios mínimos, y **los productos sin precio no aparecen en el documento**.
 
 Antes de generarlo, la ventana permite configurar:
 
 | Opción | Qué hace |
 | --- | --- |
-| **Incluir datos bancarios y condiciones comerciales** | Muestra a la derecha el panel de **Datos bancarios para el pago** (titular, RIF, correo, banco, moneda y número de cuenta resaltado de cada cuenta activa de Tesorería) junto con el recuadro de **Condiciones comerciales y de despacho**. Si se desactiva, el catálogo ocupa el ancho completo de la hoja |
+| **Incluir datos bancarios y condiciones comerciales** | Muestra a la derecha el panel de **Datos bancarios para el pago** (titular, RIF, banco, moneda y número de cuenta resaltado de cada cuenta activa de Tesorería) junto con el recuadro de **Condiciones comerciales y de despacho**. Si se desactiva, el catálogo ocupa el ancho completo de la hoja |
 | **Mostrar columna de equivalente en Bolívares (Tasa BCV)** | Añade a la tabla la columna **Equivalente Bs. (BCV)** calculada con la tasa oficial BCV vigente del día |
 | **Incluir logo institucional** | Emite el encabezado con o sin el logotipo de la empresa |
 

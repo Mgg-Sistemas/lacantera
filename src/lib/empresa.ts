@@ -25,7 +25,7 @@ export const EMPRESA = {
    */
   marca: 'Minería Internacional',
   rif: 'J-50209170-0',
-  actividad: 'Explotación de piedra',
+  actividad: 'Producción de agregados',
   /**
    * El correo de contacto, para el membrete de todo lo que se imprime.
    *
