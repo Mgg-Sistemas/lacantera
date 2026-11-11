@@ -74,8 +74,6 @@ export function ModalEditarNotaEntrega({
   const [descuento, setDescuento] = useState(String(Number(nota.descuento)))
   const [observacion, setObservacion] = useState(nota.observacion ?? '')
   const [motivo, setMotivo] = useState('')
-  const [mostrandoFechaPago, setMostrandoFechaPago] = useState(false)
-  const [fechaPagoCobro, setFechaPagoCobro] = useState('')
   const [filas, setFilas] = useState<FilaRenglon[]>(() =>
     renglones.length > 0
       ? renglones.map((r) => ({
@@ -243,7 +241,7 @@ export function ModalEditarNotaEntrega({
             {nota.pendiente_por_cobrar
               ? nota.cobrada_en
                 ? `Cobrada el ${formatoFecha(nota.cobrada_en)}.`
-                : `Pendiente por cobrar, vence el ${formatoFecha(nota.fecha_pago)}.`
+                : 'Pendiente por cobrar.'
               : 'No está marcada como pendiente por cobrar.'}
           </span>
 
@@ -260,32 +258,18 @@ export function ModalEditarNotaEntrega({
               {marcarCobrada.isPending ? 'Guardando…' : 'Marcar como cobrada'}
             </Button>
           ) : nota.estado !== 'ANULADA' ? (
-            mostrandoFechaPago ? (
-              <div className="flex items-end gap-2">
-                <Input
-                  label="Fecha de pago"
-                  type="date"
-                  min={new Date().toISOString().slice(0, 10)}
-                  value={fechaPagoCobro}
-                  onChange={(e) => setFechaPagoCobro(e.target.value)}
-                  autoFocus
-                />
-                <Button
-                  size="sm"
-                  disabled={!fechaPagoCobro || marcarPendiente.isPending}
-                  onClick={async () => {
-                    await marcarPendiente.mutateAsync({ id: nota.id, fecha_pago: fechaPagoCobro })
-                    onCerrar()
-                  }}
-                >
-                  {marcarPendiente.isPending ? 'Guardando…' : 'Confirmar'}
-                </Button>
-              </div>
-            ) : (
-              <Button size="sm" variant="ghost" onClick={() => setMostrandoFechaPago(true)}>
-                Marcar pendiente por cobrar
-              </Button>
-            )
+            // Sin fecha de pago desde el 11/11/2026: las cuentas por cobrar no vencen.
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={marcarPendiente.isPending}
+              onClick={async () => {
+                await marcarPendiente.mutateAsync({ id: nota.id })
+                onCerrar()
+              }}
+            >
+              {marcarPendiente.isPending ? 'Guardando…' : 'Marcar pendiente por cobrar'}
+            </Button>
           ) : null}
         </div>
         {marcarCobrada.error ? <ErrorDeCarga error={marcarCobrada.error} className="mt-2" /> : null}

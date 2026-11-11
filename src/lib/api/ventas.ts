@@ -577,8 +577,8 @@ export interface NotaEntrega {
   /**
    * Pendiente por cobrar, aparte de Facturación. Christopher, 12/10/2026: un
    * recordatorio con fecha de pago, sin enlazarse a ninguna factura.
-   * `vencida_por_cobrar` la calcula la vista: pendiente, sin cobrar todavía y
-   * con la fecha ya pasada. Desde el 20/10/2026 Cuentas por cobrar también la
+   * `vencida_por_cobrar` queda siempre en falso desde el 11/11/2026: las
+   * cuentas por cobrar no vencen. Desde el 20/10/2026 Cuentas por cobrar también la
    * ENSEÑA —«debería poder verlas también desde cuentas por cobrar»—: solo
    * lectura, la deuda sigue viviendo aquí y se cobra marcando la nota.
    */
@@ -632,8 +632,8 @@ export interface FiltrosDeNotas {
   hasta?: string
   /** La moneda en la que se emitió la nota: «USD», «VES»… No el equivalente. */
   moneda?: string
-  /** «PENDIENTE»: todavía sin cobrar. «VENCIDA»: pendiente y ya pasó la fecha. */
-  cobro?: 'PENDIENTE' | 'VENCIDA' | ''
+  /** «PENDIENTE»: todavía sin cobrar. «COBRADA»: cuenta por cobrar ya pagada. (Sin «vencida» desde el 11/11/2026.) */
+  cobro?: 'PENDIENTE' | 'COBRADA' | ''
   /** El articulo_id de un producto (categoría PRODUCTO): la nota lleva algún renglón de ese material. */
   producto?: string
 }
@@ -679,11 +679,36 @@ export function useNotasEntrega(filtros: string | FiltrosDeNotas = {}) {
       if (f.hasta) q = q.lte('fecha', f.hasta)
       if (f.moneda) q = q.eq('moneda', f.moneda)
       if (f.cobro === 'PENDIENTE') q = q.eq('pendiente_por_cobrar', true).is('cobrada_en', null)
-      if (f.cobro === 'VENCIDA') q = q.eq('vencida_por_cobrar', true)
+      if (f.cobro === 'COBRADA') {
+        q = q.eq('pendiente_por_cobrar', true).not('cobrada_en', 'is', null).neq('estado', 'ANULADA')
+      }
       if (f.producto) q = q.contains('articulos_ids', [Number(f.producto)])
       if (texto) q = q.or(COLUMNAS_QUE_SE_BUSCAN.map((c) => `${c}.ilike.%${texto}%`).join(','))
       return desenvolver<NotaEntrega[]>(await q)
     },
+  })
+}
+
+/**
+ * Todas las notas de entrega vigentes que tuvieron cuenta por cobrar y cuya
+ * cancelación ya fue confirmada (sin el tope de 200 filas de la lista general),
+ * para el informe ejecutivo de cuentas por cobrar pagadas.
+ */
+export function useNotasCobradas(habilitado = true) {
+  return useQuery({
+    queryKey: ['ventas', 'notas', 'cobradas-de-cuentas-por-cobrar'],
+    enabled: habilitado,
+    queryFn: async () =>
+      desenvolver<NotaEntrega[]>(
+        await supabase
+          .from('v_notas_entrega')
+          .select('*')
+          .eq('pendiente_por_cobrar', true)
+          .not('cobrada_en', 'is', null)
+          .neq('estado', 'ANULADA')
+          .order('cobrada_en', { ascending: false })
+          .order('id', { ascending: false }),
+      ),
   })
 }
 
@@ -925,13 +950,14 @@ export function useMarcarNotaCobrada() {
   )
 }
 
-/** Para una nota que ya nació sin la casilla: la deja pendiente por cobrar después, con su fecha. */
+/**
+ * Para una nota que ya nació sin la casilla: la deja pendiente por cobrar
+ * después. Sin fecha de pago desde el 11/11/2026: las cuentas por cobrar no
+ * vencen.
+ */
 export function useMarcarNotaPendientePorCobrar() {
-  return useAccionVentas((n: { id: number; fecha_pago: string }) =>
-    rpc<void>('marcar_nota_de_entrega_pendiente_por_cobrar', {
-      p_id: n.id,
-      p_fecha_pago: n.fecha_pago,
-    }),
+  return useAccionVentas((n: { id: number }) =>
+    rpc<void>('marcar_nota_de_entrega_pendiente_por_cobrar', { p_id: n.id }),
   )
 }
 

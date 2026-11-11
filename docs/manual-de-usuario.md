@@ -3008,7 +3008,7 @@ Las columnas de cobradas y anuladas enseñan los últimos 7, 30 o 90 días. En e
 3. **Se pide el despacho.** **🚚 Pedir despacho**, o **🚚 Despachar esta cotización** desde la cotización, que trae el cliente, la moneda y los renglones ya puestos y deja el despacho enlazado a ella. Hacen falta el patio y los datos del transporte: **el nombre del chofer, su cédula y la placa**. El pesaje de la romana y la guía se eligen como siempre. El pedido queda **Por aprobar** y **no rebaja nada todavía**.
 4. **Lo aprueba quien está autorizado.** **✔ Aprobar despacho** pregunta **«¿Se despacha?»**:
    - **SÍ**: nace la nota de entrega y el material sale del patio.
-   - **NO, por ahora**: con su motivo (⏳ cliente con deuda vencida, 💳 sin cupo de crédito, ⛰ no hay material, 📝 otro). Sigue por aprobar con el motivo a la vista y se le avisa a quien lo pidió.
+   - **NO, por ahora**: con su motivo (⏳ cliente con deuda pendiente, 💳 sin cupo de crédito, ⛰ no hay material, 📝 otro). Sigue por aprobar con el motivo a la vista y se le avisa a quien lo pidió.
    - **🚫 No procede**: con su justificación; el despacho queda no aprobado.
 5. **Se cobra.** Una nota sin factura se da por pagada con la **Conciliación de Pagos**: al enlazar el pago bancario que la cubre, la tarjeta pasa a **Cobrada**. Si se factura (**🧾 Facturar esta nota**), la factura se emite al momento —ya no se envía a autorizar— y el cobro se registra en ella (21.2).
 
@@ -3041,7 +3041,7 @@ Si todavía no hay ninguno, aparece **Sin clientes registrados**, con el texto *
 | **Identificación** | El RIF o la cédula |
 | **Condición** | La condición de pago y, si retiene IVA, el chip **Agente de retención** |
 | **Deuda** | Lo que debe en **facturas**, en dólares. Debajo, **de $ X** si tiene límite, en rojo cuando la deuda lo pasó |
-| **Por cobrar** | Lo que debe en **notas de entrega** marcadas por cobrar y todavía sin cobrar: en dólares, y debajo en bolívares, cuántas notas y cuántas vencidas. En rojo si alguna está vencida. **—** si no debe nada |
+| **Por cobrar** | Lo que debe en **notas de entrega** marcadas por cobrar y todavía sin cobrar: en dólares, y debajo en bolívares y cuántas notas. **—** si no debe nada |
 | **Última venta** | La fecha, o **—** |
 | **Estado** | **Activo** o **Inactivo** |
 
@@ -3053,9 +3053,9 @@ Las notas de entrega que se marcan **pendientes por cobrar** no son facturas, as
 
 - Encienda **Solo los que deben por notas de entrega** (debajo del buscador) para ver solo a esos clientes.
 - **Toque el monto** de la columna **Por cobrar** para ver las notas que debe ese cliente: número, fecha, cuándo vence o hace cuántos días venció, y su monto en $ y Bs. El número de cada nota la abre en **Facturación › Notas de entrega**, que es donde se marca cobrada. Desde Clientes no se cobra nada.
-- El botón **Reporte por cobrar** genera un PDF con los clientes que presentan saldo pendiente, ordenados de mayor a menor saldo. Desde el 09/11/2026 se emite en formato ejecutivo institucional: membrete con logo y recuadro de alcance con fecha de corte, usuario emisor y total de clientes y notas incluidas; el **total por cobrar** en dólares con su equivalente en bolívares y el **monto vencido**; tres tarjetas ejecutivas (**Clientes con saldo pendiente**, **Estado de la cartera** —notas vencidas y al día— y **Antigüedad de saldos vencidos** en tramos de 1–15, 16–30, 31–60 y más de 60 días); y la tabla **Saldo por cliente**, con la fecha del vencimiento más antiguo, el porcentaje del saldo total y su estado (**Vencida** o **Al día**). Antes de generarlo se selecciona la modalidad del reporte: **Resumen + detalle** (incluye el desglose de cada nota por cliente con fecha de emisión, vencimiento, estatus de mora —ámbar hasta 15 días, rojo a partir de 16 días— y monto original) o **Solo resumen** (formato consolidado por cliente). Adicionalmente, permite activar **Solo las notas vencidas** y **Con logo**, reflejando las opciones seleccionadas en el nombre del archivo.
+- El botón **Reporte por cobrar** genera un PDF con los clientes que presentan saldo pendiente, ordenados de mayor a menor saldo. Desde el 09/11/2026 (actualizado el 10/11/2026 sin franja de alcance) se emite en formato ejecutivo institucional: membrete con logo y tarjeta de control con fecha de corte, usuario emisor y total de clientes y notas incluidas; el **total por cobrar** en dólares con su equivalente en bolívares y cuántas **notas por cobrar** hay; dos tarjetas (**Clientes con saldo pendiente** y **Mayor saldo por cobrar**); y la tabla **Saldo por cliente**, con el porcentaje del saldo total y su estado, **Por cobrar**. Antes de generarlo se selecciona la modalidad del reporte: **Resumen + detalle** (incluye el desglose de cada nota por cliente con fecha de emisión, estatus y monto original) o **Solo resumen** (formato consolidado por cliente), y **Con logo**. Desde el 11/11/2026 no hay vencido, antigüedad ni mora: cada nota está por cobrar hasta que se cobra.
 
-Los bolívares y los dólares de cada nota son los del día en que se hizo la nota, con su tasa, igual que en el reporte Bs/$ de Notas de entrega. Una nota vence cuando pasa su fecha de pago.
+Los bolívares y los dólares de cada nota son los del día en que se hizo la nota, con su tasa, igual que en el reporte Bs/$ de Notas de entrega. Las notas por cobrar no vencen (11/11/2026).
 
 #### Registrar y editar
 
@@ -3242,7 +3242,7 @@ El papel con el que sale el camión. La pantalla lo resume: **Notas de entrega: 
 
 #### Qué se ve
 
-Arriba, los botones: **Choferes / Vehículos**, que abre el catálogo de los que se llevan el material; **Reporte WhatsApp**; **Reporte Bs/$**, que saca en PDF ejecutivo las notas que se ven (con tarjetas de resumen, planilla con estado y cobranza, relación de despachos por convenio/respaldo no facturables, resumen de cuentas por cobrar por cliente y **Desglose por material** en ambas monedas). Antes de generarlo se abre una ventana con dos interruptores (desde el 06/11/2026): **Sacar las notas por cobrar y las vencidas**, para que esas notas no salgan y los totales y el material se sumen sin ellas (las ya cobradas sí salen), y **Ocultar la información de cobro**, para que salgan todas las notas con sus montos pero sin la tarjeta de cuentas por cobrar, sin las etiquetas «Por cobrar», «Vencida» o «Cobrada» y sin la relación de cobro por cliente (en su lugar va el volumen despachado). Se pueden usar juntos. Sacar las por cobrar queda dicho en el alcance del papel; ocultar el cobro no deja rastro. Los dos se notan en el nombre del archivo. Si al sacar las por cobrar no queda ninguna nota, no se genera y se dice por qué. **Imprimir notas**, que saca en un solo PDF cada nota filtrada en su formato completo; y **Pedir despacho**, que solo ve quien escribe en Facturación.
+Arriba, los botones: **Choferes / Vehículos**, que abre el catálogo de los que se llevan el material; **Reporte WhatsApp**; **Reporte Bs/$**, que genera en PDF ejecutivo las notas filtradas en pantalla (membrete institucional y tarjeta de control sin sección de alcance desde el 10/11/2026, tres tarjetas de resumen, planilla con estado y cobranza, relación de despachos por convenio/respaldo no facturables, resumen de cuentas por cobrar por cliente y **Desglose por material** en ambas monedas). Antes de generarlo se abre una ventana con dos interruptores (desde el 06/11/2026): **Sacar las notas por cobrar**, para que esas notas no se incluyan y los totales y el material se sumen sin ellas (las ya cobradas sí se incluyen), y **Ocultar la información de cobro**, para emitir todas las notas con sus montos pero sin la tarjeta de cuentas por cobrar, sin las etiquetas «Por cobrar» o «Cobrada» y sin la relación de cobro por cliente (en su lugar se muestra el volumen despachado). Se pueden usar juntos y ambos quedan reflejados en el nombre del archivo; si al excluir las notas por cobrar no queda ninguna nota, el reporte no se genera y se informa el motivo. **Cuentas pagadas** *(10/11/2026)*, que emite el informe ejecutivo en PDF de las notas de entrega que tuvieron condición de cuenta por cobrar y cuya cancelación ya fue confirmada, permitiendo elegir entre **Resumen + detalle** o **Solo resumen**, filtrar por cliente, acotar un período de fecha efectiva de pago y activar o desactivar el logo institucional; **Imprimir notas**, que genera en un solo PDF cada nota filtrada en su formato completo; y **Pedir despacho**, que solo visualiza quien posee permiso de escritura en Facturación.
 
 Debajo, si hay despachos pedidos, la sección **Despachos por aprobar**, con una tarjeta por pedido (se explica más abajo). Y después la lista de notas.
 
@@ -3355,7 +3355,7 @@ Pulse en la fila. El título es el número, y el subtítulo dice el cliente, la 
 
 **Editar** abre **Editar NE-2026-0007**, con el aviso **Solo un administrador ve este botón. Cada cambio queda en la bitácora con el motivo.** Se corrigen el cliente, la moneda, el patio, la fecha, el vehículo, el chofer, los pesos, el flete, el descuento, la observación y los renglones, y hace falta el **Motivo**. Una nota que respalda una salida no deja editar sus renglones: son los que esa salida descontó del patio.
 
-Dentro de **Editar** hay además, aparte del resto del formulario, un recuadro **Cuenta por cobrar**: enseña si la nota ya está pendiente por cobrar o cobrada, y según el caso un botón para **Marcar pendiente por cobrar** (pide la fecha de pago) o **Marcar como cobrada**. Es el mismo recordatorio del apartado 10.10, puesto también aquí por comodidad: no toca el papel ni pide motivo, así que no hace falta pulsar **Guardar los cambios** para que quede.
+Dentro de **Editar** hay además, aparte del resto del formulario, un recuadro **Cuenta por cobrar**: enseña si la nota ya está pendiente por cobrar o cobrada, y según el caso un botón para **Marcar pendiente por cobrar** (sin fecha de pago desde el 11/11/2026) o **Marcar como cobrada**. Es el mismo recordatorio del apartado 10.10, puesto también aquí por comodidad: no toca el papel ni pide motivo, así que no hace falta pulsar **Guardar los cambios** para que quede.
 
 #### Anular
 
@@ -3453,13 +3453,15 @@ Es la confusión más común, y sale cara: quien la tiene, o le entrega al clien
 
 #### Pendiente por cobrar, aparte de Facturación
 
-Al pedir un despacho hay una casilla, **Pendiente por cobrar**, para cuando el material se vendió a crédito. No es una cuenta por cobrar ni una nota de crédito: es un recordatorio con fecha de pago, que no se enlaza a ninguna factura ni pasa por Facturación.
+Al pedir un despacho hay una casilla, **Pendiente por cobrar**, para cuando el material se vendió a crédito. No es una nota de crédito: es la cuenta que queda abierta hasta que se cobra, y no se enlaza a ninguna factura ni pasa por Facturación.
 
-- **Marcarla pide su fecha de pago**, y esa fecha no puede ser anterior a hoy: poner un vencimiento ya vencido no tendría sentido.
-- **Se busca por su propia categoría.** En los filtros de Notas de entrega, **Cobro** tiene dos opciones aparte de Cualquiera: **Pendiente por cobrar** y **Vencidas**. En la lista y en el detalle de la nota aparece un rótulo —**Por cobrar** o **Vencida**, con la fecha— al lado del estado de siempre.
-- **El sistema avisa solo.** Cuando se pasa la fecha de pago sin que nadie haya marcado la nota como cobrada, sale un aviso en la campana, una vez por nota: no se repite todos los días.
+> **Desde el 11/11/2026 las cuentas por cobrar no vencen.** No llevan fecha de pago, no salen «vencidas» ni cuentan días de mora o antigüedad en ninguna pantalla, papel, reporte ni mensaje: cada nota (y cada factura) está **Por cobrar** hasta que se cobra. Lo mismo vale para las facturas a crédito: su condición (por ejemplo, crédito a 15 días) sigue diciéndose, pero ya no se calcula ni se imprime un «vence el». El aviso diario de cobro vencido quedó en pausa.
+
+- **Marcarla no pide fecha de pago.** El sistema guarda por dentro el día en que quedó por cobrar, solo como registro; no se muestra ni vence.
+- **Se busca por su propia categoría.** En los filtros de Notas de entrega, **Cobro** ofrece dos opciones además de **Cualquiera**: **Pendiente por cobrar** y, desde el 10/11/2026, **Cobradas** (las notas que tuvieron condición de cobro pendiente y ya fueron canceladas). En la lista y en el detalle de la nota aparece un rótulo junto al estado principal: **Por cobrar** mientras siga abierta, o **Cobrada** en verde con la fecha efectiva de pago una vez confirmada su cancelación.
+- **Informe ejecutivo de Cuentas pagadas *(10/11/2026)*.** El botón **Cuentas pagadas** del encabezado genera un PDF institucional A4 (sin franja de alcance) con todas las notas vigentes que tuvieron cuenta por cobrar y ya fueron pagadas —tanto las marcadas manualmente como las cubiertas por conciliación bancaria—. Incluye el recuadro principal con el **Total recaudado en notas de entrega** ($ y Bs) y cuántas **notas pagadas**, tres tarjetas ejecutivas (**Clientes con cuentas liquidadas**, **Promedio pagado por nota** y **Moneda de emisión original** USD/VES), la tabla consolidada **Recaudación por cliente** ordenada de mayor a menor monto pagado y, en la modalidad **Resumen + detalle**, el desglose individual por cliente con fecha de emisión y fecha efectiva de pago (sin plazo ni mora desde el 11/11/2026). Permite elegir entre **Resumen + detalle** y **Solo resumen**, filtrar por **Cliente**, acotar un **Período de fecha efectiva de pago** y elegir **Con logo**.
 - **Marcar como cobrada** apaga el recordatorio, desde el detalle de la nota. No reversa nada del patio ni de ningún libro de dinero —no hay nada que reversar—: esto no mueve inventario ni toca tesorería, solo lleva la cuenta de quién todavía debe.
-- **Una nota ya despachada también se puede dejar pendiente por cobrar después.** Si no se marcó al pedirla, desde el detalle de la nota sale **Marcar pendiente por cobrar**, que pide la misma fecha de pago. No se puede usar en una nota anulada ni en una que ya tenga la cuenta abierta sin resolver.
+- **Una nota ya despachada también se puede dejar pendiente por cobrar después.** Si no se marcó al pedirla, desde el detalle de la nota sale **Marcar pendiente por cobrar**, sin fecha. No se puede usar en una nota anulada ni en una que ya tenga la cuenta abierta sin resolver.
 
 #### Cómo se descuenta el inventario al aprobar
 
@@ -3606,7 +3608,7 @@ Sobre la moneda: cada documento **congela su tasa** al crearse. Sin la tasa del 
 
 En **Ventas › Conciliación de Pagos** están los pagos que llegaron al banco y, debajo de cada uno, las notas de entrega que ese pago cubre. Sirve para cotejar la planilla del banco contra las notas: un pago puede cubrir varias notas, y una nota puede quedar repartida en más de un pago.
 
-**Ver** la lista es de cualquiera que entre a Ventas. **Registrar, importar, editar, anular y asociar** necesita el permiso extendido *Registrar pagos del banco y asociarlos a notas*, que se da persona por persona (el administrador lo tiene siempre).
+**Ver** la lista es de cualquiera que entre a Ventas. **Registrar, importar, editar, anular, asociar y quitar notas** necesita el permiso extendido *Registrar pagos del banco y asociarlos a notas*, que se da por rol: desde el 11/11/2026 lo tiene el rol **Analista de ventas**, y el administrador siempre. **Cambiar el monto aplicado a una nota ya asociada** es otra casilla aparte, *Cambiar el monto aplicado a una nota enlazada*, que solo tiene el administrador: a quien no la tiene, el monto se le muestra sin poder tocarlo, y la base tampoco le deja cambiarlo volviendo a asociar la nota con otro monto.
 
 Esta pantalla **no cobra notas ni toca Tesorería**: no cambia saldos de cuentas ni el monto de ninguna nota. Solo relaciona un pago con sus notas.
 
@@ -3655,7 +3657,7 @@ Al desplegar un pago, **Asociar notas** muestra primero las notas de una semana 
 
 #### Diferencias mínimas
 
-Cada nota asociada lleva un **monto aplicado** que nace igual al total de la nota. Si el banco depositó unos bolívares de más o de menos por la tasa, cambie ese monto y pulse **Guardar**: el pago pasa a **Cuadra**. La nota de entrega no cambia.
+Cada nota asociada lleva un **monto aplicado** que nace igual al total de la nota. Si el banco depositó unos bolívares de más o de menos por la tasa, quien tenga la casilla *Cambiar el monto aplicado a una nota enlazada* cambia ese monto y pulsa **Guardar**: el pago pasa a **Cuadra**. La nota de entrega no cambia.
 
 **Quitar** una nota de un pago no la borra: deja de contar en ese pago y queda en la bitácora. **Anular pago** pide el motivo; tampoco se borra.
 
@@ -6916,7 +6918,7 @@ Debajo, la lista de facturas.
 | --- | --- |
 | **Factura** | **FAC-2026-0012** y, debajo, el número de control **00-00000034** |
 | **Cliente** | Razón social |
-| **Fecha** | La de emisión y, debajo, **vence 03 sep 2026** si es a crédito o, en rojo, **vencida hace 12 d** |
+| **Fecha** | La de emisión *(11/11/2026: las cuentas por cobrar ya no vencen; ver el aviso al inicio de «Pendiente por cobrar».)* |
 | **Total** | En la moneda de la factura |
 | **Saldo** | **Siempre en dólares**, y solo mientras la factura está **Por cobrar** |
 | **Estado** | **Por cobrar**, **Cobrada** —o **Saldada con nota de crédito**, cuando lo que la dejó sin saldo fue una nota de crédito y no entró dinero— o **Anulada** |
@@ -6957,7 +6959,7 @@ Se envía a autorizar igual que la de notas.
 
 #### Ver una factura y cobrarla
 
-Pulse en la fila. El título trae el número y el número de control —**FAC-2026-0012 · control 00-00000034**—. Dentro están los chips del estado, la condición de pago, **Vencida hace 12 días** si aplica, **Agente de retención** si el cliente retiene y, si es sin nota, **Sin nota · sacó el material del patio** o **Sin nota · el material sale con notas enlazadas**. Si está anulada, en rojo: **Anulada:** y el motivo. Después, los renglones y los totales, que **cuando hay retención añaden dos líneas**: **Retención de IVA**, en negativo, y **A cobrar**.
+Pulse en la fila. El título trae el número y el número de control —**FAC-2026-0012 · control 00-00000034**—. Dentro están los chips del estado, la condición de pago, **Agente de retención** si el cliente retiene y, si es sin nota, **Sin nota · sacó el material del patio** o **Sin nota · el material sale con notas enlazadas**. Si está anulada, en rojo: **Anulada:** y el motivo. Después, los renglones y los totales, que **cuando hay retención añaden dos líneas**: **Retención de IVA**, en negativo, y **A cobrar**.
 
 Mientras la factura está **Por cobrar** se lee debajo **Abonado $ 400,00 · falta $ 800,00** y **El saldo se lleva en dólares.** Va en dólares porque se cobra en las dos monedas.
 
@@ -7091,22 +7093,19 @@ Una factura que ya tiene notas de crédito **no se anula**. O se corrige con not
 
 Lo que le deben a la empresa: **Facturas emitidas con saldo pendiente. El saldo se expresa en dólares.**
 
-Arriba, tres indicadores: **Por cobrar**, el total en dólares sin céntimos; **Vencido**, en rojo si hay algo vencido y en verde si no; y **Clientes con saldo**.
+Arriba, tres indicadores: **Por cobrar**, el total en dólares sin céntimos; **Documentos por cobrar**; y **Clientes con saldo**.
 
-Debajo, una tarjeta por cliente, **ordenadas por la deuda más vieja** y, a igualdad de días, por la mayor. En la cabecera van el nombre, la identificación, cuántas facturas y el total, con un chip rojo con lo vencido —**$ 1.200,00 vencido**— o uno verde, **Sin vencidos**.
+Debajo, una tarjeta por cliente, **ordenadas de quien más debe a quien menos**. En la cabecera van el nombre, la identificación, cuántas facturas y notas, el total y el chip **Por cobrar**. Desde el 11/11/2026 no hay vencido, antigüedad ni mora.
 
 | Columna | Qué muestra |
 | --- | --- |
 | **Factura** | El número y, debajo, el número de control |
 | **Emitida** | La fecha de emisión |
-| **Vence** | La fecha de vencimiento |
 | **Total** | El importe de la factura |
 | **Saldo** | Lo que falta por cobrar |
-| **Antigüedad** | Cuánto lleva vencida: **Por vencer**, **Hasta 30 días**, **31 a 60 días**, **61 a 90 días** o **Más de 90 días**. En rojo si está vencida |
+| **Estado** | **Por cobrar** |
 
-**El orden es por antigüedad y no por monto, a propósito.** Una deuda de 400 dólares de hace noventa días es un problema distinto de una de 4.000 emitida ayer, y una lista ordenada por monto las pone justo al revés de como hay que atenderlas.
-
-**Proveedores con saldo.** Debajo de los clientes va un segundo bloque, si hay a quién poner: proveedores que **pagaron una compra con material que valía más que la orden, y la diferencia quedó por cobrarles en dinero**. Cada saldo va en la moneda de su orden, con las columnas **Saldo**, **Compra**, **Desde**, **Original**, **Pendiente** y **Antigüedad**. Al total de arriba solo suman los que están en dólares, porque esos saldos no llevan tasa congelada y convertirlos con la de hoy sería inventar.
+**Proveedores con saldo.** Debajo de los clientes va un segundo bloque, si hay a quién poner: proveedores que **pagaron una compra con material que valía más que la orden, y la diferencia quedó por cobrarles en dinero**. Cada saldo va en la moneda de su orden, con las columnas **Saldo**, **Compra**, **Desde**, **Original**, **Pendiente** y **Estado** (**Por cobrar**). Al total de arriba solo suman los que están en dólares, porque esos saldos no llevan tasa congelada y convertirlos con la de hoy sería inventar.
 
 Al pie queda dicho dónde se cobra: **Los cobros a clientes se registran desde Facturación › Facturas, abriendo la factura. Lo que debe un proveedor se cobra desde Compras › Proveedores, en sus saldos.** Los dos textos llevan a esas pantallas.
 
@@ -7712,24 +7711,26 @@ Gastos es la bitácora de las facturas físicas que paga la empresa fuera de una
 
 ### 27.2 Los reportes PDF (10/11/2026)
 
-El botón **Reportes PDF**, arriba en Gastos, arma dos papeles:
+El botón **Reportes PDF**, arriba en Gastos, emite dos informes en formato ejecutivo A4 con membrete institucional, tarjeta de control en el encabezado y numeración `Página X de Y` (sin sección «Alcance»):
 
-- **Informe de gastos.** Un cuadro con el total del período en dólares y en bolívares, y lo facturado en cada moneda original por separado. Debajo, una tabla por categoría y otra por mes, semana o día, con el porcentaje de cada una. Si se pide, el detalle de cada factura y la lista de las anuladas (aparte, sin sumar).
-- **Gastos vs. ventas.** Compara las **ventas de material** —las notas de entrega **despachadas**, de contado o a crédito ya cobradas— con los gastos. El cuadro de arriba trae las ventas, los gastos, la **diferencia** (verde si se vendió más de lo que se gastó, roja si no) y cuánto se va en gasto por cada venta. Debajo: la comparación por período, los gastos por categoría y las ventas por cliente; y el detalle, si se pide.
+- **Informe ejecutivo de gastos.** Presenta un panel principal dividido entre el **Total de gastos operativos del período** (equivalente en dólares BCV y bolívares) y la **Facturación en moneda de origen** (desglosando los documentos emitidos en bolívares y en dólares). Incluye tres tarjetas de indicadores ejecutivos (*Documentos procesados*, *Mayor categoría de gasto* y *Moneda de emisión original*), seguidas de la tabla **Ejecución de gastos por categoría** con barras de proporción y la tabla **Evolución de gastos por período**. En modalidad **Resumen + detalle** añade la relación individual de cada factura y, si se solicita, la sección de auditoría de **Facturas de gasto anuladas** (sin sumarlas al total).
+- **Comparativo de gastos y ventas.** Compara los **ingresos por ventas cobradas** —notas de entrega despachadas, de contado o a crédito ya pagadas— frente a los **egresos por gastos registrados** (y compras pagadas, si se habilita). Su recuadro principal de **Balance operativo del período** muestra en tres columnas los *Ingresos por ventas (cobradas)*, los *Egresos por gastos operativos* y el *Resultado neto (ventas − gastos)* con pastilla de **Superávit** o **Déficit**, además de una **barra visual comparativa de ancho completo** que ilustra qué porcentaje de los ingresos fue absorbido por el gasto y qué porcentaje permanece como margen operativo neto. Debajo presenta tres tarjetas de indicadores (*Desempeño comercial*, *Concentración del gasto* y *Relación egreso / ingreso*), la **Evolución comparativa por período** con barra de absorción y estado, la **Distribución de gastos por categoría** (con doble porcentaje: `% del gasto` y `% sobre ventas`) y los **Ingresos por cliente (ventas cobradas)**.
 
-**Las notas que siguen por cobrar no cuentan como venta.** Si se deja encendido **Mencionar lo que está por cobrar**, el cuadro de arriba dice cuántas son y cuánto suman, sin sumarlas. Tampoco cuentan las notas pendientes de despacho ni las anuladas.
+**Las notas que siguen por cobrar no se computan como ingreso cobrado.** Si se mantiene activo **Informar el saldo pendiente por cobrar**, el recuadro principal muestra una nota informativa con la cantidad de entregas pendientes de cobro y su importe total, sin sumarlas a las ventas cobradas. Tampoco se incluyen las notas pendientes de despacho ni las anuladas.
 
 Las opciones:
 
 | Opción | Qué hace |
 |---|---|
-| **Período** | Desde y hasta, con los atajos de siempre (hoy, esta semana, este mes, mes pasado), **O un mes completo**, **Este trimestre** y **Este año** |
+| **Modalidad del informe** | **Solo resumen** (indicadores, cuadros comparativos y tablas ejecutivas) o **Resumen + detalle** (añade al final el desglose documento por documento) |
+| **Período** | Desde y hasta, con los atajos habituales (hoy, esta semana, este mes, mes pasado), **O un mes completo**, **Este trimestre** y **Este año** |
 | **Agrupar por** | Mes, semana (de lunes a domingo) o día |
-| **Montos en** | Dólares, bolívares, o los dos |
-| **Categorías de gasto** | Todas, o las que se toquen |
-| **Con el detalle de cada documento** | Añade al final la lista de cada factura (y cada nota) |
-| **Incluir las órdenes de Compras pagadas** | Solo en el comparativo. Suma las órdenes del módulo Compras, por su fecha de pago, en una columna aparte. Viene apagado |
-| **Con logo** | El membrete con o sin el logo |
+| **Montos en** | Dólares, bolívares, o ambos |
+| **Categorías de gasto** | Todas, o las seleccionadas |
+| **Informar el saldo pendiente por cobrar** | Solo en el comparativo. Muestra en el recuadro principal las notas despachadas pendientes de cobro, sin sumarlas a los ingresos |
+| **Incluir las órdenes de Compras pagadas** | Solo en el comparativo. Consolida las órdenes del módulo Compras, según su fecha de pago, en una columna adicional. Viene desactivado |
+| **Incluir relación de facturas anuladas** | Solo en el informe de gastos. Lista aparte las facturas anuladas con su motivo, sin sumarlas |
+| **Incluir logo institucional** | Emite el encabezado con o sin el logotipo de la empresa |
 
 **Cómo se comparan bolívares con dólares.** Nunca se suman tal cual. Cada nota de entrega ya trae su total en bolívares y en dólares a la tasa del día en que se hizo; cada factura de gasto se lleva a su equivalente con la **tasa BCV del día de la factura**. Lo que se suma son esos equivalentes, y el papel lo dice al pie de la tabla.
 

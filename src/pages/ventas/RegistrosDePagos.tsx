@@ -144,6 +144,8 @@ export function RegistrosDePagos() {
   const { data: comprobantes } = useComprobantesDePagos()
   const { puede } = useMisAcciones()
   const puedeRegistrar = puede('VENTAS.REGISTRAR_PAGOS')
+  // 11/11/2026: cambiar el monto aplicado a una nota ya enlazada es permiso aparte.
+  const puedeCambiarMonto = puede('VENTAS.CAMBIAR_MONTO_APLICADO')
 
   const comprobantesPorPago = useMemo(() => {
     const m = new Map<number, ComprobantePago[]>()
@@ -407,6 +409,7 @@ export function RegistrosDePagos() {
                             <DetalleDelPago
                               pago={p}
                               puedeRegistrar={puedeRegistrar}
+                              puedeCambiarMonto={puedeCambiarMonto}
                               cubiertasDeMas={cubiertasDeMas ?? []}
                               comprobantes={comprobantesPorPago.get(p.id) ?? []}
                               observacion={observacionDe.get(p.id) ?? null}
@@ -732,6 +735,7 @@ function ModalReporte({
 function DetalleDelPago({
   pago,
   puedeRegistrar,
+  puedeCambiarMonto,
   cubiertasDeMas,
   comprobantes,
   observacion,
@@ -739,6 +743,7 @@ function DetalleDelPago({
 }: {
   pago: PagoBancario
   puedeRegistrar: boolean
+  puedeCambiarMonto: boolean
   cubiertasDeMas: NotaCubiertaDeMas[]
   comprobantes: ComprobantePago[]
   observacion: ObservacionPago | null
@@ -817,13 +822,17 @@ function DetalleDelPago({
                 </div>
                 {editable ? (
                   <div className="flex items-end gap-2">
+                    {puedeCambiarMonto ? (
                     <CampoMonto
                       label={`Aplicado (${pago.moneda === 'VES' ? 'Bs' : pago.moneda})`}
                       className="w-40"
                       value={escrito ?? cifra(n.monto_aplicado)}
                       onChange={(t) => setMontos((m) => ({ ...m, [n.enlace_id]: t }))}
                     />
-                    {cambiado ? (
+                    ) : (
+                      <span className="text-ink/80 tabular self-center text-sm">{dinero(pago.moneda, n.monto_aplicado)}</span>
+                    )}
+                    {cambiado && puedeCambiarMonto ? (
                       <Button
                         size="sm"
                         disabled={cambiar.isPending}

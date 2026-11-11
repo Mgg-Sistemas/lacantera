@@ -70,7 +70,7 @@ export function textoDespachoPorAprobar(t: TarjetaVenta, empresa: string): strin
     t.almacen ? `⛰ *Sale de:* ${t.almacen}` : null,
     t.ticket ? `⚖ *Romana:* ${t.ticket}` : null,
     t.pago_combinado ? '💱 *Pago combinado:* $ + Bs' : null,
-    t.pendiente_por_cobrar && t.fecha_pago ? `📅 *Paga el:* ${fecha(t.fecha_pago)}` : null,
+    t.pendiente_por_cobrar ? '📅 *Cobro:* Por cobrar' : null,
     total(t),
     t.por ? `🙋 *Pide:* ${t.por}` : null,
     '➡ *Sigue:* aprobar el despacho',
@@ -90,7 +90,7 @@ export function textoDespachoAprobado(t: TarjetaVenta, empresa: string): string 
     total(t),
     t.por ? `👔 *Autorizó:* ${t.por}` : null,
     `📅 *Fecha:* ${fechaHoraVE(t.at ?? undefined)}`,
-    t.pendiente_por_cobrar && t.fecha_pago ? `💳 *Paga el:* ${fecha(t.fecha_pago)}` : null,
+    t.pendiente_por_cobrar ? '💳 *Cobro:* Por cobrar' : null,
     pie(empresa),
   ])
 }
@@ -116,7 +116,7 @@ export function textoFacturada(t: TarjetaVenta, empresa: string): string {
     t.iva ? `🧮 *IVA:* ${dinero(t.moneda, Number(t.iva))}` : null,
     t.igtf ? `💱 *IGTF:* ${dinero(t.moneda, Number(t.igtf))}` : null,
     total(t),
-    t.condicion ? `📋 *Condición:* ${CONDICION[t.condicion] ?? t.condicion}${t.vence_el ? ` · vence ${fecha(t.vence_el)}` : ''}` : null,
+    t.condicion ? `📋 *Condición:* ${CONDICION[t.condicion] ?? t.condicion}` : null,
     pie(empresa),
   ])
 }
@@ -140,11 +140,10 @@ export function textoCobro(
 }
 
 export function textoRecordatorio(t: TarjetaVenta, empresa: string): string {
-  const vence = t.tipo === 'FAC' ? t.vence_el : t.fecha_pago
+  // Sin «vence» ni «venció» desde el 11/11/2026: las cuentas por cobrar no vencen.
   return limpio([
     `🔔 *RECORDATORIO DE COBRO · ${t.numero}*`,
     cliente(t),
-    vence ? (t.vencida ? `📅 *Venció el:* ${fecha(vence)}` : `📅 *Vence el:* ${fecha(vence)}`) : null,
     total(t, t.tipo === 'FAC' ? 'Total factura' : 'Total nota'),
     Number(t.aplicado ?? t.cobrado ?? 0) > 0 ? `💵 *Abonado:* ${dolares(Number(t.aplicado ?? t.cobrado))}` : null,
     t.saldo_usd != null ? `📉 *Saldo:* ${dolares(Number(t.saldo_usd))}` : null,

@@ -21,9 +21,10 @@ import type { NotaEntrega } from '@/lib/api/ventas'
   Usa la geometría ejecutiva amplia de la casa (16 mm de margen lateral, 178 mm
   de ancho útil) para que el correlativo de la nota, la fecha y los montos en
   bolívares y dólares entren siempre en una sola línea sin partirse, e incorpora:
-  - El estado de Cuenta por Cobrar (Por cobrar / Vencida / Cobrada y su fecha de
-    vencimiento) tanto en los indicadores superiores como en cada renglón de la
-    planilla y en su resumen ejecutivo de cobranza por cliente.
+  - El estado de Cuenta por Cobrar (Por cobrar / Cobrada) tanto en los
+    indicadores superiores como en cada renglón de la planilla y en su resumen
+    ejecutivo de cobranza por cliente. Sin «vencida» ni fecha de vencimiento
+    desde el 11/11/2026: las cuentas por cobrar no vencen.
   - Las notas de respaldo de salida / convenio no facturables (como Optimavial,
     `!nota.facturable` o con `nota_salida` pendiente por completar), indicando su
     Nota de Salida (NS), los camiones de `nota.camiones` y su cuadro de resumen
@@ -75,7 +76,6 @@ const ESTILO_ESTADO: Record<string, EstiloPastilla> = {
 
 const ESTILO_COBRO = {
   POR_COBRAR: { fondo: '#fef3c7', texto: '#92400e', borde: '#f59e0b' },
-  VENCIDA: { fondo: '#fee2e2', texto: '#991b1b', borde: '#ef4444' },
   COBRADA: { fondo: '#dcfce7', texto: '#166534', borde: '#4ade80' },
   NO_FACTURABLE: { fondo: '#e7e5e4', texto: '#44403c', borde: '#a8a29e' },
 } as const
@@ -197,7 +197,6 @@ function cabeceraEjecutivaReporte(
     empresa: EmpresaPapel
     emitidoPor: string
     momento: Date
-    alcance: string
     totalNotas: number
     vigentes: number
     noFacturables: number
@@ -267,7 +266,7 @@ function cabeceraEjecutivaReporte(
   // Tarjeta de Control a la derecha
   const filasCaja = [
     { etiqueta: 'EMITIDO', valor: fechaLarga(d.momento), destacado: false },
-    { etiqueta: 'POR', valor: d.emitidoPor || 'Sistema', destacado: false },
+    { etiqueta: 'EMITIDO POR', valor: d.emitidoPor || 'Sistema', destacado: false },
     {
       etiqueta: 'REGISTROS',
       valor: valorRegistros,
@@ -306,7 +305,7 @@ function cabeceraEjecutivaReporte(
       f.valor,
       DER - 3,
       yFila,
-      ANCHO_CAJA - 22,
+      ANCHO_CAJA - 27,
       f.destacado ? 7.8 : 7.4,
       'bold',
       'right',
@@ -319,20 +318,7 @@ function cabeceraEjecutivaReporte(
   doc.setDrawColor(MARCA).setLineWidth(0.7)
   doc.line(IZQ, regla, DER, regla)
 
-  // Banda de alcance debajo de la línea divisoria
-  const yAlcance = regla + 2.5
-  doc.setFillColor(FILA_ALTERNA)
-  doc.setDrawColor(HAIRLINE).setLineWidth(0.25)
-  doc.roundedRect(IZQ, yAlcance, ANCHO_UTIL, 6.4, 1, 1, 'FD')
-  doc.setFillColor(ROTULO)
-  doc.rect(IZQ, yAlcance, 1.8, 6.4, 'F')
-
-  doc.setFont('helvetica', 'bold').setFontSize(7.2).setTextColor(ROTULO)
-  doc.text('ALCANCE DEL REPORTE:', IZQ + 4.5, yAlcance + 4.4)
-  doc.setFont('helvetica', 'normal').setFontSize(7.4).setTextColor(TINTA)
-  doc.text(ajustar(doc, d.alcance, ANCHO_UTIL - 42), IZQ + 38, yAlcance + 4.4)
-
-  return yAlcance + 9.5
+  return regla + 4.5
 }
 
 /**
@@ -343,7 +329,7 @@ function cabeceraContinuacion(
   doc: Doc,
   logo: string,
   razonSocial: string,
-  alcance: string,
+  momento: Date,
 ): number {
   const LADO = 12
   if (logo) doc.addImage(logo, 'PNG', IZQ, ARRIBA - 1, LADO, LADO)
@@ -361,7 +347,7 @@ function cabeceraContinuacion(
 
   doc.setFont('helvetica', 'normal').setFontSize(7.4).setTextColor(GRIS)
   doc.text(
-    ajustar(doc, `Alcance: ${alcance}`, 78),
+    `Emitido: ${fechaLarga(momento)}`,
     DER,
     ARRIBA + 6.5,
     { align: 'right' },
@@ -395,9 +381,6 @@ function pintarTarjetasResumen(
     porCobrarCount: number
     porCobrarBs: number
     porCobrarUsd: number
-    vencidasCount: number
-    vencidasBs: number
-    vencidasUsd: number
     cobradasCount: number
     volumenResumenTexto: string
     totalCamiones: number
@@ -415,18 +398,13 @@ function pintarTarjetasResumen(
     resumen.totalUsd === 0 &&
     resumen.porCobrarCount === 0
 
-  const colorCobro =
-    resumen.vencidasCount > 0
-      ? '#dc2626'
-      : resumen.porCobrarCount > 0
-        ? '#d97706'
-        : '#15803d'
+  const colorCobro = resumen.porCobrarCount > 0 ? '#d97706' : '#15803d'
 
   const tarjetas = soloConvenioSinMonto
     ? [
         {
           acento: '#d97706',
-          titulo: 'NOTAS EN EL ALCANCE',
+          titulo: 'RESUMEN DE NOTAS',
           valor: `${resumen.vigentes} ${resumen.vigentes === 1 ? 'nota vigente' : 'notas vigentes'}`,
           linea1: `${resumen.pendientes} pendiente${resumen.pendientes === 1 ? '' : 's'} por completar`,
           linea2: 'Respaldo de Notas de Salida (NS)',
@@ -493,14 +471,12 @@ function pintarTarjetasResumen(
               ? `Equivalente: ${bolivares(resumen.porCobrarBs)}`
               : 'Sin notas pendientes de cobro',
           linea2:
-            resumen.vencidasCount > 0
-              ? `${resumen.vencidasCount} vencida${resumen.vencidasCount === 1 ? '' : 's'}: ${dolares(resumen.vencidasUsd)} (${bolivares(resumen.vencidasBs)})`
-              : resumen.porCobrarCount > 0
-                ? `${resumen.porCobrarCount} por cobrar al día · 0 vencidas`
-                : resumen.cobradasCount > 0
-                  ? `${resumen.cobradasCount} nota${resumen.cobradasCount === 1 ? '' : 's'} ya cobrada${resumen.cobradasCount === 1 ? '' : 's'}`
-                  : 'Todas las notas están al día',
-          colorLinea2: resumen.vencidasCount > 0 ? '#b91c1c' : GRIS,
+            resumen.porCobrarCount > 0
+              ? `${resumen.porCobrarCount} nota${resumen.porCobrarCount === 1 ? '' : 's'} pendiente${resumen.porCobrarCount === 1 ? '' : 's'} por cobrar`
+              : resumen.cobradasCount > 0
+                ? `${resumen.cobradasCount} nota${resumen.cobradasCount === 1 ? '' : 's'} ya cobrada${resumen.cobradasCount === 1 ? '' : 's'}`
+                : 'Sin cuentas por cobrar',
+          colorLinea2: GRIS,
         },
       ]
 
@@ -626,7 +602,7 @@ function infoSecundariaEstado(nota: NotaEntrega, sinCobro = false): {
     }
     return null
   }
-  // Ocultar el cobro: ni «Por cobrar», ni «Vencida», ni «Cobrada».
+  // Ocultar el cobro: ni «Por cobrar» ni «Cobrada».
   if (sinCobro) return null
 
   if (nota.cobrada_en) {
@@ -635,15 +611,8 @@ function infoSecundariaEstado(nota: NotaEntrega, sinCobro = false): {
       estilo: ESTILO_COBRO.COBRADA,
     }
   }
-  const f = nota.fecha_pago ? fechaCorta(nota.fecha_pago) : 'Sin fecha'
-  if (nota.vencida_por_cobrar) {
-    return {
-      etiqueta: `Vencida · ${f}`,
-      estilo: ESTILO_COBRO.VENCIDA,
-    }
-  }
   return {
-    etiqueta: `Por cobrar · ${f}`,
+    etiqueta: 'Por cobrar',
     estilo: ESTILO_COBRO.POR_COBRAR,
   }
 }
@@ -652,8 +621,6 @@ export async function armarReporteNotasDeEntrega(d: {
   empresa: EmpresaPapel
   emitidoPor: string
   momento: Date
-  /** «Las 12 notas marcadas», «Las 200 más recientes»… */
-  alcance: string
   notas: NotaEntrega[]
   /** Qué se despachó, ya sumado por artículo. */
   materiales?: MaterialDespachado[]
@@ -688,13 +655,10 @@ export async function armarReporteNotasDeEntrega(d: {
   // Con el cobro oculto quedan vacías, y con ellas el renglón de pendiente y la relación por cliente.
   const sinCobro = d.ocultarCobro === true
   const notasPorCobrar = sinCobro ? [] : vigentes.filter((n) => n.pendiente_por_cobrar && !n.cobrada_en)
-  const notasVencidas = notasPorCobrar.filter((n) => n.vencida_por_cobrar)
   const notasCobradas = sinCobro ? [] : vigentes.filter((n) => n.pendiente_por_cobrar && Boolean(n.cobrada_en))
 
   const porCobrarBs = notasPorCobrar.reduce((s, n) => s + Number(n.total_bs), 0)
   const porCobrarUsd = notasPorCobrar.reduce((s, n) => s + Number(n.total_usd), 0)
-  const vencidasBs = notasVencidas.reduce((s, n) => s + Number(n.total_bs), 0)
-  const vencidasUsd = notasVencidas.reduce((s, n) => s + Number(n.total_usd), 0)
 
   // Volumen total por unidad (para resúmenes de convenio / Optimavial)
   const volumenPorUnidad = new Map<string, number>()
@@ -712,7 +676,6 @@ export async function armarReporteNotasDeEntrega(d: {
     empresa: d.empresa,
     emitidoPor: d.emitidoPor,
     momento: d.momento,
-    alcance: d.alcance,
     totalNotas: d.notas.length,
     vigentes: vigentes.length,
     noFacturables: notasRespaldo.length,
@@ -730,9 +693,6 @@ export async function armarReporteNotasDeEntrega(d: {
     porCobrarCount: notasPorCobrar.length,
     porCobrarBs,
     porCobrarUsd,
-    vencidasCount: notasVencidas.length,
-    vencidasBs,
-    vencidasUsd,
     cobradasCount: notasCobradas.length,
     volumenResumenTexto,
     totalCamiones,
@@ -767,7 +727,7 @@ export async function armarReporteNotasDeEntrega(d: {
     doc.setFillColor('#ffffff')
     doc.rect(IZQ, y, ANCHO_UTIL, altoVacio, 'F')
     doc.setFont('helvetica', 'italic').setFontSize(8.5).setTextColor(GRIS)
-    doc.text('Sin notas de entrega registradas para este alcance.', IZQ + ANCHO_UTIL / 2, y + 7.2, {
+    doc.text('No existen notas de entrega registradas para generar el informe.', IZQ + ANCHO_UTIL / 2, y + 7.2, {
       align: 'center',
     })
     y += altoVacio
@@ -811,15 +771,13 @@ export async function armarReporteNotasDeEntrega(d: {
       if (y + altoFila > ABAJO - 14) {
         cerrarBordeTablaPlanilla(y)
         doc.addPage()
-        y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.alcance)
+        y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.momento)
         yInicioTabla = y
         y = cabeceraTablaPlanilla(doc, y)
       }
 
-      // Fondo alterno o sutil realce según vencimiento o nota de convenio
-      if (!sinCobro && nota.vencida_por_cobrar && !nota.cobrada_en && nota.estado !== 'ANULADA') {
-        doc.setFillColor('#fff8f8')
-      } else if (esRespaldo) {
+      // Fondo alterno, o sutil realce si es nota de convenio
+      if (esRespaldo) {
         doc.setFillColor(idx % 2 === 1 ? '#faf6ee' : '#fffdf7')
       } else {
         doc.setFillColor(idx % 2 === 1 ? FILA_ALTERNA : '#ffffff')
@@ -1051,20 +1009,16 @@ export async function armarReporteNotasDeEntrega(d: {
   }
   if (notasPorCobrar.length > 0) {
     filasTotales.push({
-      izq: `PENDIENTE POR COBRAR (${notasPorCobrar.length} ${notasPorCobrar.length === 1 ? 'nota' : 'notas'}${
-        notasVencidas.length > 0
-          ? ` · ${notasVencidas.length} vencida${notasVencidas.length === 1 ? '' : 's'}`
-          : ''
-      })`,
+      izq: `PENDIENTE POR COBRAR (${notasPorCobrar.length} ${notasPorCobrar.length === 1 ? 'nota' : 'notas'})`,
       der: `${bolivares(porCobrarBs)}   ·   ${dolares(porCobrarUsd)}`,
-      color: notasVencidas.length > 0 ? '#b91c1c' : '#92400e',
+      color: '#92400e',
     })
   }
 
   const altoTotalPlanilla = 2.6 + filasTotales.length * 5.6
   if (y + altoTotalPlanilla > ABAJO - 14) {
     doc.addPage()
-    y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.alcance)
+    y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.momento)
   }
 
   doc.setFillColor('#faf8f6')
@@ -1126,7 +1080,7 @@ export async function armarReporteNotasDeEntrega(d: {
 
     if (y + 32 > ABAJO - 14) {
       doc.addPage()
-      y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.alcance)
+      y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.momento)
     }
 
     y = tituloSeccionEjecutiva(
@@ -1184,7 +1138,7 @@ export async function armarReporteNotasDeEntrega(d: {
       if (y + altoFila > ABAJO - 16) {
         cerrarTablaConv(y)
         doc.addPage()
-        y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.alcance)
+        y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.momento)
         yInicioConv = y
         y = pintarCabeceraConvenio(y)
       }
@@ -1264,8 +1218,6 @@ export async function armarReporteNotasDeEntrega(d: {
       cliente: string
       rif: string | null
       notas: number
-      vencidas: number
-      proximoVencimiento: string | null
       totalBs: number
       totalUsd: number
     }
@@ -1276,49 +1228,39 @@ export async function armarReporteNotasDeEntrega(d: {
         cliente: clave,
         rif: n.cliente_rif,
         notas: 0,
-        vencidas: 0,
-        proximoVencimiento: null,
         totalBs: 0,
         totalUsd: 0,
       }
       actual.notas += 1
-      if (n.vencida_por_cobrar) actual.vencidas += 1
-      if (
-        n.fecha_pago &&
-        (!actual.proximoVencimiento || n.fecha_pago < actual.proximoVencimiento)
-      ) {
-        actual.proximoVencimiento = n.fecha_pago
-      }
       actual.totalBs += Number(n.total_bs)
       actual.totalUsd += Number(n.total_usd)
       mapaClientes.set(clave, actual)
     }
 
     const clientesCobro = [...mapaClientes.values()].sort(
-      (a, b) => b.vencidas - a.vencidas || b.totalUsd - a.totalUsd,
+      (a, b) => b.totalUsd - a.totalUsd,
     )
 
     if (y + 34 > ABAJO - 14) {
       doc.addPage()
-      y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.alcance)
+      y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.momento)
     }
 
     y = tituloSeccionEjecutiva(
       doc,
       y,
       'Resumen de cuentas por cobrar por cliente',
-      `${notasPorCobrar.length} ${notasPorCobrar.length === 1 ? 'nota pendiente' : 'notas pendientes'} de cobro en el alcance`,
-      notasVencidas.length > 0 ? '#dc2626' : '#d97706',
+      `${notasPorCobrar.length} ${notasPorCobrar.length === 1 ? 'nota con saldo pendiente' : 'notas con saldo pendiente'} de cobro`,
+      '#d97706',
     )
 
     const COL_COBRO = {
-      cliente: { x: IZQ, w: 66 }, // 16..82
-      notas: { x: IZQ + 66, w: 20 }, // 82..102
-      vence: { x: IZQ + 86, w: 24 }, // 102..126
+      cliente: { x: IZQ, w: 90 }, // 16..106
+      notas: { x: IZQ + 90, w: 20 }, // 106..126
       bs: { x: IZQ + 110, w: 24 }, // 126..150
       usd: { x: IZQ + 134, w: 20 }, // 150..170
       estado: { x: IZQ + 154, w: 24 }, // 170..194
-      divisores: [IZQ + 66, IZQ + 86, IZQ + 110, IZQ + 134, IZQ + 154],
+      divisores: [IZQ + 90, IZQ + 110, IZQ + 134, IZQ + 154],
     }
 
     const pintarCabeceraCobro = (yCab: number) => {
@@ -1333,7 +1275,6 @@ export async function armarReporteNotasDeEntrega(d: {
       doc.setFont('helvetica', 'bold').setFontSize(7).setTextColor('#FFFFFF')
       doc.text('CLIENTE', COL_COBRO.cliente.x + 2.5, yT)
       doc.text('NOTAS', COL_COBRO.notas.x + COL_COBRO.notas.w / 2, yT, { align: 'center' })
-      doc.text('VENCIMIENTO', COL_COBRO.vence.x + COL_COBRO.vence.w / 2, yT, { align: 'center' })
       doc.text('SALDO BS', COL_COBRO.bs.x + COL_COBRO.bs.w - 2.5, yT, { align: 'right' })
       doc.text('SALDO $', COL_COBRO.usd.x + COL_COBRO.usd.w - 2.5, yT, { align: 'right' })
       doc.text('ESTADO', COL_COBRO.estado.x + COL_COBRO.estado.w - 2.5, yT, { align: 'right' })
@@ -1356,7 +1297,7 @@ export async function armarReporteNotasDeEntrega(d: {
       if (y + altoFila > ABAJO - 16) {
         cerrarTablaCobro(y)
         doc.addPage()
-        y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.alcance)
+        y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.momento)
         yInicioCobro = y
         y = pintarCabeceraCobro(y)
       }
@@ -1380,16 +1321,8 @@ export async function armarReporteNotasDeEntrega(d: {
 
       doc.setFont('helvetica', 'bold').setFontSize(7.5).setTextColor(TINTA)
       doc.text(
-        `${c.notas}${c.vencidas > 0 ? ` (${c.vencidas} venc.)` : ''}`,
+        String(c.notas),
         COL_COBRO.notas.x + COL_COBRO.notas.w / 2,
-        yB,
-        { align: 'center' },
-      )
-
-      doc.setFont('helvetica', 'normal').setFontSize(7.3).setTextColor(TINTA)
-      doc.text(
-        c.proximoVencimiento ? fechaCorta(c.proximoVencimiento) : '—',
-        COL_COBRO.vence.x + COL_COBRO.vence.w / 2,
         yB,
         { align: 'center' },
       )
@@ -1420,11 +1353,11 @@ export async function armarReporteNotasDeEntrega(d: {
 
       dibujarPastilla(
         doc,
-        c.vencidas > 0 ? 'Vencida' : 'Por cobrar',
+        'Por cobrar',
         COL_COBRO.estado.x + COL_COBRO.estado.w - 2.5,
         yB,
         COL_COBRO.estado.w - 4,
-        c.vencidas > 0 ? ESTILO_COBRO.VENCIDA : ESTILO_COBRO.POR_COBRAR,
+        ESTILO_COBRO.POR_COBRAR,
         6.3,
       )
 
@@ -1463,7 +1396,7 @@ export async function armarReporteNotasDeEntrega(d: {
 
     if (y + 34 > ABAJO - 14) {
       doc.addPage()
-      y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.alcance)
+      y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.momento)
     }
 
     y = tituloSeccionEjecutiva(
@@ -1522,7 +1455,7 @@ export async function armarReporteNotasDeEntrega(d: {
       if (y + altoFila > ABAJO - 16) {
         cerrarTablaMat(y)
         doc.addPage()
-        y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.alcance)
+        y = cabeceraContinuacion(doc, logo, d.empresa.razonSocial, d.momento)
         yInicioMat = y
         y = pintarCabeceraMaterial(y)
       }
@@ -1626,7 +1559,7 @@ export async function armarReporteNotasDeEntrega(d: {
 
     doc.setFont('helvetica', 'italic').setFontSize(6.8).setTextColor(GRIS)
     const notaPieMaterial = doc.splitTextToSize(
-      'Suma el subtotal de cada renglón de las notas vigentes del alcance, convertido con la tasa de su propia nota. Si una nota incluye flete o descuento, la suma de renglones puede diferir del total de la planilla.',
+      'Suma el subtotal de cada renglón de las notas vigentes incluidas en el reporte, convertido con la tasa BCV de emisión de cada nota. Si una nota incluye flete o descuento, la suma de renglones puede diferir del total de la planilla.',
       ANCHO_UTIL,
     ) as string[]
     doc.text(notaPieMaterial, IZQ, y + 1.5, { lineHeightFactor: 1.3 })

@@ -37,7 +37,9 @@ import { useAlmacenes, useExistencias } from '@/lib/api/inventario'
 import { useGuias, useTickets } from '@/lib/api/despachos'
 import { useVehiculos } from '@/lib/api/vehiculos'
 import { armarNotaDeEntrega, armarNotasDeEntrega } from '@/lib/ficha/notaDeEntregaPapel'
+import { armarReporteCuentasPagadas } from '@/lib/ficha/notasCobradasPdf'
 import { armarReporteNotasDeEntrega, type MaterialDespachado } from '@/lib/ficha/notasDeEntregaReportePdf'
+import { agruparCuentasPagadasPorCliente, fechaCaracas, filtrarNotasCobradas } from '@/lib/cuentasPagadasDeNotas'
 import type { PdfArmado } from '@/lib/ficha/reciboPdf'
 import {
   useAnularNota,
@@ -45,6 +47,7 @@ import {
   useCancelarDespacho,
   useClientes,
   useMarcarNotaPendientePorCobrar,
+  useNotasCobradas,
   useNotasEntrega,
   leerNotaEntregaPorNumero,
   usePrecios,
@@ -166,7 +169,7 @@ export function NotasDeEntrega() {
   const [busca, setBusca] = useState('')
   const [estado, setEstado] = useState('')
   const [monedaFiltro, setMonedaFiltro] = useState('')
-  const [cobroFiltro, setCobroFiltro] = useState<'' | 'PENDIENTE' | 'VENCIDA'>('')
+  const [cobroFiltro, setCobroFiltro] = useState<'' | 'PENDIENTE' | 'COBRADA'>('')
   const [productoFiltro, setProductoFiltro] = useState('')
   const [rango, setRango] = useState<Rango>(SIN_RANGO)
   const { data, isPending, error } = useNotasEntrega({
@@ -191,7 +194,6 @@ export function NotasDeEntrega() {
   const navegar = useNavigate()
   const marcarPendiente = useMarcarNotaPendientePorCobrar()
   const [marcandoPendiente, setMarcandoPendiente] = useState<NotaEntrega | null>(null)
-  const [fechaPagoNueva, setFechaPagoNueva] = useState('')
   const solicitudes = useSolicitudesDespacho()
   const { data: puedoAprobar } = usePuedoAprobarDespachos()
   const aprobar = useAprobarDespacho()
@@ -362,6 +364,8 @@ export function NotasDeEntrega() {
   const [ocultarCobroReporte, setOcultarCobroReporte] = useState(false)
   const [sinPorCobrarReporte, setSinPorCobrarReporte] = useState(false)
   const [fallaReporte, setFallaReporte] = useState<string | null>(null)
+  const [pidiendoCuentasPagadas, setPidiendoCuentasPagadas] = useState(false)
+  const [reportePagadas, setReportePagadas] = useState<PdfArmado | null>(null)
   const [armandoLote, setArmandoLote] = useState(false)
   const [reporteWhatsapp, setReporteWhatsapp] = useState<string | null>(null)
   const [armandoWhatsapp, setArmandoWhatsapp] = useState(false)
@@ -383,12 +387,12 @@ export function NotasDeEntrega() {
   /*
     PENDIENTE POR COBRAR, APARTE DE FACTURACIÓN.
 
-    Christopher, 12/10/2026: un recordatorio con fecha de pago, sin enlazarse
-    a cuentas por cobrar, notas de crédito ni ninguna factura. La base exige
-    la fecha cuando se marca, y que no sea anterior a hoy.
+    Christopher, 12/10/2026: un recordatorio, sin enlazarse a cuentas por
+    cobrar, notas de crédito ni ninguna factura. Desde el 11/11/2026 no lleva
+    fecha de pago: las cuentas por cobrar no vencen, quedan «Por cobrar» hasta
+    que se cobran.
   */
   const [pendienteCobro, setPendienteCobro] = useState(false)
-  const [fechaPago, setFechaPago] = useState('')
   /*
     CHOFER Y VEHÍCULO, OBLIGATORIOS Y DEL CATÁLOGO. Se elige del catálogo o, si
     no está, se escribe al lado y se añade —con «+ Añadir» o, si no se pulsa,
@@ -546,7 +550,6 @@ export function NotasDeEntrega() {
     setMontoUsdCombinado('')
     setMontoBsCombinado('')
     setPendienteCobro(false)
-    setFechaPago('')
   }
 
   // El papel se arma en un solo sitio: también lo imprime Salidas, cuando una
@@ -619,8 +622,8 @@ export function NotasDeEntrega() {
           : '',
         cobroFiltro === 'PENDIENTE'
           ? 'pendientes por cobrar'
-          : cobroFiltro === 'VENCIDA'
-            ? 'vencidas por cobrar'
+          : cobroFiltro === 'COBRADA'
+            ? 'cuentas por cobrar pagadas'
             : '',
         productoFiltro
           ? `producto ${precios?.find((p) => String(p.articulo_id) === productoFiltro)?.nombre ?? productoFiltro}`
@@ -676,21 +679,17 @@ export function NotasDeEntrega() {
   const verReporte = async () => {
     setFallaReporte(null)
     if (notasParaElReporte.length === 0) {
-      setFallaReporte('Todas las notas en pantalla están por cobrar o vencidas: sin ellas no queda nada que informar.')
+      setFallaReporte('Todas las notas en pantalla están por cobrar: sin ellas no queda nada que informar.')
       return
     }
     setArmandoReporte(true)
     try {
       const resumen = await resumenParaReporte(notasParaElReporte)
-      // Sacar notas cambia el alcance y se dice; ocultar el cobro no deja rastro en el papel.
       setReporte(
         await armarReporteNotasDeEntrega({
           empresa: empresaDelPapel(empresa),
           emitidoPor: yo?.nombre ?? '',
           momento: new Date(),
-          alcance: sinPorCobrarReporte
-            ? `${resumen.alcance} · sin las notas por cobrar ni vencidas`
-            : resumen.alcance,
           notas: notasParaElReporte,
           materiales: resumen.materiales,
           ocultarCobro: ocultarCobroReporte,
@@ -752,6 +751,13 @@ export function NotasDeEntrega() {
               }}
             >
               {armandoReporte ? 'Armando…' : 'Reporte Bs/$'}
+            </Button>
+            <Button
+              variant="outline"
+              icon={<Check />}
+              onClick={() => setPidiendoCuentasPagadas(true)}
+            >
+              Cuentas pagadas
             </Button>
             <Button
               variant="outline"
@@ -914,7 +920,7 @@ export function NotasDeEntrega() {
                             ) : null}
                             {s.pendiente_por_cobrar ? (
                               <p className="text-ink/60 text-xs">
-                                Pendiente por cobrar · vence {fecha(s.fecha_pago!)}
+                                Pendiente por cobrar
                               </p>
                             ) : null}
                           </div>
@@ -1089,11 +1095,11 @@ export function NotasDeEntrega() {
           <Select
             label="Cobro"
             value={cobroFiltro}
-            onChange={(e) => setCobroFiltro(e.target.value as '' | 'PENDIENTE' | 'VENCIDA')}
+            onChange={(e) => setCobroFiltro(e.target.value as '' | 'PENDIENTE' | 'COBRADA')}
             opciones={[
               { valor: '', etiqueta: 'Cualquiera' },
               { valor: 'PENDIENTE', etiqueta: 'Pendiente por cobrar' },
-              { valor: 'VENCIDA', etiqueta: 'Vencidas' },
+              { valor: 'COBRADA', etiqueta: 'Cobradas' },
             ]}
           />
           {/*
@@ -1212,8 +1218,11 @@ export function NotasDeEntrega() {
                       <div className="flex flex-col items-end gap-1">
                         <Chip tone={TONO[n.estado] ?? 'neutral'}>{ETIQUETA[n.estado]}</Chip>
                         {n.pendiente_por_cobrar && !n.cobrada_en ? (
-                          <Chip tone={n.vencida_por_cobrar ? 'danger' : 'warning'}>
-                            {n.vencida_por_cobrar ? 'Vencida' : 'Por cobrar'} · {fecha(n.fecha_pago!)}
+                          <Chip tone="warning">Por cobrar</Chip>
+                        ) : null}
+                        {n.pendiente_por_cobrar && n.cobrada_en && n.estado !== 'ANULADA' ? (
+                          <Chip tone="success">
+                            Cobrada · {fecha(fechaCaracas(n.cobrada_en) ?? n.cobrada_en)}
                           </Chip>
                         ) : null}
                       </div>
@@ -1278,7 +1287,6 @@ export function NotasDeEntrega() {
                   incompletas ||
                   faltaTransporte ||
                   faltaElCombinado ||
-                  (pendienteCobro && !fechaPago) ||
                   aRenglones(filasEfectivas).length === 0
                 }
                 onClick={async () => {
@@ -1304,7 +1312,7 @@ export function NotasDeEntrega() {
                     monto_usd_combinado: pagoCombinado ? combinadoUsd : null,
                     monto_bs_combinado: pagoCombinado ? Number(montoBsCombinado) || 0 : null,
                     pendiente_por_cobrar: pendienteCobro,
-                    fecha_pago: pendienteCobro ? fechaPago : null,
+                    fecha_pago: null,
                   })
                   if (archivos.length > 0) {
                     try {
@@ -1732,10 +1740,10 @@ export function NotasDeEntrega() {
           {/*
             PENDIENTE POR COBRAR, APARTE DE FACTURACIÓN.
 
-            Christopher, 12/10/2026: un recordatorio con fecha de pago, sin
-            enlazarse a cuentas por cobrar, notas de crédito ni ninguna
-            factura. Se puede buscar después por esa categoría, y la campana
-            avisa sola cuando se pasa la fecha.
+            Christopher, 12/10/2026: un recordatorio, sin enlazarse a cuentas
+            por cobrar, notas de crédito ni ninguna factura. Se puede buscar
+            después por esa categoría. Sin fecha de pago desde el 11/11/2026:
+            las cuentas por cobrar no vencen.
           */}
           <div className="mt-4">
             <label className="border-hairline flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-3 text-sm">
@@ -1743,33 +1751,17 @@ export function NotasDeEntrega() {
                 type="checkbox"
                 className="accent-royal-600 mt-0.5 size-4 shrink-0"
                 checked={pendienteCobro}
-                onChange={(e) => {
-                  setPendienteCobro(e.target.checked)
-                  if (!e.target.checked) setFechaPago('')
-                }}
+                onChange={(e) => setPendienteCobro(e.target.checked)}
               />
               <span className="text-ink/80">
                 Pendiente por cobrar
                 <span className="text-ink/50 mt-0.5 block text-xs">
-                  No se enlaza a Facturación ni a cuentas por cobrar: es solo un recordatorio con
-                  fecha de pago. Se puede buscar después por esta categoría, y el sistema avisa si
-                  se pasa la fecha.
+                  Queda «Por cobrar» hasta que se registre su pago. Se puede buscar después por
+                  esta categoría.
                 </span>
               </span>
             </label>
 
-            {pendienteCobro ? (
-              <div className="mt-3">
-                <Input
-                  label="Fecha de pago"
-                  type="date"
-                  min={new Date().toISOString().slice(0, 10)}
-                  value={fechaPago}
-                  onChange={(e) => setFechaPago(e.target.value)}
-                  hint={!fechaPago ? 'Hace falta para dejarla pendiente por cobrar.' : undefined}
-                />
-              </div>
-            ) : null}
           </div>
 
           {despachar.error ? <ErrorDeCarga error={despachar.error} className="mt-4" /> : null}
@@ -1921,10 +1913,7 @@ export function NotasDeEntrega() {
               detalle.cobrada_en ? (
                 <Chip tone="success">Cobrada el {fecha(detalle.cobrada_en)}</Chip>
               ) : (
-                <Chip tone={detalle.vencida_por_cobrar ? 'danger' : 'warning'}>
-                  {detalle.vencida_por_cobrar ? 'Vencida' : 'Por cobrar'} · vence{' '}
-                  {fecha(detalle.fecha_pago!)}
-                </Chip>
+                <Chip tone="warning">Por cobrar</Chip>
               )
             ) : null}
           </div>
@@ -1949,7 +1938,7 @@ export function NotasDeEntrega() {
           {detalle.pendiente_por_cobrar && !detalle.cobrada_en && puedeDespachar ? (
             <div className="border-hairline mt-3 flex flex-wrap items-center justify-between gap-2 rounded-[6px] border p-3 text-sm">
               <span className="text-ink/70">
-                Pendiente por cobrar, vence el {fecha(detalle.fecha_pago!)}.
+                Pendiente por cobrar.
               </span>
               <Button size="sm" variant="outline" icon={<Check />} onClick={() => navegar('/app/ventas/registros-de-pagos')}>
                 🏦 Registrar el pago en la conciliación
@@ -1970,10 +1959,7 @@ export function NotasDeEntrega() {
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => {
-                  setFechaPagoNueva('')
-                  setMarcandoPendiente(detalle)
-                }}
+                onClick={() => setMarcandoPendiente(detalle)}
               >
                 Marcar pendiente por cobrar
               </Button>
@@ -2124,19 +2110,16 @@ export function NotasDeEntrega() {
           ancho="sm"
           onCerrar={() => setMarcandoPendiente(null)}
           titulo={`Marcar pendiente por cobrar · ${marcandoPendiente.numero}`}
-          descripcion="No se enlaza a Facturación ni a cuentas por cobrar: es solo un recordatorio con fecha de pago."
+          descripcion="Queda «Por cobrar» hasta que se registre su pago. No lleva fecha de vencimiento."
           acciones={
             <>
               <Button variant="ghost" onClick={() => setMarcandoPendiente(null)}>
                 Cancelar
               </Button>
               <Button
-                disabled={marcarPendiente.isPending || !fechaPagoNueva}
+                disabled={marcarPendiente.isPending}
                 onClick={async () => {
-                  await marcarPendiente.mutateAsync({
-                    id: marcandoPendiente.id,
-                    fecha_pago: fechaPagoNueva,
-                  })
+                  await marcarPendiente.mutateAsync({ id: marcandoPendiente.id })
                   setMarcandoPendiente(null)
                   setDetalle(null)
                 }}
@@ -2146,14 +2129,10 @@ export function NotasDeEntrega() {
             </>
           }
         >
-          <Input
-            label="Fecha de pago"
-            type="date"
-            min={new Date().toISOString().slice(0, 10)}
-            value={fechaPagoNueva}
-            onChange={(e) => setFechaPagoNueva(e.target.value)}
-            autoFocus
-          />
+          <p className="text-ink/65 text-sm">
+            La nota {marcandoPendiente.numero} quedará como cuenta por cobrar, sin fecha de
+            vencimiento.
+          </p>
           {marcarPendiente.error ? (
             <ErrorDeCarga error={marcarPendiente.error} className="mt-4" />
           ) : null}
@@ -2327,23 +2306,23 @@ export function NotasDeEntrega() {
             <Interruptor
               encendido={sinPorCobrarReporte}
               onCambio={setSinPorCobrarReporte}
-              etiqueta="Sacar las notas por cobrar y las vencidas"
+              etiqueta="Sacar las notas por cobrar"
               detalle="No salen en la planilla, y los totales y el material se suman sin ellas. Las que ya se cobraron sí salen."
             />
             <Interruptor
               encendido={ocultarCobroReporte}
               onCambio={setOcultarCobroReporte}
               etiqueta="Ocultar la información de cobro"
-              detalle="Sin la tarjeta de cuentas por cobrar, sin las etiquetas «Por cobrar», «Vencida» o «Cobrada» y sin la relación de cobro por cliente. Las notas y los montos no cambian."
+              detalle="Sin la tarjeta de cuentas por cobrar, sin las etiquetas «Por cobrar» o «Cobrada» y sin la relación de cobro por cliente. Las notas y los montos no cambian."
             />
           </div>
           <p
             className={`mt-4 text-sm ${notasParaElReporte.length === 0 ? 'text-warning font-medium' : 'text-ink/65'}`}
           >
             {notasParaElReporte.length === 0
-              ? 'Todas las notas en pantalla están por cobrar o vencidas: sin ellas no queda nada que informar.'
+              ? 'Todas las notas en pantalla están por cobrar: sin ellas no queda nada que informar.'
               : sinPorCobrarReporte
-                ? `Saldrán ${notasParaElReporte.length} de ${data?.length ?? 0} notas: quedan fuera ${(data?.length ?? 0) - notasParaElReporte.length} por cobrar o vencidas.`
+                ? `Saldrán ${notasParaElReporte.length} de ${data?.length ?? 0} notas: quedan fuera ${(data?.length ?? 0) - notasParaElReporte.length} por cobrar.`
                 : `Saldrán las ${notasParaElReporte.length} notas en pantalla.`}
           </p>
           {fallaReporte ? <ErrorDeCarga error={new Error(fallaReporte)} className="mt-3" /> : null}
@@ -2356,6 +2335,24 @@ export function NotasDeEntrega() {
         blob={reporte?.blob ?? null}
         nombreArchivo={reporte?.nombre ?? ""}
         titulo="Reporte de notas de entrega"
+      />
+
+      {pidiendoCuentasPagadas ? (
+        <ModalReporteCuentasPagadas
+          onCerrar={() => setPidiendoCuentasPagadas(false)}
+          onListo={(archivo) => {
+            setPidiendoCuentasPagadas(false)
+            setReportePagadas(archivo)
+          }}
+        />
+      ) : null}
+
+      <Visor
+        abierto={reportePagadas !== null}
+        onCerrar={() => setReportePagadas(null)}
+        blob={reportePagadas?.blob ?? null}
+        nombreArchivo={reportePagadas?.nombre ?? ''}
+        titulo="Cuentas por cobrar pagadas"
       />
 
       {reporteWhatsapp ? (
@@ -2390,5 +2387,168 @@ export function NotasDeEntrega() {
         />
       ) : null}
     </>
+  )
+}
+
+// ─────────────── informe ejecutivo de cuentas por cobrar pagadas ──────────────
+
+function ModalReporteCuentasPagadas({
+  onCerrar,
+  onListo,
+}: {
+  onCerrar: () => void
+  onListo: (archivo: PdfArmado) => void
+}) {
+  const { data: cobradas, isPending, error } = useNotasCobradas(true)
+  const { data: empresa } = useEmpresa()
+  const { data: yo } = useMiPerfil()
+
+  const [conDetalle, setConDetalle] = useState(true)
+  const [rangoPago, setRangoPago] = useState<Rango>(SIN_RANGO)
+  const [clienteFiltro, setClienteFiltro] = useState('')
+  const [conLogo, setConLogo] = useState(true)
+  const [armando, setArmando] = useState(false)
+  const [falla, setFalla] = useState<string | null>(null)
+
+  const todosLosGrupos = agruparCuentasPagadasPorCliente(cobradas ?? [])
+  const opcionesClientes = [
+    { valor: '', etiqueta: 'Todos los clientes' },
+    ...[...todosLosGrupos]
+      .sort((a, b) => a.cliente.localeCompare(b.cliente, 'es'))
+      .map((g) => ({
+        valor: g.cliente_id != null ? String(g.cliente_id) : 'SIN_CLIENTE',
+        etiqueta: `${g.cliente}${g.rif ? ` · ${documento(g.rif)}` : ''} (${g.notas.length})`,
+      })),
+  ]
+
+  const notasElegidas = filtrarNotasCobradas(cobradas ?? [], {
+    desde: rangoPago.desde,
+    hasta: rangoPago.hasta,
+    clienteId: clienteFiltro,
+  })
+  const gruposElegidos = agruparCuentasPagadasPorCliente(notasElegidas)
+
+  const periodoTexto =
+    rangoPago.desde && rangoPago.hasta
+      ? `${fecha(rangoPago.desde)} — ${fecha(rangoPago.hasta)}`
+      : rangoPago.desde
+        ? `Desde ${fecha(rangoPago.desde)}`
+        : rangoPago.hasta
+          ? `Hasta ${fecha(rangoPago.hasta)}`
+          : undefined
+
+  const armar = async () => {
+    setArmando(true)
+    setFalla(null)
+    try {
+      const hoy = fechaCaracas(new Date().toISOString()) ?? new Date().toISOString().slice(0, 10)
+      let nombre = `cuentas-pagadas-${hoy}`
+      if (!conDetalle) nombre += '-resumen'
+      if (rangoPago.desde) nombre += `-desde-${rangoPago.desde}`
+      if (rangoPago.hasta) nombre += `-hasta-${rangoPago.hasta}`
+      if (!conLogo) nombre += '-sin-logo'
+
+      onListo(
+        await armarReporteCuentasPagadas({
+          notas: notasElegidas,
+          conDetalle,
+          conLogo,
+          periodoTexto,
+          nombreArchivo: `${nombre}.pdf`,
+          empresa: empresaDelPapel(empresa),
+          emitidoPor: yo?.nombre ?? '',
+          momento: new Date(),
+        }),
+      )
+    } catch (e) {
+      setFalla(enCastellano(e))
+    } finally {
+      setArmando(false)
+    }
+  }
+
+  return (
+    <Modal
+      abierto
+      onCerrar={onCerrar}
+      titulo="Reporte de cuentas por cobrar pagadas"
+      descripcion="Relación administrativa de notas de entrega registradas con condición de cobro pendiente cuya cancelación ya fue confirmada."
+      acciones={
+        <>
+          <Button variant="ghost" onClick={onCerrar}>
+            Cancelar
+          </Button>
+          <Button
+            icon={<Printer />}
+            disabled={isPending || armando || notasElegidas.length === 0}
+            onClick={() => void armar()}
+          >
+            {armando ? 'Generando…' : 'Generar PDF'}
+          </Button>
+        </>
+      }
+    >
+      {isPending ? <Cargando /> : null}
+      {error ? <ErrorDeCarga error={error} /> : null}
+
+      {!isPending && !error ? (
+        <>
+          <p className={`text-sm ${notasElegidas.length === 0 ? 'text-warning font-medium' : 'text-ink/65'}`}>
+            {notasElegidas.length === 0
+              ? (cobradas?.length ?? 0) === 0
+                ? 'No existen notas de entrega con cuenta por cobrar pagada registradas en el sistema.'
+                : 'No existen notas pagadas que coincidan con el período o cliente seleccionado.'
+              : `Se incluirán ${gruposElegidos.length} cliente${gruposElegidos.length === 1 ? '' : 's'} con ${notasElegidas.length} nota${notasElegidas.length === 1 ? '' : 's'} pagada${notasElegidas.length === 1 ? '' : 's'}.`}
+          </p>
+
+          <div className="mt-5 space-y-4">
+            <div role="radiogroup" aria-label="Modalidad del informe" className="grid gap-2 sm:grid-cols-2">
+              {[
+                {
+                  valor: true,
+                  titulo: 'Resumen + detalle',
+                  texto: 'Consolidado de recaudación por cliente y desglose de cada nota con su cumplimiento de pago.',
+                },
+                {
+                  valor: false,
+                  titulo: 'Solo resumen',
+                  texto: 'Formato ejecutivo consolidado con una fila por cliente, sin desglose individual de notas.',
+                },
+              ].map((o) => (
+                <button
+                  key={o.titulo}
+                  type="button"
+                  role="radio"
+                  aria-checked={conDetalle === o.valor}
+                  onClick={() => setConDetalle(o.valor)}
+                  className={`rounded-[6px] border p-3 text-left transition-colors ${
+                    conDetalle === o.valor ? 'border-royal-600 bg-royal-600/10' : 'border-hairline hover:bg-ink/3'
+                  }`}
+                >
+                  <span className="text-ink/85 block text-sm font-medium">{o.titulo}</span>
+                  <span className="text-ink/55 mt-0.5 block text-xs">{o.texto}</span>
+                </button>
+              ))}
+            </div>
+
+            <Select
+              label="Cliente"
+              value={clienteFiltro}
+              onChange={(e) => setClienteFiltro(e.target.value)}
+              opciones={opcionesClientes}
+            />
+
+            <div>
+              <p className="text-ink/70 mb-1.5 text-xs font-medium">Período de fecha efectiva de pago (opcional)</p>
+              <RangoDeFechas valor={rangoPago} onCambio={setRangoPago} />
+            </div>
+
+            <Interruptor encendido={conLogo} onCambio={setConLogo} etiqueta="Con logo" />
+          </div>
+        </>
+      ) : null}
+
+      {falla ? <ErrorDeCarga error={new Error(falla)} className="mt-4" /> : null}
+    </Modal>
   )
 }

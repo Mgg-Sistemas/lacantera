@@ -10,7 +10,6 @@ import type { ArchivoArmado } from '@/lib/ficha/armado'
 import {
   agruparPorCliente,
   armarReporteClientesPorCobrar,
-  diasVencida,
   type ClienteQueDebe,
 } from '@/lib/ficha/clientesPorCobrarPdf'
 import { PageHeader } from '@/components/PageHeader'
@@ -261,13 +260,12 @@ export function Clientes() {
                             className="hover:bg-ink/5 -mx-2 rounded-md px-2 py-1 text-right"
                           >
                             <span
-                              className={`block font-medium underline decoration-dotted underline-offset-2 ${enNotas.vencidas > 0 ? 'text-danger' : 'text-ink/85'}`}
+                              className="text-ink/85 block font-medium underline decoration-dotted underline-offset-2"
                             >
                               {dolares(enNotas.usd)}
                             </span>
                             <span className="text-ink/45 block text-xs">
                               {bolivares(enNotas.bs)} · {enNotas.notas.length} nota{enNotas.notas.length === 1 ? '' : 's'}
-                              {enNotas.vencidas > 0 ? `, ${enNotas.vencidas} vencida${enNotas.vencidas === 1 ? '' : 's'}` : ''}
                             </span>
                           </button>
                         ) : (
@@ -512,15 +510,9 @@ function NotasQueDebe({ deuda, onCerrar }: { deuda: ClienteQueDebe; onCerrar: ()
         <p className="tabular text-ink/90 text-lg font-semibold">
           {dolares(deuda.usd)} <span className="text-ink/50 text-sm font-normal">· {bolivares(deuda.bs)}</span>
         </p>
-        {deuda.vencidas > 0 ? (
-          <p className="text-danger text-xs">
-            Vencido: {dolares(deuda.usdVencido)} en {deuda.vencidas} nota{deuda.vencidas === 1 ? '' : 's'}
-          </p>
-        ) : null}
       </div>
       <ul className="divide-hairline divide-y">
         {deuda.notas.map((n) => {
-          const dias = n.vencida ? diasVencida(n.fecha_pago) : 0
           return (
             <li key={n.nota_id} className="flex items-start justify-between gap-3 py-3">
               <div>
@@ -531,13 +523,9 @@ function NotasQueDebe({ deuda, onCerrar }: { deuda: ClienteQueDebe; onCerrar: ()
                   {n.numero}
                 </Link>
                 <p className="text-ink/50 text-xs">Del {fecha(n.fecha)}</p>
-                {n.fecha_pago ? (
-                  <Chip tone={n.vencida ? 'danger' : 'warning'} className="mt-1">
-                    {n.vencida
-                      ? `Vencida hace ${dias} día${dias === 1 ? '' : 's'}`
-                      : `Vence el ${fecha(n.fecha_pago)}`}
-                  </Chip>
-                ) : null}
+                <Chip tone="warning" className="mt-1">
+                  Por cobrar
+                </Chip>
               </div>
               <div className="tabular text-right">
                 <p className="text-ink/85 font-medium">{dolares(n.total_usd ?? 0)}</p>
@@ -564,16 +552,13 @@ function ModalReportePorCobrar({
 }) {
   const { data: empresa } = useEmpresa()
   const { data: yo } = useMiPerfil()
-  const [soloVencidas, setSoloVencidas] = useState(false)
   const [conDetalle, setConDetalle] = useState(true)
   const [conLogo, setConLogo] = useState(true)
   const [armando, setArmando] = useState(false)
   const [falla, setFalla] = useState<string | null>(null)
 
-  // Con «solo vencidas», cada cliente se vuelve a sumar con solo esas notas.
-  const salen = soloVencidas
-    ? agruparPorCliente(deudores.flatMap((d) => d.notas).filter((n) => n.vencida))
-    : deudores
+  // Sin «solo vencidas» desde el 11/11/2026: las cuentas por cobrar no vencen.
+  const salen = deudores
   const notas = salen.reduce((s, c) => s + c.notas.length, 0)
 
   const armar = async () => {
@@ -581,13 +566,11 @@ function ModalReportePorCobrar({
     setFalla(null)
     try {
       let nombre = `clientes-por-cobrar-${new Date().toISOString().slice(0, 10)}`
-      if (soloVencidas) nombre += '-vencidas'
       if (!conDetalle) nombre += '-resumen'
       if (!conLogo) nombre += '-sin-logo'
       onListo(
         await armarReporteClientesPorCobrar({
           clientes: salen,
-          alcance: [['Notas', soloVencidas ? 'Solo las vencidas' : 'Todas las pendientes por cobrar']],
           conDetalle,
           conLogo,
           nombreArchivo: `${nombre}.pdf`,
@@ -622,7 +605,7 @@ function ModalReportePorCobrar({
     >
       <p className={`text-sm ${salen.length === 0 ? 'text-warning font-medium' : 'text-ink/65'}`}>
         {salen.length === 0
-          ? 'No existen notas vencidas para incluir en el reporte.'
+          ? 'No hay notas por cobrar para incluir en el reporte.'
           : `Se incluirán ${salen.length} cliente${salen.length === 1 ? '' : 's'} con ${notas} nota${notas === 1 ? '' : 's'}.`}
       </p>
       <div className="mt-5 space-y-3">
@@ -632,7 +615,7 @@ function ModalReportePorCobrar({
         */}
         <div role="radiogroup" aria-label="Qué reporte" className="grid gap-2 sm:grid-cols-2">
           {[
-            { valor: true, titulo: 'Resumen + detalle', texto: 'Saldo consolidado por cliente y desglose de cada nota con su estatus de vencimiento.' },
+            { valor: true, titulo: 'Resumen + detalle', texto: 'Saldo consolidado por cliente y desglose de cada nota por cobrar.' },
             { valor: false, titulo: 'Solo resumen', texto: 'Formato consolidado con una fila por cliente, sin desglose de notas.' },
           ].map((o) => (
             <button
@@ -650,12 +633,6 @@ function ModalReportePorCobrar({
             </button>
           ))}
         </div>
-        <Interruptor
-          encendido={soloVencidas}
-          onCambio={setSoloVencidas}
-          etiqueta="Solo las notas vencidas"
-          detalle="Incluye únicamente las notas cuya fecha de vencimiento ha transcurrido."
-        />
         <Interruptor encendido={conLogo} onCambio={setConLogo} etiqueta="Con logo" />
       </div>
       {falla ? <ErrorDeCarga error={new Error(falla)} className="mt-4" /> : null}

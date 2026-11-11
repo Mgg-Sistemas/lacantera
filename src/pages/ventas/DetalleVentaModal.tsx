@@ -205,7 +205,8 @@ export function DetalleVentaModal({
           {t.por ? <Dato titulo={t.tipo === 'SD' ? 'Pidió' : t.tipo === 'NE' ? 'Aprobó' : 'Hizo'}>{t.por}</Dato> : null}
           {condicionTxt(t.condicion) ? <Dato titulo="Condición">{condicionTxt(t.condicion)}</Dato> : null}
           {t.numero_control ? <Dato titulo="Nº de control"><span className="font-mono">{t.numero_control}</span></Dato> : null}
-          {t.vence_el && t.tipo !== 'NE' ? <Dato titulo={t.tipo === 'COT' ? 'Válida hasta' : 'Vence'}>{fecha(t.vence_el)}</Dato> : null}
+          {/* Solo la validez de la cotización: las facturas no vencen desde el 11/11/2026. */}
+          {t.vence_el && t.tipo === 'COT' ? <Dato titulo="Válida hasta">{fecha(t.vence_el)}</Dato> : null}
           {t.almacen ? <Dato titulo="Sale de">{t.almacen}</Dato> : null}
           {t.chofer ? (
             <Dato titulo="Chofer">
@@ -215,7 +216,7 @@ export function DetalleVentaModal({
           ) : null}
           {t.vehiculo ? <Dato titulo="Vehículo">{t.vehiculo}</Dato> : null}
           {t.ticket ? <Dato titulo="Romana">{t.ticket}</Dato> : null}
-          {t.pendiente_por_cobrar && t.fecha_pago ? <Dato titulo="Cobrar el">{fecha(t.fecha_pago)}</Dato> : null}
+          {t.pendiente_por_cobrar ? <Dato titulo="Cobro">Por cobrar</Dato> : null}
         </dl>
 
         {t.resumen ? (
