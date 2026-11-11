@@ -178,7 +178,7 @@ export function ReportesDeGastos({
         abierto={archivo === null}
         onCerrar={onCerrar}
         titulo="Reportes PDF"
-        descripcion="El informe de gastos, o el comparativo de gastos con las ventas de material despachadas."
+        descripcion="Informe ejecutivo de gastos o comparativo financiero de gastos frente a las ventas cobradas."
         acciones={
           <>
             <Button variant="ghost" onClick={onCerrar}>
@@ -194,16 +194,16 @@ export function ReportesDeGastos({
           {[
             {
               valor: 'GASTOS' as const,
-              titulo: 'Informe de gastos',
-              texto: 'Lo gastado por categoría y por período, con el detalle de cada factura si se pide.',
+              titulo: 'Informe ejecutivo de gastos',
+              texto: 'Consolidado por categoría y por período en moneda original y equivalente BCV.',
               puede: true,
             },
             {
               valor: 'COMPARATIVO' as const,
-              titulo: 'Gastos vs. ventas',
+              titulo: 'Comparativo de gastos y ventas',
               texto: puedeComparar
-                ? 'Ventas de material despachadas frente a los gastos: diferencia y cuánto se va en gasto.'
-                : 'Hace falta acceso a Ventas o a Facturación para ver las ventas.',
+                ? 'Balance operativo de ventas cobradas frente a los gastos registrados, margen neto y absorción.'
+                : 'Requiere acceso de lectura en Ventas o Facturación para consultar los ingresos.',
               puede: puedeComparar,
             },
           ].map((o) => (
@@ -216,6 +216,42 @@ export function ReportesDeGastos({
               onClick={() => setQue(o.valor)}
               className={`rounded-[6px] border p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                 que === o.valor ? 'border-royal-600 bg-royal-600/10' : 'border-hairline hover:bg-ink/3'
+              }`}
+            >
+              <span className="text-ink/85 block text-sm font-medium">{o.titulo}</span>
+              <span className="text-ink/55 mt-0.5 block text-xs">{o.texto}</span>
+            </button>
+          ))}
+        </div>
+
+        <p className="text-ink/80 mt-5 mb-2 text-sm font-medium">Modalidad del informe</p>
+        <div role="radiogroup" aria-label="Modalidad del informe" className="grid gap-2 sm:grid-cols-2">
+          {[
+            {
+              detalle: false,
+              titulo: 'Solo resumen',
+              texto:
+                que === 'COMPARATIVO'
+                  ? 'Balance operativo con barra comparativa, indicadores ejecutivos, evolución por período, categorías y clientes.'
+                  : 'Total de gastos operativos, indicadores ejecutivos, distribución por categoría y evolución por período.',
+            },
+            {
+              detalle: true,
+              titulo: 'Resumen + detalle',
+              texto:
+                que === 'COMPARATIVO'
+                  ? 'El resumen ejecutivo más el desglose individual de cada factura de gasto y nota de entrega.'
+                  : 'El resumen ejecutivo más la relación detallada de cada factura de gasto registrada.',
+            },
+          ].map((o) => (
+            <button
+              key={String(o.detalle)}
+              type="button"
+              role="radio"
+              aria-checked={conDetalle === o.detalle}
+              onClick={() => setConDetalle(o.detalle)}
+              className={`rounded-[6px] border p-3 text-left transition-colors ${
+                conDetalle === o.detalle ? 'border-royal-600 bg-royal-600/10' : 'border-hairline hover:bg-ink/3'
               }`}
             >
               <span className="text-ink/85 block text-sm font-medium">{o.titulo}</span>
@@ -310,19 +346,13 @@ export function ReportesDeGastos({
         </div>
 
         <div className="mt-5 space-y-3">
-          <Interruptor
-            encendido={conDetalle}
-            onCambio={setConDetalle}
-            etiqueta="Con el detalle de cada documento"
-            detalle="Añade al final la lista de cada factura (y de cada nota, en el comparativo)."
-          />
           {que === 'COMPARATIVO' ? (
             <>
               <Interruptor
                 encendido={conPorCobrar}
                 onCambio={setConPorCobrar}
-                etiqueta="Mencionar lo que está por cobrar"
-                detalle="Una línea con las notas despachadas que siguen por cobrar. No se suman a las ventas."
+                etiqueta="Informar el saldo pendiente por cobrar"
+                detalle="Incluye en el recuadro principal una nota informativa con las entregas despachadas pendientes de cobro (sin sumarlas a los ingresos)."
               />
               <Interruptor
                 encendido={conCompras}
@@ -331,8 +361,8 @@ export function ReportesDeGastos({
                 etiqueta="Incluir las órdenes de Compras pagadas"
                 detalle={
                   puedeCompras
-                    ? 'Suma las órdenes del módulo Compras, por su fecha de pago, en una columna aparte.'
-                    : 'Hace falta acceso a Compras.'
+                    ? 'Consolida las órdenes pagadas del módulo Compras, según su fecha de pago, en una columna adicional.'
+                    : 'Requiere permiso de lectura en el módulo Compras.'
                 }
               />
             </>
@@ -340,11 +370,11 @@ export function ReportesDeGastos({
             <Interruptor
               encendido={conAnuladas}
               onCambio={setConAnuladas}
-              etiqueta="Listar las facturas anuladas"
-              detalle="Aparte y sin sumar, para dejar el rastro."
+              etiqueta="Incluir relación de facturas anuladas"
+              detalle="Las presenta en una sección de auditoría separada al final del informe, sin sumarlas al total."
             />
           )}
-          <Interruptor encendido={conLogo} onCambio={setConLogo} etiqueta="Con logo" />
+          <Interruptor encendido={conLogo} onCambio={setConLogo} etiqueta="Incluir logo institucional" />
         </div>
 
         {vacio ? <p className="text-warning mt-4 text-sm font-medium">{vacio}</p> : null}

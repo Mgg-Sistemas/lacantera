@@ -7713,24 +7713,26 @@ Gastos es la bitácora de las facturas físicas que paga la empresa fuera de una
 
 ### 27.2 Los reportes PDF (10/11/2026)
 
-El botón **Reportes PDF**, arriba en Gastos, arma dos papeles:
+El botón **Reportes PDF**, arriba en Gastos, emite dos informes en formato ejecutivo A4 con membrete institucional, tarjeta de control en el encabezado y numeración `Página X de Y` (sin sección «Alcance»):
 
-- **Informe de gastos.** Un cuadro con el total del período en dólares y en bolívares, y lo facturado en cada moneda original por separado. Debajo, una tabla por categoría y otra por mes, semana o día, con el porcentaje de cada una. Si se pide, el detalle de cada factura y la lista de las anuladas (aparte, sin sumar).
-- **Gastos vs. ventas.** Compara las **ventas de material** —las notas de entrega **despachadas**, de contado o a crédito ya cobradas— con los gastos. El cuadro de arriba trae las ventas, los gastos, la **diferencia** (verde si se vendió más de lo que se gastó, roja si no) y cuánto se va en gasto por cada venta. Debajo: la comparación por período, los gastos por categoría y las ventas por cliente; y el detalle, si se pide.
+- **Informe ejecutivo de gastos.** Presenta un panel principal dividido entre el **Total de gastos operativos del período** (equivalente en dólares BCV y bolívares) y la **Facturación en moneda de origen** (desglosando los documentos emitidos en bolívares y en dólares). Incluye tres tarjetas de indicadores ejecutivos (*Documentos procesados*, *Mayor categoría de gasto* y *Moneda de emisión original*), seguidas de la tabla **Ejecución de gastos por categoría** con barras de proporción y la tabla **Evolución de gastos por período**. En modalidad **Resumen + detalle** añade la relación individual de cada factura y, si se solicita, la sección de auditoría de **Facturas de gasto anuladas** (sin sumarlas al total).
+- **Comparativo de gastos y ventas.** Compara los **ingresos por ventas cobradas** —notas de entrega despachadas, de contado o a crédito ya pagadas— frente a los **egresos por gastos registrados** (y compras pagadas, si se habilita). Su recuadro principal de **Balance operativo del período** muestra en tres columnas los *Ingresos por ventas (cobradas)*, los *Egresos por gastos operativos* y el *Resultado neto (ventas − gastos)* con pastilla de **Superávit** o **Déficit**, además de una **barra visual comparativa de ancho completo** que ilustra qué porcentaje de los ingresos fue absorbido por el gasto y qué porcentaje permanece como margen operativo neto. Debajo presenta tres tarjetas de indicadores (*Desempeño comercial*, *Concentración del gasto* y *Relación egreso / ingreso*), la **Evolución comparativa por período** con barra de absorción y estado, la **Distribución de gastos por categoría** (con doble porcentaje: `% del gasto` y `% sobre ventas`) y los **Ingresos por cliente (ventas cobradas)**.
 
-**Las notas que siguen por cobrar no cuentan como venta.** Si se deja encendido **Mencionar lo que está por cobrar**, el cuadro de arriba dice cuántas son y cuánto suman, sin sumarlas. Tampoco cuentan las notas pendientes de despacho ni las anuladas.
+**Las notas que siguen por cobrar no se computan como ingreso cobrado.** Si se mantiene activo **Informar el saldo pendiente por cobrar**, el recuadro principal muestra una nota informativa con la cantidad de entregas pendientes de cobro y su importe total, sin sumarlas a las ventas cobradas. Tampoco se incluyen las notas pendientes de despacho ni las anuladas.
 
 Las opciones:
 
 | Opción | Qué hace |
 |---|---|
-| **Período** | Desde y hasta, con los atajos de siempre (hoy, esta semana, este mes, mes pasado), **O un mes completo**, **Este trimestre** y **Este año** |
+| **Modalidad del informe** | **Solo resumen** (indicadores, cuadros comparativos y tablas ejecutivas) o **Resumen + detalle** (añade al final el desglose documento por documento) |
+| **Período** | Desde y hasta, con los atajos habituales (hoy, esta semana, este mes, mes pasado), **O un mes completo**, **Este trimestre** y **Este año** |
 | **Agrupar por** | Mes, semana (de lunes a domingo) o día |
-| **Montos en** | Dólares, bolívares, o los dos |
-| **Categorías de gasto** | Todas, o las que se toquen |
-| **Con el detalle de cada documento** | Añade al final la lista de cada factura (y cada nota) |
-| **Incluir las órdenes de Compras pagadas** | Solo en el comparativo. Suma las órdenes del módulo Compras, por su fecha de pago, en una columna aparte. Viene apagado |
-| **Con logo** | El membrete con o sin el logo |
+| **Montos en** | Dólares, bolívares, o ambos |
+| **Categorías de gasto** | Todas, o las seleccionadas |
+| **Informar el saldo pendiente por cobrar** | Solo en el comparativo. Muestra en el recuadro principal las notas despachadas pendientes de cobro, sin sumarlas a los ingresos |
+| **Incluir las órdenes de Compras pagadas** | Solo en el comparativo. Consolida las órdenes del módulo Compras, según su fecha de pago, en una columna adicional. Viene desactivado |
+| **Incluir relación de facturas anuladas** | Solo en el informe de gastos. Lista aparte las facturas anuladas con su motivo, sin sumarlas |
+| **Incluir logo institucional** | Emite el encabezado con o sin el logotipo de la empresa |
 
 **Cómo se comparan bolívares con dólares.** Nunca se suman tal cual. Cada nota de entrega ya trae su total en bolívares y en dólares a la tasa del día en que se hizo; cada factura de gasto se lleva a su equivalente con la **tasa BCV del día de la factura**. Lo que se suma son esos equivalentes, y el papel lo dice al pie de la tabla.
 
