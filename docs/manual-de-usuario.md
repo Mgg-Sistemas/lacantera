@@ -60,10 +60,11 @@ También tienen capítulo, en su sitio, las pantallas que hoy no están en el me
 | 24 | Contactos | Sí |
 | 25 | Alimentación | Sí |
 | 26 | Salidas y traslados | Sí |
+| 27 | Gastos | Sí |
 
 **Que un módulo esté en el menú no quiere decir que lo vea todo el mundo.** A cada persona le sale solo lo que su permiso alcanza (3.1).
 
-**Los capítulos 18 a 26 van al final**, y no intercalados donde les tocaría: meterlos en medio correría diez números debajo de quien tiene el manual impreso, y rompería las remisiones repartidas por todo el documento. El **Organigrama** tiene apartado propio, el 11.13.
+**Los capítulos 18 a 27 van al final**, y no intercalados donde les tocaría: meterlos en medio correría diez números debajo de quien tiene el manual impreso, y rompería las remisiones repartidas por todo el documento. El **Organigrama** tiene apartado propio, el 11.13.
 
 ---
 
@@ -7690,3 +7691,54 @@ Si la salida fue para alguien de fuera de la empresa, quien tenga la casilla **G
 | La opción **Enviar** o **Traslado directo** apagada | No responde por el almacén de origen, o por los dos | Use **Pedir material de otro almacén**, y que lo envíe quien responde por el origen |
 | Un mensaje que dice que el traslado **ya se recibió y no se cancela** | El material ya llegó | Haga un traslado de vuelta |
 | El Historial o los traslados vacíos, teniendo el módulo | Le falta el permiso de lectura sobre Inventario | Pídalo a la administración |
+
+---
+
+## 27. Gastos
+
+Gastos es la bitácora de las facturas físicas que paga la empresa fuera de una orden de compra: la ferretería, los víveres, una reparación. Cada factura se transcribe con su categoría, su monto en la moneda en que se pagó, para qué se usó lo comprado y su foto. No mueve ninguna cuenta de Tesorería.
+
+### 27.1 Quién entra y quién puede hacer qué
+
+| Qué se hace | Qué hace falta |
+|---|---|
+| Ver el historial, el **Informe por categoría** y el **Informe de gastos** en PDF | Gastos en lectura |
+| **Registrar factura** | Gastos en escritura |
+| **Anular** una factura | Gastos en total |
+| El reporte **Gastos vs. ventas** | Gastos en lectura y, además, Ventas o Facturación en lectura |
+| Sumar las **órdenes de Compras pagadas** al comparativo | Además, Compras en lectura |
+
+**Una factura no se corrige: se anula** con su motivo y queda a la vista, tachada. Las anuladas no salen en el historial salvo que se marque **Mostrar anuladas**, y nunca suman en los informes.
+
+### 27.2 Los reportes PDF (10/11/2026)
+
+El botón **Reportes PDF**, arriba en Gastos, arma dos papeles:
+
+- **Informe de gastos.** Un cuadro con el total del período en dólares y en bolívares, y lo facturado en cada moneda original por separado. Debajo, una tabla por categoría y otra por mes, semana o día, con el porcentaje de cada una. Si se pide, el detalle de cada factura y la lista de las anuladas (aparte, sin sumar).
+- **Gastos vs. ventas.** Compara las **ventas de material** —las notas de entrega **despachadas**, de contado o a crédito ya cobradas— con los gastos. El cuadro de arriba trae las ventas, los gastos, la **diferencia** (verde si se vendió más de lo que se gastó, roja si no) y cuánto se va en gasto por cada venta. Debajo: la comparación por período, los gastos por categoría y las ventas por cliente; y el detalle, si se pide.
+
+**Las notas que siguen por cobrar no cuentan como venta.** Si se deja encendido **Mencionar lo que está por cobrar**, el cuadro de arriba dice cuántas son y cuánto suman, sin sumarlas. Tampoco cuentan las notas pendientes de despacho ni las anuladas.
+
+Las opciones:
+
+| Opción | Qué hace |
+|---|---|
+| **Período** | Desde y hasta, con los atajos de siempre (hoy, esta semana, este mes, mes pasado), **O un mes completo**, **Este trimestre** y **Este año** |
+| **Agrupar por** | Mes, semana (de lunes a domingo) o día |
+| **Montos en** | Dólares, bolívares, o los dos |
+| **Categorías de gasto** | Todas, o las que se toquen |
+| **Con el detalle de cada documento** | Añade al final la lista de cada factura (y cada nota) |
+| **Incluir las órdenes de Compras pagadas** | Solo en el comparativo. Suma las órdenes del módulo Compras, por su fecha de pago, en una columna aparte. Viene apagado |
+| **Con logo** | El membrete con o sin el logo |
+
+**Cómo se comparan bolívares con dólares.** Nunca se suman tal cual. Cada nota de entrega ya trae su total en bolívares y en dólares a la tasa del día en que se hizo; cada factura de gasto se lleva a su equivalente con la **tasa BCV del día de la factura**. Lo que se suma son esos equivalentes, y el papel lo dice al pie de la tabla.
+
+**Cuidado con el mes en curso.** Si el período incluye el mes de hoy, puede haber gastos que todavía no se han cargado y el comparativo saldrá mejor de lo que es. La ventana lo advierte.
+
+### 27.3 Cuando el sistema no le deja
+
+| Lo que ve | Qué significa | Qué hacer |
+|---|---|---|
+| **Gastos vs. ventas** apagado, con «Hace falta acceso a Ventas o a Facturación» | Su usuario no ve las ventas | Pida el permiso a la administración, o use el **Informe de gastos** |
+| «No hay ventas ni gastos en ese período con esas opciones.» | El rango o las categorías elegidas dejan el papel vacío | Amplíe el período o vuelva a **Todas** las categorías |
+| «La fecha final no puede ser anterior a la inicial.» | Las fechas están al revés | Corrija el rango |
