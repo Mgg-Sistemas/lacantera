@@ -1,6 +1,13 @@
 import { useState } from 'react'
 import { useMonedasUsables } from '@/lib/api/tasas'
-import { Tag } from 'lucide-react'
+import { Printer, Tag } from 'lucide-react'
+import { Interruptor } from '@/components/ui/Interruptor'
+import { Visor } from '@/components/Visor'
+import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
+import { useMiPerfil } from '@/lib/api/usuarios'
+import { hoyEnCaracas } from '@/lib/api/tasas'
+import type { ArchivoArmado } from '@/lib/ficha/armado'
+import { armarListaDePrecios } from '@/lib/ficha/listaDePreciosPdf'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -11,6 +18,7 @@ import { Select } from '@/components/ui/Select'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { dinero, fecha } from '@/lib/formato'
 import {
+  traerCuentasParaPagos,
   unidadesDeVenta,
   useGuardarPrecio,
   usePrecios,
@@ -88,6 +96,48 @@ export function Precios() {
 
   // Artículos activos sin ningún precio: una fila por artículo, sin cifra.
   const sinPrecio = (data ?? []).filter((p) => p.activo && !p.precio).length
+  const conPrecio = (data ?? []).filter((p) => p.activo && Number(p.precio) > 0).length
+
+  /*
+    EL PDF DE LA LISTA (11/11/2026): hoja horizontal para el cliente, con los
+    precios y los datos para el pago, que salen de Tesorería al armarlo.
+  */
+  const { data: empresa } = useEmpresa()
+  const { data: yo } = useMiPerfil()
+  const [pdfAbierto, setPdfAbierto] = useState(false)
+  const [conCuentas, setConCuentas] = useState(true)
+  const [conLogo, setConLogo] = useState(true)
+  const [armando, setArmando] = useState(false)
+  const [fallaPdf, setFallaPdf] = useState<unknown>(null)
+  const [archivo, setArchivo] = useState<ArchivoArmado | null>(null)
+
+  const armarPdf = async () => {
+    setArmando(true)
+    setFallaPdf(null)
+    try {
+      const cuentas = conCuentas ? await traerCuentasParaPagos() : []
+      if (conCuentas && cuentas.length === 0) {
+        throw new Error('No hay ninguna cuenta bancaria activa en Tesorería para poner en el papel.')
+      }
+      setArchivo(
+        await armarListaDePrecios({
+          precios: data ?? [],
+          cuentas,
+          conCuentas,
+          conLogo,
+          empresa: empresaDelPapel(empresa),
+          emitidoPor: yo?.nombre ?? '',
+          momento: new Date(),
+          nombreArchivo: `lista-de-precios-${hoyEnCaracas()}${conLogo ? '' : '-sin-logo'}.pdf`,
+        }),
+      )
+      setPdfAbierto(false)
+    } catch (e) {
+      setFallaPdf(e)
+    } finally {
+      setArmando(false)
+    }
+  }
 
   return (
     <>
@@ -95,12 +145,64 @@ export function Precios() {
         title="Lista de precios"
         description="Precios de venta por unidad y precio mínimo de cada producto."
         actions={
-          sinPrecio > 0 ? (
-            <Chip tone="warning">
-              {sinPrecio} {sinPrecio === 1 ? 'producto sin precio' : 'productos sin precio'}
-            </Chip>
-          ) : undefined
+          <>
+            {sinPrecio > 0 ? (
+              <Chip tone="warning">
+                {sinPrecio} {sinPrecio === 1 ? 'producto sin precio' : 'productos sin precio'}
+              </Chip>
+            ) : null}
+            <Button
+              variant="outline"
+              icon={<Printer />}
+              disabled={conPrecio === 0}
+              onClick={() => {
+                setFallaPdf(null)
+                setPdfAbierto(true)
+              }}
+            >
+              PDF de precios
+            </Button>
+          </>
         }
+      />
+
+      <Modal
+        abierto={pdfAbierto}
+        onCerrar={() => setPdfAbierto(false)}
+        titulo="PDF de la lista de precios"
+        descripcion="Hoja horizontal para enviar al cliente: producto, unidad y precio. No lleva códigos internos ni precios mínimos."
+        acciones={
+          <>
+            <Button variant="ghost" onClick={() => setPdfAbierto(false)}>
+              Cancelar
+            </Button>
+            <Button icon={<Printer />} disabled={armando} onClick={() => void armarPdf()}>
+              {armando ? 'Armando…' : 'Generar PDF'}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <Interruptor
+            encendido={conCuentas}
+            onCambio={setConCuentas}
+            etiqueta="Incluir los datos para el pago"
+            detalle="Banco, titular, RIF y número de las cuentas bancarias activas de Tesorería."
+          />
+          <Interruptor encendido={conLogo} onCambio={setConLogo} etiqueta="Incluir logo institucional" />
+        </div>
+        <p className="text-ink/50 mt-4 text-xs">
+          Salen {conPrecio} {conPrecio === 1 ? 'precio' : 'precios'}. Los productos sin precio no aparecen en el papel.
+        </p>
+        {fallaPdf ? <ErrorDeCarga error={fallaPdf} className="mt-4" /> : null}
+      </Modal>
+
+      <Visor
+        abierto={archivo !== null}
+        onCerrar={() => setArchivo(null)}
+        blob={archivo?.blob ?? null}
+        nombreArchivo={archivo?.nombre ?? ''}
+        titulo="Lista de precios"
       />
 
       {isPending ? <Cargando /> : null}
