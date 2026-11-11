@@ -434,6 +434,33 @@ export function useCancelarSolicitud() {
   )
 }
 
+/*
+  EDITAR ANTES DE ENTREGAR (MGG «Editar», 11/11/2026). La edita quien la pidió
+  o quien lleva Salidas, mientras está Por aprobar o Aprobada; si ya estaba
+  aprobada vuelve a Por aprobar, porque lo aprobado era otra cosa.
+*/
+export function useEditarSolicitudSalida() {
+  return useAccionDeSolicitud(
+    (s: {
+      id: number
+      motivo: string
+      renglones: Array<{
+        articulo_id: number
+        cantidad: number
+        presentaciones?: string | null
+        presentacion?: string | null
+        suelto?: string | null
+        propietario?: string | null
+      }>
+    }) =>
+      rpc<string>('editar_solicitud_salida', {
+        p_id: s.id,
+        p_renglones: s.renglones,
+        p_motivo: s.motivo,
+      }),
+  )
+}
+
 export function useEntregarSolicitud() {
   return useAccionDeSolicitud((id: number) =>
     rpc<string>('entregar_solicitud_salida', { p_id: id }),

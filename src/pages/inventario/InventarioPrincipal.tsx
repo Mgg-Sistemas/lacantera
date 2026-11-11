@@ -353,6 +353,7 @@ export function InventarioPrincipal() {
         stockAjeno: dueno ? 0 : ajeno,
         stockAlerta,
         minimo: alertable ? minimo : 0,
+        restockPct: a.restock_pct != null ? Number(a.restock_pct) : null,
         valor: hayValor ? valor : null,
         precio,
         sinValorar,
@@ -374,8 +375,8 @@ export function InventarioPrincipal() {
       if (tokens.length > 0) {
         /*
           Búsqueda POR PALABRAS, como MGG: cada palabra tiene que aparecer en
-          algún dato, en cualquier orden. Aquí no hay alias, modelo ni
-          ubicación física; se busca en lo que el catálogo sí guarda.
+          algún dato, en cualquier orden. Desde el 11/11/2026 también el alias,
+          el modelo, el fabricante, el color y la ubicación física (ficha MGG).
         */
         const a = p.articulo
         const pajar = [
@@ -384,6 +385,11 @@ export function InventarioPrincipal() {
           a.nombre,
           a.marca,
           a.numero_parte,
+          a.alias,
+          a.modelo,
+          a.fabricante,
+          a.color,
+          a.ubicacion_fisica,
           a.descripcion,
           a.presentacion,
           a.categoria,
@@ -732,7 +738,7 @@ export function InventarioPrincipal() {
                   maxLength={100}
                   label="Buscar"
                   icon={<Search />}
-                  placeholder="Buscar: nombre, código, medida, marca… (ej. clavo media pulgada)"
+                  placeholder="Buscar: nombre, código, alias, marca, ubicación… (ej. clavo media pulgada)"
                   value={texto}
                   onChange={(e) => setTexto(e.target.value)}
                 />
@@ -1232,6 +1238,9 @@ function FilaProducto({
       <td className="text-ink/60 px-5 py-3 font-mono text-xs">{p.sku}</td>
       <td className="px-3 py-3">
         <p className="text-ink/85 font-medium">{p.nombre}</p>
+        {p.articulo.ubicacion_fisica ? (
+          <p className="text-ink/50 text-2xs mt-0.5">📍 {p.articulo.ubicacion_fisica}</p>
+        ) : null}
         {/* La barra de stock de MGG: llena = en el umbral o por encima. */}
         <div
           className="bg-ink/8 mt-1.5 h-1.5 w-[140px] overflow-hidden rounded-full"
@@ -1268,9 +1277,14 @@ function FilaProducto({
       </td>
       <td
         className="tabular text-ink/55 px-3 py-3 text-right whitespace-nowrap"
-        title={conMinimo ? `${cantidad(p.minimo)} mín × ${p._pct}%` : 'Sin stock mínimo'}
+        title={
+          conMinimo
+            ? `${cantidad(p.minimo)} mín × ${p._pct}%${p._pctPropio ? ' (umbral propio del producto)' : ''}`
+            : 'Sin stock mínimo'
+        }
       >
         {conMinimo ? `≤ ${cantidad(umbral)}` : '—'}
+        {conMinimo && p._pctPropio ? <span className="text-royal-600 ml-1 text-2xs">★ {p._pct}%</span> : null}
       </td>
       <td className="tabular text-ink/65 px-3 py-3 text-right whitespace-nowrap">
         {p.precio !== null ? dolares(p.precio) : '—'}

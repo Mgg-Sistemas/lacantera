@@ -36,7 +36,10 @@ import {
 } from '@/lib/api/catalogo'
 import type { Articulo } from '@/lib/api/catalogo'
 import { useMisPermisos } from '@/lib/api/usuarios'
-import { useMovimientos } from '@/lib/api/inventario'
+import { useAlmacenes, useMovimientos, useRegistrarEntradas } from '@/lib/api/inventario'
+import { useGuardarFichaDeArticulo } from '@/lib/api/catalogo'
+import { CamposFichaMgg } from './CamposFichaMgg'
+import { fichaParaGuardar, fichaVacia, umbralValido } from './fichaMgg'
 import { fecha } from '@/lib/formato'
 import { densidadEnPalabras, densidadLegible } from '@/lib/medidas'
 import { useFiltroEnLaDireccion } from '@/lib/enLaDireccion'
@@ -659,6 +662,20 @@ export function ModalArticuloNuevo({ onCerrar }: { onCerrar: () => void }) {
   )
   const crear = useCrearArticulo()
   const editar = useEditarArticulo()
+  /*
+    COMO EL «+ NUEVO PRODUCTO» DE MGG (11/11/2026): la ficha completa y, si ya
+    hay, el stock inicial con su almacén y su costo, de una vez. Es lo mismo que
+    hace el teléfono: crear el artículo y luego su entrada.
+  */
+  const guardarFicha = useGuardarFichaDeArticulo()
+  const entradaInicial = useRegistrarEntradas()
+  const { data: almacenesStock } = useAlmacenes()
+  const [ficha, setFicha] = useState(fichaVacia)
+  const [stockIni, setStockIni] = useState({ almacen: '', cantidad: '', costo: '', comprobado: false })
+  const [avisoStock, setAvisoStock] = useState<string | null>(null)
+  const cantIni = Number(stockIni.cantidad) || 0
+  const costoIni = Number(stockIni.costo) || 0
+  const stockIncompleto = cantIni > 0 && (!stockIni.almacen || !(costoIni > 0) || !stockIni.comprobado)
   const categorias = useCategoriasDeInventario()
   const opcionesCategoria = opcionesDeCategoria(categorias.data)
   const prefijoDeCategoria = (codigo: string) =>
@@ -756,6 +773,10 @@ export function ModalArticuloNuevo({ onCerrar }: { onCerrar: () => void }) {
                 disabled={
                   crear.isPending ||
                   editar.isPending ||
+                  guardarFicha.isPending ||
+                  entradaInicial.isPending ||
+                  !umbralValido(ficha) ||
+                  (!form.id && stockIncompleto) ||
                   !form.nombre ||
                   (hayHomonimo && !form.confirmado) ||
                   (pideDensidad && !(densidadEscrita > 0)) ||
@@ -790,8 +811,40 @@ export function ModalArticuloNuevo({ onCerrar }: { onCerrar: () => void }) {
                       : null,
                     motivo_densidad: cambiaDensidad ? form.motivo_densidad.trim() : null,
                   }
-                  if (form.id) await editar.mutateAsync(datos)
-                  else await crear.mutateAsync(datos)
+                  if (form.id) {
+                    // La ficha de MGG de uno que ya existe se corrige en «Corregir» (ModalEditarArticulo).
+                    await editar.mutateAsync(datos)
+                    onCerrar()
+                    return
+                  }
+                  const id = await crear.mutateAsync(datos)
+                  await guardarFicha.mutateAsync({ id, ...fichaParaGuardar(ficha) })
+                  if (cantIni > 0) {
+                    try {
+                      await entradaInicial.mutateAsync({
+                        almacen_id: Number(stockIni.almacen),
+                        renglones: [
+                          {
+                            almacen_id: Number(stockIni.almacen),
+                            articulo_id: id,
+                            cantidad: cantIni,
+                            costo: costoIni,
+                            moneda: 'USD',
+                            confirmado: stockIni.comprobado,
+                            sin_valor: false,
+                          },
+                        ],
+                        motivo: 'Stock inicial al dar de alta el producto',
+                        referencia: null,
+                      })
+                    } catch (e) {
+                      // El artículo ya existe: volver a «Guardar» lo crearía dos veces.
+                      setAvisoStock(
+                        `El producto quedó creado pero sin stock (${e instanceof Error ? e.message : 'error'}). Cárgale la cantidad con «Movimiento › Entrada».`,
+                      )
+                      return
+                    }
+                  }
                   onCerrar()
                 }}
               >
@@ -1155,6 +1208,55 @@ export function ModalArticuloNuevo({ onCerrar }: { onCerrar: () => void }) {
                 onChange={(e) => setForm({ ...form, numero_parte: e.target.value })}
               />
             </div>
+
+            {!form.id ? <CamposFichaMgg className="sm:col-span-2" valor={ficha} onCambio={setFicha} /> : null}
+
+            {!form.id ? (
+              <div className="sm:col-span-2">
+                <div className="text-ink/55 mb-2 text-xs font-semibold tracking-wide uppercase">Stock inicial</div>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <Select
+                    label="Almacén"
+                    vacio="Elegir…"
+                    value={stockIni.almacen}
+                    onChange={(e) => setStockIni({ ...stockIni, almacen: e.target.value, comprobado: false })}
+                    opciones={(almacenesStock ?? []).map((a) => ({ valor: String(a.id), etiqueta: a.nombre }))}
+                  />
+                  <Input
+                    limite={{ maxDecimales: 4, sinNegativos: true }}
+                    label="¿Cuánto hay?"
+                    type="number"
+                    inputMode="decimal"
+                    placeholder="0"
+                    hint="Si no hay nada todavía, déjalo vacío."
+                    value={stockIni.cantidad}
+                    onChange={(e) => setStockIni({ ...stockIni, cantidad: e.target.value, comprobado: false })}
+                  />
+                  <Input
+                    limite={{ maxDecimales: 4, sinNegativos: true }}
+                    label={`Costo c/u (USD)${cantIni > 0 ? ' *' : ''}`}
+                    type="number"
+                    inputMode="decimal"
+                    placeholder={cantIni > 0 ? 'Obligatorio' : '0'}
+                    value={stockIni.costo}
+                    onChange={(e) => setStockIni({ ...stockIni, costo: e.target.value, comprobado: false })}
+                  />
+                </div>
+                {cantIni > 0 && costoIni > 0 ? (
+                  <label className="text-ink/70 mt-2 flex cursor-pointer items-center gap-2 text-xs">
+                    <input
+                      type="checkbox"
+                      className="accent-royal-600 size-4"
+                      checked={stockIni.comprobado}
+                      onChange={(e) => setStockIni({ ...stockIni, comprobado: e.target.checked })}
+                    />
+                    Comprobé el costo: {cantIni} {form.unidad || ''} a {costoIni} USD c/u. Es la referencia de lo que
+                    entre después.
+                  </label>
+                ) : null}
+                {avisoStock ? <p className="text-danger mt-2 text-sm">{avisoStock}</p> : null}
+              </div>
+            ) : null}
 
             {/* Lo que faltaba: el formulario no decía si esto se le puede
                 entregar a alguien, y por eso Asignaciones ofrecía gasolina
