@@ -29,6 +29,12 @@ import { porcentaje } from '@/lib/antiguedadDeDeuda'
   fecha de vencimiento, solo que queden en status pendiente por cobrar». Fuera
   la cartera vencida/al día, la antigüedad, el vencimiento más antiguo y el
   indicador de mora: cada nota está «Por cobrar» hasta que se cobra.
+
+  11/11/2026: UN SOLO CLIENTE. «Una opción para un informe PDF de la cuenta
+  por cobrar de los clientes por individual». Con `unCliente` el papel es un
+  estado de cuenta: el cliente en la tarjeta de control y en una ficha propia,
+  sin las tarjetas ni la tabla «por cliente» —con uno solo no comparan nada—,
+  y el detalle de sus notas.
 */
 
 type Doc = InstanceType<typeof import('jspdf').jsPDF>
@@ -66,6 +72,8 @@ export interface DatosReporteClientesPorCobrar {
   empresa: EmpresaPapel
   emitidoPor: string
   momento: Date
+  /** Estado de cuenta de un solo cliente (el de `clientes[0]`). */
+  unCliente?: boolean
 }
 
 // ── Geometría A4 ejecutiva (16 mm de margen, 178 mm útiles), como el reporte de notas de entrega.
@@ -163,11 +171,19 @@ function cabecera(doc: Doc, logo: string, d: DatosReporteClientesPorCobrar, nota
   }
   bajo = Math.max(bajo, y + LADO - 1)
 
-  const filas: Array<[string, string, boolean]> = [
-    ['CORTE AL', fechaLarga(d.momento), false],
-    ['EMITIDO POR', d.emitidoPor || 'Sistema', false],
-    ['REGISTROS', `${plural(d.clientes.length, 'cliente', 'clientes')} · ${plural(notas, 'nota', 'notas')}`, true],
-  ]
+  const uno = d.unCliente === true && d.clientes.length === 1
+  const filas: Array<[string, string, boolean]> = uno
+    ? [
+        ['CLIENTE', d.clientes[0].cliente, true],
+        ['CORTE AL', fechaLarga(d.momento), false],
+        ['EMITIDO POR', d.emitidoPor || 'Sistema', false],
+        ['REGISTROS', plural(notas, 'nota', 'notas'), false],
+      ]
+    : [
+        ['CORTE AL', fechaLarga(d.momento), false],
+        ['EMITIDO POR', d.emitidoPor || 'Sistema', false],
+        ['REGISTROS', `${plural(d.clientes.length, 'cliente', 'clientes')} · ${plural(notas, 'nota', 'notas')}`, true],
+      ]
   const CAB = 6.8
   const FILA = 5.4
   const alto = CAB + filas.length * FILA + 2.4
@@ -176,7 +192,7 @@ function cabecera(doc: Doc, logo: string, d: DatosReporteClientesPorCobrar, nota
   doc.roundedRect(xCaja, yc, ANCHO_CAJA, alto, 1.4, 1.4, 'FD')
   doc.setFillColor(MARCA).rect(xCaja, yc, ANCHO_CAJA, CAB, 'F')
   doc.setTextColor('#FFFFFF')
-  enUnaLinea(doc, 'CLIENTES CON CUENTAS POR COBRAR', xCaja + ANCHO_CAJA / 2, yc + 4.7, ANCHO_CAJA - 4, 8, 'bold', 'center')
+  enUnaLinea(doc, uno ? 'ESTADO DE CUENTA POR COBRAR' : 'CLIENTES CON CUENTAS POR COBRAR', xCaja + ANCHO_CAJA / 2, yc + 4.7, ANCHO_CAJA - 4, 8, 'bold', 'center')
   let yf = yc + CAB + 4.2
   filas.forEach(([et, val, destacado], i) => {
     if (i > 0) {
@@ -201,7 +217,12 @@ function cabeceraCorta(doc: Doc, logo: string, d: DatosReporteClientesPorCobrar)
   if (logo) doc.addImage(logo, 'PNG', IZQ, ARRIBA - 1, LADO, LADO)
   const x = logo ? IZQ + LADO + 3.5 : IZQ
   doc.setFont('helvetica', 'bold').setFontSize(9.5).setTextColor(MARCA)
-  doc.text('CLIENTES CON CUENTAS POR COBRAR', x, ARRIBA + 3.8)
+  const uno = d.unCliente === true && d.clientes.length === 1
+  doc.text(
+    uno ? ajustar(doc, `ESTADO DE CUENTA · ${d.clientes[0].cliente}`, 110) : 'CLIENTES CON CUENTAS POR COBRAR',
+    x,
+    ARRIBA + 3.8,
+  )
   doc.setFont('helvetica', 'bold').setFontSize(7.4).setTextColor(ROTULO)
   doc.text(ajustar(doc, (d.empresa.razonSocial || '').toUpperCase(), 100), x, ARRIBA + 8)
   doc.setFont('helvetica', 'normal').setFontSize(7.4).setTextColor(GRIS)
@@ -280,7 +301,8 @@ export async function armarReporteClientesPorCobrar(d: DatosReporteClientesPorCo
   const { jsPDF } = await import('jspdf')
   const logo = d.conLogo ? await logoComoImagen(600, false) : ''
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
-  const titulo = 'Clientes con cuentas por cobrar'
+  const uno = d.unCliente === true && d.clientes.length === 1
+  const titulo = uno ? `Estado de cuenta por cobrar · ${d.clientes[0].cliente}` : 'Clientes con cuentas por cobrar'
 
   const todas = d.clientes.flatMap((c) => c.notas)
   const usd = d.clientes.reduce((s, c) => s + c.usd, 0)
@@ -313,12 +335,34 @@ export async function armarReporteClientesPorCobrar(d: DatosReporteClientesPorCo
     doc.setTextColor('#111111')
     enUnaLinea(doc, String(todas.length), DER - 4, y + 13, 50, 14, 'bold', 'right')
     doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(GRIS)
-    doc.text(plural(d.clientes.length, 'cliente', 'clientes'), DER - 4, y + 18.5, { align: 'right' })
+    if (!uno) doc.text(plural(d.clientes.length, 'cliente', 'clientes'), DER - 4, y + 18.5, { align: 'right' })
     y += ALTO + 4
   }
 
+  // ── Un solo cliente: su ficha, en vez de las tarjetas y la tabla por cliente
+  if (uno) {
+    const c = d.clientes[0]
+    const H = 19
+    doc.setFillColor('#ffffff').setDrawColor('#d6d3d1').setLineWidth(0.28)
+    doc.roundedRect(IZQ, y, ANCHO, H, 1.3, 1.3, 'FD')
+    doc.setFillColor(ROTULO).rect(IZQ, y, 2, H, 'F')
+    doc.setFont('helvetica', 'bold').setFontSize(6.8).setTextColor(ROTULO)
+    doc.text('CLIENTE', IZQ + 4.5, y + 4.8)
+    doc.setTextColor('#1c1917')
+    enUnaLinea(doc, c.cliente, IZQ + 4.5, y + 11, ANCHO - 70, 11, 'bold', 'left', 8)
+    if (c.rif) {
+      doc.setFont('helvetica', 'normal').setFontSize(7.4).setTextColor(GRIS)
+      doc.text(`RIF ${documento(c.rif)}`, IZQ + 4.5, y + 15.8)
+    }
+    doc.setFont('helvetica', 'bold').setFontSize(7.4).setTextColor(TINTA)
+    doc.text(plural(c.notas.length, 'nota por cobrar', 'notas por cobrar'), DER - 4, y + 9.5, { align: 'right' })
+    doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(GRIS)
+    doc.text(`${dinero('USD', c.usd)} · ${dinero('VES', c.bs)}`, DER - 4, y + 14.5, { align: 'right' })
+    y += H + 6
+  }
+
   // ── Dos tarjetas (sin cartera vencida ni antigüedad desde el 11/11/2026)
-  {
+  if (!uno) {
     const GAP = 4
     const w = (ANCHO - GAP) / 2
     const H = 25
@@ -361,7 +405,8 @@ export async function armarReporteClientesPorCobrar(d: DatosReporteClientesPorCo
     y += H + 6
   }
 
-  // ── Deuda por cliente
+  // ── Deuda por cliente (con uno solo no compara nada: no sale)
+  if (!uno) {
   y = tituloSeccion(doc, y, 'Saldo por cliente', 'Ordenado de mayor a menor saldo')
   let yInicio = y
   y = cabeceraTablaClientes(doc, y)
@@ -413,11 +458,12 @@ export async function armarReporteClientesPorCobrar(d: DatosReporteClientesPorCo
     y += H
   })
   cerrarTabla(y)
+  }
 
   // Banda de totales
   {
     const filas: Array<[string, string, string]> = [
-      [`TOTAL POR COBRAR (${plural(d.clientes.length, 'CLIENTE', 'CLIENTES')} · ${plural(todas.length, 'NOTA', 'NOTAS')})`, `${dinero('VES', bs)}   ·   ${dinero('USD', usd)}`, MARCA],
+      [uno ? `TOTAL POR COBRAR (${plural(todas.length, 'NOTA', 'NOTAS')})` : `TOTAL POR COBRAR (${plural(d.clientes.length, 'CLIENTE', 'CLIENTES')} · ${plural(todas.length, 'NOTA', 'NOTAS')})`, `${dinero('VES', bs)}   ·   ${dinero('USD', usd)}`, MARCA],
     ]
     const H = 2.6 + filas.length * 5.6
     if (y + H > LIMITE) y = nuevaHoja()
@@ -444,7 +490,7 @@ export async function armarReporteClientesPorCobrar(d: DatosReporteClientesPorCo
   if (d.conDetalle && d.clientes.length > 0) {
     if (y + 40 > LIMITE) y = nuevaHoja()
     else y += 2
-    y = tituloSeccion(doc, y, 'Detalle de notas por cliente', 'Notas pendientes por cobrar')
+    y = tituloSeccion(doc, y, uno ? 'Detalle de notas' : 'Detalle de notas por cliente', 'Notas pendientes por cobrar')
 
     for (const c of d.clientes) {
       // Que la franja del cliente no quede sola al pie de la hoja.
