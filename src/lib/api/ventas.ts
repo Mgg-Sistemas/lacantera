@@ -1005,6 +1005,17 @@ export function useEditarNotaEntrega() {
   )
 }
 
+/**
+ * El precio de los renglones de una nota que respalda una salida (11/11/2026).
+ * Solo el precio: el material y la cantidad son los que descontó la salida, y
+ * el inventario no se toca. Solo ADMIN, con motivo.
+ */
+export function useCambiarPreciosNotaDeSalida() {
+  return useAccionVentas((a: { id: number; motivo: string; precios: Array<{ renglon_id: number; precio: number }> }) =>
+    rpc<void>('cambiar_precios_nota_de_salida', { p_id: a.id, p_precios: a.precios, p_motivo: a.motivo }),
+  )
+}
+
 // ---------------------------------------------------------------------------
 // El desglose del informe de despachos
 // ---------------------------------------------------------------------------

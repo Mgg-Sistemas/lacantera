@@ -3357,6 +3357,8 @@ Pulse en la fila. El título es el número, y el subtítulo dice el cliente, la 
 
 **Editar** abre **Editar NE-2026-0007**, con el aviso **Solo un administrador ve este botón. Cada cambio queda en la bitácora con el motivo.** Se corrigen el cliente, la moneda, el patio, la fecha, el vehículo, el chofer, los pesos, el flete, el descuento, la observación y los renglones, y hace falta el **Motivo**. Una nota que respalda una salida no deja editar sus renglones: son los que esa salida descontó del patio.
 
+**Una nota que respalda una salida** *(11/11/2026)* también se edita, salvo sus renglones: el material y la cantidad son los que esa salida descontó del patio y no cambian. Lo que sí se cambia es el **precio** de cada renglón, en el recuadro que reemplaza a la tabla de renglones; el total en Bs y en $ se recalcula solo y **el inventario no se toca**. Se guarda con **Guardar los cambios**, con el mismo motivo, y queda en la auditoría. No se puede en una nota anulada ni en una ya facturada.
+
 Dentro de **Editar** hay además, aparte del resto del formulario, un recuadro **Cuenta por cobrar**: enseña si la nota ya está pendiente por cobrar o cobrada, y según el caso un botón para **Marcar pendiente por cobrar** (sin fecha de pago desde el 11/11/2026) o **Marcar como cobrada**. Es el mismo recordatorio del apartado 10.10, puesto también aquí por comodidad: no toca el papel ni pide motivo, así que no hace falta pulsar **Guardar los cambios** para que quede.
 
 #### Anular

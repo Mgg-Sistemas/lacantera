@@ -11,6 +11,7 @@ import type { PrecioVenta } from '@/lib/api/ventas'
 import { aRenglones, filaVacia, type FilaRenglon } from '@/pages/ventas/filas'
 import { Renglones } from '@/pages/ventas/Renglones'
 import {
+  useCambiarPreciosNotaDeSalida,
   useEditarNotaEntrega,
   useMarcarNotaCobrada,
   useMarcarNotaPendientePorCobrar,
@@ -31,8 +32,12 @@ import {
 
   LA QUE RESPALDA UNA SALIDA NO EDITA SUS RENGLONES AQUÍ. Ver el comentario de
   `editar_nota_entrega` en la migración: esos renglones cuelgan del asiento de
-  la salida, no de uno propio, y tocarlos por aquí perdería ese enlace. Para
-  esas notas el bloque de renglones no se enseña.
+  la salida, no de uno propio, y tocarlos por aquí perdería ese enlace.
+
+  PERO SÍ SU PRECIO (11/11/2026): «editables, para poder cambiar el monto».
+  Material y cantidad quedan fijos —son los que descontó la salida— y el
+  precio de cada renglón se cambia con `cambiar_precios_nota_de_salida`, que
+  no toca el inventario. Se guarda junto con el resto, con el mismo motivo.
 */
 
 export function ModalEditarNotaEntrega({
@@ -57,6 +62,7 @@ export function ModalEditarNotaEntrega({
   existenciasDePatio: (almacenId: string) => Record<number, number> | undefined
 }) {
   const editar = useEditarNotaEntrega()
+  const cambiarPrecios = useCambiarPreciosNotaDeSalida()
   const marcarCobrada = useMarcarNotaCobrada()
   const marcarPendiente = useMarcarNotaPendientePorCobrar()
   const editaRenglones = nota.nota_salida === null
@@ -93,8 +99,19 @@ export function ModalEditarNotaEntrega({
       : [filaVacia()],
   )
 
+  // Los precios de una nota que respalda una salida, renglón por renglón.
+  const [preciosSalida, setPreciosSalida] = useState<Record<number, string>>(() =>
+    Object.fromEntries(renglones.map((r) => [r.id, String(Number(r.precio_unitario))])),
+  )
+  const preciosCambiados = editaRenglones
+    ? []
+    : renglones
+        .filter((r) => Number(preciosSalida[r.id]) !== Number(r.precio_unitario))
+        .map((r) => ({ renglon_id: r.id, precio: Number(preciosSalida[r.id]) }))
+  const precioInvalido = preciosCambiados.some((p) => !(p.precio > 0))
+
   const faltaAlgo =
-    !clienteId || !almacenId || !fecha || !moneda || motivo.trim().length < 4
+    !clienteId || !almacenId || !fecha || !moneda || motivo.trim().length < 4 || precioInvalido
 
   return (
     <Modal
@@ -109,7 +126,7 @@ export function ModalEditarNotaEntrega({
             Cancelar
           </Button>
           <Button
-            disabled={faltaAlgo || editar.isPending}
+            disabled={faltaAlgo || editar.isPending || cambiarPrecios.isPending}
             onClick={async () => {
               await editar.mutateAsync({
                 id: nota.id,
@@ -129,10 +146,13 @@ export function ModalEditarNotaEntrega({
                 observacion,
                 renglones: editaRenglones ? aRenglones(filas) : undefined,
               })
+              if (preciosCambiados.length > 0) {
+                await cambiarPrecios.mutateAsync({ id: nota.id, motivo, precios: preciosCambiados })
+              }
               onCerrar()
             }}
           >
-            {editar.isPending ? 'Guardando…' : 'Guardar los cambios'}
+            {editar.isPending || cambiarPrecios.isPending ? 'Guardando…' : 'Guardar los cambios'}
           </Button>
         </>
       }
@@ -292,10 +312,37 @@ export function ModalEditarNotaEntrega({
           />
         </div>
       ) : (
-        <p className="text-ink/55 bg-ink/4 rounded-card mt-4 p-3 text-xs">
-          Esta nota respalda la salida {nota.nota_salida}: sus renglones son los que esa salida
-          descontó del patio, y no se editan desde aquí.
-        </p>
+        <div className="border-hairline mt-4 rounded-[6px] border p-3">
+          <p className="text-ink/55 mb-3 text-xs">
+            Esta nota respalda la salida {nota.nota_salida}: el material y la cantidad son los que
+            esa salida descontó del patio y no cambian. El precio sí se puede cambiar; el
+            inventario no se toca.
+          </p>
+          <div className="space-y-3">
+            {renglones.map((r) => (
+              <div key={r.id} className="grid items-end gap-3 sm:grid-cols-[1fr_auto_160px]">
+                <div>
+                  <p className="text-ink/85 text-sm font-medium">{r.descripcion}</p>
+                  <p className="text-ink/50 text-xs">Renglón {r.linea}</p>
+                </div>
+                <p className="tabular text-ink/70 pb-2 text-sm">
+                  {Number(r.cantidad)} {r.unidad}
+                </p>
+                <Input
+                  label={`Precio (${moneda === 'VES' ? 'Bs' : moneda})`}
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  inputMode="decimal"
+                  limite={{ maxDecimales: 2, sinNegativos: true }}
+                  value={preciosSalida[r.id] ?? ''}
+                  onChange={(e) => setPreciosSalida((p) => ({ ...p, [r.id]: e.target.value }))}
+                />
+              </div>
+            ))}
+          </div>
+          {precioInvalido ? <p className="text-warning mt-2 text-xs">Cada precio tiene que ser mayor que cero.</p> : null}
+        </div>
       )}
 
       <div className="mt-4">
@@ -311,6 +358,7 @@ export function ModalEditarNotaEntrega({
       </div>
 
       {editar.error ? <ErrorDeCarga error={editar.error} className="mt-4" /> : null}
+      {cambiarPrecios.error ? <ErrorDeCarga error={cambiarPrecios.error} className="mt-4" /> : null}
     </Modal>
   )
 }
