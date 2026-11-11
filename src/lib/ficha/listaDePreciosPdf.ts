@@ -441,7 +441,7 @@ function panelDerechoPagoYCondiciones(
     ],
   ]
 
-  const altoCond = 8 + condiciones.length * 8.2 + 2
+  const altoCond = 8 + condiciones.length * 8.4 + 2.2
   if (yCond + altoCond <= ABAJO) {
     doc.setFillColor(FILA_ALTERNA).setDrawColor(BORDE_FUERTE).setLineWidth(0.3)
     doc.roundedRect(x, yCond, w, altoCond, 1.2, 1.2, 'FD')
@@ -450,32 +450,44 @@ function panelDerechoPagoYCondiciones(
     doc.text('CONDICIONES COMERCIALES Y DE DESPACHO', x + 3.8, yCond + 4.8)
     doc.setDrawColor(HAIRLINE).setLineWidth(0.25).line(x + 3.5, yCond + 6.4, x + w - 3.5, yCond + 6.4)
 
-    let yItem = yCond + 10.2
+    let yItem = yCond + 10.3
+    const xTexto = x + 6.8
+    const anchoTotal = w - 10.6
+
     for (const [titulo, texto] of condiciones) {
-      doc.setFont('helvetica', 'bold').setFontSize(7).setTextColor(MARCA)
-      doc.text('■', x + 3.8, yItem)
+      // Viñeta cuadrada vectorial (evita glifos fuera de WinAnsi en Helvetica)
+      doc.setFillColor(MARCA).rect(x + 3.8, yItem - 2.0, 1.6, 1.6, 'F')
 
+      // Título en negrita (una sola vez)
       doc.setFont('helvetica', 'bold').setFontSize(7).setTextColor(ROTULO)
-      doc.text(titulo, x + 7.2, yItem)
-      const wTit = doc.getTextWidth(titulo + ' ')
+      doc.text(titulo, xTexto, yItem)
+      const wTit = doc.getTextWidth(titulo) + 1.5
 
+      // Cuerpo en fuente normal: primera línea tras el título y segunda línea debajo
       doc.setFont('helvetica', 'normal').setFontSize(6.9).setTextColor(TINTA)
-      const lineas = doc.splitTextToSize(texto, w - 10.5 - wTit) as string[]
-      if (lineas.length === 1) {
-        doc.text(lineas[0], x + 7.2 + wTit, yItem)
-      } else {
-        const completo = `${titulo} ${texto}`
-        const envuelto = doc.splitTextToSize(completo, w - 11) as string[]
-        doc.setFont('helvetica', 'bold').setTextColor(ROTULO)
-        doc.text(titulo, x + 7.2, yItem)
-        const restoPrimera = envuelto[0].slice(titulo.length).trimStart()
-        doc.setFont('helvetica', 'normal').setTextColor(TINTA)
-        if (restoPrimera) doc.text(restoPrimera, x + 7.2 + wTit, yItem)
-        if (envuelto[1]) {
-          doc.text(recortar(doc, envuelto.slice(1).join(' '), w - 11), x + 7.2, yItem + 3.4)
+      const dispPrimera = Math.max(10, anchoTotal - wTit)
+      const palabras = texto.split(/\s+/)
+      let primera = ''
+      let idxPalabra = 0
+      while (idxPalabra < palabras.length) {
+        const candidata = primera ? `${primera} ${palabras[idxPalabra]}` : palabras[idxPalabra]
+        if (doc.getTextWidth(candidata) <= dispPrimera) {
+          primera = candidata
+          idxPalabra++
+        } else {
+          break
         }
       }
-      yItem += 8.2
+
+      if (primera) {
+        doc.text(primera, xTexto + wTit, yItem)
+      }
+      const resto = palabras.slice(idxPalabra).join(' ')
+      if (resto) {
+        doc.text(recortar(doc, resto, anchoTotal), xTexto, yItem + 3.5)
+      }
+
+      yItem += 8.4
     }
     return yCond + altoCond
   }
