@@ -162,7 +162,7 @@ export function useInformeGastosPorCategoria(desde: string | null, hasta: string
 }
 
 /** Qué es cada documento del informe de gastos y ventas. */
-export type TipoDeDocumentoDelInforme = 'GASTO' | 'GASTO_ANULADO' | 'VENTA' | 'POR_COBRAR' | 'COMPRA'
+export type TipoDeDocumentoDelInforme = 'GASTO' | 'GASTO_ANULADO' | 'VENTA' | 'POR_COBRAR' | 'COMPRA' | 'NOMINA'
 
 /**
  * Un documento del informe de gastos o del comparativo con las ventas
@@ -196,12 +196,15 @@ export async function traerInformeGastosYVentas(a: {
   hasta: string
   conVentas: boolean
   conCompras: boolean
+  /** Las nóminas aprobadas o pagadas, una línea por período (11/11/2026). */
+  conNomina: boolean
 }): Promise<DocumentoDelInforme[]> {
   const filas = await rpc<DocumentoDelInforme[]>('informe_gastos_y_ventas', {
     p_desde: a.desde,
     p_hasta: a.hasta,
     p_con_ventas: a.conVentas,
     p_con_compras: a.conCompras,
+    p_con_nomina: a.conNomina,
   })
   // Los numeric llegan como número o como texto según el tamaño: se fijan aquí.
   return (filas ?? []).map((f) => ({
