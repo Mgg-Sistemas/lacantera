@@ -3145,16 +3145,17 @@ Para quitar un precio, el botón **Quitar el precio por** esa unidad, en la mism
 
 #### El PDF de precios para el cliente (11/11/2026)
 
-El botón **PDF de precios**, arriba a la derecha, arma una **hoja horizontal** para enviar al cliente: el membrete de la empresa, **Vigente desde** con la fecha del día, y una tabla con **Producto**, **Unidad** y **Precio**. No lleva el código interno ni el precio mínimo, que son de la casa, y **los productos sin precio no salen**.
+El botón **PDF de precios**, arriba a la derecha, emite la **Lista Oficial de Precios** en formato ejecutivo A4 horizontal para entregar al cliente: incluye el membrete institucional completo de **MINERÍA INTERNACIONAL TS, C.A.** (logotipo, razón social, actividad, RIF, correo electrónico corporativo y ubicación), una tarjeta de control con la fecha de vigencia y cantidad de rubros, tres tarjetas ejecutivas superiores (*Datos institucionales del proveedor*, *Resumen de oferta comercial* y *Modalidad de facturación y pago*) y el catálogo numerado con **Ítem**, **Material / Producto**, **Unidad de medida** y **Precio unitario ($)**. No expone códigos internos ni precios mínimos, y **los productos sin precio no aparecen en el documento**.
 
-Antes de armarla, una ventana deja elegir:
+Antes de generarlo, la ventana permite configurar:
 
 | Opción | Qué hace |
 | --- | --- |
-| **Incluir los datos para el pago** | Pone a la derecha el recuadro **Datos para el pago**: banco, titular, RIF, número de cuenta y moneda de **cada cuenta bancaria activa de Tesorería**. Si la cuenta cambia en Tesorería, el papel cambia solo. Apagado, no queda hueco |
-| **Incluir logo institucional** | Con o sin el logotipo |
+| **Incluir datos bancarios y condiciones comerciales** | Muestra a la derecha el panel de **Datos bancarios para el pago** (titular, RIF, correo, banco, moneda y número de cuenta resaltado de cada cuenta activa de Tesorería) junto con el recuadro de **Condiciones comerciales y de despacho**. Si se desactiva, el catálogo ocupa el ancho completo de la hoja |
+| **Mostrar columna de equivalente en Bolívares (Tasa BCV)** | Añade a la tabla la columna **Equivalente Bs. (BCV)** calculada con la tasa oficial BCV vigente del día |
+| **Incluir logo institucional** | Emite el encabezado con o sin el logotipo de la empresa |
 
-Lo puede armar quien vea Ventas o Facturación, aunque no vea Tesorería: del banco solo se le entrega lo que se le da a un cliente para pagar. Si no hay ninguna cuenta bancaria activa, el sistema lo dice en lugar de sacar el recuadro vacío.
+Lo puede generar quien tenga permiso de lectura en Ventas o Facturación, aunque no tenga acceso a Tesorería: de las cuentas bancarias únicamente se consulta la información pública necesaria para recibir pagos. Si no existe ninguna cuenta bancaria activa, el sistema lo advierte en lugar de emitir el recuadro vacío.
 
 #### Qué no le deja el sistema
 
