@@ -153,6 +153,45 @@ export interface Articulo {
    */
   marca: string | null
   numero_parte: string | null
+  /*
+    LA FICHA DE MGG (la dueña, 11/11/2026: «trae la estructura de MGG»).
+    Dónde está en el almacén (estante, pila, pasillo), otro nombre con el que
+    se le busca, y lo que lo identifica. `restock_pct`: el umbral propio de
+    reabastecimiento, en % del mínimo; nulo sigue la política ABC.
+  */
+  ubicacion_fisica?: string | null
+  alias?: string | null
+  modelo?: string | null
+  fabricante?: string | null
+  color?: string | null
+  restock_pct?: string | null
+}
+
+/** Lo de la ficha de MGG que se guarda aparte de crear/editar el artículo. */
+export interface FichaMgg {
+  ubicacion_fisica?: string | null
+  alias?: string | null
+  modelo?: string | null
+  fabricante?: string | null
+  color?: string | null
+  restock_pct?: number | null
+}
+
+export function useGuardarFichaDeArticulo() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (a: FichaMgg & { id: number }) =>
+      rpc('guardar_ficha_de_articulo', {
+        p_id: a.id,
+        p_ubicacion_fisica: a.ubicacion_fisica || null,
+        p_alias: a.alias || null,
+        p_modelo: a.modelo || null,
+        p_fabricante: a.fabricante || null,
+        p_color: a.color || null,
+        p_restock_pct: a.restock_pct ?? null,
+      }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['articulos'] }),
+  })
 }
 
 /**

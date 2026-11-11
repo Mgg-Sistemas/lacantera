@@ -41,6 +41,7 @@ import {
 import type { SolicitudDeSalida } from '@/lib/api/salidas'
 import { ModalSalida } from './ModalSalida'
 import { ModalReporteSalida } from './ModalReporteSalida'
+import { ModalEditarSolicitud } from './ModalEditarSolicitud'
 import { textoSalidaAprobada, textoSalidaPedida, textoSalidaRechazada } from '@/lib/ficha/salidasWhatsapp'
 import { ModalWhatsappCompra } from '@/pages/compras/ModalWhatsappCompra'
 import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
@@ -136,6 +137,8 @@ export function Solicitudes() {
   const [ws, setWs] = useState<{ titulo: string; texto: string } | null>(null)
   const { data: datosEmpresa } = useEmpresa()
   const { data: yo } = useMiPerfil()
+  // «✎ Editar» de MGG (11/11/2026): antes de entregarla, quien la pidió o quien lleva Salidas.
+  const [editando, setEditando] = useState<SolicitudDeSalida | null>(null)
   const miNombre = yo?.nombre ?? '—'
   const [conMiFirma, setConMiFirma] = useState(true)
 
@@ -404,6 +407,17 @@ export function Solicitudes() {
             }}
           >
             Entregar material
+          </Button>
+        ) : null}
+
+        {ESPERAN.includes(s.estado) && (s.pedida_por === yo?.id || puedoSacar) ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            title={s.estado === 'APROBADA' ? 'Al guardar, vuelve a Por aprobar' : 'Cambiar materiales o el para qué'}
+            onClick={() => setEditando(s)}
+          >
+            ✎ Editar
           </Button>
         ) : null}
 
@@ -746,6 +760,8 @@ export function Solicitudes() {
       />
 
       {ws ? <ModalWhatsappCompra titulo={ws.titulo} texto={ws.texto} onCerrar={() => setWs(null)} /> : null}
+
+      {editando ? <ModalEditarSolicitud s={editando} onCerrar={() => setEditando(null)} /> : null}
 
       {cerrando ? (
         <Modal

@@ -1186,6 +1186,15 @@ En el menú, **Operación › Inventario** tiene tres entradas: **Inventario**, 
 
 **Cuando un artículo baja de su mínimo, el sistema avisa solo** en la campana, a almacén y a compras (3.3).
 
+**Desde el 11/11/2026 el inventario lleva solo los materiales de venta** (las arenas, las piedras, la coraza, el gavión, el polvillo y el filtro) y el combustible. Quedan el **Almacén General** (ahí recibe Compras), los patios, los tanques y **En camino** (el de los traslados). Lo demás se borró a pedido de la gerencia, con respaldo en la base.
+
+**Lo que se trajo de MGG ese día:**
+
+- **La ficha del producto** pide también la **ubicación física** (estante, pasillo o pila), un **alias** con el que se le busca, **modelo**, **fabricante**, **color** y un **umbral de reabastecimiento propio** en % del mínimo. Si no se pone, manda la clase ABC (A 120 %, B 100 %, C 80 %). La tabla lo marca con **★** y el buscador mira también el alias, el modelo y la ubicación.
+- **+ Nuevo producto** en la PC trae, como en el teléfono, el **stock inicial**: almacén, cuánto hay y el costo de cada uno.
+- **Subalmacenes:** al crear o editar un almacén, **Es sección de** lo cuelga de otro (una sección, un estante o una pila). La lista de Almacenes los enseña en árbol, con **↳**.
+- **✎ Editar** en Salidas y traslados (26.2): una solicitud se corrige antes de entregarla. Si ya estaba aprobada, vuelve a **Por aprobar**.
+
 ### 7.1 Quién entra y quién puede registrar
 
 Hay dos puertas distintas, y conviene no confundirlas.
