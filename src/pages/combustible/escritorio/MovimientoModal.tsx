@@ -11,6 +11,7 @@ import {
   useLecturaVigente,
   useLibroTanque,
   useMotivosDespacho,
+  usePersonasParaVale,
   useRegistrarEntradaCombustible,
   useRegistrarMerma,
   useRegistrarRetorno,
@@ -208,6 +209,26 @@ export function MovimientoModal({
   )
 
   const cat = (t: CatalogoCombustible['tipo']) => catalogos.filter((c) => c.tipo === t && c.activo)
+  /*
+    AUTORIZADO POR: LOS EMPLEADOS ACTIVOS DE NÓMINA (11/11/2026). Pedido: «que
+    salgan en Autorizado los empleados de nómina activa». Salen de
+    `personas_para_vale` —nombre y cargo, sin abrir la ficha ni el sueldo—, y
+    se suman los que se hayan cargado a mano en 🗂 Catálogos → Autorizados (sin
+    repetir un nombre que ya esté en la nómina).
+  */
+  const personas = usePersonasParaVale()
+  const opcionesAutorizado = (() => {
+    const deNomina = (personas.data ?? []).map((p) => ({
+      valor: p.nombre,
+      nombre: p.nombre,
+      detalle: p.cargo ?? undefined,
+    }))
+    const vistos = new Set(deNomina.map((o) => o.valor.toUpperCase()))
+    const aMano = cat('autorizado')
+      .filter((c) => !vistos.has(c.valor.toUpperCase()))
+      .map((c) => ({ valor: c.valor, nombre: c.valor, detalle: 'Catálogo de combustible' }))
+    return [...deNomina, ...aMano]
+  })()
   const opcionesEquipo = useMemo(
     () =>
       opcionesDeEquipo({
@@ -511,7 +532,7 @@ export function MovimientoModal({
           vacio="Elegí quién autorizó"
           valor={autorizado}
           onCambio={setAutorizado}
-          opciones={cat('autorizado').map((c) => ({ valor: c.valor, etiqueta: c.valor }))}
+          opciones={opcionesAutorizado}
         />
         <SelectBuscable
           label="Destino"
