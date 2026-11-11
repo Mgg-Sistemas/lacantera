@@ -68,6 +68,7 @@ export function ReportesDeGastos({
   const { puede } = useMisPermisos()
   const puedeComparar = puede('VENTAS', 'LECTURA') || puede('FACTURACION', 'LECTURA')
   const puedeCompras = puede('COMPRAS', 'LECTURA')
+  const puedeNomina = puede('NOMINA', 'LECTURA')
   const { data: empresa } = useEmpresa()
   const { data: yo } = useMiPerfil()
 
@@ -81,6 +82,11 @@ export function ReportesDeGastos({
   const [conDetalle, setConDetalle] = useState(false)
   const [conPorCobrar, setConPorCobrar] = useState(true)
   const [conCompras, setConCompras] = useState(false)
+  // La nómina del período (11/11/2026): encendida de entrada para quien ve
+  // Nómina. Se guarda si la apagó, porque los permisos llegan después del
+  // primer pintado y un useState(puedeNomina) se quedaría apagado.
+  const [sinNomina, setSinNomina] = useState(false)
+  const conNomina = puedeNomina && !sinNomina
   const [conAnuladas, setConAnuladas] = useState(false)
   const [conLogo, setConLogo] = useState(true)
 
@@ -115,14 +121,23 @@ export function ReportesDeGastos({
         hasta: rango.hasta,
         conVentas: comparativo,
         conCompras: comparativo && conCompras,
+        conNomina,
       })
-      const documentos = todos.filter((x) => {
-        if (x.tipo === 'GASTO' || x.tipo === 'GASTO_ANULADO') {
-          if (elegidas.length && !elegidas.includes(x.categoria ?? '')) return false
-          if (x.tipo === 'GASTO_ANULADO') return !comparativo && conAnuladas
-        }
-        return true
-      })
+      /*
+        La nómina entra a los papeles como un gasto más, en su categoría
+        «Nómina»: así suma en el total, en las categorías, en los períodos y en
+        el detalle sin un camino aparte. Las categorías elegidas filtran solo
+        las facturas; la nómina la manda su propio interruptor.
+      */
+      const documentos = todos
+        .filter((x) => {
+          if (x.tipo === 'GASTO' || x.tipo === 'GASTO_ANULADO') {
+            if (elegidas.length && !elegidas.includes(x.categoria ?? '')) return false
+            if (x.tipo === 'GASTO_ANULADO') return !comparativo && conAnuladas
+          }
+          return true
+        })
+        .map((x) => (x.tipo === 'NOMINA' ? { ...x, tipo: 'GASTO' as const } : x))
 
       const hayAlgo = comparativo
         ? documentos.some((x) => x.tipo === 'VENTA' || x.tipo === 'GASTO' || x.tipo === 'COMPRA')
@@ -136,10 +151,12 @@ export function ReportesDeGastos({
         return
       }
 
+      const hayNomina = todos.some((x) => x.tipo === 'NOMINA')
       const nombresCategorias = elegidas.length
         ? categorias
             .filter((c) => elegidas.includes(c.codigo))
             .map((c) => c.nombre)
+            .concat(hayNomina ? ['Nómina'] : [])
             .join(', ')
         : 'Todas'
       let nombre = `${comparativo ? 'gastos-vs-ventas' : 'informe-de-gastos'}-${rango.desde}-al-${rango.hasta}`
@@ -346,6 +363,17 @@ export function ReportesDeGastos({
         </div>
 
         <div className="mt-5 space-y-3">
+          <Interruptor
+            encendido={conNomina}
+            onCambio={(v) => setSinNomina(!v)}
+            deshabilitado={!puedeNomina}
+            etiqueta="Incluir la nómina"
+            detalle={
+              puedeNomina
+                ? 'Suma cada nómina aprobada o pagada como gasto, en la categoría «Nómina»: lo asignado más los aportes, en el mes en que termina su período (la quincena del 16 al 31 cuenta en ese mes aunque se pague después).'
+                : 'Requiere permiso de lectura en el módulo Nómina.'
+            }
+          />
           {que === 'COMPARATIVO' ? (
             <>
               <Interruptor

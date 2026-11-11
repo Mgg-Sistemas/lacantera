@@ -7719,6 +7719,7 @@ Gastos es la bitácora de las facturas físicas que paga la empresa fuera de una
 | **Anular** una factura | Gastos en total |
 | El reporte **Gastos vs. ventas** | Gastos en lectura y, además, Ventas o Facturación en lectura |
 | Sumar las **órdenes de Compras pagadas** al comparativo | Además, Compras en lectura |
+| Sumar la **nómina** a los reportes PDF | Además, Nómina en lectura |
 
 **Una factura no se corrige: se anula** con su motivo y queda a la vista, tachada. Las anuladas no salen en el historial salvo que se marque **Mostrar anuladas**, y nunca suman en los informes.
 
@@ -7741,6 +7742,7 @@ Las opciones:
 | **Montos en** | Dólares, bolívares, o ambos |
 | **Categorías de gasto** | Todas, o las seleccionadas |
 | **Informar el saldo pendiente por cobrar** | Solo en el comparativo. Muestra en el recuadro principal las notas despachadas pendientes de cobro, sin sumarlas a los ingresos |
+| **Incluir la nómina** (11/11/2026) | En los dos informes. Suma cada nómina **aprobada o pagada** como un gasto más, en la categoría **Nómina**: una línea por período (no por trabajador, así no se ven sueldos), por **lo asignado más los aportes patronales**, en bolívares y a la tasa de la propia nómina. Cuenta en el mes en que **termina** su período: la quincena del 16 al 31 de octubre va a octubre aunque se haya pagado en noviembre. Las nóminas en borrador, calculadas sin aprobar o anuladas no salen. Viene encendido para quien ve Nómina; quien no la ve lo encuentra apagado. Las categorías elegidas arriba filtran solo las facturas |
 | **Incluir las órdenes de Compras pagadas** | Solo en el comparativo. Consolida las órdenes del módulo Compras, según su fecha de pago, en una columna adicional. Viene desactivado |
 | **Incluir relación de facturas anuladas** | Solo en el informe de gastos. Lista aparte las facturas anuladas con su motivo, sin sumarlas |
 | **Incluir logo institucional** | Emite el encabezado con o sin el logotipo de la empresa |
