@@ -3151,7 +3151,7 @@ Antes de generarlo, la ventana permite configurar:
 
 | Opción | Qué hace |
 | --- | --- |
-| **Incluir datos bancarios y condiciones comerciales** | Muestra a la derecha el panel de **Datos bancarios para el pago** (titular, RIF, banco, moneda y número de cuenta resaltado de cada cuenta activa de Tesorería) junto con el recuadro de **Condiciones comerciales y de despacho**. Si se desactiva, el catálogo ocupa el ancho completo de la hoja |
+| **Incluir datos bancarios y condiciones comerciales** | Muestra a la derecha el panel de **Datos bancarios para el pago** (titular, RIF, banco y número de cuenta resaltado de cada cuenta activa de Tesorería) junto con el recuadro de **Condiciones comerciales y de despacho**. Si se desactiva, el catálogo ocupa el ancho completo de la hoja |
 | **Mostrar columna de equivalente en Bolívares (Tasa BCV)** | Añade a la tabla la columna **Equivalente Bs. (BCV)** calculada con la tasa oficial BCV vigente del día |
 | **Incluir logo institucional** | Emite el encabezado con o sin el logotipo de la empresa |
 

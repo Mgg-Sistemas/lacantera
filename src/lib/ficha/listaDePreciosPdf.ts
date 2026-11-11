@@ -58,9 +58,6 @@ const BORDE_FUERTE = '#d6cfc9'
 const FONDO_PIE_TABLA = '#f3ede8'
 const FONDO_CUENTA = '#fdf3f1'
 const BORDE_CUENTA = '#e6b8af'
-const VERDE_FONDO = '#dcfce7'
-const VERDE_TEXTO = '#166534'
-const VERDE_BORDE = '#86efac'
 
 const fmtTasa = new Intl.NumberFormat('es-VE', {
   minimumFractionDigits: 4,
@@ -362,20 +359,9 @@ function panelDerechoPagoYCondiciones(
     }
 
     const banco = bancoLegible(c.banco ?? '—')
-    const etqMoneda =
-      c.moneda === 'VES' ? 'BOLÍVARES (Bs)' : c.moneda === 'USD' ? 'DÓLARES ($)' : c.moneda
 
     doc.setFont('helvetica', 'bold').setFontSize(8.6).setTextColor(TINTA)
-    doc.text(recortar(doc, banco, w - 34), x + 3.8, yc + 3.5)
-
-    // Pastilla de moneda
-    doc.setFont('helvetica', 'bold').setFontSize(6.4)
-    const wPast = doc.getTextWidth(etqMoneda) + 4.4
-    const xPast = x + w - 3.8 - wPast
-    doc.setFillColor(VERDE_FONDO).setDrawColor(VERDE_BORDE).setLineWidth(0.25)
-    doc.roundedRect(xPast, yc + 0.3, wPast, 4.4, 0.9, 0.9, 'FD')
-    doc.setTextColor(VERDE_TEXTO)
-    doc.text(etqMoneda, xPast + wPast / 2, yc + 3.3, { align: 'center' })
+    doc.text(recortar(doc, banco, w - 7.6), x + 3.8, yc + 3.5)
 
     // Recuadro resaltado para el número de cuenta
     const yNum = yc + 6.1
