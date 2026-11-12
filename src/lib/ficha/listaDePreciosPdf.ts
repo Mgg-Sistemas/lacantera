@@ -106,8 +106,6 @@ function cabecera(
   logo: string,
   d: DatosListaDePrecios,
   cantidadProductos: number,
-  mostrarBs: boolean,
-  tasaNum: number | null,
 ): number {
   const y = 12
   const LADO = 20
@@ -145,14 +143,14 @@ function cabecera(
   doc.text('LISTA OFICIAL DE PRECIOS', xr + W / 2, y + 4.9, { align: 'center' })
 
   const rubrosTxt = `${cantidadProductos} ${cantidadProductos === 1 ? 'material comercializable' : 'materiales comercializables'}`
-  const monedaTxt =
-    mostrarBs && tasaNum
-      ? `USD y Bs. (Tasa Bs ${fmtTasa.format(tasaNum)})`
-      : 'Dólares (USD) · Ref. BCV'
+  const primeroDelMes = new Date(d.momento.getFullYear(), d.momento.getMonth(), 1).toLocaleDateString(
+    'es-VE',
+    { day: 'numeric', month: 'long', year: 'numeric' },
+  )
 
-  const filasControl: Array<{ etq: string; val: string }> = [
+  const filasControl: Array<{ etq: string; val: string; destacado?: boolean }> = [
+    { etq: 'VIGENTE DESDE', val: primeroDelMes, destacado: true },
     { etq: 'RUBROS EN CATÁLOGO', val: rubrosTxt },
-    { etq: 'MONEDA DE COTIZACIÓN', val: monedaTxt },
     { etq: 'FECHA DE EMISIÓN', val: fechaLarga(d.momento) },
   ]
 
@@ -160,7 +158,7 @@ function cabecera(
   for (const f of filasControl) {
     doc.setFont('helvetica', 'bold').setFontSize(6.8).setTextColor(GRIS)
     doc.text(f.etq, xr + 3.5, yc)
-    doc.setFont('helvetica', 'bold').setFontSize(7.6).setTextColor(TINTA)
+    doc.setFont('helvetica', 'bold').setFontSize(7.6).setTextColor(f.destacado ? MARCA : TINTA)
     doc.text(recortar(doc, f.val, W - 40), xr + W - 3.5, yc, { align: 'right' })
     yc += 4.6
   }
@@ -482,7 +480,7 @@ export async function armarListaDePrecios(d: DatosListaDePrecios): Promise<Archi
   const tasaNum = d.tasaBcv && Number(d.tasaBcv) > 0 ? Number(d.tasaBcv) : null
   const mostrarBs = Boolean(d.conEquivalenteBs && tasaNum)
 
-  let y = cabecera(doc, logo, d, filas.length, mostrarBs, tasaNum)
+  let y = cabecera(doc, logo, d, filas.length)
   y = franjaEjecutiva(doc, y, d, filas, mostrarBs, tasaNum)
 
   const W_PAGO = 98
