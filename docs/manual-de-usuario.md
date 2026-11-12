@@ -6794,6 +6794,8 @@ El botón **Despachar** está apagado mientras falte algo de lo obligatorio, el 
 
 **Sin máquina no hay consumo por hora.** La ayuda lo dice: **Sin máquina no hay consumo por hora: solo cuenta para el gasto.** Con máquina, el horómetro queda anotado en el vale y es lo que permite comparar dos equipos o notar que uno empezó a beber más de la cuenta.
 
+**En la lista de equipos solo salen las máquinas operativas** (estado **Activa** en Maquinaria) desde el 12/11/2026, en la computadora y en el teléfono. Una máquina fuera de servicio no aparece para surtir; al corregir un movimiento viejo, el equipo que ya tenía se conserva aunque hoy esté fuera de servicio.
+
 **Desde el 12/11/2026 el horómetro y el kilometraje son opcionales** al surtir, en la computadora (**Nuevo movimiento de tanque**, sección **Medidores del equipo (opcional)**) y en el teléfono, porque todavía no se lleva el control por horómetro. Si se escriben, se siguen revisando: **no pueden retroceder** respecto de la última lectura del equipo. Sin horómetro, ese surtido no suma horas al mantenimiento ni da consumo por hora.
 
 **Un horómetro no retrocede.** Si la lectura es menor que la última, la ayuda lo dice antes de guardar: **Un horómetro no retrocede: lo último anotado marcaba 1250.** **Y el contador es uno solo, aunque se apunte en dos sitios**: el sistema compara con la lectura más alta anotada hasta la fecha del vale, venga del vale o del parte diario. El aviso de antes de guardar solo mira los vales: una lectura puede pasar el aviso y no guardarse, y entonces el mensaje dice con qué lectura choca.
