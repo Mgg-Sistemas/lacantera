@@ -7782,3 +7782,32 @@ Las opciones:
 | **Gastos vs. ventas** apagado, con «Hace falta acceso a Ventas o a Facturación» | Su usuario no ve las ventas | Pida el permiso a la administración, o use el **Informe de gastos** |
 | «No hay ventas ni gastos en ese período con esas opciones.» | El rango o las categorías elegidas dejan el papel vacío | Amplíe el período o vuelva a **Todas** las categorías |
 | «La fecha final no puede ser anterior a la inicial.» | Las fechas están al revés | Corrija el rango |
+
+### 27.4 Pendiente por pagar (12/11/2026)
+
+**Gastos › Pendiente por pagar** es la hoja «Cuentas pendientes por pagar» dentro del sistema: las facturas o servicios que se deben y que **no vienen de una orden de compra** (esas se pagan en **Compras › Pagos por hacer**). Ejemplos: viajes de acarreo de una semana, repuestos que aún no entregan factura, dinero para tener en resguardo. No mueve ninguna cuenta de Tesorería.
+
+**Quién hace qué.** Solo las personas de la lista del módulo registran, abonan, corrigen y anulan. La lista se ve arriba de la pantalla. Todos los demás que entran a Gastos —**también los administradores**— solo pueden ver: no les salen los botones, y si lo intentaran por otra vía el sistema lo rechaza con el mensaje «Las cuentas por pagar solo las registran y modifican quienes las llevan». Un administrador puede cambiar la lista con **Cambiar quién las lleva**; nadie se borra, se quita y queda anotado quién lo hizo.
+
+**Bolívares y dólares, uno al lado del otro.** Cada cuenta se escribe en **una** moneda (Bs o $) y ese monto **no cambia nunca**: es el que va en negrita. Al lado sale el mismo monto en la otra moneda **a la tasa BCV de hoy**, cuya fecha se ve en la tarjeta **Tasa BCV**. Así, una deuda en dólares dice cuántos bolívares cuesta pagarla hoy. Si hoy no hay tasa publicada se usa la última y se avisa; si no hay ninguna, sale «sin tasa» en vez de un número inventado.
+
+Arriba, cuatro tarjetas: **Se debe hoy en $**, **Se debe hoy en Bs** (todo lo pendiente llevado a cada moneda), **Cuentas por pagar** (con cuántas tienen abonos y cuántas están vencidas) y la **Tasa BCV** usada. Debajo se dice además cuánto se debe en cada moneda tal como se escribió, sin convertir.
+
+**Registrar una cuenta.** Botón **Nueva cuenta**: a quién se le debe (proveedor o concepto), descripción, monto y moneda, fecha, vencimiento si tiene, y el número de factura o la casilla **Aún no entregan factura**. Si ya hay otra cuenta del mismo proveedor con el mismo número de factura, avisa sin impedir guardar.
+
+**Abonar.** Botón **Abonar** en la fila (o en el detalle): fecha del pago, monto y moneda. **Pagar todo lo que falta** rellena el saldo. Si se paga en la otra moneda, el sistema lo convierte con la **tasa BCV del día del pago** y esa tasa queda fija en el abono. Antes de guardar dice cuánto descuenta y cuánto quedaría. No deja pagar de más.
+
+**El estado sale solo:** **Pendiente** (sin abonos), **Abonada** (con abonos y saldo), **Pagada** (saldo en cero; la fila se pinta de verde, como en la hoja de Excel) o **Anulada**.
+
+**Corregir y anular.** Tocando una fila se abre su detalle con todos los abonos. Mientras no tenga abonos, una cuenta se puede **Corregir** o **Anular** (con motivo). Con abonos ya no: si hubo un error, se anula primero el abono (**Anular abono**, con motivo) y el monto vuelve a quedar por pagar. Nada se borra: lo anulado queda a la vista, tachado, con quién y por qué.
+
+**Filtros.** **Mostrar**: por pagar (pendientes y abonadas, lo que sale al entrar), solo pendientes, abonadas, pagadas o todas. Además **Solo las que aún no entregan factura**, **Mostrar anuladas** y la búsqueda por proveedor, descripción o número. En el teléfono cada cuenta es una tarjeta con los dos montos y un botón **Abonar** grande.
+
+**El PDF.** Botón **PDF**: hoja horizontal con el mismo formato de la de Excel —logo, «CUENTAS PENDIENTES POR PAGAR», **Ítem**, **Factura / concepto**, **Descripción**, **Monto Bs**, **Monto $** y **Monto total**—. Cada monto es lo que falta por pagar; debajo del concepto se anotan los abonos («Abonó $960,00 el 21/10/2026»). Al pie dice la tasa BCV usada. Opciones: **Incluir las pagadas** (salen en verde y no suman al total) e **Incluir logo institucional**. Respeta la búsqueda y «solo sin factura» de la pantalla; las anuladas nunca salen.
+
+| Lo que ve | Qué significa | Qué hacer |
+|---|---|---|
+| No hay botón **Nueva cuenta** ni **Abonar** | Usted no está en la lista de quienes llevan estas cuentas | Si debe llevarlas, pídale a un administrador que lo agregue |
+| «El abono pasa de lo que se debe: el saldo es …» | Se intentó pagar más de lo que falta | Abone el saldo, o use **Pagar todo lo que falta** |
+| «No hay tasa BCV para el … con que convertir el abono.» | Se abona en la otra moneda y ese día no tiene tasa | Registre la tasa en **Tasas de cambio**, o abone en la moneda de la deuda |
+| «Esa cuenta ya tiene abonos: no se corrige.» | La cuenta tiene pagos | Anule primero el abono equivocado |
