@@ -378,6 +378,8 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
     'contactos directorio agenda telefono celular whatsapp correo email empresa persona cargo direccion etiqueta cliente proveedor prospecto socio importar exportar excel vcard duplicados',
   '/app/costos':
     'caja costo por m3 metro cubico fondo entregado deuda casa matriz socio gastos fijos cerrar caja tasa referencial precio',
+  '/app/gastos/por-pagar':
+    'pendiente por pagar cuentas por pagar deuda deudas debemos abono abonar pagar factura servicio proveedor bolivares dolares tasa saldo',
 }
 
 /** El módulo al que pertenece una ruta. El panel es la raíz. */
@@ -858,6 +860,9 @@ export const navigation: NavSection[] = [
         icon: Wallet,
         children: [
           { label: 'Historial de gastos', to: '/app/gastos' },
+          // Las cuentas por pagar (12/11/2026): las ve quien entra a Gastos;
+          // las escriben solo quienes están en su lista (ver la migración).
+          { label: 'Pendiente por pagar', to: '/app/gastos/por-pagar' },
           { label: 'Categorías', to: '/app/gastos/categorias' },
         ],
       },

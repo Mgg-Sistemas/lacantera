@@ -130,4 +130,109 @@ export default async function pruebaGastos(tx) {
         or x.monto <> (select coalesce(sum(coalesce(r.total_asignaciones, 0) + coalesce(r.total_aportes, 0)), 0)
                          from public.nomina_recibos r where r.periodo_id = p.id)`
   comprobar(descuadres === 0, 'cada nómina vale lo asignado más los aportes y cae el día en que termina su período')
+
+  /*
+    PENDIENTE POR PAGAR (12/11/2026). Lo que se rompería en silencio: que un
+    ADMIN que no está en la lista escriba (el ADMIN pasa por encima de la
+    matriz, y aquí justamente no debe), que quien no entra a Gastos vea las
+    deudas, que un abono en la otra moneda descuente mal, que se pague de más,
+    o que se corrija o anule una deuda con abonos encima.
+  */
+  grupo('Pendiente por pagar · quién escribe y quién solo mira')
+
+  await comoDueno(tx)
+  const adminFuera = await usuarioDePrueba(tx, {
+    usuario: 'prueba_cxp_admin',
+    nombre: 'Administrador que no lleva las cuentas',
+    roles: ['ADMIN'],
+  })
+  const llevador = await usuarioDePrueba(tx, {
+    usuario: 'prueba_cxp_lleva',
+    nombre: 'Quien lleva las cuentas',
+    roles: ['PRUEBA_GASTOS_SOLO'],
+  })
+  await tx`insert into public.gastos_por_pagar_controladores (usuario_id) values (${llevador})`
+  const hoy = (await tx`select (now() at time zone 'America/Caracas')::date::text as d`)[0].d
+  const tasaHoy = Number((await tx`select tasa from public.obtener_tasa('USD', 'VES', ${hoy}::date, 'BCV')`)[0]?.tasa ?? 0)
+
+  await como(tx, adminFuera)
+  const [{ controla }] = await tx`select public.controlo_cuentas_por_pagar() as controla`
+  comprobar(controla === false, 'un ADMIN fuera de la lista no lleva las cuentas')
+  const adminNo = await debeFallar(tx, (sp) =>
+    sp`select public.registrar_cuenta_por_pagar(${hoy}::date, 'PRUEBA', 'PRUEBA DE ADMIN', 'USD', 10)`)
+  comprobar(/solo las registran/i.test(adminNo ?? ''), 'un ADMIN fuera de la lista no registra, con un mensaje claro')
+  const directo = await debeFallar(tx, (sp) =>
+    sp`insert into public.gastos_por_pagar (numero, fecha, proveedor, descripcion, moneda, monto, registrado_por)
+       values ('X', ${hoy}::date, 'X', 'XXX', 'USD', 1, ${adminFuera})`)
+  comprobar(directo !== null, 'nadie escribe directo en la tabla, sin pasar por las funciones')
+
+  await comoDueno(tx)
+  await como(tx, llevador)
+  const [{ numero }] = await tx`
+    select public.registrar_cuenta_por_pagar(${hoy}::date, 'prueba proveedor', 'prueba de acarreo', 'USD', 960) as numero`
+  comprobar(/^CXP-\d{4}-\d{4}$/.test(numero), `quien lleva las cuentas registra, aunque su rol no sea ADMIN (${numero})`)
+  const [cuenta] = await tx`select id, proveedor, estado from public.v_gastos_por_pagar where numero = ${numero}`
+  comprobar(cuenta?.estado === 'PENDIENTE' && cuenta.proveedor === 'PRUEBA PROVEEDOR', 'nace pendiente, en mayúsculas')
+
+  await comoDueno(tx)
+  await como(tx, adminFuera)
+  const [{ ve }] = await tx`select count(*)::int as ve from public.v_gastos_por_pagar where numero = ${numero}`
+  comprobar(ve === 1, 'el ADMIN fuera de la lista sí la ve')
+  const abonoAjeno = await debeFallar(tx, (sp) =>
+    sp`select public.abonar_cuenta_por_pagar(${cuenta.id}, ${hoy}::date, 'USD', 1)`)
+  comprobar(abonoAjeno !== null, 'el ADMIN fuera de la lista no abona')
+
+  await comoDueno(tx)
+  await como(tx, ajeno)
+  const [{ veAjeno }] = await tx`select count(*)::int as "veAjeno" from public.v_gastos_por_pagar`
+  comprobar(veAjeno === 0, 'quien no entra a Gastos no ve ninguna cuenta por pagar')
+  const ajenoLista = await debeFallar(tx, (sp) => sp`select public.guardar_controlador_por_pagar(${ajeno}, true)`)
+  comprobar(/administrador/i.test(ajenoLista ?? ''), 'quien no es ADMIN no se agrega a la lista')
+
+  grupo('Pendiente por pagar · abonos y saldo')
+
+  await comoDueno(tx)
+  await como(tx, llevador)
+  if (tasaHoy > 0) {
+    // 100 $ de la deuda pagados en Bs a la tasa de hoy descuentan exactamente 100 $.
+    const bs = Math.round(100 * tasaHoy * 100) / 100
+    await tx`select public.abonar_cuenta_por_pagar(${cuenta.id}, ${hoy}::date, 'VES', ${bs})`
+    const [a] = await tx`select estado, abonado from public.v_gastos_por_pagar where id = ${cuenta.id}`
+    comprobar(
+      a.estado === 'ABONADA' && Number(a.abonado) === 100,
+      `un abono en Bs descuenta su equivalente a la tasa del día (${a.abonado} $)`,
+    )
+    const corregir = await debeFallar(tx, (sp) =>
+      sp`select public.editar_cuenta_por_pagar(${cuenta.id}, ${hoy}::date, 'X', 'XXX', 'USD', 10)`)
+    comprobar(/abonos/i.test(corregir ?? ''), 'con abonos no se corrige')
+    const anular = await debeFallar(tx, (sp) => sp`select public.anular_cuenta_por_pagar(${cuenta.id}, 'motivo de prueba')`)
+    comprobar(/abonos/i.test(anular ?? ''), 'con abonos vigentes no se anula la deuda')
+  } else {
+    comprobar(true, 'sin tasa de hoy: se salta la conversión')
+  }
+  const demas = await debeFallar(tx, (sp) =>
+    sp`select public.abonar_cuenta_por_pagar(${cuenta.id}, ${hoy}::date, 'USD', 5000)`)
+  comprobar(/pasa de lo que se debe/i.test(demas ?? ''), 'no se paga de más: dice cuánto queda')
+
+  const [{ saldo }] = await tx`select saldo from public.v_gastos_por_pagar where id = ${cuenta.id}`
+  await tx`select public.abonar_cuenta_por_pagar(${cuenta.id}, ${hoy}::date, 'USD', ${saldo})`
+  const [pagada] = await tx`select estado, saldo from public.v_gastos_por_pagar where id = ${cuenta.id}`
+  comprobar(pagada.estado === 'PAGADA' && Number(pagada.saldo) === 0, 'abonando el resto queda pagada')
+  const yaPagada = await debeFallar(tx, (sp) =>
+    sp`select public.abonar_cuenta_por_pagar(${cuenta.id}, ${hoy}::date, 'USD', 1)`)
+  comprobar(/pagada/i.test(yaPagada ?? ''), 'a una cuenta pagada no se le abona más')
+
+  const [{ ultimo }] = await tx`
+    select max(id) as ultimo from public.gastos_por_pagar_abonos where cuenta_id = ${cuenta.id} and anulado_en is null`
+  await tx`select public.anular_abono_por_pagar(${ultimo}, 'motivo de prueba')`
+  const [v] = await tx`select estado from public.v_gastos_por_pagar where id = ${cuenta.id}`
+  comprobar(v.estado !== 'PAGADA', `al anular un abono vuelve a deberse (${v.estado})`)
+
+  const manana = await debeFallar(tx, (sp) =>
+    sp`select public.registrar_cuenta_por_pagar(${hoy}::date + 1, 'X', 'XXX', 'USD', 1)`)
+  comprobar(/mañana/i.test(manana ?? ''), 'no se registra una deuda de mañana')
+  const euros = await debeFallar(tx, (sp) =>
+    sp`select public.registrar_cuenta_por_pagar(${hoy}::date, 'X', 'XXX', 'EUR', 1)`)
+  comprobar(/bolívares o dólares/i.test(euros ?? ''), 'solo bolívares o dólares')
+  await comoDueno(tx)
 }
