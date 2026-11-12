@@ -319,6 +319,9 @@ const Gastos = pagina(() => import('@/pages/gastos/Gastos').then((m) => ({ defau
 const CategoriasDeGasto = pagina(() =>
   import('@/pages/gastos/Categorias').then((m) => ({ default: m.Categorias })),
 )
+const PendientePorPagar = pagina(() =>
+  import('@/pages/gastos/PendientePorPagar').then((m) => ({ default: m.PendientePorPagar })),
+)
 // Centro de costo apagado el 12/11/2026 (ver la ruta '/app/costos', abajo).
 // const CentroDeCosto = pagina(() =>
 //   import('@/pages/costos/CentroDeCosto').then((m) => ({ default: m.CentroDeCosto })),
@@ -396,6 +399,7 @@ const paginas: Record<string, ReactNode> = {
   '/app/contactos': <Navigate to="/app" replace />,
   '/app/gastos': <Gastos />,
   '/app/gastos/categorias': <CategoriasDeGasto />,
+  '/app/gastos/por-pagar': <PendientePorPagar />,
   '/app/despachos': <TableroDespachos />,
   '/app/despachos/tickets': <Tickets />,
   '/app/despachos/guias': <Guias />,
