@@ -154,7 +154,7 @@ Esto es lo primero que hay que saber antes de buscar una pantalla: qué ofrece h
 **Hoy el menú lateral ofrece esto**, en tres secciones y con el **Panel** arriba del todo:
 
 - **Operación:** Explotación · Maquinaria · Inventario · Salidas y traslados · Combustible · Asignaciones
-- **Administración:** Compras · Ventas · Control de despacho · Control de asistencia · Contactos · Alimentación · Facturación · Nómina · Organigrama · Tesorería
+- **Administración:** Compras · Ventas · Control de asistencia · Alimentación · Facturación · Nómina · Organigrama · Tesorería
 - **Sistema:** Tasas de cambio · Configuración · Manual de usuario
 
 Cada persona ve solo los módulos sobre los que tiene permiso (3.1), así que su menú puede ser más corto que esta lista. Si tiene un manual impreso de otra fecha, esta lista es la que manda.
@@ -360,9 +360,9 @@ Esto es todo lo que ofrece el menú hoy. Cada persona ve solo la parte sobre la 
 | **Centro de costo** | **Desactivado desde el 12/11/2026, hasta nuevo aviso.** Ya no sale en el menú y su dirección lleva al Panel. Lo que tenía (la caja de septiembre, los viajes aceptados y los gastos anotados) sigue guardado, sin borrar. |
 | **Compras** | **Tablero**, **Compra directa**, **Historial de directas**, **Proveedores**, **Recepciones**, **Pagos por hacer**, **Gasto por unidad** |
 | **Ventas** | **Tablero**, **Clientes**, **Lista de precios**, **Cotizaciones** |
-| **Control de despacho** | Enlace directo |
+| **Control de despacho** | **Desactivado desde el 12/11/2026, hasta nuevo aviso.** Ya no sale en el menú y su dirección lleva al Panel. |
 | **Control de asistencia** | Enlace directo |
-| **Contactos** | Enlace directo |
+| **Contactos** | **Desactivado desde el 12/11/2026, hasta nuevo aviso.** Ya no sale en el menú y su dirección lleva al Panel. La libreta sigue guardada y se sigue usando en Asistencia › Visitantes. |
 | **Alimentación** | Enlace directo |
 | **Facturación** | **Notas de entrega**, **Facturas**, **Notas de crédito**, **Cuentas por cobrar** |
 | **Nómina** | **Tablero**, **Personal**, **Nómina del período**, **Prestaciones y parámetros** |
@@ -7204,6 +7204,8 @@ Lo que el módulo no hace, para que nadie lo descubra con una factura en la mano
 
 ## 22. Control de despacho
 
+> **Desactivado desde el 12/11/2026, hasta nuevo aviso.** Ya no sale en el menú. Lo que sigue describe cómo funcionaba, para cuando se vuelva a encender.
+
 **Es la planilla de lo que salió.** Se entra por **Administración › Control de despacho**, justo antes de Facturación, porque es lo que se mira para saber qué falta por cobrar.
 
 Esa planilla se llevaba en Excel y se llenaba entera a mano: había que copiar el número de la nota, la fecha, el cliente, el material y la cantidad de cada despacho antes de poder anotar lo único que no está en ninguna parte del sistema —el precio acordado, el estado del cobro y las observaciones—. **Aquí la mitad izquierda se llena sola**, leyendo las notas de entrega y las notas de salida, y solo quedan cinco cosas por escribir.
@@ -7370,6 +7372,8 @@ Gente de afuera que entra a la cantera —un chofer de otra empresa, un inspecto
 Los visitantes **no entran al calendario del personal, ni al reporte de asistencia, ni a la nómina**: son otra tabla, y se sacan por su propio Excel.
 
 ## 24. Contactos
+
+> **Desactivado desde el 12/11/2026, hasta nuevo aviso.** Ya no sale en el menú. La libreta sigue guardada y Asistencia › Visitantes la sigue usando. Lo que sigue describe cómo funcionaba, para cuando se vuelva a encender.
 
 **Administración › Contactos**
 
