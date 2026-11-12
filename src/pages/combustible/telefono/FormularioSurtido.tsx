@@ -41,8 +41,9 @@ import { Aviso, CampoGrande, Rotulo, TarjetaCuaderno } from './piezas'
   · «👤 ¿Quién recibió?», obligatorio y precargado con el operador de la
     máquina (`maquinaria.operador_id`, vía `combustible_lectura_vigente`).
   · «Para qué», en botones (`motivos_despacho`); el que lo exige pide detalle.
-  · El horómetro final es obligatorio y no retrocede; un vehículo puede ir
-    solo con el kilometraje.
+  · El horómetro final no retrocede; un vehículo puede ir solo con el
+    kilometraje. Desde el 12/11/2026 los dos son OPCIONALES: «todavía no se
+    está llevando el control por horómetros».
   · Tres vales al día por máquina como máximo.
   La base las impone igual (`combustible_registrar_uso` →
   `despachar_combustible_nucleo`); aquí se adelantan para no hacer esperar a
@@ -269,11 +270,8 @@ export function FormularioSurtido({
     if (tipo === 'uso') {
       if (maquinaId == null && equipoTexto.trim().length < 3) return 'Indicá a qué equipo o camión va el combustible.'
       if (topeAlcanzado) return `A ${maquina?.nombre ?? 'este equipo'} ya se le surtió 3 veces el ${fecha}. El máximo son 3 al día.`
-      if (maquinaId != null && hfNum == null && !(esVehiculo && kmNum != null)) {
-        return esVehiculo
-          ? 'Escribí el horómetro final o el kilometraje del tablero.'
-          : 'Escribí el horómetro final: sin él no se surte una máquina.'
-      }
+      // El horómetro y el kilometraje son opcionales desde el 12/11/2026
+      // («todavía no se lleva el control por horómetros»); si se escriben, no retroceden.
       if (errHor) return errHor
       if (kmRetrocede) return `El kilometraje no retrocede: lo último anotado marcaba ${fmt(kmVigente)}.`
     }
@@ -581,12 +579,12 @@ export function FormularioSurtido({
             </CampoGrande>
             <CampoGrande>
               <Input
-                label="Horómetro final"
+                label="Horómetro final (opcional)"
                 type="number"
                 inputMode="decimal"
                 value={hf}
                 onChange={(e) => setHf(e.target.value)}
-                placeholder="lo que marca hoy"
+                placeholder="si se sabe"
                 error={errHor ? 'No puede ser menor que el inicial.' : undefined}
               />
             </CampoGrande>
@@ -604,14 +602,14 @@ export function FormularioSurtido({
               {hiAuto != null
                 ? 'El inicial es el último final de este equipo. '
                 : 'Este equipo no tiene horómetro cargado: si lo tiene, escribí las dos lecturas. '}
-              {esVehiculo ? 'Es un vehículo: con el kilometraje del tablero basta. ' : ''}
-              Las horas van al mantenimiento y el final es donde arranca el próximo surtido.
+              Por ahora el horómetro y el kilometraje son opcionales: si se escriben, las horas van al
+              mantenimiento y el final es donde arranca el próximo surtido.
             </p>
           </div>
           {esVehiculo ? (
             <CampoGrande>
               <Input
-                label="Kilometraje"
+                label="Kilometraje (opcional)"
                 type="number"
                 inputMode="decimal"
                 value={km}

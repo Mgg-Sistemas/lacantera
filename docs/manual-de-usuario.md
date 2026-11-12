@@ -6792,7 +6792,11 @@ Arriba, los botones: **Vista de teléfono** (20.4), **Usos** —la lista de para
 
 El botón **Despachar** está apagado mientras falte algo de lo obligatorio, el horómetro retroceda, la cantidad pase lo que hay o la máquina haya llegado a su tope del día.
 
-**Sin máquina no hay consumo por hora.** La ayuda lo dice: **Sin máquina no hay consumo por hora: solo cuenta para el gasto.** Con máquina, **el horómetro es obligatorio**: **Obligatorio al surtir una máquina. Queda anotado en el vale.** Es lo que permite comparar dos equipos o notar que uno empezó a beber más de la cuenta.
+**Sin máquina no hay consumo por hora.** La ayuda lo dice: **Sin máquina no hay consumo por hora: solo cuenta para el gasto.** Con máquina, el horómetro queda anotado en el vale y es lo que permite comparar dos equipos o notar que uno empezó a beber más de la cuenta.
+
+**En la lista de equipos solo salen las máquinas operativas** (estado **Activa** en Maquinaria) desde el 12/11/2026, en la computadora y en el teléfono. Una máquina fuera de servicio no aparece para surtir; al corregir un movimiento viejo, el equipo que ya tenía se conserva aunque hoy esté fuera de servicio.
+
+**Desde el 12/11/2026 el horómetro y el kilometraje son opcionales** al surtir, en la computadora (**Nuevo movimiento de tanque**, sección **Medidores del equipo (opcional)**) y en el teléfono, porque todavía no se lleva el control por horómetro. Si se escriben, se siguen revisando: **no pueden retroceder** respecto de la última lectura del equipo. Sin horómetro, ese surtido no suma horas al mantenimiento ni da consumo por hora.
 
 **Un horómetro no retrocede.** Si la lectura es menor que la última, la ayuda lo dice antes de guardar: **Un horómetro no retrocede: lo último anotado marcaba 1250.** **Y el contador es uno solo, aunque se apunte en dos sitios**: el sistema compara con la lectura más alta anotada hasta la fecha del vale, venga del vale o del parte diario. El aviso de antes de guardar solo mira los vales: una lectura puede pasar el aviso y no guardarse, y entonces el mensaje dice con qué lectura choca.
 
@@ -6810,7 +6814,7 @@ Es la misma operación, hecha para usarla **de pie al lado del tanque**, con el 
 
 Va en dos pasos. Primero **¿De qué tanque?**: **Toque el tanque del que va a surtir.**, en botones grandes que dicen cuánto queda; si solo hay un tanque con combustible, ese paso se salta. Después el vale: **Cantidad**, **Máquina**, **Destino** si no es una máquina con ficha, **Horómetro**, el uso, **Receptor**, y las **Fotos del despacho**. Los usos son botones, no una lista desplegable, porque es lo que más se toca. La **Fecha** y la **Nota** están plegadas hasta que hagan falta. Se guarda con **Surtir**.
 
-**Las reglas son las mismas** que en la computadora: el tope de tres vales por máquina al día, el horómetro que no retrocede y quien recibe, obligatorio. No es un atajo: es la misma puerta.
+**Las reglas son las mismas** que en la computadora: el tope de tres vales por máquina al día, el horómetro (opcional desde el 12/11/2026) que no retrocede y quien recibe, obligatorio. No es un atajo: es la misma puerta.
 
 <p class="regla"><strong>Si la señal está mala, el sistema lo dice.</strong> Cuando el guardado tarda, aparece: <strong>Está tardando por la señal. El vale ya se está guardando: no lo cargue otra vez.</strong> Es el error más común en la mina: el que espera vuelve a pulsar, y salen dos vales del mismo gasoil.</p>
 

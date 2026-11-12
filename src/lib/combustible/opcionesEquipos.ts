@@ -96,9 +96,13 @@ export function opcionesEquipos(args: {
     const elegido = !!args.incluirValor && clave(args.incluirValor) === clave(valor)
     if (!elegido && !c.activo) continue
     if (!elegido && !esTanquePermitidoParaEquipo(args.tanqueActual, c.tanques_permitidos)) continue
+    const maq = c.maquina_id != null ? maquinas.get(c.maquina_id) : undefined
+    // SOLO LAS MÁQUINAS OPERATIVAS (12/11/2026): «que no salgan las máquinas
+    // que no están activas». La que ya estaba elegida (al corregir un
+    // movimiento viejo) sale igual, para no perderla.
+    if (maq && !elegido && maq.estado && maq.estado !== 'ACTIVA') continue
     vistos.add(clave(valor))
 
-    const maq = c.maquina_id != null ? maquinas.get(c.maquina_id) : undefined
     if (!maq) {
       opciones.push({ valor, etiqueta: c.valor, grupo: GRUPO_OTROS, icono: '⛽' })
       continue
