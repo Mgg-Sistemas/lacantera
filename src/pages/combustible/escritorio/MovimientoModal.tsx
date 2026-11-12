@@ -20,7 +20,7 @@ import {
   useUltimoContador,
 } from '@/lib/api/combustible'
 import type { Maquina } from '@/lib/api/maquinaria'
-import { contadorFinalPropuesto, errorHorometro, faltaHorometroFinal, horasTrabajadas, pasaPorSurtidor } from '@/lib/combustible/medidores'
+import { contadorFinalPropuesto, errorHorometro, horasTrabajadas, pasaPorSurtidor } from '@/lib/combustible/medidores'
 import { calcularMermaImplicita, MARGEN_MERMA_DEFECTO, mermaDeRecepcion, observacionMermaImplicita } from '@/lib/combustible/merma'
 import { leerOpcionEquipo } from '@/lib/combustible/opcionesEquipos'
 import { hoyIsoVE } from '@/lib/combustible/reporteExistenciasCorte'
@@ -57,9 +57,10 @@ import { Calculado } from './piezas'
 
   Lo de La Cantera que se queda (decisión de la dueña): al surtir, «Para qué»
   y «¿Quién recibió?» (precargado con el operador de la máquina), el horómetro
-  obligatorio que no retrocede (un vehículo puede dar el kilometraje) y el tope
-  de tres vales al día por máquina. La base lo vuelve a exigir todo; aquí se
-  dice mientras se llena.
+  que no retrocede (un vehículo puede dar el kilometraje) y el tope de tres
+  vales al día por máquina. La base lo vuelve a exigir todo; aquí se dice
+  mientras se llena. Desde el 12/11/2026 el horómetro y el kilometraje son
+  OPCIONALES («todavía no se está llevando el control por horómetros»).
 
   Diferencias con Golden Touch: sin «Registro Drive» (solo cuaderno); sin el
   destino «MGG» (no se copian los envíos a MGG); la merma fuera de margen la
@@ -251,7 +252,8 @@ export function MovimientoModal({
   if (tipo === 'uso' && !elegido) falta.push('el equipo')
   if (llevaVale) falta.push(...faltaDelVale(vale, motivos.data))
   if (llevaMedidorEquipo) {
-    if (hf.trim() === '' && !(esVehiculo && km.trim() !== '')) falta.push(esVehiculo ? 'el horómetro final o el kilometraje' : 'el horómetro final')
+    // EL HORÓMETRO Y EL KILOMETRAJE SON OPCIONALES (12/11/2026): «todavía no
+    // se está llevando el control por horómetros». Si se escribe, no retrocede.
     if (errHor) falta.push('un horómetro que no retroceda')
     if (topeAlcanzado) falta.push('un surtido libre del día')
   }
@@ -567,7 +569,9 @@ export function MovimientoModal({
 
       {llevaMedidorEquipo || llevaContador ? (
         <div className="border-hairline mt-4 rounded-lg border p-3">
-          <p className="text-ink/80 mb-3 text-sm font-semibold">🕒 Medidores del equipo</p>
+          <p className="text-ink/80 mb-3 text-sm font-semibold">
+            🕒 Medidores del equipo <span className="text-ink/45 font-normal">(opcional)</span>
+          </p>
           {llevaMedidorEquipo ? (
             <div className="grid gap-4 sm:grid-cols-2">
               <Input
@@ -587,7 +591,7 @@ export function MovimientoModal({
                 value={hf}
                 onChange={(e) => setHf(e.target.value)}
                 error={errHor ?? undefined}
-                hint={faltaHorometroFinal(leerNumero(hi), leerNumero(hf)) ?? undefined}
+                hint={hf.trim() === '' ? 'Opcional: todavía no se lleva el control por horómetro.' : undefined}
               />
               <Calculado label="Horas utilizadas (HRS = HF − HI)" valor={hrs == null ? '' : lt(hrs)} />
               <Input
