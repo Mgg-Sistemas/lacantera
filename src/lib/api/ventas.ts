@@ -367,6 +367,45 @@ export interface CotizacionVenta {
   creada_en: string
   renglones: number
   despachos: number
+  /*
+    EL DESPACHO PEDIDO DESDE LA COTIZACIÓN (12/11/2026). «Despachar» lo marca
+    aquí y Facturación lo completa; `despacho_por_completar` lo deduce la base
+    (pedido, no cancelado, sin un SD esperando aprobación) y
+    `despacho_por_aprobar` trae ese SD si ya se completó.
+  */
+  despacho_pedido_en?: string | null
+  despacho_pedido_por_nombre?: string | null
+  despacho_cancelado_en?: string | null
+  despacho_motivo_cancelacion?: string | null
+  despacho_por_completar?: boolean
+  despacho_por_aprobar?: string | null
+}
+
+/** Pide el despacho de una cotización enviada: queda por completar en Facturación. */
+export function usePedirDespachoDeCotizacion() {
+  return useAccionVentas((id: number) => rpc<string>('pedir_despacho_de_cotizacion', { p_id: id }))
+}
+
+/** Si al final no se despacha: queda quién y por qué; la cotización sigue enviada. */
+export function useCancelarPedidoDeDespacho() {
+  return useAccionVentas((c: { id: number; motivo: string }) =>
+    rpc<void>('cancelar_pedido_de_despacho', { p_id: c.id, p_motivo: c.motivo }),
+  )
+}
+
+/** Las cotizaciones con el despacho pedido que Facturación todavía no completa. */
+export function useDespachosPorCompletar() {
+  return useQuery({
+    queryKey: ['ventas', 'cotizaciones', 'por-completar'],
+    queryFn: async () =>
+      desenvolver<CotizacionVenta[]>(
+        await supabase
+          .from('v_cotizaciones_venta')
+          .select('*')
+          .eq('despacho_por_completar', true)
+          .order('despacho_pedido_en', { ascending: true }),
+      ),
+  })
 }
 
 export interface RenglonGuardado {

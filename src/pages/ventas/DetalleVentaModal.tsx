@@ -1,5 +1,7 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
+import { ErrorDeCarga } from '@/components/ui/Estado'
+import { usePedirDespachoDeCotizacion } from '@/lib/api/ventas'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -55,13 +57,27 @@ export function DetalleVentaModal({
   const chips = chipsDe(t)
   const debe = (t.etapa === 'despachada' || t.etapa === 'facturada') && Number(t.saldo_usd ?? 0) > 0.01
   const wa = (titulo: string, texto: string) => onWhatsapp(`${titulo} · ${t.numero}`, texto)
+  // «Despachar» deja el despacho pedido y Facturación lo completa (12/11/2026).
+  const pedirDespacho = usePedirDespachoDeCotizacion()
+  const [pedido, setPedido] = useState(false)
 
   const deEtapa = (
     <>
       {t.etapa === 'cot' ? (
         <>
           {permisos?.despachar ? (
-            <Button onClick={() => navegar(`/app/facturacion/notas-entrega?cotizacion=${t.id}`)}>🚚 Despachar esta cotización</Button>
+            pedido ? (
+              <Button onClick={() => navegar(`/app/facturacion/notas-entrega?cotizacion=${t.id}`)}>
+                Ir a completarlo
+              </Button>
+            ) : (
+              <Button
+                disabled={pedirDespacho.isPending}
+                onClick={() => pedirDespacho.mutate(t.id, { onSuccess: () => setPedido(true) })}
+              >
+                {pedirDespacho.isPending ? 'Pidiendo…' : '🚚 Despachar esta cotización'}
+              </Button>
+            )
           ) : null}
           <Button variant="outline" onClick={() => wa('Cotización', textoCotizacion(t, empresa))}>
             💬 WhatsApp de la cotización
@@ -190,6 +206,13 @@ export function DetalleVentaModal({
           </Aviso>
         ) : null}
         {t.etapa === 'anulada' && t.motivo ? <Aviso tono="danger" titulo="Motivo">{t.motivo}</Aviso> : null}
+        {pedido ? (
+          <Aviso tono="warning" titulo="Despacho pedido">
+            Facturación lo completa con el patio, el vehículo y el chofer, en Notas de entrega › Por completar. Después
+            pasa a aprobación.
+          </Aviso>
+        ) : null}
+        {pedirDespacho.error ? <ErrorDeCarga error={pedirDespacho.error} /> : null}
         {t.tipo === 'NE' && t.etapa === 'despachada' && ((t.precios_pendientes ?? 0) > 0 || !t.cliente) ? (
           <Aviso tono="warning" titulo="Le falta para cobrarse">
             {[!t.cliente ? 'el cliente' : null, (t.precios_pendientes ?? 0) > 0 ? `el precio de ${t.precios_pendientes} renglón(es)` : null]

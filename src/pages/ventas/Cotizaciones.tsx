@@ -15,7 +15,7 @@ import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { Visor } from '@/components/Visor'
 import { dinero, documento, fecha } from '@/lib/formato'
 import { empresaDelPapel, useAlicuotaIva, useEmpresa } from '@/lib/api/empresa'
-import { useMiPerfil } from '@/lib/api/usuarios'
+import { useMiPerfil, useMisPermisos } from '@/lib/api/usuarios'
 import { useTasaVigente } from '@/lib/api/tasas'
 import { densidadesDeArticulos } from '@/lib/api/catalogo'
 import { armarDocumento } from '@/lib/ficha/ventaPdf'
@@ -25,6 +25,7 @@ import {
   useClientes,
   useCotizacionesVenta,
   useCrearCotizacion,
+  usePedirDespachoDeCotizacion,
   usePrecios,
   useRenglones,
   type CotizacionVenta,
@@ -76,6 +77,16 @@ export function Cotizaciones() {
   const [nueva, setNueva] = useState(false)
   const [detalle, setDetalle] = useState<CotizacionVenta | null>(null)
   const navegar = useNavigate()
+  /*
+    «DESPACHAR» YA NO PIDE PLACA NI CHOFER (12/11/2026). Deja el despacho
+    pedido al instante y Facturación lo completa (Notas de entrega › Por
+    completar). Lo toca quien puede pedir despachos: Facturación en escritura,
+    lo mismo que exige la base.
+  */
+  const { puede } = useMisPermisos()
+  const puedeDespachar = puede('FACTURACION', 'ESCRITURA')
+  const pedirDespacho = usePedirDespachoDeCotizacion()
+  const [despachoPedido, setDespachoPedido] = useState<{ id: number; numero: string } | null>(null)
   /*
     DESDE EL TABLERO DE VENTAS: `?nueva=1` abre «Nueva cotización» y
     `?cotizacion=COT-…` abre esa. El parámetro se quita al abrir.
@@ -247,6 +258,24 @@ export function Cotizaciones() {
         }
       />
 
+      {despachoPedido ? (
+        <div className="border-success/30 bg-success/8 mb-4 flex flex-wrap items-center gap-3 rounded-[6px] border p-3.5">
+          <p className="text-ink/80 grow text-sm">
+            Quedó pedido el despacho de la cotización <strong>{despachoPedido.numero}</strong>. Facturación lo completa
+            con el patio, el vehículo y el chofer, y después pasa a aprobación.
+          </p>
+          <Button
+            size="sm"
+            onClick={() => navegar(`/app/facturacion/notas-entrega?cotizacion=${despachoPedido.id}`)}
+          >
+            Ir a completarlo
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setDespachoPedido(null)}>
+            Cerrar
+          </Button>
+        </div>
+      ) : null}
+
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}
 
@@ -302,6 +331,11 @@ export function Cotizaciones() {
                     </td>
                     <td className="px-5 py-3 text-right">
                       <Chip tone={TONO[q.estado] ?? 'neutral'}>{ETIQUETA[q.estado]}</Chip>
+                      {q.despacho_por_completar ? (
+                        <span className="text-warning block text-xs">Despacho por completar</span>
+                      ) : q.despacho_por_aprobar ? (
+                        <span className="text-info block text-xs">Despacho por aprobar</span>
+                      ) : null}
                     </td>
                   </tr>
                 ))}
@@ -505,10 +539,29 @@ export function Cotizaciones() {
                   </Button>
                   {/* «La aceptó» terminaba ahí (10/11/2026): ahora la
                       cotización aceptada se despacha, y al aprobarse el
-                      despacho queda aceptada sola. */}
-                  <Button onClick={() => navegar(`/app/facturacion/notas-entrega?cotizacion=${detalle.id}`)}>
-                    🚚 Despachar esta cotización
-                  </Button>
+                      despacho queda aceptada sola. Desde el 12/11 el botón
+                      deja el despacho pedido y Facturación lo completa. */}
+                  {detalle.despacho_por_completar ? (
+                    puedeDespachar ? (
+                      <Button onClick={() => navegar(`/app/facturacion/notas-entrega?cotizacion=${detalle.id}`)}>
+                        Completar el despacho
+                      </Button>
+                    ) : null
+                  ) : detalle.despacho_por_aprobar ? null : puedeDespachar ? (
+                    <Button
+                      disabled={pedirDespacho.isPending}
+                      onClick={() =>
+                        pedirDespacho.mutate(detalle.id, {
+                          onSuccess: () => {
+                            setDespachoPedido({ id: detalle.id, numero: detalle.numero })
+                            setDetalle(null)
+                          },
+                        })
+                      }
+                    >
+                      {pedirDespacho.isPending ? 'Pidiendo…' : '🚚 Despachar esta cotización'}
+                    </Button>
+                  ) : null}
                 </>
               ) : null}
             </>
@@ -522,7 +575,26 @@ export function Cotizaciones() {
                 {detalle.despachos} {detalle.despachos === 1 ? 'despacho' : 'despachos'}
               </Chip>
             ) : null}
+            {detalle.despacho_por_completar ? <Chip tone="warning">Despacho por completar</Chip> : null}
+            {detalle.despacho_por_aprobar ? (
+              <Chip tone="info">Despacho {detalle.despacho_por_aprobar} por aprobar</Chip>
+            ) : null}
           </div>
+          {detalle.despacho_por_completar ? (
+            <p className="text-ink/60 mt-2 text-sm">
+              Pidió el despacho {detalle.despacho_pedido_por_nombre ?? '—'}
+              {detalle.despacho_pedido_en ? ` el ${fecha(detalle.despacho_pedido_en)}` : ''}. Falta que Facturación
+              ponga patio, vehículo y chofer en Notas de entrega › Por completar.
+            </p>
+          ) : null}
+          {detalle.estado === 'ENVIADA' && detalle.vencida && !detalle.despacho_por_completar ? (
+            <p className="text-warning mt-2 text-sm">
+              Esta cotización ya venció: se puede despachar igual, pero revise que los precios sigan vigentes.
+            </p>
+          ) : null}
+          {pedirDespacho.error && pedirDespacho.variables === detalle.id ? (
+            <ErrorDeCarga error={pedirDespacho.error} className="mt-3" />
+          ) : null}
 
           <TablaRenglones
             moneda={detalle.moneda}

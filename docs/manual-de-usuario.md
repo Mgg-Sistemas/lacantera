@@ -3016,7 +3016,7 @@ Las columnas de cobradas y anuladas enseñan los últimos 7, 30 o 90 días. En e
 
 1. **Se registra el cliente** y **se le pone precio a lo que se vende** (10.3 y 10.4).
 2. **Se cotiza, si hace falta.** **+ Nueva cotización**. La cotización no es obligatoria: se puede despachar sin ella.
-3. **Se pide el despacho.** **🚚 Pedir despacho**, o **🚚 Despachar esta cotización** desde la cotización, que trae el cliente, la moneda y los renglones ya puestos y deja el despacho enlazado a ella. Hacen falta el patio y los datos del transporte: **el nombre del chofer, su cédula y la placa**. El pesaje de la romana y la guía se eligen como siempre. El pedido queda **Por aprobar** y **no rebaja nada todavía**.
+3. **Se pide el despacho.** **🚚 Pedir despacho**, o **🚚 Despachar esta cotización** desde la cotización. Desde el 12/11/2026 este segundo botón **no pide nada más**: deja el despacho pedido al instante con los datos de la cotización, y Facturación lo completa en **Notas de entrega › Despachos por completar** (ver 10.6). Para enviarlo a aprobación hacen falta el patio y los datos del transporte: **el nombre del chofer, su cédula y la placa**. El pesaje de la romana y la guía se eligen como siempre. El pedido queda **Por aprobar** y **no rebaja nada todavía**.
 4. **Lo aprueba quien está autorizado.** **✔ Aprobar despacho** pregunta **«¿Se despacha?»**:
    - **SÍ**: nace la nota de entrega y el material sale del patio.
    - **NO, por ahora**: con su motivo (⏳ cliente con deuda pendiente, 💳 sin cupo de crédito, ⛰ no hay material, 📝 otro). Sigue por aprobar con el motivo a la vista y se le avisa a quien lo pidió.
@@ -3189,6 +3189,17 @@ El botón **Nueva cotización**. Si no hay ninguna, **Sin cotizaciones**, con el
 
 Se muestran **las 200 más recientes**, las nuevas primero, sin filtros ni buscador.
 
+#### Despachar una cotización (12/11/2026)
+
+En una cotización **Enviada**, el botón **🚚 Despachar esta cotización** deja el despacho **pedido al instante**, sin pedir patio, placa ni chofer: arriba sale **Quedó pedido el despacho de la cotización …** con el botón **Ir a completarlo**. Lo ve quien tiene Facturación en escritura.
+
+- En la lista, la cotización muestra debajo de su estado **Despacho por completar** y, cuando Facturación ya lo completó, **Despacho por aprobar**.
+- A quien factura le llega el aviso **Despacho por completar · COTV-…** en la campana.
+- Una cotización **vencida** se despacha igual, pero se avisa para revisar que los precios sigan vigentes.
+- El despacho lleva los renglones, los precios, el **descuento** y el **flete** de la cotización.
+- No se puede pedir dos veces: si ya está pedido o esperando aprobación, el sistema lo dice.
+- Al aprobarse el despacho nace la nota de entrega y la cotización queda **Aceptada** sola.
+
 #### Los renglones: el bloque donde se decide el precio
 
 Este bloque es el mismo en **Nueva cotización** y en **Pedir despacho** (10.6), así que se explica una sola vez.
@@ -3301,6 +3312,14 @@ Al lado, el **Estado** —**Cualquiera** o uno de los cuatro— y la **Moneda** 
 Si no aparece nada, sale **Sin resultados** y la pantalla recuerda que el número va completo, **NE-2026-0042**, con el año y los cuatro dígitos.
 
 **La nota de salida se busca en su propia pantalla**, **Salidas › Historial**, con el mismo campo **Buscar una nota**, donde vale el **NS-2026-0012** o el número del movimiento. Y las dos, la de entrega y la de salida, se encuentran también desde **la lupa de arriba**, escribiendo el número desde cualquier pantalla.
+
+#### Despachos por completar (12/11/2026)
+
+Arriba de **Despachos por aprobar** sale **Despachos por completar**: las cotizaciones a las que Ventas les tocó **Despachar**. Cada una dice el cliente, los renglones, el total, quién lo pidió y cuándo, y si la cotización está vencida.
+
+- **Completar datos** abre **Completar el despacho de COTV-…**, la misma ventana de **Pedir despacho** con el cliente, la moneda, los renglones, los precios, el descuento y el flete ya puestos. Solo falta el **Patio**, el vehículo, el chofer y, si hay, la romana. **Enviar a aprobación** lo manda a quien aprueba y sale de esta lista.
+- **No se despacha** cancela el pedido con un **Motivo**. No se borra nada y la cotización sigue enviada: se puede volver a pedir o cerrarla en Ventas.
+- Si el despacho se rechaza al aprobarlo, la cotización vuelve a salir aquí.
 
 #### Pedir un despacho
 
