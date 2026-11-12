@@ -317,9 +317,10 @@ const Gastos = pagina(() => import('@/pages/gastos/Gastos').then((m) => ({ defau
 const CategoriasDeGasto = pagina(() =>
   import('@/pages/gastos/Categorias').then((m) => ({ default: m.Categorias })),
 )
-const CentroDeCosto = pagina(() =>
-  import('@/pages/costos/CentroDeCosto').then((m) => ({ default: m.CentroDeCosto })),
-)
+// Centro de costo apagado el 12/11/2026 (ver la ruta '/app/costos', abajo).
+// const CentroDeCosto = pagina(() =>
+//   import('@/pages/costos/CentroDeCosto').then((m) => ({ default: m.CentroDeCosto })),
+// )
 const TableroDespachos = pagina(() =>
   import('@/pages/despachos/Tablero').then((m) => ({ default: m.TableroDespachos })),
 )
@@ -381,7 +382,10 @@ const paginas: Record<string, ReactNode> = {
   '/app/explotacion/viajes': <ViajesDeCamiones />,
   '/app/explotacion/plantas': <PlantasYRutas />,
   '/app/explotacion/salidas': <SalidasDePlanta />,
-  '/app/costos': <CentroDeCosto />,
+  // CENTRO DE COSTO APAGADO (12/11/2026), hasta nuevo aviso: quien tenga la
+  // dirección guardada cae en el Panel. Los datos siguen en la base; para
+  // encenderlo, volver a `<CentroDeCosto />` y a su entrada del menú.
+  '/app/costos': <Navigate to="/app" replace />,
   '/app/control-despacho': <ControlDespacho />,
   '/app/asistencia': <ControlDeAsistencia />,
   '/app/contactos': <Contactos />,
@@ -406,7 +410,7 @@ const paginas: Record<string, ReactNode> = {
   '/app/compras/proveedores/:id': <FichaProveedor />,
   // El centro de costos viejo de Compras se retiró el 14/09/2026. Quien tenga
   // la dirección guardada cae en el módulo que lo sustituye.
-  '/app/compras/centro-de-costos': <Navigate to="/app/costos" replace />,
+  '/app/compras/centro-de-costos': <Navigate to="/app" replace />,
   '/app/compras/gasto': <GastoPorUnidad />,
   '/app/compras/recepciones': <Recepciones />,
   '/app/compras/facturas': <FacturasProveedor />,

@@ -725,20 +725,19 @@ export const navigation: NavSection[] = [
   {
     label: 'Administración',
     items: [
-      {
-        /*
-          El centro de costo, con entrada propia.
+      /*
+        CENTRO DE COSTO APAGADO (12/11/2026), hasta nuevo aviso de gerencia.
+        Sale del menú para todos y su dirección lleva al Panel (App.tsx). Sus
+        datos siguen intactos en la base (tablas costo_*), sin borrar nada.
+        Para encenderlo, devolver esta entrada y la ruta. Era:
 
-          Sustituye al «Centro de costos» que abría el análisis de Compras y
-          leía un libro de tesorería vacío. Este es una caja: lo que entra
-          para operar, lo que cuesta producir y a cuánto sale el metro cúbico,
-          congelado al cerrar. Va antes de Compras porque es la pregunta de
-          gerencia, y las compras son una de sus respuestas.
-        */
-        label: 'Centro de costo',
-        icon: Landmark,
-        to: '/app/costos',
-      },
+        { label: 'Centro de costo', icon: Landmark, to: '/app/costos' },
+
+        El centro de costo, con entrada propia. Sustituye al «Centro de
+        costos» que abría el análisis de Compras y leía un libro de tesorería
+        vacío. Este es una caja: lo que entra para operar, lo que cuesta
+        producir y a cuánto sale el metro cúbico, congelado al cerrar.
+      */
       {
         label: 'Compras',
         icon: ShoppingCart,
