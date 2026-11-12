@@ -58,6 +58,8 @@ import {
   renglonesDeNotas,
   useSolicitarDespacho,
   useSolicitudesDespacho,
+  useCancelarPedidoDeDespacho,
+  useDespachosPorCompletar,
   type NotaEntrega,
   type RenglonGuardado,
   type SolicitudDeDespacho,
@@ -273,7 +275,25 @@ export function NotasDeEntrega() {
     esa cotización («🚚 Despachar esta cotización»). El despacho queda
     enlazado a ella: al aprobarse, la cotización pasa a aceptada.
   */
-  const [desdeCotizacion, setDesdeCotizacion] = useState<{ id: number; numero: string } | null>(null)
+  /*
+    COMPLETAR EL DESPACHO PEDIDO DESDE UNA COTIZACIÓN (12/11/2026). «Despachar»
+    en Ventas ya no abre este formulario: deja el despacho pedido y la
+    cotización sale arriba, en «Por completar». Desde ahí (o desde el aviso)
+    se llega con `?cotizacion=ID` y quien entra a Facturación pone patio,
+    vehículo, chofer y pesos. El descuento y el flete de la cotización viajan
+    al despacho; si está vencida, se avisa para revisar precios.
+  */
+  const [desdeCotizacion, setDesdeCotizacion] = useState<{
+    id: number
+    numero: string
+    descuento: number
+    vencida: boolean
+  } | null>(null)
+  const porCompletar = useDespachosPorCompletar()
+  const cancelarPedido = useCancelarPedidoDeDespacho()
+  const [cancelandoPedido, setCancelandoPedido] = useState<{ id: number; numero: string } | null>(null)
+  const [motivoCancelar, setMotivoCancelar] = useState('')
+  const [falloCotizacion, setFalloCotizacion] = useState<string | null>(null)
   const pedirDespacho = parametros.get('pedir')
   const cotizacionPedida = Number(parametros.get('cotizacion')) || null
   useEffect(() => {
@@ -287,9 +307,10 @@ export function NotasDeEntrega() {
     void leerCotizacionParaDespacho(cotizacionPedida)
       .then((c) => {
         if (!vigente) return
-        setDesdeCotizacion({ id: c.id, numero: c.numero })
+        setDesdeCotizacion({ id: c.id, numero: c.numero, descuento: c.descuento, vencida: c.vencida })
         setClienteId(String(c.cliente_id))
         setMoneda(c.moneda)
+        setFlete(c.flete > 0 ? String(c.flete) : '')
         setFilas(
           c.renglones.length
             ? c.renglones.map((r) => ({
@@ -310,7 +331,13 @@ export function NotasDeEntrega() {
         )
         setNuevo(true)
       })
-      .catch(() => setNuevo(true))
+      .catch((e: unknown) => {
+        // Antes abría el formulario vacío sin decir nada: ahora se dice.
+        if (!vigente) return
+        setFalloCotizacion(
+          `No se pudo leer la cotización para completar el despacho: ${e instanceof Error ? e.message : String(e)}`,
+        )
+      })
     return () => {
       vigente = false
     }
@@ -494,7 +521,9 @@ export function NotasDeEntrega() {
     nota al 0 % aunque le llegue otra cosa.
   */
   const subtotal = subtotalDe(filasEfectivas)
-  const total = subtotal + (Number(flete) || 0)
+  // El descuento global solo llega desde una cotización (12/11/2026); a mano no se pone.
+  const descuentoCotizado = desdeCotizacion?.descuento ?? 0
+  const total = Math.max(subtotal - descuentoCotizado, 0) + (Number(flete) || 0)
   const incompletas = filasEfectivas.some((f) => faltaEnFila(f, precios ?? []) !== null)
 
   /*
@@ -806,6 +835,109 @@ export function NotasDeEntrega() {
             />
           </div>
         </div>
+      ) : null}
+
+      {/* ------------------------------------------ despachos por completar */}
+      {falloCotizacion ? (
+        <div className="border-danger/30 bg-danger-soft mb-4 flex items-start gap-2.5 rounded-[6px] border p-3.5">
+          <p className="text-danger grow text-sm">{falloCotizacion}</p>
+          <Button size="sm" variant="ghost" icon={<X />} aria-label="Cerrar aviso" onClick={() => setFalloCotizacion(null)} />
+        </div>
+      ) : null}
+      {porCompletar.error ? <ErrorDeCarga error={porCompletar.error} className="mb-4" /> : null}
+      {(porCompletar.data ?? []).length > 0 ? (
+        <section className="mb-6">
+          <h2 className="text-ink/85 font-titular mb-2 text-lg">
+            Despachos por completar ({(porCompletar.data ?? []).length})
+          </h2>
+          <p className="text-ink/55 mb-2 text-sm">
+            Pedidos desde Ventas con los datos de la cotización. Falta el patio, el vehículo y el chofer; al completarlos
+            pasan a aprobación.
+          </p>
+          <div className="space-y-3">
+            {(porCompletar.data ?? []).map((q) => (
+              <Card key={q.id}>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-ink/70 tabular font-mono text-xs">Cotización {q.numero}</span>
+                      <Chip tone="warning">Por completar</Chip>
+                      {q.vencida ? <Chip tone="danger">Cotización vencida</Chip> : null}
+                    </div>
+                    <p className="text-ink/85 mt-1.5 text-sm font-medium">{q.cliente}</p>
+                    <p className="text-ink/60 text-xs">
+                      {q.renglones} renglón{q.renglones === 1 ? '' : 'es'}
+                      {q.total != null ? ` · ${dinero(q.moneda, q.total)}` : ''} · pidió{' '}
+                      {q.despacho_pedido_por_nombre ?? '—'}
+                      {q.despacho_pedido_en ? ` el ${fechaHora(q.despacho_pedido_en)}` : ''}
+                    </p>
+                  </div>
+                  {puedeDespachar ? (
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setMotivoCancelar('')
+                          cancelarPedido.reset()
+                          setCancelandoPedido({ id: q.id, numero: q.numero })
+                        }}
+                      >
+                        No se despacha
+                      </Button>
+                      <Button
+                        size="sm"
+                        icon={<Truck />}
+                        onClick={() => setParametros({ cotizacion: String(q.id) }, { replace: true })}
+                      >
+                        Completar datos
+                      </Button>
+                    </div>
+                  ) : null}
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {cancelandoPedido ? (
+        <Modal
+          abierto
+          ancho="sm"
+          onCerrar={() => setCancelandoPedido(null)}
+          titulo={`No despachar la cotización ${cancelandoPedido.numero}`}
+          descripcion="El pedido de despacho queda cancelado con su motivo. La cotización sigue enviada: se puede volver a pedir o cerrarla en Ventas."
+          acciones={
+            <>
+              <Button variant="ghost" onClick={() => setCancelandoPedido(null)}>
+                Volver
+              </Button>
+              <Button
+                variant="danger"
+                disabled={motivoCancelar.trim().length < 4 || cancelarPedido.isPending}
+                onClick={() =>
+                  cancelarPedido.mutate(
+                    { id: cancelandoPedido.id, motivo: motivoCancelar.trim() },
+                    { onSuccess: () => setCancelandoPedido(null) },
+                  )
+                }
+              >
+                {cancelarPedido.isPending ? 'Guardando…' : 'No se despacha'}
+              </Button>
+            </>
+          }
+        >
+          <Textarea
+            label="Motivo"
+            rows={2}
+            autoFocus
+            maxLength={300}
+            value={motivoCancelar}
+            onChange={(e) => setMotivoCancelar(e.target.value)}
+          />
+          {cancelarPedido.error ? <ErrorDeCarga error={cancelarPedido.error} className="mt-3" /> : null}
+        </Modal>
       ) : null}
 
       {/* ------------------------------------------ despachos por aprobar */}
@@ -1244,8 +1376,14 @@ export function NotasDeEntrega() {
             setNuevo(false)
             limpiar()
           }}
-          titulo={desdeCotizacion ? `Pedir despacho · desde ${desdeCotizacion.numero}` : 'Pedir despacho'}
-          descripcion="No rebaja nada todavía. Al aprobarlo quien tiene el permiso, nace la nota de entrega y el material sale del patio."
+          titulo={desdeCotizacion ? `Completar el despacho de ${desdeCotizacion.numero}` : 'Pedir despacho'}
+          descripcion={
+            desdeCotizacion
+              ? `Ya trae el cliente, los renglones y los precios de la cotización. Ponga el patio, el vehículo y el chofer.${
+                  desdeCotizacion.vencida ? ' OJO: la cotización ya venció; revise que los precios sigan vigentes.' : ''
+                } Al aprobarlo nace la nota de entrega.`
+              : 'No rebaja nada todavía. Al aprobarlo quien tiene el permiso, nace la nota de entrega y el material sale del patio.'
+          }
           acciones={
             <>
               {/* Ocupa toda la fila para que no compita con los botones: es
@@ -1305,6 +1443,7 @@ export function NotasDeEntrega() {
                     peso_bruto: Number(bruto) || null,
                     peso_tara: Number(tara) || null,
                     flete: Number(flete) || 0,
+                    descuento: descuentoCotizado,
                     observacion: observacion || null,
                     ticket_id: Number(ticketId) || null,
                     guia_id: Number(guiaId) || null,
@@ -1657,7 +1796,7 @@ export function NotasDeEntrega() {
             <Totales
               moneda={moneda}
               subtotal={subtotal}
-              descuento={0}
+              descuento={descuentoCotizado}
               flete={Number(flete) || 0}
               alicuota={0}
               iva={0}

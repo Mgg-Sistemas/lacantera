@@ -9,7 +9,16 @@
   en el patio, despacho, factura. Es larga porque una nota de crédito no existe
   sin una factura, y una factura no existe sin algo que se haya despachado.
 */
-import { grupo, comprobar, como, comoDueno, debeFallar, asegurarTasaBcv } from './ayuda.mjs'
+import {
+  grupo,
+  comprobar,
+  como,
+  comoDueno,
+  debeFallar,
+  asegurarTasaBcv,
+  usuarioDePrueba,
+  rolDePrueba,
+} from './ayuda.mjs'
 
 const cerca = (a, b, holgura = 0.02) => Math.abs(Number(a) - Number(b)) < holgura
 
@@ -216,6 +225,64 @@ export default async function pruebaVentas(tx) {
     sobreAnulada !== null && /no hay nada que restarle/i.test(sobreAnulada),
     'una factura anulada no se corrige: no hay nada que restarle',
   )
+
+  await comoDueno(tx)
+
+  /*
+    DESPACHAR UNA COTIZACIÓN (12/11/2026): el botón deja el despacho pedido y
+    Facturación lo completa. Se prueba con usuarios que NO son ADMIN —el ADMIN
+    pasa por encima de todo y no diría si la puerta cierra—. Lo que se
+    rompería en silencio: que quien no factura pida despachos, que se pidan
+    dos a la vez de la misma cotización, o que el pedido no salga de «por
+    completar» al completarse.
+  */
+  grupo('Despachar una cotización · queda por completar')
+
+  const vendedor = await usuarioDePrueba(tx, { usuario: 'prueba_desp_vende', nombre: 'Quien vende y factura' })
+  const soloVentas = await usuarioDePrueba(tx, { usuario: 'prueba_desp_solo', nombre: 'Quien solo cotiza' })
+  await rolDePrueba(tx, 'PRUEBA_DESP_FACTURA', { PANEL: 'LECTURA', VENTAS: 'ESCRITURA', FACTURACION: 'ESCRITURA' })
+  await rolDePrueba(tx, 'PRUEBA_DESP_COTIZA', { PANEL: 'LECTURA', VENTAS: 'ESCRITURA' })
+  await tx`insert into public.usuarios_roles (usuario_id, rol) values (${vendedor}, 'PRUEBA_DESP_FACTURA')`
+  await tx`insert into public.usuarios_roles (usuario_id, rol) values (${soloVentas}, 'PRUEBA_DESP_COTIZA')`
+
+  await como(tx, vendedor)
+  await tx`select public.crear_cotizacion_venta(${cli.id},
+            ${renglones([{ articulo_id: Number(piedra.id), cantidad: 5, precio_unitario: 10 }])},
+            'USD', 15, null, 0, 7)`
+  await comoDueno(tx)
+  const [cot] = await tx`select id, numero, estado from public.cotizaciones_venta order by id desc limit 1`
+  comprobar(cot?.estado === 'ENVIADA', `la cotización nace enviada (${cot?.numero})`)
+
+  await como(tx, soloVentas)
+  const sinFacturar = await debeFallar(tx, (sp) => sp`select public.pedir_despacho_de_cotizacion(${cot.id})`)
+  comprobar(/facturaci/i.test(sinFacturar ?? ''), 'quien no factura no pide el despacho')
+
+  await comoDueno(tx)
+  await como(tx, vendedor)
+  await tx`select public.pedir_despacho_de_cotizacion(${cot.id})`
+  const [v1] = await tx`select despacho_por_completar, despacho_por_aprobar from public.v_cotizaciones_venta where id = ${cot.id}`
+  comprobar(v1.despacho_por_completar === true, 'pedido sin placa ni chofer: queda por completar')
+  const dos = await debeFallar(tx, (sp) => sp`select public.pedir_despacho_de_cotizacion(${cot.id})`)
+  comprobar(/ya está pedido/i.test(dos ?? ''), 'no se pide dos veces')
+
+  // Completar es el «Pedir despacho» de siempre, enlazado a la cotización.
+  const [sd] = await tx`
+    select public.solicitar_despacho(${cli.id}, ${patio.id},
+      ${renglones([{ articulo_id: Number(piedra.id), cantidad: 5, precio_unitario: 10 }])},
+      'AB123CD', 'CHOFER DE PRUEBA', 'V-12345678', 'CAMION DE PRUEBA', 'USD', ${cot.id}) as numero`
+  const [v2] = await tx`select despacho_por_completar, despacho_por_aprobar from public.v_cotizaciones_venta where id = ${cot.id}`
+  comprobar(
+    v2.despacho_por_completar === false && v2.despacho_por_aprobar === sd.numero,
+    `al completarlo sale de «por completar» y espera aprobación (${sd.numero})`,
+  )
+  const otroSd = await debeFallar(tx, (sp) =>
+    sp`select public.solicitar_despacho(${cli.id}, ${patio.id},
+      ${renglones([{ articulo_id: Number(piedra.id), cantidad: 5, precio_unitario: 10 }])},
+      'AB123CD', 'CHOFER DE PRUEBA', 'V-12345678', 'CAMION DE PRUEBA', 'USD', ${cot.id})`)
+  comprobar(/esperando aprobación/i.test(otroSd ?? ''), 'no hay dos despachos esperando aprobación de la misma cotización')
+
+  const corto = await debeFallar(tx, (sp) => sp`select public.cancelar_pedido_de_despacho(${cot.id}, 'no')`)
+  comprobar(/por qué/i.test(corto ?? ''), 'cancelar el pedido pide un motivo')
 
   await comoDueno(tx)
 }
