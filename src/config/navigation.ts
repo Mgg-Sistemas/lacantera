@@ -1,6 +1,6 @@
 import {
   ScanLine,
-  BookUser,
+  // BookUser, (era el icono de Contactos, apagado el 12/11/2026)
   Banknote,
   Fuel,
   HandHelping,
@@ -861,17 +861,17 @@ export const navigation: NavSection[] = [
           { label: 'Categorías', to: '/app/gastos/categorias' },
         ],
       },
-      {
-        /*
-          CONTROL DE DESPACHO, 21/09/2026. La planilla de Excel de Christopher
-          con la mitad izquierda llenándose sola: lee las notas de entrega y las
-          de salida, y no escribe en ningún otro módulo. Va antes de Facturación
-          porque es lo que se mira para saber qué falta por cobrar.
-        */
-        label: 'Control de despacho',
-        icon: ClipboardList,
-        to: '/app/control-despacho',
-      },
+      /*
+        CONTROL DE DESPACHO APAGADO (12/11/2026), hasta nuevo aviso. Sale del
+        menú para todos y su dirección lleva al Panel (App.tsx). No se tocó la
+        base. Para encenderlo, devolver esta entrada y la ruta. Era:
+
+        { label: 'Control de despacho', icon: ClipboardList, to: '/app/control-despacho' },
+
+        CONTROL DE DESPACHO, 21/09/2026. La planilla de Excel de Christopher
+        con la mitad izquierda llenándose sola: lee las notas de entrega y las
+        de salida, y no escribe en ningún otro módulo.
+      */
       {
         /*
           CONTROL DE ASISTENCIA, 22/09/2026. El carnet con QR ya existía para
@@ -882,17 +882,17 @@ export const navigation: NavSection[] = [
         icon: ScanLine,
         to: '/app/asistencia',
       },
-      {
-        /*
-          CONTACTOS, 24/09/2026. El directorio general: personas y empresas
-          con sus canales, dirección, etiquetas y quién los atiende. Un
-          contacto puede enlazarse al cliente, proveedor o trabajador que ya
-          existe, para no tenerlo dos veces.
-        */
-        label: 'Contactos',
-        icon: BookUser,
-        to: '/app/contactos',
-      },
+      /*
+        CONTACTOS APAGADO (12/11/2026), hasta nuevo aviso. Sale del menú para
+        todos y su dirección lleva al Panel (App.tsx). La libreta sigue en la
+        base y Asistencia › Visitantes la sigue usando para elegir a quién
+        viene. Para encenderlo, devolver esta entrada y la ruta. Era:
+
+        { label: 'Contactos', icon: BookUser, to: '/app/contactos' },
+
+        CONTACTOS, 24/09/2026. El directorio general: personas y empresas
+        con sus canales, dirección, etiquetas y quién los atiende.
+      */
       {
         /*
           ALIMENTACIÓN, 05/10/2026. Traída de MGG a los rieles de la casa: cada
