@@ -8,6 +8,11 @@ export interface CotizacionParaDespacho {
   numero: string
   cliente_id: number
   moneda: string
+  /** El descuento y el flete de la cotización viajan al despacho (12/11/2026). */
+  descuento: number
+  flete: number
+  /** Pasó su «vale hasta»: se despacha igual, pero se avisa para revisar precios. */
+  vencida: boolean
   renglones: Array<{
     articulo_id: number | null
     descripcion: string
@@ -23,8 +28,21 @@ export interface CotizacionParaDespacho {
 }
 
 export async function leerCotizacionParaDespacho(id: number): Promise<CotizacionParaDespacho> {
-  const c = desenvolver<{ id: number; numero: string; cliente_id: number; moneda: string }>(
-    await supabase.from('cotizaciones_venta').select('id, numero, cliente_id, moneda').eq('id', id).single(),
+  const c = desenvolver<{
+    id: number
+    numero: string
+    cliente_id: number
+    moneda: string
+    descuento: number | string | null
+    flete: number | string | null
+    fecha: string
+    validez_dias: number
+  }>(
+    await supabase
+      .from('cotizaciones_venta')
+      .select('id, numero, cliente_id, moneda, descuento, flete, fecha, validez_dias')
+      .eq('id', id)
+      .single(),
   )
   const renglones = desenvolver<CotizacionParaDespacho['renglones']>(
     await supabase
@@ -33,7 +51,21 @@ export async function leerCotizacionParaDespacho(id: number): Promise<Cotizacion
       .eq('cotizacion_id', id)
       .order('linea'),
   )
-  return { ...c, renglones }
+  // Vence al terminar el día `fecha + validez_dias` (el mismo criterio de la vista).
+  const vence = new Date(`${c.fecha}T12:00:00`)
+  vence.setDate(vence.getDate() + Number(c.validez_dias || 0))
+  const hoy = new Date()
+  hoy.setHours(0, 0, 0, 0)
+  return {
+    id: c.id,
+    numero: c.numero,
+    cliente_id: c.cliente_id,
+    moneda: c.moneda,
+    descuento: Number(c.descuento ?? 0),
+    flete: Number(c.flete ?? 0),
+    vencida: vence < hoy,
+    renglones,
+  }
 }
 
 /*
