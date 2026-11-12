@@ -306,13 +306,15 @@ const SalidasDePlanta = pagina(() =>
 const PlantasYRutas = pagina(() =>
   import('@/pages/explotacion/Plantas').then((m) => ({ default: m.Plantas })),
 )
-const ControlDespacho = pagina(() =>
-  import('@/pages/controlDespacho/ControlDespacho').then((m) => ({ default: m.ControlDespacho })),
-)
+// Control de despacho apagado el 12/11/2026 (ver su ruta, abajo).
+// const ControlDespacho = pagina(() =>
+//   import('@/pages/controlDespacho/ControlDespacho').then((m) => ({ default: m.ControlDespacho })),
+// )
 const ControlDeAsistencia = pagina(() =>
   import('@/pages/asistencia/ControlDeAsistencia').then((m) => ({ default: m.ControlDeAsistencia })),
 )
-const Contactos = pagina(() => import('@/pages/contactos/Contactos').then((m) => ({ default: m.Contactos })))
+// Contactos apagado el 12/11/2026 (ver su ruta, abajo).
+// const Contactos = pagina(() => import('@/pages/contactos/Contactos').then((m) => ({ default: m.Contactos })))
 const Gastos = pagina(() => import('@/pages/gastos/Gastos').then((m) => ({ default: m.Gastos })))
 const CategoriasDeGasto = pagina(() =>
   import('@/pages/gastos/Categorias').then((m) => ({ default: m.Categorias })),
@@ -386,9 +388,12 @@ const paginas: Record<string, ReactNode> = {
   // dirección guardada cae en el Panel. Los datos siguen en la base; para
   // encenderlo, volver a `<CentroDeCosto />` y a su entrada del menú.
   '/app/costos': <Navigate to="/app" replace />,
-  '/app/control-despacho': <ControlDespacho />,
+  // CONTROL DE DESPACHO Y CONTACTOS APAGADOS (12/11/2026), hasta nuevo aviso:
+  // la dirección guardada cae en el Panel. Para encenderlos, volver a
+  // `<ControlDespacho />` y `<Contactos />` y a sus entradas del menú.
+  '/app/control-despacho': <Navigate to="/app" replace />,
   '/app/asistencia': <ControlDeAsistencia />,
-  '/app/contactos': <Contactos />,
+  '/app/contactos': <Navigate to="/app" replace />,
   '/app/gastos': <Gastos />,
   '/app/gastos/categorias': <CategoriasDeGasto />,
   '/app/despachos': <TableroDespachos />,
