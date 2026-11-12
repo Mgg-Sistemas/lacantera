@@ -36,6 +36,7 @@ import { dolares, enteros } from '@/lib/formato'
 import { cn } from '@/lib/cn'
 import { useNotaDeTraslado } from '@/pages/salidas/NotaDeTraslado'
 import { BotonActaDeConteo } from './BotonActaDeConteo'
+import { BotonPlanillaDeEntrada } from './BotonPlanillaDeEntrada'
 import { ModalCorregirCosto, ModalDesglose } from './ModalesDeExistencias'
 import { MaterialPorRecibir } from './MaterialPorRecibir'
 import { ModalAlTaller } from './ModalAlTaller'
@@ -642,6 +643,8 @@ export function InventarioPrincipal() {
           >
             ↓ Plantilla
           </Button>
+          {/* La planilla en papel para anotar a mano lo que entra (12/11/2026). */}
+          <BotonPlanillaDeEntrada />
           {escribe ? (
             <Button
               variant="ghost"
