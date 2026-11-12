@@ -154,7 +154,7 @@ Esto es lo primero que hay que saber antes de buscar una pantalla: qué ofrece h
 **Hoy el menú lateral ofrece esto**, en tres secciones y con el **Panel** arriba del todo:
 
 - **Operación:** Explotación · Maquinaria · Inventario · Salidas y traslados · Combustible · Asignaciones
-- **Administración:** Centro de costo · Compras · Ventas · Control de despacho · Control de asistencia · Contactos · Alimentación · Facturación · Nómina · Organigrama · Tesorería
+- **Administración:** Compras · Ventas · Control de despacho · Control de asistencia · Contactos · Alimentación · Facturación · Nómina · Organigrama · Tesorería
 - **Sistema:** Tasas de cambio · Configuración · Manual de usuario
 
 Cada persona ve solo los módulos sobre los que tiene permiso (3.1), así que su menú puede ser más corto que esta lista. Si tiene un manual impreso de otra fecha, esta lista es la que manda.
@@ -357,7 +357,7 @@ Esto es todo lo que ofrece el menú hoy. Cada persona ve solo la parte sobre la 
 
 | Módulo | Pantallas |
 | --- | --- |
-| **Centro de costo** | Enlace directo |
+| **Centro de costo** | **Desactivado desde el 12/11/2026, hasta nuevo aviso.** Ya no sale en el menú y su dirección lleva al Panel. Lo que tenía (la caja de septiembre, los viajes aceptados y los gastos anotados) sigue guardado, sin borrar. |
 | **Compras** | **Tablero**, **Compra directa**, **Historial de directas**, **Proveedores**, **Recepciones**, **Pagos por hacer**, **Gasto por unidad** |
 | **Ventas** | **Tablero**, **Clientes**, **Lista de precios**, **Cotizaciones** |
 | **Control de despacho** | Enlace directo |
