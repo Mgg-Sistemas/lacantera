@@ -6820,6 +6820,8 @@ El botón **Despachar** está apagado mientras falte algo de lo obligatorio, el 
 
 **Un horómetro no retrocede.** Si la lectura es menor que la última, la ayuda lo dice antes de guardar: **Un horómetro no retrocede: lo último anotado marcaba 1250.** **Y el contador es uno solo, aunque se apunte en dos sitios**: el sistema compara con la lectura más alta anotada hasta la fecha del vale, venga del vale o del parte diario. El aviso de antes de guardar solo mira los vales: una lectura puede pasar el aviso y no guardarse, y entonces el mensaje dice con qué lectura choca.
 
+**Acarreo interno (13/11/2026).** En la computadora, **Nuevo movimiento de tanque** con el tipo **Uso (consumo de equipo)** trae la casilla **Acarreo interno**, para el combustible que se gasta moviendo material dentro de la cantera. Al marcarla desaparecen **Equipo** y **Destino**, y también el vale y los medidores: solo queda **Autorizado por**, que pasa a ser obligatorio. El movimiento se registra con el motivo **Operación** y el equipo **ACARREO INTERNO**, y quien autoriza consta también como quien recibió. En el libro y en el vale se ve como cualquier otro uso, con el equipo **ACARREO INTERNO**; se anula igual que un vale. Si el motivo **Operación** está apagado en los catálogos, la pantalla lo dice y no deja guardar. Por ahora la casilla está solo en la computadora, no en el teléfono.
+
 **Tres vales por máquina al día, como máximo.** La pantalla lo avisa antes de llenar el resto —**Es el surtido 2 de 3 de ese día para esta máquina.**— y al llegar al tope apaga el botón: **Ya se surtió 3 veces ese día. Son 3 al día como máximo.** Y no hay otro camino: el sistema no deja un cuarto.
 
 #### La lista de usos
