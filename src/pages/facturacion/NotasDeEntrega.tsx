@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { useMonedasUsables, useTasaVigente } from '@/lib/api/tasas'
 import { Check, Combine, FileText, MessageCircle, Pencil, Printer, Truck, X } from 'lucide-react'
@@ -296,17 +296,27 @@ export function NotasDeEntrega() {
   const [falloCotizacion, setFalloCotizacion] = useState<string | null>(null)
   const pedirDespacho = parametros.get('pedir')
   const cotizacionPedida = Number(parametros.get('cotizacion')) || null
+  /*
+    Qué cotización se está leyendo (13/11/2026). Antes la lectura se descartaba
+    con la limpieza del efecto: al borrar `?cotizacion=` de la dirección el
+    efecto corría de nuevo, marcaba la lectura como vieja y «Completar datos»
+    no abría nada. Ahora solo se descarta si después se pidió otra cotización.
+  */
+  const cotizacionEnLectura = useRef<number | null>(null)
   useEffect(() => {
     if (!pedirDespacho && !cotizacionPedida) return
-    let vigente = true
     setParametros({}, { replace: true })
     if (!cotizacionPedida) {
+      cotizacionEnLectura.current = null
       setNuevo(true)
       return
     }
-    void leerCotizacionParaDespacho(cotizacionPedida)
+    const pedida = cotizacionPedida
+    cotizacionEnLectura.current = pedida
+    setFalloCotizacion(null)
+    void leerCotizacionParaDespacho(pedida)
       .then((c) => {
-        if (!vigente) return
+        if (cotizacionEnLectura.current !== pedida) return
         setDesdeCotizacion({ id: c.id, numero: c.numero, descuento: c.descuento, vencida: c.vencida })
         setClienteId(String(c.cliente_id))
         setMoneda(c.moneda)
@@ -333,14 +343,11 @@ export function NotasDeEntrega() {
       })
       .catch((e: unknown) => {
         // Antes abría el formulario vacío sin decir nada: ahora se dice.
-        if (!vigente) return
+        if (cotizacionEnLectura.current !== pedida) return
         setFalloCotizacion(
           `No se pudo leer la cotización para completar el despacho: ${e instanceof Error ? e.message : String(e)}`,
         )
       })
-    return () => {
-      vigente = false
-    }
   }, [pedirDespacho, cotizacionPedida, setParametros])
   useEffect(() => {
     if (!notaPedida || !data) return
