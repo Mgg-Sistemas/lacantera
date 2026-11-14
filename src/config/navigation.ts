@@ -439,7 +439,7 @@ export const PANTALLAS_DE_TELEFONO: PantallaDeTelefono[] = [
   // pantalla se llega a la otra por su propio menú.
   { accion: 'COMBUSTIBLE.SURTIDOR_TELEFONO', ruta: '/app/combustible/surtidor', label: 'Surtidor', icon: Fuel },
   { accion: 'ALIMENTACION.COCINA_TELEFONO', ruta: '/app/alimentacion/cocina', label: 'Cocina', icon: UtensilsCrossed },
-  { accion: 'ALIMENTACION.TELEFONO', ruta: '/app/alimentacion', label: 'Alimentación', icon: UtensilsCrossed },
+  { accion: 'ALIMENTACION.TELEFONO', ruta: '/app/alimentacion/cocina', label: 'Alimentación', icon: UtensilsCrossed },
   { accion: 'INVENTARIO.ALMACEN_TELEFONO', ruta: '/app/inventario/almacen', label: 'Almacén', icon: Boxes },
   // La de compras (07/11/2026). Desde la fase 5b lleva a «Pedidos / Compras»:
   // la pantalla de teléfono del flujo anterior se retiró con él.
