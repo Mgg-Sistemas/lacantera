@@ -72,7 +72,7 @@ export function esTanquePermitidoParaEquipo(
 export function opcionesEquipos(args: {
   catalogo: CatalogoCombustible[]
   maquinas: MaquinaParaOpcion[]
-  /** Los tanques: de aquí salen los bidones. */
+  /** Los tanques: de aquí salía la lista de bidones (ya no se ofrecen; solo el que ya estaba elegido). */
   tanques?: Pick<TanqueGt, 'almacen_id' | 'nombre' | 'es_bidon' | 'activo'>[]
   /** En el teléfono la etiqueta es el código; en la PC, el nombre. */
   modo: 'telefono' | 'pc'
@@ -81,59 +81,73 @@ export function opcionesEquipos(args: {
   /** El que ya estaba elegido (al corregir): sale siempre. */
   incluirValor?: string | null
 }): OpcionEquipo[] {
-  const maquinas = new Map(args.maquinas.map((m) => [m.id, m]))
-  const ordenGrupo = (g: string) => {
-    const i = GRUPOS_EQUIPO.findIndex((x) => x.grupo === g)
-    return i >= 0 ? i : g === GRUPO_OTROS ? GRUPOS_EQUIPO.length : GRUPOS_EQUIPO.length + 1
-  }
-  const opciones: OpcionEquipo[] = []
-  const vistos = new Set<string>()
+  /*
+    LA LISTA SALE DE MAQUINARIA, NO DEL CATÁLOGO (13/11/2026).
 
+    Pedido: «en Equipo solo que me muestre las máquinas operativas en mi
+    sistema, en el apartado de Maquinaria», y faltaba el Hyundai 250LC. Antes se
+    recorría el catálogo de Combustible, que se llenó con las 17 máquinas del
+    10/11: toda máquina dada de alta después no tenía renglón y no salía, y las
+    que sí lo tenían salían aunque su estado no lo permitiera. Ahora se recorren
+    las máquinas de Maquinaria y solo salen las que están en estado ACTIVA. El
+    catálogo queda para lo que de verdad decide: «¿Puede surtir?» y los tanques
+    de los que puede surtir (sin renglón, puede surtir de todos).
+
+    Ya no se ofrecen los equipos sin ficha de Maquinaria ni los bidones. Lo que
+    ya estaba elegido al corregir un movimiento viejo sale siempre.
+  */
+  const incluido = args.incluirValor ?? ''
+  const vistos = new Set<string>()
+  const opciones: OpcionEquipo[] = []
+  const catalogoDe = new Map<number, CatalogoCombustible>()
   for (const c of args.catalogo) {
-    if (c.tipo !== 'equipo') continue
-    const valor = c.maquina_id != null ? valorMaquina(c.maquina_id) : c.valor.trim()
-    if (!valor || vistos.has(clave(valor))) continue
-    const elegido = !!args.incluirValor && clave(args.incluirValor) === clave(valor)
-    if (!elegido && !c.activo) continue
-    if (!elegido && !esTanquePermitidoParaEquipo(args.tanqueActual, c.tanques_permitidos)) continue
-    const maq = c.maquina_id != null ? maquinas.get(c.maquina_id) : undefined
-    // SOLO LAS MÁQUINAS OPERATIVAS (12/11/2026): «que no salgan las máquinas
-    // que no están activas». La que ya estaba elegida (al corregir un
-    // movimiento viejo) sale igual, para no perderla.
-    if (maq && !elegido && maq.estado && maq.estado !== 'ACTIVA') continue
+    if (c.tipo === 'equipo' && c.maquina_id != null) catalogoDe.set(c.maquina_id, c)
+  }
+
+  for (const maq of args.maquinas) {
+    const valor = valorMaquina(maq.id)
+    const c = catalogoDe.get(maq.id)
+    const elegido = !!incluido && clave(incluido) === clave(valor)
+    if (!elegido) {
+      if (maq.estado !== 'ACTIVA') continue
+      if (c && !c.activo) continue
+      if (c && !esTanquePermitidoParaEquipo(args.tanqueActual, c.tanques_permitidos)) continue
+    }
+    if (vistos.has(clave(valor))) continue
     vistos.add(clave(valor))
 
-    if (!maq) {
-      opciones.push({ valor, etiqueta: c.valor, grupo: GRUPO_OTROS, icono: '⛽' })
-      continue
-    }
     const g = GRUPOS_EQUIPO.find((x) => x.clase === (maq.clase ?? '').toUpperCase()) ?? GRUPOS_EQUIPO[0]
-    const nombre = c.valor || maq.nombre
+    const nombre = c?.valor || maq.nombre
     opciones.push({
       valor,
       codigo: maq.codigo,
       nombre,
       etiqueta: args.modo === 'telefono' ? `${maq.codigo} · ${nombre}` : nombre,
-      detalle: [maq.tipo, maq.estado && maq.estado !== 'ACTIVA' ? maq.estado.replace(/_/g, ' ').toLowerCase() : null]
-        .filter(Boolean)
-        .join(' · ') || undefined,
+      detalle:
+        [maq.tipo, maq.estado && maq.estado !== 'ACTIVA' ? maq.estado.replace(/_/g, ' ').toLowerCase() : null]
+          .filter(Boolean)
+          .join(' · ') || undefined,
       grupo: g.grupo,
       icono: g.icono,
     })
   }
 
-  for (const t of args.tanques ?? []) {
-    if (!t.es_bidon || t.almacen_id === args.tanqueActual) continue
-    const valor = valorBidon(t.almacen_id)
-    const elegido = !!args.incluirValor && args.incluirValor === valor
-    if (!t.activo && !elegido) continue
-    opciones.push({
-      valor,
-      etiqueta: `🪣 ${t.nombre}`,
-      detalle: 'bidón · salida directa',
-      grupo: GRUPO_BIDONES,
-      icono: '🪣',
-    })
+  // Lo que ya estaba elegido y no es una máquina de la lista (un equipo sin
+  // ficha o un bidón de un movimiento viejo) se conserva para no perderlo.
+  if (incluido && !vistos.has(clave(incluido))) {
+    const b = incluido.match(/^bidon:(\d+)$/)
+    const tanque = b ? args.tanques?.find((t) => t.almacen_id === Number(b[1])) : undefined
+    if (b) {
+      opciones.push({
+        valor: incluido,
+        etiqueta: `🪣 ${tanque?.nombre ?? 'Bidón'}`,
+        detalle: 'bidón · salida directa',
+        grupo: GRUPO_BIDONES,
+        icono: '🪣',
+      })
+    } else if (!/^maquina:\d+$/.test(incluido)) {
+      opciones.push({ valor: incluido, etiqueta: incluido, grupo: GRUPO_OTROS, icono: '⛽' })
+    }
   }
 
   return opciones.sort(
@@ -141,4 +155,9 @@ export function opcionesEquipos(args: {
       ordenGrupo(a.grupo) - ordenGrupo(b.grupo) ||
       (a.etiqueta ?? a.valor).localeCompare(b.etiqueta ?? b.valor, 'es', { numeric: true }),
   )
+}
+
+function ordenGrupo(g: string): number {
+  const i = GRUPOS_EQUIPO.findIndex((x) => x.grupo === g)
+  return i >= 0 ? i : g === GRUPO_OTROS ? GRUPOS_EQUIPO.length : GRUPOS_EQUIPO.length + 1
 }
