@@ -50,7 +50,6 @@ import {
   useAprobarViajes,
   useComoApruebo,
   useEquiposEnOperacion,
-  useMaquinasParaViajes,
   usePagoDeAcarreosEntre,
   useRechazarViajes,
   useRegistrarViajes,
@@ -167,7 +166,6 @@ function PestanaDia() {
   const refCarga = useRef<HTMLDivElement>(null)
 
   const vehiculos = useVehiculos(true)
-  const maquinas = useMaquinasParaViajes()
   const rutas = useRutasAcarreo()
   const dias = useAcarreosDia(dia)
   const todos = useAcarreosDelDia(dia)
@@ -177,10 +175,17 @@ function PestanaDia() {
   const { puede } = useMisPermisos()
   const escribe = puede('EXPLOTACION', 'ESCRITURA')
 
-  const filas = useMemo(() => dias.data ?? [], [dias.data])
+  // Solo registros de camiones (se ocultan las maquinarias operativas)
+  const filas = useMemo(
+    () => (dias.data ?? []).filter((f) => f.vehiculo_id !== null),
+    [dias.data],
+  )
+  const viajesDelDia = useMemo(
+    () => (todos.data ?? []).filter((v) => v.vehiculo_id !== null),
+    [todos.data],
+  )
   const flota = useMemo(() => vehiculos.data ?? [], [vehiculos.data])
   const listaRutas = useMemo(() => rutas.data ?? [], [rutas.data])
-  const listaMaquinas = useMemo(() => maquinas.data ?? [], [maquinas.data])
 
   const usables = useMemo(() => listaRutas.filter((r) => r.se_puede_usar), [listaRutas])
 
@@ -189,36 +194,28 @@ function PestanaDia() {
     [listaRutas, filas],
   )
 
-  // Todos los equipos (camiones + máquinas propias) normalizados
-  const todosLosEquipos = useMemo<EquipoAcarreo[]>(() => {
-    const camiones: EquipoAcarreo[] = flota.map((v) => ({
-      vehiculoId: v.id,
-      maquinaId: null,
-      placa: v.placa,
-      nombre: v.descripcion ?? '',
-      chofer: v.chofer_actual,
-      compania: v.propio ? 'Flota propia' : (v.transportista ?? 'Sin transportista'),
-      cargaUtilM3: v.carga_util_m3,
-      capacidadM3: v.capacidad_m3,
-    }))
-    const maq: EquipoAcarreo[] = listaMaquinas.map((m) => ({
-      vehiculoId: null,
-      maquinaId: m.id,
-      placa: m.codigo,
-      nombre: m.nombre,
-      chofer: null,
-      compania: 'Máquinas propias',
-      cargaUtilM3: null,
-      capacidadM3: null,
-    }))
-    return [...camiones, ...maq]
-  }, [flota, listaMaquinas])
+  // Solo el registro de camiones
+  const todosLosEquipos = useMemo<EquipoAcarreo[]>(
+    () =>
+      flota.map((v) => ({
+        vehiculoId: v.id,
+        maquinaId: null,
+        placa: v.placa,
+        nombre: v.descripcion ?? '',
+        chofer: v.chofer_actual,
+        compania: v.propio ? 'Flota propia' : (v.transportista ?? 'Sin transportista'),
+        cargaUtilM3: v.carga_util_m3,
+        capacidadM3: v.capacidad_m3,
+      })),
+    [flota],
+  )
 
-  // Índice rápido de filas del día por equipo
+  // Índice rápido de filas del día por camión
   const filasPorEquipo = useMemo(() => {
     const mapa = new Map<string, AcarreoDia[]>()
     for (const f of filas) {
-      const k = f.vehiculo_id !== null ? `v:${f.vehiculo_id}` : `m:${f.maquina_id ?? 0}`
+      if (f.vehiculo_id === null) continue
+      const k = `v:${f.vehiculo_id}`
       mapa.set(k, [...(mapa.get(k) ?? []), f])
     }
     return mapa
@@ -229,22 +226,14 @@ function PestanaDia() {
       .filter((f) => f.ruta_id === rutaId)
       .reduce((s, f) => s + f.viajes + f.por_aprobar, 0)
 
-  const companiasDisponibles = useMemo(() => {
-    const set = new Set<string>()
-    for (const eq of todosLosEquipos) {
-      if (eq.maquinaId !== null) {
-        const tieneHoy = (filasPorEquipo.get(claveEquipo(eq)) ?? []).length > 0
-        if (tieneHoy || escribe) set.add(eq.compania)
-      } else {
-        set.add(eq.compania)
-      }
-    }
-    return [...set].sort()
-  }, [todosLosEquipos, filasPorEquipo, escribe])
+  const companiasDisponibles = useMemo(
+    () => [...new Set(todosLosEquipos.map((eq) => eq.compania))].sort(),
+    [todosLosEquipos],
+  )
 
   const termino = busqueda.trim().toLowerCase()
 
-  // Equipos filtrados por búsqueda, compañía, ruta y botón «Solo con viajes»
+  // Camiones filtrados por búsqueda, compañía, ruta y botón «Solo con viajes»
   const seccionesPorCompania = useMemo(() => {
     const mapa = new Map<string, EquipoAcarreo[]>()
     for (const eq of todosLosEquipos) {
@@ -252,11 +241,6 @@ function PestanaDia() {
       const movioHoy = suyas.some(
         (f) => f.viajes > 0 || f.por_aprobar > 0 || f.rechazados > 0 || f.anulados > 0,
       )
-
-      // Las máquinas propias sin viajes hoy solo se listan cuando se filtra o se busca por ellas
-      if (eq.maquinaId !== null && !movioHoy && !termino && companiaFiltro !== 'Máquinas propias') {
-        continue
-      }
 
       if (companiaFiltro && eq.compania !== companiaFiltro) continue
 
@@ -325,13 +309,9 @@ function PestanaDia() {
   }
 
   const imprimir = async (incluirDescartados = false) => {
-    const todosViajes = todos.data ?? []
     const viajes = companiaFiltro
-      ? todosViajes.filter((v) => {
-          const comp = v.maquina_id !== null ? 'Máquinas propias' : v.transportista
-          return comp === companiaFiltro
-        })
-      : todosViajes
+      ? viajesDelDia.filter((v) => v.transportista === companiaFiltro)
+      : viajesDelDia
     const placas = [...new Set(viajes.map((v) => v.placa ?? '—'))]
     const guardadas = await qc.fetchQuery({
       queryKey: ['firmas'],
@@ -375,7 +355,7 @@ function PestanaDia() {
     )
   }
 
-  const hayDescartados = (todos.data ?? []).some(
+  const hayDescartados = viajesDelDia.some(
     (v) => v.estado === 'ANULADO' || v.estado === 'RECHAZADO',
   )
 
@@ -433,7 +413,7 @@ function PestanaDia() {
           <Button
             variant="outline"
             icon={<Printer />}
-            disabled={(todos.data ?? []).length === 0}
+            disabled={viajesDelDia.length === 0}
             onClick={() => void imprimir(conDescartados)}
           >
             Imprimir el día
@@ -510,14 +490,14 @@ function PestanaDia() {
                 {enteros(kpisDia.sinCarga)} sin carga útil medida
               </span>
             ) : (
-              'Según carga útil de cada equipo'
+              'Según carga útil de cada camión'
             )}
           </p>
         </Card>
 
         <Card>
           <p className="text-ink/45 text-2xs font-mono tracking-[0.14em] uppercase">
-            Equipos activos hoy
+            Camiones activos hoy
           </p>
           <p className="tabular text-ink/90 mt-2 text-2xl font-semibold">
             {enteros(kpisDia.equiposActivos)}
@@ -555,10 +535,10 @@ function PestanaDia() {
       {dias.error ? <ErrorDeCarga error={dias.error} /> : null}
       {rutas.error ? <ErrorDeCarga error={rutas.error} /> : null}
 
-      <PorAprobar viajes={todos.data ?? []} />
+      <PorAprobar viajes={viajesDelDia} />
 
       {/* Barra de búsqueda y filtro por desglose (compañía, nombre, placa, ruta, solo con viajes) */}
-      {flota.length > 0 || listaMaquinas.length > 0 ? (
+      {flota.length > 0 ? (
         <Card className="mb-5">
           <div className="flex flex-wrap items-end gap-3">
             <div className="relative min-w-[240px] flex-1">
@@ -710,7 +690,7 @@ function PestanaDia() {
                     <span className="text-ink/90 text-sm font-semibold">{empresa}</span>
                     <span className="text-ink/45 text-xs">
                       ({activosComp} de {equiposEmpresa.length}{' '}
-                      {equiposEmpresa.length === 1 ? 'equipo con viajes' : 'equipos con viajes'})
+                      {equiposEmpresa.length === 1 ? 'camión con viajes' : 'camiones con viajes'})
                     </span>
                   </span>
                   <span className="text-ink/65 tabular text-xs">
@@ -938,7 +918,7 @@ function CargarViajesUnificado({
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-12 lg:items-start">
         <div className="lg:col-span-4">
           <SelectBuscable
-            label="Camión o máquina"
+            label="Camión"
             vacio="Buscar placa, modelo, chofer o compañía…"
             valor={clavePreseleccionada}
             onCambio={(v) => {

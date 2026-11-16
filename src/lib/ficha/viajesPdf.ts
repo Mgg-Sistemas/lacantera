@@ -726,7 +726,7 @@ export async function armarReporteSemanalDeAcarreos(
   const resumenPares: Array<[string, string]> = [
     ['Compañía', d.companiaFiltro ?? 'Todas'],
     ['Ruta', (d.rutaFiltro ?? 'Todas').replace(/\s*(→|->)\s*/g, ' a ')],
-    ['Equipos con actividad', String(d.filas.length)],
+    ['Camiones con actividad', String(d.filas.length)],
     ['Viajes aprobados', cantidad(totalViajes)],
     ...(totalPorAprobar > 0
       ? ([['Por aprobar', cantidad(totalPorAprobar)]] as Array<[string, string]>)
@@ -747,7 +747,7 @@ export async function armarReporteSemanalDeAcarreos(
   )
 
   const colsMatriz: ColPeso[] = [
-    { titulo: 'Placa / Cód.', ancho: 18 },
+    { titulo: 'Placa', ancho: 18 },
     { titulo: 'Descripción · Chofer', ancho: 42 },
     ...etiquetasDia.map((t) => ({ titulo: t, ancho: 12, alDerecha: true })),
     { titulo: 'Viajes', ancho: 14, alDerecha: true },
@@ -775,7 +775,7 @@ export async function armarReporteSemanalDeAcarreos(
       bordes,
       abajo,
       arriba,
-      `${comp} (${suyas.length} ${suyas.length === 1 ? 'equipo' : 'equipos'})`,
+      `${comp} (${suyas.length} ${suyas.length === 1 ? 'camión' : 'camiones'})`,
       colsMatriz,
       suyas.map((f) => {
         const desc = [f.nombre, f.chofer].filter(Boolean).join(' · ') || '—'
@@ -807,7 +807,7 @@ export async function armarReporteSemanalDeAcarreos(
   if (d.rutas.length > 0) {
     const colsRutas: ColPeso[] = [
       { titulo: 'Ruta de acarreo', ancho: 56 },
-      { titulo: 'Equipos', ancho: 16, alDerecha: true },
+      { titulo: 'Camiones', ancho: 16, alDerecha: true },
       { titulo: 'Viajes aprobados', ancho: 20, alDerecha: true },
       { titulo: 'Por aprobar', ancho: 18, alDerecha: true },
       { titulo: 'm³ movidos', ancho: 20, alDerecha: true },
@@ -1001,7 +1001,7 @@ export function textoDelReporteSemanal(d: {
     d.companiaFiltro ? `Compañía: *${d.companiaFiltro}*` : '',
     '',
     `*RESUMEN GENERAL*`,
-    `• Equipos activos: ${d.filas.length}`,
+    `• Camiones activos: ${d.filas.length}`,
     `• Viajes aprobados: ${cantidad(totalViajes)}${totalPorAprobar > 0 ? ` (+${cantidad(totalPorAprobar)} por aprobar)` : ''}`,
     `• Volumen movido: ${conM3.length > 0 ? `${cantidad(totalM3)} m³` : '—'}`,
     d.hayDinero ? `• Total generado: $ ${numero(totalUsd)}` : '',

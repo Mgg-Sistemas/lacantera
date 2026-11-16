@@ -1050,7 +1050,7 @@ Tiene tres pestañas: **Acarreos del día**, **Reporte semanal** y **Registro de
 
 #### Acarreos del día
 
-Arriba se elige la **Fecha de operación** (con flechas para moverse de día), junto a los botones **Imprimir el día**, **Reporte de operaciones**, **Tarifas vigentes** y **Registrar acarreo**, seguidos de cuatro tarjetas con el resumen del día (**Viajes aprobados**, **Volumen del día**, **Equipos activos hoy** y **Monto del día**).
+Arriba se elige la **Fecha de operación** (con flechas para moverse de día), junto a los botones **Imprimir el día**, **Reporte de operaciones**, **Tarifas vigentes** y **Registrar acarreo**, seguidos de cuatro tarjetas con el resumen del día (**Viajes aprobados**, **Volumen del día**, **Camiones activos hoy** y **Monto del día**).
 
 Cuenta con una barra de búsqueda y desglose para localizar camiones por **placa**, **nombre o modelo** (p. ej. *Kodia rojo*), **chofer** o **compañía**, filtrar por **Ruta** o pulsar el botón **Solo con viajes** para ocultar los camiones en cero. Al tocar cualquier camión —tenga o no viajes ese día— se abre su ficha de **Historial y desglose de viajes**, donde puede consultar ese día, la semana (lunes a domingo), el mes o un rango libre, imprimir su PDF individual o descargar su CSV.
 
@@ -1058,13 +1058,13 @@ Cuenta con una barra de búsqueda y desglose para localizar camiones por **placa
 
 Lo hace quien puede cargar viajes (6.1), desde el bloque superior **Registrar acarreo rápido** (o pulsando **+** en la fila del camión):
 
-1. Busque y elija el **Camión o máquina** (por placa, modelo, chofer o compañía) y la **Ruta**.
+1. Busque y elija el **Camión** (por placa, modelo, chofer o compañía) y la **Ruta**.
 2. Elija la **Carga**: **Con la carga completa** (los metros cúbicos salen de la carga útil del camión), **Con carga parcial** (hay que decir cuántos traía) o **Vacío**.
 3. Escriba la **Cant. viajes**. **La cantidad se suma a los que ya tenga** ese camión en esa ruta ese día; no los reemplaza.
 4. Si la ruta es de precio libre o su tarifa es un rango, diga el **Precio por viaje (USD)**.
 5. Pulse **Cargar**.
 
-El precio lo pone la ruta. Si tiene tarifa fija, se copia la vigente en la fecha del viaje, y cambiar la tarifa después no toca los viajes ya cargados. Si es un rango, el precio tiene que caer dentro. Si es de precio libre —es lo que se hace con la coraza, que se cuadra con el pedido—, lo dice quien carga. **Las máquinas propias no se pagan por viaje**: el viaje queda contado sin precio.
+El precio lo pone la ruta. Si tiene tarifa fija, se copia la vigente en la fecha del viaje, y cambiar la tarifa después no toca los viajes ya cargados. Si es un rango, el precio tiene que caer dentro. Si es de precio libre —es lo que se hace con la coraza, que se cuadra con el pedido—, lo dice quien carga.
 
 #### Reporte semanal (Lunes a Domingo)
 

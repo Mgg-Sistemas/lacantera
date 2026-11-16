@@ -29,7 +29,6 @@ import {
   lunesDeSemana,
   sumarDiasIso,
   useAcarreosDiaEntre,
-  useMaquinasParaViajes,
   useRutasAcarreo,
   type EquipoAcarreo,
 } from '@/lib/api/acarreos'
@@ -81,12 +80,11 @@ export function PestanaSemanal() {
 
   const acarreosSemana = useAcarreosDiaEntre(lunes, domingo)
   const vehiculosQ = useVehiculos(true)
-  const maquinasQ = useMaquinasParaViajes()
   const rutasQ = useRutasAcarreo()
   const { data: laEmpresa } = useEmpresa()
   const { nombre: yo } = useSesion()
 
-  // Catálogo base de todos los equipos conocidos para enriquecer descripción/chofer/capacidad
+  // Catálogo base del registro de camiones para enriquecer descripción/chofer/capacidad
   const catalogoEquipos = useMemo(() => {
     const mapa = new Map<string, EquipoAcarreo>()
     for (const v of vehiculosQ.data ?? []) {
@@ -102,23 +100,14 @@ export function PestanaSemanal() {
       }
       mapa.set(claveEquipo(eq), eq)
     }
-    for (const m of maquinasQ.data ?? []) {
-      const eq: EquipoAcarreo = {
-        vehiculoId: null,
-        maquinaId: m.id,
-        placa: m.codigo,
-        nombre: m.nombre,
-        chofer: null,
-        compania: 'Máquinas propias',
-        cargaUtilM3: null,
-        capacidadM3: null,
-      }
-      mapa.set(claveEquipo(eq), eq)
-    }
     return mapa
-  }, [vehiculosQ.data, maquinasQ.data])
+  }, [vehiculosQ.data])
 
-  const filasCrudas = useMemo(() => acarreosSemana.data ?? [], [acarreosSemana.data])
+  // Solo registros de camiones (sin maquinarias operativas)
+  const filasCrudas = useMemo(
+    () => (acarreosSemana.data ?? []).filter((f) => f.vehiculo_id !== null),
+    [acarreosSemana.data],
+  )
 
   // Rutas con movimiento en la semana o activas
   const opcionesRuta = useMemo(() => {
@@ -643,7 +632,7 @@ export function PestanaSemanal() {
                   </p>
                   <p className="text-ink/60 tabular mt-1 text-xs">
                     <strong className="text-ink/90">{enteros(r.viajes)}</strong> viajes ·{' '}
-                    {enteros(r.equipos)} {r.equipos === 1 ? 'equipo' : 'equipos'}
+                    {enteros(r.equipos)} {r.equipos === 1 ? 'camión' : 'camiones'}
                     {r.m3 !== null ? ` · ${enteros(r.m3)} m³` : ''}
                     {kpis.hayDinero && r.montoUsd !== null ? ` · ${dolares(r.montoUsd)}` : ''}
                   </p>
@@ -686,7 +675,7 @@ export function PestanaSemanal() {
                   <h2 className="text-ink/85 text-sm font-semibold">
                     {comp}{' '}
                     <span className="text-ink/45 font-normal">
-                      · {camiones.length} {camiones.length === 1 ? 'equipo' : 'equipos'} ·{' '}
+                      · {camiones.length} {camiones.length === 1 ? 'camión' : 'camiones'} ·{' '}
                       {enteros(subViajes)} viajes
                       {kpis.hayDinero ? ` · ${dolares(subUsd)}` : ''}
                     </span>
