@@ -25,7 +25,7 @@ export const diceQueIncluye = (incluye: ClaseCosto[]): string =>
 
 export const ORIGENES: Record<string, string> = {
   MANUAL: 'Manual',
-  ACARREO: 'Viajes de camiones',
+  ACARREO: 'Acarreos internos',
   SALIDA_PLANTA: 'Salidas de planta',
   FIJO: 'Gasto fijo',
   NOMINA: 'Nómina',

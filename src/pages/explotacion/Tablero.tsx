@@ -72,9 +72,9 @@ export function TableroExplotacion() {
       exigeEscritura: true,
     },
     {
-      titulo: 'Viajes de camiones',
+      titulo: 'Acarreos internos',
       detalle:
-        'El acarreo: qué camión movió qué, de dónde a dónde, y cuánto se le paga al transportista por ello.',
+        'El acarreo diario y semanal: qué camión movió qué, de dónde a dónde, y cuánto se le paga a cada compañía.',
       icono: Route,
       ruta: '/app/explotacion/viajes',
     },
@@ -136,7 +136,7 @@ export function TableroExplotacion() {
                 Tres pantallas abiertas y cada una contesta una pregunta distinta.{' '}
                 <strong>Salidas de planta</strong> es lo que sale con producto, camión por camión —y
                 los metros cúbicos se llenan solos con la carga útil—.{' '}
-                <strong>Viajes de camiones</strong> es el acarreo y lo que se le paga al
+                <strong>Acarreos internos</strong> es el acarreo y lo que se le paga al
                 transportista. <strong>Plantas y rutas</strong> es dónde están los sitios y qué
                 tarifa tiene cada ruta.
               </p>

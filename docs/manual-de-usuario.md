@@ -346,7 +346,7 @@ Esto es todo lo que ofrece el menú hoy. Cada persona ve solo la parte sobre la 
 
 | Módulo | Pantallas |
 | --- | --- |
-| **Explotación** | **Tablero**, **Viajes de camiones**, **Plantas y rutas**, **Salidas de planta** |
+| **Explotación** | **Tablero**, **Acarreos internos**, **Plantas y rutas**, **Salidas de planta** |
 | **Maquinaria** | **Equipos**, **Historial de taller** |
 | **Inventario** | **Inventario**, **Almacenes y talleres**, **Solicitudes de pedido** |
 | **Salidas y traslados** | Enlace directo |
@@ -975,7 +975,7 @@ Explotación es el acarreo y lo que sale de la planta, camión por camión. El m
 
 - **Tablero**: el resumen del día.
 - **Salidas de planta**: cada camión que sale de la planta con producto, y cuántos metros cúbicos lleva.
-- **Viajes de camiones**: el acarreo, qué camión movió qué y de dónde a dónde, y lo que se le paga al transportista.
+- **Acarreos internos**: el acarreo diario y semanal, qué camión movió qué y de dónde a dónde, y lo que se le paga a cada compañía.
 - **Plantas y rutas**: las minas, plantas, patios y bases, quién las opera, y las rutas entre ellos con su tarifa.
 
 **Frentes y bancos**, **Voladuras** y **Producción por turno** existen pero están escondidas del menú (1.5). Se cuentan al final del capítulo, en 6.7.
@@ -1015,7 +1015,7 @@ La pantalla de entrada: **Acarreo y salidas de planta, camión por camión. Los 
 
 Arriba, dos cifras del día: **Salidas de hoy**, con cuántos camiones salieron, y **Metros cúbicos de hoy**, **Estimados por la carga útil del camión**. Solo cuentan las salidas que no se anularon.
 
-Debajo, tres atajos: **Anotar una salida**, **Viajes de camiones** y **Plantas y rutas**, cada uno con lo que se hace ahí. A cada persona le salen los que su permiso alcanza.
+Debajo, tres atajos: **Anotar una salida**, **Acarreos internos** y **Plantas y rutas**, cada uno con lo que se hace ahí. A cada persona le salen los que su permiso alcanza.
 
 ### 6.3 Salidas de planta
 
@@ -1040,31 +1040,39 @@ El camión y el producto se quedan puestos para la siguiente, que es lo normal c
 
 **Para qué sirve todo esto.** Cada salida es el denominador del **Costo por m³** de **Centro de costo**: lo que costó la caja, dividido entre lo que salió de la planta. Sin salidas de planta anotadas, Centro de costo no puede dar ese número.
 
-### 6.4 Viajes de camiones
+### 6.4 Acarreos internos
 
-**Operación › Explotación › Viajes de camiones**
+**Operación › Explotación › Acarreos internos**
 
-**Viajes por camión o máquina y por ruta. Cada viaje nuevo queda pendiente de aprobación del responsable de la mina o planta, o de quien tenga ese permiso; hasta entonces no cuenta para el pago.**
+**Control diario y semanal de viajes por camión, compañía y ruta. Cada viaje nuevo queda pendiente de aprobación del responsable antes de contar para el pago.**
 
-Tiene dos pestañas: **Viajes del día** y **Registro de pago**.
+Tiene tres pestañas: **Acarreos del día**, **Reporte semanal** y **Registro de pago**.
 
-#### Viajes del día
+#### Acarreos del día
 
-Arriba se elige el **Día**, y están los botones **Imprimir el día** y **Reporte de operaciones**. A la derecha, para quien ve el dinero, la **Tarifa por viaje** de cada ruta.
+Arriba se elige la **Fecha de operación** (con flechas para moverse de día), junto a los botones **Imprimir el día**, **Reporte de operaciones**, **Tarifas vigentes** y **Registrar acarreo**, seguidos de cuatro tarjetas con el resumen del día (**Viajes aprobados**, **Volumen del día**, **Equipos activos hoy** y **Monto del día**).
 
-Los viajes se ven en una tabla por empresa transportista —los camiones propios en **Flota propia**—, con una fila por camión y una columna por ruta, más los **m³** y el **Monto a pagar** del día. Debajo de cada tabla está el formulario para cargar viajes, y al pie el total del día. **Ver los**, con el número de viajes, abre el detalle de un camión, viaje por viaje.
+Cuenta con una barra de búsqueda y desglose para localizar camiones por **placa**, **nombre o modelo** (p. ej. *Kodia rojo*), **chofer** o **compañía**, filtrar por **Ruta** o pulsar el botón **Solo con viajes** para ocultar los camiones en cero. Al tocar cualquier camión —tenga o no viajes ese día— se abre su ficha de **Historial y desglose de viajes**, donde puede consultar ese día, la semana (lunes a domingo), el mes o un rango libre, imprimir su PDF individual o descargar su CSV.
 
 #### Cargar viajes
 
-Lo hace quien puede cargar viajes (6.1).
+Lo hace quien puede cargar viajes (6.1), desde el bloque superior **Registrar acarreo rápido** (o pulsando **+** en la fila del camión):
 
-1. Elija el **Camión** —o la **Máquina**, en la sección de máquinas propias— y la **Ruta**.
+1. Busque y elija el **Camión o máquina** (por placa, modelo, chofer o compañía) y la **Ruta**.
 2. Elija la **Carga**: **Con la carga completa** (los metros cúbicos salen de la carga útil del camión), **Con carga parcial** (hay que decir cuántos traía) o **Vacío**.
-3. Escriba la **Cantidad de viajes**. **La cantidad se suma a los que ya tenga** ese camión en esa ruta ese día; no los reemplaza.
-4. Si la ruta es de precio libre o su tarifa es un rango, diga el **Precio de cada viaje**.
+3. Escriba la **Cant. viajes**. **La cantidad se suma a los que ya tenga** ese camión en esa ruta ese día; no los reemplaza.
+4. Si la ruta es de precio libre o su tarifa es un rango, diga el **Precio por viaje (USD)**.
 5. Pulse **Cargar**.
 
 El precio lo pone la ruta. Si tiene tarifa fija, se copia la vigente en la fecha del viaje, y cambiar la tarifa después no toca los viajes ya cargados. Si es un rango, el precio tiene que caer dentro. Si es de precio libre —es lo que se hace con la coraza, que se cuadra con el pedido—, lo dice quien carga. **Las máquinas propias no se pagan por viaje**: el viaje queda contado sin precio.
+
+#### Reporte semanal (Lunes a Domingo)
+
+La pestaña **Reporte semanal** arma el corte operativo de **lunes a domingo**:
+
+- Permite navegar con **Anterior**, **Esta semana** o **Siguiente**, y filtrar por **camión/modelo/chofer**, **Compañía** o **Ruta**.
+- Muestra las tarjetas de resumen semanal, el **desglose semanal por ruta** y la **matriz por compañía y camión** con las columnas **Lun, Mar, Mié, Jue, Vie, Sáb, Dom**, **Total**, **m³** y **Monto**, más el subtotal de cada compañía. Tocar cualquier camión o día abre sus viajes detallados.
+- Permite exportar el **PDF semanal** en formato horizontal, **Descargar CSV** y copiar el **Resumen WhatsApp** de la semana.
 
 #### Aprobar, rechazar y ajustar el precio
 
@@ -1131,7 +1139,7 @@ El botón **Tarifas** solo sale a quien ve el dinero. Para ponerle tarifa a una 
 #### Por dónde entra el material al patio
 
 - **Registrar entrada**, en **Inventario › Inventario › Existencias**, admite cualquier artículo que lleve existencias, también los productos de cantera. Lo registra como una entrada sin compra, con su procedencia y su costo (7.4).
-- **Salidas de planta** y **Viajes de camiones** no mueven el inventario.
+- **Salidas de planta** y **Acarreos internos** no mueven el inventario.
 - **Producción por turno** también escribe entradas, pero no está en el menú (6.7).
 
 #### Lo que se mide, se mide en metros cúbicos
@@ -1162,7 +1170,7 @@ Las casillas de permiso de estas tres pantallas —ver la producción, abrir fre
 | «Su usuario no tiene permiso para esta acción.» | Le falta la casilla de lo que intentó hacer, y el mensaje no dice cuál | Mire en 6.1 qué casilla hace falta y pídala |
 | **Su rol no registra salidas** en Salidas de planta | No tiene la casilla de anotar salidas | Pídala, o que las anote quien la tenga |
 | **Sin productos medidos en metros cúbicos** | Los productos del catálogo usan otras unidades | Revise la unidad del producto en el catálogo de artículos |
-| **Sin rutas abiertas** en Viajes de camiones | No hay rutas encendidas con los dos sitios abiertos | Créelas o enciéndalas en **Plantas y rutas** |
+| **Sin rutas abiertas** en Acarreos internos | No hay rutas encendidas con los dos sitios abiertos | Créelas o enciéndalas en **Plantas y rutas** |
 | **Sin camiones registrados** | No hay camiones en la flota | Regístrelos en **Maquinaria › Equipos**, con su placa y su capacidad |
 | Una ruta con **Sin tarifa: no se pueden cargar viajes** | La ruta no tiene tarifa vigente | Póngasela con **Tarifas**, en Plantas y rutas |
 | **Lo decide el responsable** en un grupo por aprobar | Usted no responde por ninguno de los dos sitios de esa ruta | Que lo apruebe el responsable, quien tenga la casilla o el gerente general |

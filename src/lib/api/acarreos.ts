@@ -700,3 +700,114 @@ export function useFijarTarifaRuta() {
   es como el campo acabó sin existir en el formulario y los metros cúbicos
   saliendo en cero.
 */
+
+/** Ficha resumida de un camión o máquina propia para filtrar y abrir sus viajes. */
+export interface EquipoAcarreo {
+  vehiculoId: number | null
+  maquinaId: number | null
+  placa: string
+  /** Modelo o descripción («KODIA ROJO», «SINOTRUK AZUL», o nombre de máquina). */
+  nombre: string
+  chofer: string | null
+  compania: string
+  cargaUtilM3: string | null
+  capacidadM3: string | null
+}
+
+export const esEquipo = (
+  f: { vehiculo_id: number | null; maquina_id: number | null },
+  e: Pick<EquipoAcarreo, 'vehiculoId' | 'maquinaId'>,
+) => (e.vehiculoId !== null ? f.vehiculo_id === e.vehiculoId : f.maquina_id === e.maquinaId)
+
+export const claveEquipo = (e: Pick<EquipoAcarreo, 'vehiculoId' | 'maquinaId'>) =>
+  e.vehiculoId !== null ? `v:${e.vehiculoId}` : `m:${e.maquinaId ?? 0}`
+
+export const esFechaIso = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v)
+
+/** Suma días a una fecha AAAA-MM-DD sin pasar por la zona horaria del navegador. */
+export function sumarDiasIso(iso: string, dias: number): string {
+  const d = new Date(`${iso}T12:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + dias)
+  return d.toISOString().slice(0, 10)
+}
+
+/** Devuelve el lunes (AAAA-MM-DD) de la semana (lunes a domingo) que contiene `iso`. */
+export function lunesDeSemana(iso: string): string {
+  const d = new Date(`${iso}T12:00:00Z`)
+  const desdeLunes = (d.getUTCDay() + 6) % 7
+  return sumarDiasIso(iso, -desdeLunes)
+}
+
+export const DIAS_SEMANA_CORTO = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as const
+
+/** Los 7 días (lunes a domingo) a partir de un lunes AAAA-MM-DD. */
+export function diasDeLaSemana(lunesIso: string): Array<{
+  iso: string
+  etiqueta: string
+  corto: string
+}> {
+  return DIAS_SEMANA_CORTO.map((etiqueta, i) => {
+    const iso = sumarDiasIso(lunesIso, i)
+    return {
+      iso,
+      etiqueta,
+      corto: `${iso.slice(8, 10)}/${iso.slice(5, 7)}`,
+    }
+  })
+}
+
+/**
+ * Resumen de viajes agrupado por camión/máquina, día y ruta entre dos fechas.
+ * Alimenta el reporte semanal sin traer miles de renglones sueltos.
+ */
+export function useAcarreosDiaEntre(desde: string, hasta: string) {
+  return useQuery({
+    queryKey: ['acarreos', 'dia-rango', desde, hasta],
+    enabled: esFechaIso(desde) && esFechaIso(hasta) && desde <= hasta,
+    staleTime: 20_000,
+    queryFn: async () =>
+      desenvolver<AcarreoDia[]>(
+        await supabase
+          .from('v_acarreos_dia')
+          .select('*')
+          .gte('fecha', desde)
+          .lte('fecha', hasta)
+          .order('transportista')
+          .order('placa')
+          .order('fecha'),
+      ),
+  })
+}
+
+/**
+ * Historial viaje por viaje de un camión o máquina entre dos fechas (un día,
+ * una semana, un mes o rango libre).
+ */
+export function useAcarreosDeEquipoEntre(
+  desde: string,
+  hasta: string,
+  equipo: { vehiculoId: number | null; maquinaId: number | null } | null,
+) {
+  const valido = Boolean(equipo) && esFechaIso(desde) && esFechaIso(hasta) && desde <= hasta
+  return useQuery({
+    queryKey: [
+      'acarreos',
+      'detalle-rango',
+      desde,
+      hasta,
+      equipo?.vehiculoId ?? null,
+      equipo?.maquinaId ?? null,
+    ],
+    enabled: valido,
+    queryFn: async () => {
+      let q = supabase.from('v_acarreos').select('*').gte('fecha', desde).lte('fecha', hasta)
+      q =
+        equipo!.vehiculoId !== null
+          ? q.eq('vehiculo_id', equipo!.vehiculoId)
+          : q.eq('maquina_id', equipo!.maquinaId!)
+      return desenvolver<Acarreo[]>(
+        await q.order('fecha', { ascending: false }).order('tramo_dice').order('secuencia'),
+      )
+    },
+  })
+}
