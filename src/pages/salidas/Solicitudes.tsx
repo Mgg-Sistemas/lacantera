@@ -270,7 +270,7 @@ export function Solicitudes() {
     LOS BOTONES DE UNA SOLICITUD, LOS DE SIEMPRE. Los usan la lista y el
     detalle del tablero; la lógica no se toca.
   */
-  const botonesDe = (s: SolicitudDeSalida) => {
+  const botonesDe = (s: SolicitudDeSalida, alActuar?: () => void) => {
     const puedo = quePuedoHacerConLaSolicitud(s, comoApruebo, puedoSacar)
     return (
       <>
@@ -280,6 +280,7 @@ export function Solicitudes() {
             icon={<PackageCheck />}
             disabled={aprobar.isPending}
             onClick={() => {
+              alActuar?.()
               setFallo(null)
               if (tengoFirma) {
                 setConMiFirma(true)
@@ -309,6 +310,7 @@ export function Solicitudes() {
           variant="ghost"
           icon={<FileText />}
           onClick={() => {
+            alActuar?.()
             setFallo(null)
             void nota.abrirOrden(s)
           }}
@@ -322,6 +324,7 @@ export function Solicitudes() {
             variant="ghost"
             icon={<FileText />}
             onClick={() => {
+              alActuar?.()
               setFallo(null)
               void nota.abrir(s.nota_salida!, s.motivo)
             }}
@@ -335,7 +338,10 @@ export function Solicitudes() {
             size="sm"
             variant="ghost"
             icon={<MessageCircle />}
-            onClick={() => setVerReporteSalida({ s, notaSalida: s.nota_salida! })}
+            onClick={() => {
+              alActuar?.()
+              setVerReporteSalida({ s, notaSalida: s.nota_salida! })
+            }}
           >
             Reporte
           </Button>
@@ -345,6 +351,7 @@ export function Solicitudes() {
             variant="ghost"
             icon={<MessageCircle />}
             onClick={() => {
+              alActuar?.()
               const empresa = empresaDelPapel(datosEmpresa).razonSocial
               setWs({
                 titulo: `Avisar por WhatsApp · ${s.numero}`,
@@ -372,6 +379,7 @@ export function Solicitudes() {
             variant="ghost"
             icon={<X />}
             onClick={() => {
+              alActuar?.()
               setMotivo('')
               setCerrando({ s, como: 'RECHAZAR' })
             }}
@@ -386,6 +394,7 @@ export function Solicitudes() {
             icon={<PackageMinus />}
             disabled={entregar.isPending}
             onClick={() => {
+              alActuar?.()
               setFallo(null)
               entregar.mutate(s.id, {
                 onSuccess: (numero) => {
@@ -415,7 +424,10 @@ export function Solicitudes() {
             size="sm"
             variant="ghost"
             title={s.estado === 'APROBADA' ? 'Al guardar, vuelve a Por aprobar' : 'Cambiar materiales o el para qué'}
-            onClick={() => setEditando(s)}
+            onClick={() => {
+              alActuar?.()
+              setEditando(s)
+            }}
           >
             ✎ Editar
           </Button>
@@ -426,6 +438,7 @@ export function Solicitudes() {
             size="sm"
             variant="ghost"
             onClick={() => {
+              alActuar?.()
               setMotivo('')
               setCerrando({ s, como: 'CANCELAR' })
             }}
@@ -715,13 +728,8 @@ export function Solicitudes() {
           titulo={`Solicitud ${detalle.numero}`}
           ancho="lg"
           acciones={
-            <div
-              className="flex flex-wrap items-center justify-end gap-2"
-              onClickCapture={(e) => {
-                if ((e.target as HTMLElement).closest('button')) setDetalleId(null)
-              }}
-            >
-              {botonesDe(detalle)}
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {botonesDe(detalle, () => setDetalleId(null))}
               <Button variant="ghost" onClick={() => setDetalleId(null)}>
                 Cerrar
               </Button>

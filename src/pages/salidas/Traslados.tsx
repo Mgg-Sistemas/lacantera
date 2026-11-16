@@ -182,7 +182,7 @@ export function Traslados() {
     LOS BOTONES DE UN TRASLADO, LOS DE SIEMPRE. Los usan la tabla y el detalle
     del tablero; la lógica no se toca.
   */
-  const botonesDe = (t: Traslado) => {
+  const botonesDe = (t: Traslado, alActuar?: () => void) => {
     const puedo = quePuedoHacer(t, yo)
     const ocupado = enCurso === t.id
     return (
@@ -192,7 +192,10 @@ export function Traslados() {
             size="sm"
             icon={<MoveRight className="size-4" />}
             disabled={ocupado}
-            onClick={() => pedirPaso(t, 'aceptar')}
+            onClick={() => {
+              alActuar?.()
+              pedirPaso(t, 'aceptar')
+            }}
           >
             {ocupado ? 'Enviando…' : 'Aprobar y enviar'}
           </Button>
@@ -202,7 +205,10 @@ export function Traslados() {
             size="sm"
             icon={<PackageCheck className="size-4" />}
             disabled={ocupado}
-            onClick={() => pedirPaso(t, 'recibir')}
+            onClick={() => {
+              alActuar?.()
+              pedirPaso(t, 'recibir')
+            }}
           >
             {ocupado ? 'Confirmando…' : 'Confirmar llegada'}
           </Button>
@@ -215,7 +221,10 @@ export function Traslados() {
             size="sm"
             icon={<FileText className="size-4" />}
             disabled={nota.armando === t.id}
-            onClick={() => void nota.abrirTraslado(t.id)}
+            onClick={() => {
+              alActuar?.()
+              void nota.abrirTraslado(t.id)
+            }}
           >
             {nota.armando === t.id ? 'Armando…' : 'Nota'}
           </Button>
@@ -227,6 +236,7 @@ export function Traslados() {
             icon={<X className="size-4" />}
             disabled={ocupado}
             onClick={() => {
+              alActuar?.()
               setCancelando(t)
               setMotivo('')
               setErrorAlCancelar('')
@@ -448,13 +458,8 @@ export function Traslados() {
           titulo={`Traslado ${detalle.numero}`}
           ancho="lg"
           acciones={
-            <div
-              className="flex flex-wrap items-center justify-end gap-2"
-              onClickCapture={(e) => {
-                if ((e.target as HTMLElement).closest('button')) setDetalleId(null)
-              }}
-            >
-              {botonesDe(detalle)}
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {botonesDe(detalle, () => setDetalleId(null))}
               <Button variant="ghost" onClick={() => setDetalleId(null)}>
                 Cerrar
               </Button>
