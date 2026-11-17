@@ -40,12 +40,17 @@ import {
   useRecibos,
 } from '@/lib/api/nomina'
 import type { ACargoDe, CargasDeEmpleado, Empleado } from '@/lib/api/nomina'
+import { useTabulador } from '@/lib/api/tabulador'
 import { useMisRoles } from '@/lib/api/catalogo'
 import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
 import { useSesion } from '@/lib/sesion'
 import { Visor } from '@/components/Visor'
 import { armarInformeDePersonal } from '@/lib/ficha/informePersonalPdf'
-import { armarDirectorioPersonal } from '@/lib/ficha/directorioPersonalPdf'
+import {
+  armarDirectorioPersonal,
+  type PersonaDelDirectorio,
+  type ResumenNivelTabulador,
+} from '@/lib/ficha/directorioPersonalPdf'
 import { armarPlanillaDeIngreso } from '@/lib/ficha/planillaIngresoPdf'
 import type { ApartadoImpreso } from '@/lib/ficha/planillaIngresoPdf'
 import { armarPagoBancario } from '@/lib/ficha/nominaBancariaPdf'
@@ -89,6 +94,7 @@ export function Personal() {
   const { data, isPending, error } = useEmpleados(!verInactivos)
   const { data: empresa } = useEmpresa()
   const { data: cargos } = useACargoDe()
+  const { data: nivelesTabulador } = useTabulador()
 
   /*
     De qué responde una persona: los almacenes que lleva y las máquinas que
@@ -375,7 +381,16 @@ export function Personal() {
     if (gente.length === 0) return
     setArmandoDirectorio({ hechos: 0, total: gente.length })
     try {
-      const personas = []
+      const niveles = nivelesTabulador ?? []
+      const personas: PersonaDelDirectorio[] = []
+      const conteoPorNivel = new Map<
+        number,
+        { nivel: (typeof niveles)[number]; trabajadores: number; subtotalMensual: number }
+      >()
+      let fueraCount = 0
+      let fueraSubtotal = 0
+      let monedaFuera = 'USD'
+
       for (let i = 0; i < gente.length; i++) {
         const e = gente[i]
         setArmandoDirectorio({ hechos: i, total: gente.length })
@@ -390,19 +405,119 @@ export function Personal() {
             )
           : null
 
+        const nivel =
+          (e.tabulador_id ? niveles.find((n) => n.id === e.tabulador_id) : null) ??
+          niveles.find((n) => n.cargo.trim().toUpperCase() === e.cargo.trim().toUpperCase()) ??
+          null
+
+        const salarioBaseNum = Number(e.salario_base) || 0
+        const salarioMensualMonto =
+          e.base_estipulacion === 'DIARIO'
+            ? salarioBaseNum * 30
+            : e.base_estipulacion === 'HORA'
+              ? salarioBaseNum * 8 * 30
+              : salarioBaseNum
+
+        const etiquetaBase =
+          BASES_SALARIO.find((b) => b.valor === e.base_estipulacion)?.etiqueta ?? 'Por mes'
+        const etiquetaFrecuencia =
+          FRECUENCIAS.find((f) => f.valor === e.frecuencia)?.etiqueta.toLowerCase() ?? 'quincenal'
+
+        const cobroPorPeriodoTexto =
+          e.base_estipulacion === 'MENSUAL'
+            ? e.frecuencia === 'QUINCENAL'
+              ? `Quincena: ${dinero(e.moneda_salario, salarioBaseNum / 2)}`
+              : e.frecuencia === 'SEMANAL'
+                ? `Semanal: ${dinero(e.moneda_salario, (salarioBaseNum / 30) * 7)}`
+                : `Mensual: ${dinero(e.moneda_salario, salarioBaseNum)}`
+            : `Equiv. mes: ${dinero(e.moneda_salario, salarioMensualMonto)}`
+
+        const coincideConTabulador = nivel
+          ? e.moneda_salario === nivel.moneda &&
+            Math.abs(salarioMensualMonto - Number(nivel.sueldo_mensual)) < 0.01
+          : true
+
+        if (nivel) {
+          const previo = conteoPorNivel.get(nivel.id) ?? {
+            nivel,
+            trabajadores: 0,
+            subtotalMensual: 0,
+          }
+          previo.trabajadores += 1
+          previo.subtotalMensual += salarioMensualMonto
+          conteoPorNivel.set(nivel.id, previo)
+        } else {
+          fueraCount += 1
+          fueraSubtotal += salarioMensualMonto
+          monedaFuera = e.moneda_salario || monedaFuera
+        }
+
+        const cargoResp = aCargoDe(e.id)
+
         personas.push({
           ficha: e.ficha,
-          nombre: `${e.nombres} ${e.apellidos}`.trim(),
+          nombre: `${e.apellidos}, ${e.nombres}`.trim(),
           cedula: e.cedula,
           cargo: e.cargo,
           departamento: e.departamento,
           fechaIngreso: e.fecha_ingreso,
+          antiguedadTexto: e.fecha_ingreso_confirmada
+            ? e.activo
+              ? antiguedad(e.fecha_ingreso)
+              : e.fecha_egreso
+                ? `hasta ${fecha(e.fecha_egreso)}`
+                : null
+            : 'Ingreso por confirmar',
+          activo: e.activo,
+          eventual: e.eventual,
+          aCargo: cargoResp ? resumenACargo(cargoResp) : null,
+          tabuladorCargo: nivel?.cargo ?? null,
+          tabuladorMensual: nivel ? dinero(nivel.moneda, nivel.sueldo_mensual) : null,
+          tabuladorQuincenal: nivel
+            ? nivel.sueldo_quincenal
+              ? dinero(nivel.moneda, nivel.sueldo_quincenal)
+              : dinero(nivel.moneda, Number(nivel.sueldo_mensual) / 2)
+            : null,
+          enTabulador: Boolean(nivel),
+          coincideConTabulador,
+          salarioBaseTexto: dinero(e.moneda_salario, e.salario_base),
+          salarioMensualMonto,
+          monedaSalario: e.moneda_salario,
+          modalidadPago: `${etiquetaBase} · ${etiquetaFrecuencia}`,
+          cobroPorPeriodoTexto,
           fotoDataUrl,
+        })
+      }
+
+      const resumenTabulador: ResumenNivelTabulador[] = niveles
+        .filter((n) => n.activo || conteoPorNivel.has(n.id))
+        .map((n) => {
+          const grupo = conteoPorNivel.get(n.id)
+          return {
+            cargo: n.cargo,
+            moneda: n.moneda,
+            sueldoMensual: n.sueldo_mensual,
+            sueldoQuincenal:
+              n.sueldo_quincenal ?? String((Number(n.sueldo_mensual) / 2).toFixed(2)),
+            trabajadores: grupo?.trabajadores ?? 0,
+            subtotalMensual: grupo?.subtotalMensual ?? 0,
+          }
+        })
+
+      if (fueraCount > 0) {
+        resumenTabulador.push({
+          cargo: 'Fuera de tabulador (estipulación individual)',
+          moneda: monedaFuera,
+          sueldoMensual: String((fueraSubtotal / fueraCount).toFixed(2)),
+          sueldoQuincenal: String((fueraSubtotal / fueraCount / 2).toFixed(2)),
+          trabajadores: fueraCount,
+          subtotalMensual: fueraSubtotal,
         })
       }
 
       const pdf = await armarDirectorioPersonal({
         personas,
+        resumenTabulador,
         filtro: filtroDelPapel,
         empresa: empresaDelPapel(empresa),
         emitidoPor: nombre,
@@ -410,8 +525,8 @@ export function Personal() {
       })
       setVista({
         ...pdf,
-        titulo: 'Directorio de personal',
-        descripcion: `${gente.length} ${gente.length === 1 ? 'persona' : 'personas'} · con foto, solo para administración`,
+        titulo: 'Directorio ejecutivo de personal',
+        descripcion: `${gente.length} ${gente.length === 1 ? 'persona' : 'personas'} · con foto, tabulador y remuneración`,
       })
     } finally {
       setArmandoDirectorio(null)
