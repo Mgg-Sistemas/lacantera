@@ -8,6 +8,7 @@ import {
   PackageMinus,
   SendHorizontal,
   Smartphone,
+  Truck,
   X,
 } from 'lucide-react'
 import { Ayuda } from '@/components/Ayuda'
@@ -34,6 +35,7 @@ import {
   useCancelarSolicitud,
   useComoAprueboSalidas,
   useEntregarSolicitud,
+  useNotasDeEntregaDeSalidas,
   usePersonasDeLaEmpresa,
   useRechazarSolicitud,
   useSolicitudesDeSalida,
@@ -220,6 +222,11 @@ export function Solicitudes() {
     o quien sea de fuera—, que es lo que aquí hace de «solicitante» de MGG.
   */
   const cargadas = useMemo(() => solicitudes ?? [], [solicitudes])
+  const numerosEntregadasExternas = useMemo(
+    () => cargadas.filter((s) => s.nota_salida && s.destino_externo).map((s) => s.nota_salida!),
+    [cargadas],
+  )
+  const { data: notasEntregaPorSalida } = useNotasDeEntregaDeSalidas(numerosEntregadasExternas)
   const usuariosOpc = useMemo(() => {
     const ids = [...new Set(cargadas.map((s) => s.pedida_por).filter((u): u is string => Boolean(u)))]
     return ids
@@ -272,6 +279,7 @@ export function Solicitudes() {
   */
   const botonesDe = (s: SolicitudDeSalida, alActuar?: () => void) => {
     const puedo = quePuedoHacerConLaSolicitud(s, comoApruebo, puedoSacar)
+    const ne = s.nota_salida ? notasEntregaPorSalida?.get(s.nota_salida) : undefined
     return (
       <>
         {puedo.aprobar ? (
@@ -331,6 +339,60 @@ export function Solicitudes() {
           >
             Nota {s.nota_salida}
           </Button>
+        ) : null}
+
+        {s.nota_salida && s.destino_externo ? (
+          ne ? (
+            <>
+              <Button
+                size="sm"
+                variant="ghost"
+                icon={<FileText />}
+                disabled={nota.armandoEntregaId === ne.id}
+                onClick={() => {
+                  alActuar?.()
+                  setFallo(null)
+                  void nota.verNotaDeEntrega(ne)
+                }}
+              >
+                {nota.armandoEntregaId === ne.id ? 'Armando…' : `Entrega ${ne.numero}`}
+              </Button>
+              {ne.estado === 'PENDIENTE' ? (
+                <Chip tone="warning">Pendiente</Chip>
+              ) : !ne.facturable ? (
+                <Chip tone="neutral">Solo respaldo</Chip>
+              ) : null}
+              {ne.estado !== 'ANULADA' && nota.puedoGenerarNotaEntrega ? (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  icon={<Truck />}
+                  onClick={() => {
+                    alActuar?.()
+                    nota.editarCamionesNotaDeEntrega(ne)
+                  }}
+                >
+                  Camiones{ne.camiones?.length ? ` (${ne.camiones.length})` : ''}
+                </Button>
+              ) : null}
+            </>
+          ) : nota.puedoGenerarNotaEntrega ? (
+            <label className="border-hairline hover:border-royal-600/50 bg-surface text-ink/85 inline-flex cursor-pointer items-center gap-1.5 rounded-[6px] border px-2.5 py-1 text-xs font-semibold transition-colors">
+              <input
+                type="checkbox"
+                className="accent-royal-600 size-3.5 shrink-0"
+                checked={nota.notaEnCurso === s.nota_salida}
+                onChange={(e) => {
+                  if (e.target.checked && s.nota_salida && s.destino_externo) {
+                    alActuar?.()
+                    setFallo(null)
+                    void nota.pedirNotaDeEntrega(s.nota_salida, s.destino_externo)
+                  }
+                }}
+              />
+              Generar nota de entrega
+            </label>
+          ) : null
         ) : null}
 
         {s.nota_salida ? (

@@ -629,6 +629,32 @@ export async function leerNotaDeEntregaDeLaSalida(numero: string): Promise<NotaE
   return filas[0] ?? null
 }
 
+/** Mapa `nota_salida -> NotaEntrega` para saber en las listas qué salidas ya tienen su NE. */
+export function useNotasDeEntregaDeSalidas(numeros: string[]) {
+  const unicos = [...new Set(numeros.filter(Boolean))].sort()
+  return useQuery({
+    queryKey: ['salidas', 'notas-entrega', unicos],
+    enabled: unicos.length > 0,
+    staleTime: 20_000,
+    queryFn: async () => {
+      const todas: NotaEntrega[] = []
+      // En trozos de 150 para no desbordar la URL de PostgREST en historiales largos.
+      for (let i = 0; i < unicos.length; i += 150) {
+        const lote = unicos.slice(i, i + 150)
+        const filas = desenvolver<NotaEntrega[]>(
+          await supabase
+            .from('v_notas_entrega')
+            .select('*')
+            .in('nota_salida', lote)
+            .neq('estado', 'ANULADA'),
+        )
+        todas.push(...filas)
+      }
+      return new Map(todas.filter((f) => f.nota_salida).map((f) => [f.nota_salida!, f]))
+    },
+  })
+}
+
 /** El cliente al que se parece el destino escrito a mano, si es uno y solo uno. */
 export const clienteQueSeParece = (nombre: string) =>
   rpc<number | null>('cliente_que_se_parece', { p_nombre: nombre })
@@ -650,6 +676,7 @@ export function useGenerarNotaDeEntrega() {
       }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['ventas', 'notas'] })
+      void qc.invalidateQueries({ queryKey: ['salidas', 'notas-entrega'] })
     },
   })
 }
