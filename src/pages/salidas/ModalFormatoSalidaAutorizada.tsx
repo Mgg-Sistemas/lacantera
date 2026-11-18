@@ -43,7 +43,7 @@ export function ModalFormatoSalidaAutorizada({
   const { data: personas } = usePersonasDeLaEmpresa()
   const inputFotosRef = useRef<HTMLInputElement>(null)
 
-  // Encabezado y autorización (prellenado con Norbelis Sequea por defecto)
+  // Encabezado y autorización (prellenado con Norbelis Sequea por defecto; si se vacía alguno, no sale en el PDF)
   const [titulo, setTitulo] = useState('Autorización de Salida de Componente / Material')
   const [lugar, setLugar] = useState('Naiguatá')
   const [fechaIso, setFechaIso] = useState(() => hoyEnCaracas())
@@ -58,6 +58,7 @@ export function ModalFormatoSalidaAutorizada({
   )
 
   // Especificaciones principales del artículo / material que sale (no inventariado)
+  // Solo los recuadros que tengan texto aparecen en el PDF.
   const [descripcion, setDescripcion] = useState('')
   const [cantidad, setCantidad] = useState('')
   const [modeloSerial, setModeloSerial] = useState('')
@@ -68,14 +69,16 @@ export function ModalFormatoSalidaAutorizada({
   const [observaciones, setObservaciones] = useState('')
   const [renglonesExtra, setRenglonesExtra] = useState<RenglonEspecificacionSalida[]>([])
 
-  // Responsables del traslado / técnico
+  // Responsables del traslado / técnico (inician vacíos: si no se llenan, la tabla no aparece en el PDF)
   const [responsables, setResponsables] = useState<ResponsableTrasladoSalida[]>([
-    { nombre: '', cedula: '', rol: 'Responsable de traslado / técnico' },
+    { nombre: '', cedula: '', rol: '' },
   ])
 
   // Anexo fotográfico
   const [fotos, setFotos] = useState<FotoCargada[]>([])
-  const [subtituloAnexo, setSubtituloAnexo] = useState('')
+  const [subtituloAnexo, setSubtituloAnexo] = useState(
+    'Registro visual del estado físico en el que se autoriza la salida del material o componente de las instalaciones de la Cantera de Naiguatá.',
+  )
 
   // Estado de generación y visor PDF
   const [generando, setGenerando] = useState(false)
@@ -122,23 +125,25 @@ export function ModalFormatoSalidaAutorizada({
     setError(null)
     setGenerando(true)
     try {
+      // Solo se agregan los recuadros que hayan sido llenados con información
       const especificaciones: RenglonEspecificacionSalida[] = [
-        { concepto: 'Descripción', detalle: descripcion.trim() },
-        ...(cantidad.trim() ? [{ concepto: 'Cantidad / Condición', detalle: cantidad.trim() }] : []),
-        {
-          concepto: 'Modelo / Serial',
-          detalle: modeloSerial.trim() || 'S/N',
-        },
-        {
-          concepto: 'Procedencia / Ubicación',
-          detalle: procedencia.trim() || 'Área de la Cantera de Naiguatá',
-        },
+        ...(descripcion.trim()
+          ? [{ concepto: 'Descripción', detalle: descripcion.trim() }]
+          : []),
+        ...(cantidad.trim()
+          ? [{ concepto: 'Cantidad / Condición', detalle: cantidad.trim() }]
+          : []),
+        ...(modeloSerial.trim()
+          ? [{ concepto: 'Modelo / Serial', detalle: modeloSerial.trim() }]
+          : []),
+        ...(procedencia.trim()
+          ? [{ concepto: 'Procedencia / Ubicación', detalle: procedencia.trim() }]
+          : []),
         ...(destino.trim() ? [{ concepto: 'Destino', detalle: destino.trim() }] : []),
-        {
-          concepto: 'Motivo de Salida',
-          detalle: motivoSalida.trim() || 'Traslado autorizado',
-        },
-        ...renglonesExtra.filter((r) => r.concepto.trim() || r.detalle.trim()),
+        ...(motivoSalida.trim()
+          ? [{ concepto: 'Motivo de Salida', detalle: motivoSalida.trim() }]
+          : []),
+        ...renglonesExtra.filter((r) => Boolean(r.concepto.trim() && r.detalle.trim())),
         ...(observaciones.trim()
           ? [{ concepto: 'Observaciones', detalle: observaciones.trim() }]
           : []),
@@ -149,7 +154,6 @@ export function ModalFormatoSalidaAutorizada({
       for (let i = 0; i < fotos.length; i++) {
         const f = fotos[i]
         const img = await cargarImagen(f.previewUrl)
-        // En lotes de 3 fotos, la 3ra tarjeta es más apaisada (104×82) y las dos superiores son 80×92
         const esTerceraDeTres = fotos.length % 3 === 0 && i % 3 === 2
         const dataUrl = fotoRecortada(
           img,
@@ -161,32 +165,26 @@ export function ModalFormatoSalidaAutorizada({
         )
         fotosProcesadas.push({
           dataUrl,
-          leyenda: f.leyenda.trim() || `Vista de referencia ${i + 1}`,
+          leyenda: f.leyenda.trim(),
         })
       }
 
-      const asuntoFinal =
-        asuntoPersonalizado.trim() ||
-        `Autorización de salida de ${descripcion.trim()}${
-          cantidad.trim() ? ` (${cantidad.trim()})` : ''
-        }.`
-
       const archivo = await armarFormatoSalidaAutorizada({
-        lugar,
-        fechaIso,
-        titulo: titulo.trim() || 'Autorización de Salida de Componente / Material',
-        asunto: asuntoFinal,
-        autorizadoPor: autorizadoPor.trim() || 'Norbelis Sequea',
-        autorizadoCedula: autorizadoCedula.trim() || 'V-25.445.835',
+        lugar: lugar.trim(),
+        fechaIso: fechaIso.trim(),
+        titulo: titulo.trim(),
+        asunto: asuntoPersonalizado.trim(),
+        autorizadoPor: autorizadoPor.trim(),
+        autorizadoCedula: autorizadoCedula.trim(),
         autorizadoCargo: autorizadoCargo.trim(),
-        instalacion: instalacion.trim() || 'Cantera de Naiguatá',
+        instalacion: instalacion.trim(),
         descripcionCorta: descripcion.trim(),
-        motivoResumen: (motivoSalida.trim() || 'mantenimiento y operación autorizada').toLowerCase(),
+        motivoResumen: motivoSalida.trim().toLowerCase(),
         especificaciones,
         responsables,
         firmaPieLinea1: autorizadoCedula.trim() ? `C.I.: ${autorizadoCedula.trim()}` : '',
         firmaPieLinea2: firmaPieLinea2.trim(),
-        subtituloAnexo: subtituloAnexo.trim() || undefined,
+        subtituloAnexo: subtituloAnexo.trim(),
         fotos: fotosProcesadas,
         empresa: {
           razonSocial: empresa?.razon_social || 'MINERÍA INTERNACIONAL TS, C.A.',
@@ -209,7 +207,7 @@ export function ModalFormatoSalidaAutorizada({
         abierto={abierto}
         onCerrar={onCerrar}
         titulo="Formato de salida autorizada (fuera de inventario)"
-        descripcion="Constancia y autorización operativa para dar salida a neumáticos, componentes mecánicos, piezas o equipos ubicados en el área de la cantera que no forman parte del stock regular de almacén, con anexo fotográfico."
+        descripcion="Constancia y autorización operativa para dar salida a neumáticos, componentes mecánicos, piezas o equipos ubicados en el área de la cantera que no forman parte del stock regular de almacén. Los recuadros que deje en blanco no aparecerán en el PDF."
         ancho="lg"
         acciones={
           <>
@@ -329,11 +327,11 @@ export function ModalFormatoSalidaAutorizada({
                 />
               </div>
               <Input
-                label="Cantidad / Condición (opcional)"
+                label="Cantidad / Condición"
                 sinNormalizar
                 value={cantidad}
                 onChange={(e) => setCantidad(e.target.value)}
-                placeholder="Ej. 4 unidades"
+                placeholder="Dejar vacío para no mostrar"
               />
             </div>
 
@@ -343,21 +341,21 @@ export function ModalFormatoSalidaAutorizada({
                 sinNormalizar
                 value={modeloSerial}
                 onChange={(e) => setModeloSerial(e.target.value)}
-                placeholder="Ej. 29.5R25 o XUG0050GNRVB61422"
+                placeholder="Dejar vacío para no mostrar"
               />
               <Input
                 label="Procedencia / Ubicación actual"
                 sinNormalizar
                 value={procedencia}
                 onChange={(e) => setProcedencia(e.target.value)}
-                placeholder="Ej. Área de la Cantera de Naiguatá"
+                placeholder="Dejar vacío para no mostrar"
               />
               <Input
-                label="Destino (opcional)"
+                label="Destino"
                 sinNormalizar
                 value={destino}
                 onChange={(e) => setDestino(e.target.value)}
-                placeholder="Ej. Taller externo / Vulcanizadora"
+                placeholder="Dejar vacío para no mostrar"
               />
             </div>
 
@@ -367,19 +365,36 @@ export function ModalFormatoSalidaAutorizada({
                 sinNormalizar
                 value={motivoSalida}
                 onChange={(e) => setMotivoSalida(e.target.value)}
-                placeholder="Ej. Mantenimiento y reparación"
+                placeholder="Dejar vacío para no mostrar"
               />
-              <Input
-                label="Asunto (opcional — se genera solo si se deja vacío)"
-                sinNormalizar
-                value={asuntoPersonalizado}
-                onChange={(e) => setAsuntoPersonalizado(e.target.value)}
-                placeholder={
-                  descripcion.trim()
-                    ? `Autorización de salida de ${descripcion.trim()}.`
-                    : 'Se armará automáticamente con la descripción'
-                }
-              />
+              <div>
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <span className="text-ink/75 text-xs font-medium">Asunto</span>
+                  {descripcion.trim() && !asuntoPersonalizado.trim() ? (
+                    <button
+                      type="button"
+                      className="text-royal-600 dark:text-royal-300 text-[11px] hover:underline"
+                      onClick={() =>
+                        setAsuntoPersonalizado(
+                          `Autorización de salida de ${descripcion.trim()}${
+                            cantidad.trim() ? ` (${cantidad.trim()})` : ''
+                          }.`,
+                        )
+                      }
+                    >
+                      Autocompletar con descripción
+                    </button>
+                  ) : null}
+                </div>
+                <Input
+                  label="Asunto"
+                  ocultarEtiqueta
+                  sinNormalizar
+                  value={asuntoPersonalizado}
+                  onChange={(e) => setAsuntoPersonalizado(e.target.value)}
+                  placeholder="Dejar vacío para no mostrar recuadro de asunto"
+                />
+              </div>
             </div>
 
             {renglonesExtra.length > 0 ? (
@@ -430,20 +445,25 @@ export function ModalFormatoSalidaAutorizada({
             ) : null}
 
             <Textarea
-              label="Observaciones adicionales (opcional)"
+              label="Observaciones adicionales"
               rows={2}
               value={observaciones}
               onChange={(e) => setObservaciones(e.target.value)}
-              placeholder="Cualquier nota sobre el estado físico, compromiso de retorno o condición de salida…"
+              placeholder="Dejar vacío para no mostrar en el PDF…"
             />
           </div>
 
           {/* 3. Responsables del traslado / técnico */}
           <div className="border-hairline space-y-3 rounded-card border p-3.5">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-ink/80 text-xs font-semibold tracking-wider uppercase">
-                3. Responsables del traslado / técnico
-              </p>
+              <div>
+                <p className="text-ink/80 text-xs font-semibold tracking-wider uppercase">
+                  3. Responsables del traslado / técnico
+                </p>
+                <p className="text-ink/50 text-xs">
+                  Si se deja en blanco, esta tabla no aparece en el PDF.
+                </p>
+              </div>
               <Button
                 size="sm"
                 variant="ghost"
@@ -451,7 +471,7 @@ export function ModalFormatoSalidaAutorizada({
                 onClick={() =>
                   setResponsables((prev) => [
                     ...prev,
-                    { nombre: '', cedula: '', rol: 'Responsable de traslado / técnico' },
+                    { nombre: '', cedula: '', rol: '' },
                   ])
                 }
               >
@@ -478,7 +498,7 @@ export function ModalFormatoSalidaAutorizada({
                     ocultarEtiqueta={idx > 0}
                     sinNormalizar
                     list="lista-personal-salida-autorizada"
-                    placeholder="Ej. Nelsi Méndez"
+                    placeholder="Dejar vacío para no mostrar"
                     value={r.nombre}
                     onChange={(e) => cambiarNombreResponsable(idx, e.target.value)}
                   />
@@ -486,7 +506,7 @@ export function ModalFormatoSalidaAutorizada({
                     label="Cédula de Identidad"
                     ocultarEtiqueta={idx > 0}
                     sinNormalizar
-                    placeholder="Ej. 15.551.681"
+                    placeholder="Dejar vacío para no mostrar"
                     value={r.cedula}
                     onChange={(e) =>
                       setResponsables((prev) =>
@@ -500,7 +520,7 @@ export function ModalFormatoSalidaAutorizada({
                     label="Rol / Cargo"
                     ocultarEtiqueta={idx > 0}
                     sinNormalizar
-                    placeholder="Responsable de traslado / técnico"
+                    placeholder="Ej. Responsable de traslado / técnico"
                     value={r.rol}
                     onChange={(e) =>
                       setResponsables((prev) =>
@@ -534,7 +554,7 @@ export function ModalFormatoSalidaAutorizada({
                   4. Anexo fotográfico (fotos de referencia)
                 </p>
                 <p className="text-ink/50 text-xs">
-                  Salen en la segunda página del PDF con su marco y leyenda («Fotografía 1 — …»).
+                  Si no adjunta fotos, la página de anexo fotográfico no se incluye en el PDF.
                 </p>
               </div>
               <Button
@@ -558,11 +578,11 @@ export function ModalFormatoSalidaAutorizada({
             {fotos.length > 0 ? (
               <>
                 <Input
-                  label="Descripción general del anexo fotográfico (opcional)"
+                  label="Descripción general del anexo fotográfico"
                   sinNormalizar
                   value={subtituloAnexo}
                   onChange={(e) => setSubtituloAnexo(e.target.value)}
-                  placeholder="Registro visual del estado físico en el que se autoriza la salida del material o componente de las instalaciones de la Cantera de Naiguatá."
+                  placeholder="Dejar vacío para no mostrar texto descriptivo"
                 />
 
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -589,13 +609,7 @@ export function ModalFormatoSalidaAutorizada({
                       <Input
                         label={`Fotografía ${idx + 1} — Leyenda`}
                         sinNormalizar
-                        placeholder={
-                          idx === 0
-                            ? 'Ej. Detalle del estado físico'
-                            : idx === 1
-                              ? 'Ej. Vista superior del conjunto'
-                              : 'Ej. Vista general de las piezas'
-                        }
+                        placeholder="Dejar vacío para mostrar solo «Fotografía N»"
                         value={f.leyenda}
                         onChange={(e) =>
                           setFotos((prev) =>
