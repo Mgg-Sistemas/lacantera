@@ -44,6 +44,7 @@ import type { SolicitudDeSalida } from '@/lib/api/salidas'
 import { ModalSalida } from './ModalSalida'
 import { ModalReporteSalida } from './ModalReporteSalida'
 import { ModalEditarSolicitud } from './ModalEditarSolicitud'
+import { ModalFormatoSalidaAutorizada } from './ModalFormatoSalidaAutorizada'
 import { textoSalidaAprobada, textoSalidaPedida, textoSalidaRechazada } from '@/lib/ficha/salidasWhatsapp'
 import { ModalWhatsappCompra } from '@/pages/compras/ModalWhatsappCompra'
 import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
@@ -117,6 +118,7 @@ const CLAVE_MODO = 'salidas.solicitudes.modo'
 export function Solicitudes() {
   const [verTodas, setVerTodas] = useState(false)
   const [pidiendo, setPidiendo] = useState(false)
+  const [abriendoFormato, setAbriendoFormato] = useState(false)
   const [desdeFila, setDesdeFila] = useState<{ articulo?: string; almacen?: string }>({})
   const [cerrando, setCerrando] = useState<{ s: SolicitudDeSalida; como: 'RECHAZAR' | 'CANCELAR' } | null>(null)
   const [motivo, setMotivo] = useState('')
@@ -524,6 +526,9 @@ export function Solicitudes() {
                 Vista de teléfono
               </Button>
             </Link>
+            <Button variant="outline" icon={<FileText />} onClick={() => setAbriendoFormato(true)}>
+              Formato de salida
+            </Button>
             <Button icon={<SendHorizontal />} onClick={() => setPidiendo(true)}>
               Solicitar salida
             </Button>
@@ -931,6 +936,11 @@ export function Solicitudes() {
       ) : null}
 
       {nota.visor}
+
+      <ModalFormatoSalidaAutorizada
+        abierto={abriendoFormato}
+        onCerrar={() => setAbriendoFormato(false)}
+      />
 
       {verReporteSalida ? (
         <ModalReporteSalida

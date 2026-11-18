@@ -39,6 +39,7 @@ import { armarReporteSalidas } from '@/lib/ficha/historialSalidasPdf'
 import { useNotaDeSalida } from './NotaDeSalida'
 import { useNotaDeTraslado } from './NotaDeTraslado'
 import { CabeceraSalidas } from './CabeceraSalidas'
+import { ModalFormatoSalidaAutorizada } from './ModalFormatoSalidaAutorizada'
 
 /*
   LO QUE SALIÓ Y LO QUE SE MOVIÓ, EN UNA SOLA PANTALLA
@@ -107,6 +108,7 @@ export function Salidas() {
   const [nota, setNota] = useState('')
   const [rango, setRango] = useState<Rango>(SIN_RANGO)
   const [reporte, setReporte] = useState<ArchivoArmado | null>(null)
+  const [abriendoFormato, setAbriendoFormato] = useState(false)
 
   const { data: almacenes } = useAlmacenes()
   const { data: articulos } = useArticulos()
@@ -286,14 +288,19 @@ export function Salidas() {
         title="Historial de salidas y traslados"
         description="Consulta de salidas del inventario y traslados entre almacenes. Para registrar o solicitar una salida, vaya a «Salidas»; para trasladar material, a «Traslados»."
         actions={
-          <Button
-            variant="outline"
-            icon={<Printer />}
-            disabled={!data || data.length === 0}
-            onClick={() => void imprimirReporte()}
-          >
-            Reporte en PDF
-          </Button>
+          <>
+            <Button variant="outline" icon={<FileText />} onClick={() => setAbriendoFormato(true)}>
+              Formato de salida
+            </Button>
+            <Button
+              variant="outline"
+              icon={<Printer />}
+              disabled={!data || data.length === 0}
+              onClick={() => void imprimirReporte()}
+            >
+              Reporte en PDF
+            </Button>
+          </>
         }
       />
 
@@ -496,6 +503,11 @@ export function Salidas() {
 
       {notaDeSalida.visor}
       {notaDeTraslado.visor}
+
+      <ModalFormatoSalidaAutorizada
+        abierto={abriendoFormato}
+        onCerrar={() => setAbriendoFormato(false)}
+      />
 
       <Visor
         abierto={reporte !== null}
