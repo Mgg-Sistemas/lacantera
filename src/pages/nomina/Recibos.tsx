@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
-import { AlertTriangle, ClipboardList, FileText, Printer } from 'lucide-react'
+import { AlertTriangle, ClipboardList, FileText, Landmark, Printer } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas } from '@/components/Pestanas'
 import { PESTANAS_PERIODO } from '@/components/pestanasDeModulos'
@@ -20,6 +20,7 @@ import {
 } from '@/lib/api/nomina'
 import type { Periodo, Recibo } from '@/lib/api/nomina'
 import { useFirmas } from '@/lib/api/firmas'
+import { useMisRoles } from '@/lib/api/catalogo'
 import { useSesion } from '@/lib/sesion'
 import { armarRecibo, armarRecibos, salariosDelRecibo } from '@/lib/ficha/reciboPdf'
 import { armarInformeDePersonal } from '@/lib/ficha/informePersonalPdf'
@@ -27,6 +28,7 @@ import type { PersonaDelInforme } from '@/lib/ficha/informePersonalPdf'
 import type { DatosRecibo, FirmaEmpresa, PdfArmado } from '@/lib/ficha/reciboPdf'
 import type { EmpresaPapel } from '@/lib/ficha/papel'
 import { Visor } from '@/components/Visor'
+import { ModalPagoBancario } from './ModalPagoBancario'
 import { bolivares, dolares, fecha } from '@/lib/formato'
 import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
 
@@ -202,6 +204,8 @@ export function Recibos() {
   const { firma } = useFirmaRrhh()
   const { data: firmas } = useFirmas()
   const { nombre } = useSesion()
+  const { puede } = useMisRoles()
+  const puedeRRHH = puede('RRHH')
   const { data: empresa } = useEmpresa()
 
   const periodoId = params.get('periodo') ? Number(params.get('periodo')) : undefined
@@ -209,6 +213,7 @@ export function Recibos() {
 
   const { data, isPending, error } = useRecibos(periodoId)
   const [abierto, setAbierto] = useState<Recibo | null>(null)
+  const [abiertoBanco, setAbiertoBanco] = useState(false)
   const [imprimiendo, setImprimiendo] = useState(false)
   /*
     Encendido de salida, que es lo que el recibo venía haciendo siempre.
@@ -223,7 +228,13 @@ export function Recibos() {
   // Se enseña antes de descargarlo: un recibo con la firma sin llenar o el
   // periodo equivocado se ve en dos segundos y no llega al papel.
   const [vista, setVista] = useState<
-    (PdfArmado & { cuantos: number; informe?: boolean }) | null
+    | (PdfArmado & {
+        cuantos?: number
+        informe?: boolean
+        titulo?: string
+        descripcion?: string
+      })
+    | null
   >(null)
 
   const ordenados = [...(data ?? [])].sort((a, b) =>
@@ -414,6 +425,17 @@ export function Recibos() {
                   etiqueta="Equivalencia en dólares"
                   className="mr-2"
                 />
+              ) : null}
+
+              {puedeRRHH ? (
+                <Button
+                  variant="outline"
+                  icon={<Landmark />}
+                  disabled={imprimiendo}
+                  onClick={() => setAbiertoBanco(true)}
+                >
+                  Pago bancario
+                </Button>
               ) : null}
 
               {/* El informe va primero porque es lo que se mira al cuadrar; los
@@ -637,26 +659,37 @@ export function Recibos() {
           </div>
         </Modal>
       ) : null}
+      <ModalPagoBancario
+        abierto={abiertoBanco}
+        onCerrar={() => setAbiertoBanco(false)}
+        periodoInicialId={periodo?.id ?? null}
+        onVerPdf={(pdf) => setVista(pdf)}
+      />
+
       <Visor
         abierto={vista !== null}
         onCerrar={() => setVista(null)}
         blob={vista?.blob ?? null}
         nombreArchivo={vista?.nombre ?? 'recibo.pdf'}
         titulo={
-          vista?.informe
-            ? `Informe de nómina · ${periodo?.numero ?? ''}`
-            : vista && vista.cuantos > 1
-              ? `Recibos del periodo ${periodo?.numero ?? ''}`
-              : 'Recibo de pago'
+          vista?.titulo
+            ? vista.titulo
+            : vista?.informe
+              ? `Informe de nómina · ${periodo?.numero ?? ''}`
+              : vista && (vista.cuantos ?? 0) > 1
+                ? `Recibos del periodo ${periodo?.numero ?? ''}`
+                : 'Recibo de pago'
         }
         descripcion={
-          vista?.informe
-            ? // El informe no se firma dos veces ni se reparte: se archiva. La
-              // descripción del recibo aquí mentiría.
-              `${vista.cuantos} ${vista.cuantos === 1 ? 'persona' : 'personas'} · con lo que cobraron y quién quedó desincorporado`
-            : vista
-              ? `${vista.cuantos} recibo${vista.cuantos === 1 ? '' : 's'} · original y copia, para firmar a mano`
-              : undefined
+          vista?.descripcion
+            ? vista.descripcion
+            : vista?.informe
+              ? // El informe no se firma dos veces ni se reparte: se archiva. La
+                // descripción del recibo aquí mentiría.
+                `${vista.cuantos} ${vista.cuantos === 1 ? 'persona' : 'personas'} · con lo que cobraron y quién quedó desincorporado`
+              : vista
+                ? `${vista.cuantos} recibo${vista.cuantos === 1 ? '' : 's'} · original y copia, para firmar a mano`
+                : undefined
         }
       />
 

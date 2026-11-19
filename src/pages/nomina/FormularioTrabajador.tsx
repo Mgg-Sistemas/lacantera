@@ -27,6 +27,25 @@ import {
 import { useMisRoles } from '@/lib/api/catalogo'
 import { useTabulador } from '@/lib/api/tabulador'
 import { useMetodosPago, opcionesDe } from '@/lib/api/metodosPago'
+import {
+  combinarEmpleadoConExtras,
+  useConfigBancoTesoro,
+  useGuardarDatosBancariosEmpleado,
+} from '@/lib/api/bancoTesoro'
+import {
+  AGENCIAS_BT,
+  CIUDADES_BT,
+  CONDICIONES_INMUEBLE_BT,
+  ESTADOS_BT,
+  PARROQUIAS_BT,
+  PROFESIONES_BT,
+  SECTORES_MUNICIPIOS_BT,
+  TIPOS_CARGO_BT,
+  TIPOS_CUENTA_NOMINA_BT,
+  TIPOS_VIVIENDA_BT,
+  deducirCargoYProfesionBt,
+  resolverUbicacionYAgenciaPorDireccion,
+} from '@/lib/bancoTesoro/catalogos'
 import { BANCOS } from '@/lib/bancos'
 import { dinero } from '@/lib/formato'
 
@@ -78,6 +97,26 @@ const vacio = {
   tipo_cuenta: '',
   telefono_pago: '',
   telefono: '',
+  telefono_local: '',
+  correo: '',
+  calle_avenida: '',
+  casa_edificio: '',
+  piso_nivel: '',
+  apto_local: '',
+  referencia_domicilio: '',
+  condicion_inmueble: '',
+  tipo_vivienda: '',
+  tiempo_residencia: '',
+  bt_region: '',
+  bt_estado: '',
+  bt_ciudad: '',
+  bt_municipio: '',
+  bt_parroquia: '',
+  zona_postal: '',
+  bt_profesion: '',
+  bt_tipo_cargo: '',
+  bt_agencia: '',
+  bt_tipo_cuenta: '',
   grado_instruccion: '',
   experiencia_empresa: '',
   experiencia_cargo: '',
@@ -102,13 +141,18 @@ export function FormularioTrabajador() {
   const { data: metodos } = useMetodosPago()
   const { puede } = useMisRoles()
   const guardar = useGuardarEmpleado()
+  const configBt = useConfigBancoTesoro()
+  const guardarDatosBancarios = useGuardarDatosBancariosEmpleado()
 
-  const quien = esNuevo ? undefined : data?.find((e) => e.id === Number(id))
+  const quienBase = esNuevo ? undefined : data?.find((e) => e.id === Number(id))
+  const quien = quienBase
+    ? combinarEmpleadoConExtras(quienBase, configBt.extrasPorEmpleado)
+    : undefined
   const [f, setF] = useState<Edicion>({ ...vacio })
   const [cargado, setCargado] = useState(false)
 
   useEffect(() => {
-    if (esNuevo || !quien || cargado) return
+    if (esNuevo || !quien || configBt.isPending || cargado) return
 
     setF({
       id: quien.id,
@@ -140,6 +184,29 @@ export function FormularioTrabajador() {
       tipo_cuenta: quien.tipo_cuenta ?? '',
       telefono_pago: quien.telefono_pago ?? '',
       telefono: quien.telefono ?? '',
+      telefono_local: quien.telefono_local ?? '',
+      correo: quien.correo ?? '',
+      calle_avenida: quien.calle_avenida ?? '',
+      casa_edificio: quien.casa_edificio ?? '',
+      piso_nivel: quien.piso_nivel ?? '',
+      apto_local: quien.apto_local ?? '',
+      referencia_domicilio: quien.referencia_domicilio ?? '',
+      condicion_inmueble: quien.condicion_inmueble ?? '',
+      tipo_vivienda: quien.tipo_vivienda ?? '',
+      tiempo_residencia:
+        quien.tiempo_residencia !== null && quien.tiempo_residencia !== undefined
+          ? String(quien.tiempo_residencia)
+          : '',
+      bt_region: quien.bt_region ?? '',
+      bt_estado: quien.bt_estado ?? '',
+      bt_ciudad: quien.bt_ciudad ?? '',
+      bt_municipio: quien.bt_municipio ?? '',
+      bt_parroquia: quien.bt_parroquia ?? '',
+      zona_postal: quien.zona_postal ?? '',
+      bt_profesion: quien.bt_profesion ?? '',
+      bt_tipo_cargo: quien.bt_tipo_cargo ?? '',
+      bt_agencia: quien.bt_agencia ?? '',
+      bt_tipo_cuenta: quien.bt_tipo_cuenta ?? '',
       grado_instruccion: quien.grado_instruccion ?? '',
       experiencia_empresa: quien.experiencia_empresa ?? '',
       experiencia_cargo: quien.experiencia_cargo ?? '',
@@ -152,7 +219,7 @@ export function FormularioTrabajador() {
     // Una sola vez: si se recargara con cada respuesta de la consulta, un
     // refresco en segundo plano borraría lo que se está escribiendo.
     setCargado(true)
-  }, [esNuevo, quien, cargado])
+  }, [esNuevo, quien, configBt.isPending, cargado])
 
   const cambiar = (c: Partial<Edicion>) => setF((e) => ({ ...e, ...c }))
 
@@ -194,11 +261,77 @@ export function FormularioTrabajador() {
   const faltaPago = faltaQuien ?? faltaContrato
   const volver = esNuevo ? '/app/nomina/personal' : `/app/nomina/personal/${id}`
 
+  const ubicacionSugerida = resolverUbicacionYAgenciaPorDireccion({
+    direccionTrabajador: f.direccion,
+    calleTrabajador: f.calle_avenida,
+    referenciaTrabajador: f.referencia_domicilio,
+    agenciaManual: f.bt_agencia,
+    estadoManual: f.bt_estado,
+    ciudadManual: f.bt_ciudad,
+    municipioManual: f.bt_municipio,
+    parroquiaManual: f.bt_parroquia,
+    zonaPostalManual: f.zona_postal,
+  })
+
+  const codigosCargoSugeridos = deducirCargoYProfesionBt(f.cargo, f.grado_instruccion)
+
   const enviar = async () => {
     const guardado = await guardar.mutateAsync(f as never)
+    const idFinal = esNuevo ? Number(guardado) : Number(id)
+
+    const tieneAlgunExtra = [
+      f.correo,
+      f.telefono_local,
+      f.calle_avenida,
+      f.casa_edificio,
+      f.piso_nivel,
+      f.apto_local,
+      f.referencia_domicilio,
+      f.condicion_inmueble,
+      f.tipo_vivienda,
+      f.tiempo_residencia,
+      f.bt_estado,
+      f.bt_ciudad,
+      f.bt_municipio,
+      f.bt_parroquia,
+      f.zona_postal,
+      f.bt_profesion,
+      f.bt_tipo_cargo,
+      f.bt_agencia,
+      f.bt_tipo_cuenta,
+    ].some((x) => Boolean(x && String(x).trim() !== ''))
+
+    if (tieneAlgunExtra || !esNuevo) {
+      await guardarDatosBancarios.mutateAsync({
+        empleado_id: idFinal,
+        correo: f.correo,
+        telefono_local: f.telefono_local,
+        calle_avenida: f.calle_avenida,
+        casa_edificio: f.casa_edificio,
+        piso_nivel: f.piso_nivel,
+        apto_local: f.apto_local,
+        referencia_domicilio: f.referencia_domicilio,
+        condicion_inmueble: f.condicion_inmueble,
+        tipo_vivienda: f.tipo_vivienda,
+        tiempo_residencia: f.tiempo_residencia,
+        bt_region: f.bt_estado
+          ? ESTADOS_BT.find((x) => x.codigo === f.bt_estado)?.region ?? ''
+          : '',
+        bt_estado: f.bt_estado,
+        bt_ciudad: f.bt_ciudad,
+        bt_municipio: f.bt_municipio,
+        bt_parroquia: f.bt_parroquia,
+        zona_postal: f.zona_postal,
+        bt_profesion: f.bt_profesion,
+        bt_tipo_cargo: f.bt_tipo_cargo,
+        bt_agencia: f.bt_agencia,
+        bt_tipo_cuenta: f.bt_tipo_cuenta,
+      })
+    }
+
     // Al terminar se aterriza en la ficha de la persona, tenga o no ficha
     // todavía: es donde se comprueba que quedó bien.
-    void navegar(`/app/nomina/personal/${esNuevo ? guardado : id}`)
+    void navegar(`/app/nomina/personal/${idFinal}`)
   }
 
   return (
@@ -310,6 +443,19 @@ export function FormularioTrabajador() {
                     valor={f.telefono}
                     onCambiar={(v) => cambiar({ telefono: v })}
                   />
+                  <CampoTelefono
+                    label="Teléfono local (opcional)"
+                    valor={f.telefono_local}
+                    onCambiar={(v) => cambiar({ telefono_local: v })}
+                  />
+                  <Input
+                    label="Correo electrónico (opcional)"
+                    type="email"
+                    placeholder="trabajador@correo.com"
+                    maxLength={80}
+                    value={f.correo}
+                    onChange={(e) => cambiar({ correo: e.target.value })}
+                  />
                   <Input
                     label="Contacto de emergencia"
                     placeholder="Marta Arias, esposa"
@@ -332,6 +478,129 @@ export function FormularioTrabajador() {
                     onChange={(e) => cambiar({ direccion: e.target.value })}
                   />
                 </div>
+
+                <details className="border-hairline bg-canvas/60 mt-4 rounded-lg border p-4">
+                  <summary className="text-ink/80 cursor-pointer text-xs font-medium select-none">
+                    Domicilio desglosado y vivienda para Apertura Bancaria — Banco del Tesoro
+                    (opcional)
+                  </summary>
+                  <p className="text-ink/50 mt-1.5 text-xs">
+                    Si dejas estos campos en blanco, la plantilla de Carga Masiva (44 columnas)
+                    repartirá automáticamente la dirección de arriba y asignará la ubicación y
+                    agencia más cercana ({ubicacionSugerida.agencia} ·{' '}
+                    {ubicacionSugerida.agenciaNombre}).
+                  </p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <Input
+                      label="Calle / avenida"
+                      maxLength={40}
+                      value={f.calle_avenida}
+                      onChange={(e) => cambiar({ calle_avenida: e.target.value })}
+                    />
+                    <Input
+                      label="Casa / edificio"
+                      maxLength={30}
+                      value={f.casa_edificio}
+                      onChange={(e) => cambiar({ casa_edificio: e.target.value })}
+                    />
+                    <Input
+                      label="Piso / nivel"
+                      maxLength={10}
+                      placeholder="PB"
+                      value={f.piso_nivel}
+                      onChange={(e) => cambiar({ piso_nivel: e.target.value })}
+                    />
+                    <Input
+                      label="Apto / ofic. / local"
+                      maxLength={20}
+                      placeholder="S/N"
+                      value={f.apto_local}
+                      onChange={(e) => cambiar({ apto_local: e.target.value })}
+                    />
+                    <Input
+                      label="Referencia"
+                      maxLength={40}
+                      value={f.referencia_domicilio}
+                      onChange={(e) => cambiar({ referencia_domicilio: e.target.value })}
+                    />
+                    <Select
+                      label="Condición del inmueble"
+                      vacio="1 — Propia (por defecto)"
+                      value={f.condicion_inmueble}
+                      onChange={(e) => cambiar({ condicion_inmueble: e.target.value })}
+                      opciones={CONDICIONES_INMUEBLE_BT.map((x) => ({
+                        valor: x.codigo,
+                        etiqueta: `${x.codigo} — ${x.nombre}`,
+                      }))}
+                    />
+                    <Select
+                      label="Tipo de vivienda"
+                      vacio="1 — Casa (por defecto)"
+                      value={f.tipo_vivienda}
+                      onChange={(e) => cambiar({ tipo_vivienda: e.target.value })}
+                      opciones={TIPOS_VIVIENDA_BT.map((x) => ({
+                        valor: x.codigo,
+                        etiqueta: `${x.codigo} — ${x.nombre}`,
+                      }))}
+                    />
+                    <Input
+                      label="Tiempo de residencia (años)"
+                      type="number"
+                      placeholder="5"
+                      limite={{ maxEnteros: 2, maxDecimales: 0, sinNegativos: true }}
+                      value={f.tiempo_residencia}
+                      onChange={(e) => cambiar({ tiempo_residencia: e.target.value })}
+                    />
+                    <Select
+                      label="Estado (Banco del Tesoro)"
+                      vacio={`Automático (${ubicacionSugerida.estado})`}
+                      value={f.bt_estado}
+                      onChange={(e) => cambiar({ bt_estado: e.target.value })}
+                      opciones={ESTADOS_BT.map((x) => ({
+                        valor: x.codigo,
+                        etiqueta: `${x.codigo} — ${x.nombre}`,
+                      }))}
+                    />
+                    <Select
+                      label="Ciudad (Banco del Tesoro)"
+                      vacio={`Automática (${ubicacionSugerida.ciudad})`}
+                      value={f.bt_ciudad}
+                      onChange={(e) => cambiar({ bt_ciudad: e.target.value })}
+                      opciones={CIUDADES_BT.map((x) => ({
+                        valor: x.codigo,
+                        etiqueta: `${x.codigo} — ${x.nombre}`,
+                      }))}
+                    />
+                    <Select
+                      label="Municipio / Sector postal"
+                      vacio={`Automático (${ubicacionSugerida.municipio})`}
+                      value={f.bt_municipio}
+                      onChange={(e) => cambiar({ bt_municipio: e.target.value })}
+                      opciones={SECTORES_MUNICIPIOS_BT.map((x) => ({
+                        valor: x.codigo,
+                        etiqueta: `${x.codigo} — ${x.nombre} (${x.zonaPostal})`,
+                      }))}
+                    />
+                    <Select
+                      label="Parroquia"
+                      vacio={`Automática (${ubicacionSugerida.parroquia})`}
+                      value={f.bt_parroquia}
+                      onChange={(e) => cambiar({ bt_parroquia: e.target.value })}
+                      opciones={PARROQUIAS_BT.map((x) => ({
+                        valor: x.codigo,
+                        etiqueta: `${x.codigo} — ${x.nombre}`,
+                      }))}
+                    />
+                    <Input
+                      label="Zona postal"
+                      solo="numeros"
+                      maxLength={4}
+                      placeholder={ubicacionSugerida.zonaPostal}
+                      value={f.zona_postal}
+                      onChange={(e) => cambiar({ zona_postal: e.target.value })}
+                    />
+                  </div>
+                </details>
               </>
             ),
           },
@@ -625,6 +894,62 @@ export function FormularioTrabajador() {
                     </>
                   ) : null}
                 </div>
+
+                <details className="border-hairline bg-canvas/60 mt-4 rounded-lg border p-4">
+                  <summary className="text-ink/80 cursor-pointer text-xs font-medium select-none">
+                    Códigos de Apertura Masiva — Banco del Tesoro 0163 (opcional)
+                  </summary>
+                  <p className="text-ink/50 mt-1.5 text-xs">
+                    Agencia más cercana sugerida según dirección:{' '}
+                    <strong>
+                      {ubicacionSugerida.agencia} · {ubicacionSugerida.agenciaNombre}
+                    </strong>
+                    . Cargo banco sugerido: <strong>{codigosCargoSugeridos.tipoCargo}</strong> ·
+                    Profesión: <strong>{codigosCargoSugeridos.profesion}</strong>.
+                  </p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <Select
+                      label="Agencia Banco del Tesoro"
+                      vacio={`Automática (${ubicacionSugerida.agencia} · ${ubicacionSugerida.agenciaNombre})`}
+                      value={f.bt_agencia}
+                      onChange={(e) => cambiar({ bt_agencia: e.target.value })}
+                      opciones={AGENCIAS_BT.map((a) => ({
+                        valor: a.codigo,
+                        etiqueta: `${a.codigo} · ${a.nombre}`,
+                      }))}
+                    />
+                    <Select
+                      label="Tipo de cuenta nómina"
+                      vacio="VI01 — Cuenta Nómina (por defecto)"
+                      value={f.bt_tipo_cuenta}
+                      onChange={(e) => cambiar({ bt_tipo_cuenta: e.target.value })}
+                      opciones={TIPOS_CUENTA_NOMINA_BT.map((c) => ({
+                        valor: c.codigo,
+                        etiqueta: c.nombre,
+                      }))}
+                    />
+                    <Select
+                      label="Tipo de cargo (catálogo BT)"
+                      vacio={`Automático (${codigosCargoSugeridos.tipoCargo})`}
+                      value={f.bt_tipo_cargo}
+                      onChange={(e) => cambiar({ bt_tipo_cargo: e.target.value })}
+                      opciones={TIPOS_CARGO_BT.map((c) => ({
+                        valor: c.codigo,
+                        etiqueta: `${c.codigo} — ${c.nombre}`,
+                      }))}
+                    />
+                    <Select
+                      label="Profesión (catálogo BT)"
+                      vacio={`Automática (${codigosCargoSugeridos.profesion})`}
+                      value={f.bt_profesion}
+                      onChange={(e) => cambiar({ bt_profesion: e.target.value })}
+                      opciones={PROFESIONES_BT.map((p) => ({
+                        valor: p.codigo,
+                        etiqueta: `${p.codigo} — ${p.nombre}`,
+                      }))}
+                    />
+                  </div>
+                </details>
 
                 <div className="mt-4">
                   <Textarea
