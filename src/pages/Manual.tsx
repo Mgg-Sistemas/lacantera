@@ -9,6 +9,8 @@ import {
   ChevronDown,
   RotateCcw,
   CheckCircle2,
+  Lightbulb,
+  Info,
 } from 'lucide-react'
 import { Link } from 'react-router'
 import { PageHeader } from '@/components/PageHeader'
@@ -27,7 +29,7 @@ import './manual.css'
 */
 import manualHtml from './manual.generado.html?raw'
 
-type VistaManual = 'paso_a_paso' | 'preguntas_respuestas' | 'libro_completo'
+type VistaManual = 'preguntas_respuestas' | 'paso_a_paso' | 'libro_completo'
 
 interface Capitulo {
   id: string
@@ -62,11 +64,12 @@ const compara = (texto: string) => enMayuscula(texto.toLowerCase())
 
 export function Manual() {
   const contenido = useRef<HTMLDivElement>(null)
-  const [vista, setVista] = useState<VistaManual>('paso_a_paso')
+  // Iniciamos por defecto en preguntas_respuestas para dar respuesta inmediata al usuario
+  const [vista, setVista] = useState<VistaManual>('preguntas_respuestas')
   const [areaFiltro, setAreaFiltro] = useState<AreaOperativa>('TODAS')
   const [busqueda, setBusqueda] = useState('')
 
-  // Acordeones abiertos
+  // Acordeones abiertos por defecto
   const [guiaAbierta, setGuiaAbierta] = useState<string | null>(GUIAS_PASO_A_PASO[0]?.id ?? null)
   const [qaAbierto, setQaAbierto] = useState<string | null>(PREGUNTAS_FRECUENTES[0]?.id ?? null)
 
@@ -196,8 +199,8 @@ export function Manual() {
   return (
     <>
       <PageHeader
-        title="Manual y Centro de Ayuda Operativa"
-        description="Guías paso a paso, respuestas rápidas a bloqueos operativos y manual técnico completo de La Cantera."
+        title="Centro de Ayuda y Manual Operativo"
+        description="Respuestas directas a dudas del día a día, pasos a seguir en cada pantalla y manual oficial de La Cantera."
         actions={
           <div className="flex items-center gap-2">
             <Button
@@ -216,13 +219,29 @@ export function Manual() {
       />
 
       {/* Selector de Pilares Principales */}
-      <div className="mb-6 flex border-b border-hairline gap-4 sm:gap-8">
+      <div className="mb-6 flex border-b border-hairline gap-3 sm:gap-8">
+        <button
+          type="button"
+          onClick={() => setVista('preguntas_respuestas')}
+          className={`pb-3 text-sm font-semibold transition-all relative flex items-center gap-2 ${
+            vista === 'preguntas_respuestas'
+              ? 'text-tierra-600 dark:text-tierra-300 border-b-2 border-tierra-600 dark:border-tierra-400'
+              : 'text-ink/50 hover:text-ink/80'
+          }`}
+        >
+          <HelpCircle className="size-4.5" />
+          <span>Preguntas Frecuentes (Q&A)</span>
+          <span className="rounded-full bg-tierra-600/10 text-tierra-700 dark:text-tierra-300 px-2 py-0.5 text-xs font-bold">
+            {PREGUNTAS_FRECUENTES.length}
+          </span>
+        </button>
+
         <button
           type="button"
           onClick={() => setVista('paso_a_paso')}
-          className={`pb-3 text-sm font-medium transition-all relative flex items-center gap-2 ${
+          className={`pb-3 text-sm font-semibold transition-all relative flex items-center gap-2 ${
             vista === 'paso_a_paso'
-              ? 'text-tierra-600 dark:text-tierra-300 border-b-2 border-tierra-600 dark:border-tierra-400 font-semibold'
+              ? 'text-tierra-600 dark:text-tierra-300 border-b-2 border-tierra-600 dark:border-tierra-400'
               : 'text-ink/50 hover:text-ink/80'
           }`}
         >
@@ -235,26 +254,10 @@ export function Manual() {
 
         <button
           type="button"
-          onClick={() => setVista('preguntas_respuestas')}
-          className={`pb-3 text-sm font-medium transition-all relative flex items-center gap-2 ${
-            vista === 'preguntas_respuestas'
-              ? 'text-tierra-600 dark:text-tierra-300 border-b-2 border-tierra-600 dark:border-tierra-400 font-semibold'
-              : 'text-ink/50 hover:text-ink/80'
-          }`}
-        >
-          <HelpCircle className="size-4.5" />
-          <span>Preguntas Frecuentes (Q&A)</span>
-          <span className="rounded-full bg-ink/6 px-2 py-0.5 text-xs text-ink/75 font-semibold">
-            {PREGUNTAS_FRECUENTES.length}
-          </span>
-        </button>
-
-        <button
-          type="button"
           onClick={() => setVista('libro_completo')}
-          className={`pb-3 text-sm font-medium transition-all relative flex items-center gap-2 ${
+          className={`pb-3 text-sm font-semibold transition-all relative flex items-center gap-2 ${
             vista === 'libro_completo'
-              ? 'text-tierra-600 dark:text-tierra-300 border-b-2 border-tierra-600 dark:border-tierra-400 font-semibold'
+              ? 'text-tierra-600 dark:text-tierra-300 border-b-2 border-tierra-600 dark:border-tierra-400'
               : 'text-ink/50 hover:text-ink/80'
           }`}
         >
@@ -267,19 +270,19 @@ export function Manual() {
       <div className="mb-6 space-y-4">
         <div className="relative max-w-2xl">
           <Input
-            label="Buscar en el manual y centro de ayuda"
+            label="Buscar por duda o palabra clave"
             type="search"
             sinNormalizar
             icon={<Search />}
-            placeholder="¿Qué desea hacer? (ej. «emitir retención», «feriado bancario», «chofer», «error»...)"
-            hint="Busca simultáneamente en procedimientos paso a paso, dudas frecuentes y el manual completo."
+            placeholder="Escriba su duda (ej: «retención», «reintegro», «feriado», «chofer», «báscula»...)"
+            hint="Escriba lo que necesita hacer y el sistema filtrará las soluciones de inmediato."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
           />
 
           {busqueda.trim().length >= 2 && hallazgosLibro.length > 0 && vista !== 'libro_completo' ? (
-            <div className="border-hairline rounded-[6px] bg-surface shadow-popover absolute inset-x-0 top-[4.6rem] z-30 max-h-72 overflow-y-auto border p-2">
-              <p className="px-3 py-1.5 text-2xs font-semibold tracking-wider text-ink/50 uppercase">
+            <div className="border-hairline rounded-[8px] bg-surface shadow-popover absolute inset-x-0 top-[4.6rem] z-30 max-h-72 overflow-y-auto border p-2">
+              <p className="px-3 py-1.5 text-2xs font-bold tracking-wider text-ink/50 uppercase">
                 Capítulos del manual completo que coinciden:
               </p>
               <ul>
@@ -300,19 +303,18 @@ export function Manual() {
           ) : null}
         </div>
 
-        {/* Pastillas de filtro por Área Operativa */}
+        {/* Botones de filtro por Área Temática */}
         {vista !== 'libro_completo' ? (
-          <div className="flex flex-wrap items-center gap-1.5 pt-1">
-            <span className="text-xs font-semibold text-ink/50 mr-1">Área:</span>
+          <div className="flex flex-wrap items-center gap-2 pt-1">
             {AREAS_OPERATIVAS.map((a) => (
               <button
                 key={a.id}
                 type="button"
                 onClick={() => setAreaFiltro(a.id)}
-                className={`px-3 py-1 text-xs rounded-full border transition-all ${
+                className={`px-3 py-1.5 text-xs rounded-full border transition-all ${
                   areaFiltro === a.id
-                    ? 'border-tierra-600 bg-tierra-600/10 text-tierra-600 dark:text-tierra-300 font-semibold'
-                    : 'border-hairline bg-surface/50 text-ink/65 hover:border-ink/30 hover:text-ink/90'
+                    ? 'border-tierra-600 bg-tierra-600/10 text-tierra-700 dark:text-tierra-300 font-bold shadow-sm'
+                    : 'border-hairline bg-surface/60 text-ink/70 hover:border-ink/35 hover:text-ink'
                 }`}
                 title={a.descripcion}
               >
@@ -324,117 +326,118 @@ export function Manual() {
       </div>
 
       {/* ========================================================================= */}
-      {/* PILAR 1: GUÍAS PASO A PASO (STEP-BY-STEP) */}
+      {/* PILAR 1: PREGUNTAS FRECUENTES (Q&A OPERATIVO - DIGERIBLE Y ACCIONABLE) */}
       {/* ========================================================================= */}
-      {vista === 'paso_a_paso' && (
-        <div className="space-y-4 max-w-5xl">
-          {guiasFiltradas.length === 0 ? (
-            <div className="rounded-[6px] border border-dashed border-hairline p-12 text-center bg-surface">
-              <ListOrdered className="size-10 text-ink/40 mx-auto mb-3" />
-              <p className="text-sm font-semibold text-ink/85">No se encontraron guías para la búsqueda</p>
-              <p className="text-xs text-ink/50 mt-1">
-                Pruebe con otros términos o seleccione «Todo el sistema» en el filtro de áreas.
+      {vista === 'preguntas_respuestas' && (
+        <div className="space-y-4 max-w-4xl">
+          {qaFiltradas.length === 0 ? (
+            <div className="rounded-[10px] border border-dashed border-hairline p-12 text-center bg-surface">
+              <HelpCircle className="size-10 text-ink/40 mx-auto mb-3" />
+              <p className="text-base font-semibold text-ink/90">No encontramos respuestas para esa búsqueda</p>
+              <p className="text-sm text-ink/60 mt-1">
+                Pruebe buscando palabras más sencillas como «pago», «tasa», «romana» o elija otra área.
               </p>
             </div>
           ) : (
-            guiasFiltradas.map((guia) => {
-              const estaAbierta = guiaAbierta === guia.id
+            qaFiltradas.map((qa) => {
+              const estaAbierta = qaAbierto === qa.id
               return (
                 <div
-                  key={guia.id}
-                  className="rounded-[6px] border border-hairline bg-surface transition-all overflow-hidden"
+                  key={qa.id}
+                  className={`rounded-[10px] border transition-all overflow-hidden bg-surface ${
+                    estaAbierta
+                      ? 'border-tierra-600/50 shadow-md ring-1 ring-tierra-600/15'
+                      : 'border-hairline hover:border-ink/30 hover:shadow-sm'
+                  }`}
                 >
                   <button
                     type="button"
-                    onClick={() => setGuiaAbierta(estaAbierta ? null : guia.id)}
-                    className="w-full p-4 text-left flex items-start justify-between gap-4 hover:bg-ink/2 transition-colors"
+                    onClick={() => setQaAbierto(estaAbierta ? null : qa.id)}
+                    className="w-full p-4 sm:p-5 text-left flex items-start justify-between gap-4 transition-colors"
                   >
-                    <div className="space-y-1">
+                    <div className="space-y-2.5 flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-bold text-ink/90">{guia.titulo}</span>
-                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-ink/6 text-ink/75">
-                          {AREAS_OPERATIVAS.find((a) => a.id === guia.area)?.label}
+                        <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-tierra-600/10 text-tierra-700 dark:text-tierra-300">
+                          {AREAS_OPERATIVAS.find((a) => a.id === qa.area)?.label}
                         </span>
                       </div>
-                      <p className="text-xs text-ink/60 leading-relaxed max-w-3xl">{guia.resumen}</p>
+                      <h3 className="text-base sm:text-lg font-bold text-ink leading-snug">
+                        {qa.pregunta}
+                      </h3>
+                      {/* Píldora de respuesta directa siempre legible y clara */}
+                      <div className="p-3.5 rounded-[8px] bg-canvas/90 border border-hairline flex items-start gap-3 text-sm text-ink leading-relaxed shadow-sm">
+                        <Lightbulb className="size-5 text-warning shrink-0 mt-0.5" />
+                        <div>
+                          <strong className="text-tierra-600 dark:text-tierra-400 font-bold block sm:inline sm:mr-1.5">
+                            Respuesta rápida:
+                          </strong>
+                          <span className="text-ink font-normal">{qa.respuestaCorta}</span>
+                        </div>
+                      </div>
                     </div>
                     <div className="shrink-0 pt-1">
-                      <ChevronDown
-                        className={`size-5 text-ink/50 transition-transform duration-200 ${
-                          estaAbierta ? 'rotate-180 text-tierra-600' : ''
+                      <div
+                        className={`size-8 rounded-full flex items-center justify-center transition-all ${
+                          estaAbierta ? 'bg-tierra-600 text-white' : 'bg-ink/5 text-ink/70 hover:bg-ink/10'
                         }`}
-                      />
+                      >
+                        <ChevronDown
+                          className={`size-4.5 transition-transform duration-200 ${
+                            estaAbierta ? 'rotate-180' : ''
+                          }`}
+                        />
+                      </div>
                     </div>
                   </button>
 
                   {estaAbierta && (
-                    <div className="p-4 pt-0 border-t border-hairline space-y-5 bg-ink/2">
-                      {/* Metadatos: Rol y Ruta */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-4 text-xs">
-                        <div className="p-2.5 rounded-[4px] border border-hairline bg-surface flex items-center justify-between">
-                          <span className="text-ink/55">Rol requerido:</span>
-                          <strong className="text-ink/85">{guia.rolRequerido}</strong>
+                    <div className="p-4 sm:p-5 pt-0 border-t border-hairline space-y-4 bg-canvas/20">
+                      {/* Causa del sistema (Explicación breve) */}
+                      <div className="rounded-[8px] border border-hairline bg-surface p-4 space-y-2 shadow-sm">
+                        <div className="flex items-center gap-2 text-xs font-bold text-ink uppercase tracking-wider">
+                          <Info className="size-4 text-tierra-600 dark:text-tierra-400" />
+                          <span>¿Por qué sucede esto en el sistema?</span>
                         </div>
-                        <div className="p-2.5 rounded-[4px] border border-hairline bg-surface flex items-center justify-between">
-                          <span className="text-ink/55">Ubicación en menú:</span>
-                          <span className="text-ink/85 font-mono text-[11px]">{guia.rutaMenu}</span>
-                        </div>
-                      </div>
-
-                      {/* Lista numerada de pasos */}
-                      <div className="space-y-3">
-                        <p className="text-xs font-semibold text-ink/70 uppercase tracking-wider">
-                          Pasos a seguir:
+                        <p className="text-sm text-ink leading-relaxed pl-6 font-normal">
+                          {qa.causaRaiz}
                         </p>
-                        <div className="space-y-2.5">
-                          {guia.pasos.map((paso) => (
-                            <div
-                              key={paso.numero}
-                              className="rounded-[6px] border border-hairline bg-surface p-3.5 flex items-start gap-3.5"
-                            >
-                              <span className="size-6 rounded-full bg-tierra-600/10 text-tierra-600 dark:text-tierra-300 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
-                                {paso.numero}
-                              </span>
-                              <div className="min-w-0 flex-1 space-y-1">
-                                <div className="flex flex-wrap items-center justify-between gap-2">
-                                  <p className="text-xs font-bold text-ink/90">{paso.titulo}</p>
-                                  {paso.boton ? (
-                                    <span className="px-2 py-0.5 rounded-[4px] border border-hairline bg-ink/5 text-[11px] font-mono text-ink/80 font-medium">
-                                      Botón: «{paso.boton}»
-                                    </span>
-                                  ) : null}
+                      </div>
+
+                      {/* Pasos de solución estructurados y visuales */}
+                      <div className="rounded-[8px] border border-tierra-600/30 bg-surface p-4 sm:p-5 space-y-3.5 shadow-sm">
+                        <div className="flex items-center gap-2 text-xs font-bold text-tierra-600 dark:text-tierra-400 uppercase tracking-wider">
+                          <CheckCircle2 className="size-4.5 text-success" />
+                          <span>Pasos exactos para resolverlo:</span>
+                        </div>
+
+                        <div className="space-y-3 pl-1 sm:pl-2">
+                          {qa.accionSolucion.split('\n').map((line, idx) => {
+                            const match = line.match(/^(\d+)\.\s*(.*)$/)
+                            if (match) {
+                              return (
+                                <div key={idx} className="flex items-start gap-3 text-sm text-ink leading-relaxed">
+                                  <span className="size-6 rounded-full bg-tierra-600 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                                    {match[1]}
+                                  </span>
+                                  <span className="flex-1 font-medium text-ink pt-0.5">{match[2]}</span>
                                 </div>
-                                <p className="text-xs text-ink/75 leading-relaxed">{paso.detalle}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Resultado esperado */}
-                      <div className="rounded-[6px] border border-success/30 bg-success-soft p-3 text-xs text-ink/80 flex items-start gap-2.5">
-                        <CheckCircle2 className="size-4.5 text-success shrink-0 mt-0.5" />
-                        <div>
-                          <strong className="text-ink/90 block">Resultado al finalizar:</strong>
-                          <span className="text-ink/75">{guia.resultado}</span>
-                        </div>
-                      </div>
-
-                      {/* Cómo revertir o corregir */}
-                      <div className="rounded-[6px] border border-warning/30 bg-warning-soft p-3 text-xs text-ink/80 flex items-start gap-2.5">
-                        <RotateCcw className="size-4.5 text-warning shrink-0 mt-0.5" />
-                        <div>
-                          <strong className="text-ink/90 block">↺ Si te equivocaste o necesitas corregir:</strong>
-                          <span className="text-ink/75">{guia.revertir}</span>
+                              )
+                            }
+                            return line.trim() ? (
+                              <p key={idx} className="text-sm text-ink leading-relaxed pl-9">
+                                {line}
+                              </p>
+                            ) : null
+                          })}
                         </div>
                       </div>
 
                       {/* Enlace directo a la pantalla */}
-                      {guia.rutaDirecta ? (
-                        <div className="pt-1 flex justify-end">
-                          <Link to={guia.rutaDirecta}>
-                            <Button size="sm" icon={<ExternalLink className="size-3.5" />}>
-                              Ir a la pantalla
+                      {qa.rutaRecomendada ? (
+                        <div className="flex justify-end pt-1">
+                          <Link to={qa.rutaRecomendada}>
+                            <Button size="sm" icon={<ExternalLink className="size-4" />}>
+                              {qa.textoRuta || 'Ir a la pantalla correspondiente'}
                             </Button>
                           </Link>
                         </div>
@@ -449,78 +452,129 @@ export function Manual() {
       )}
 
       {/* ========================================================================= */}
-      {/* PILAR 2: PREGUNTAS FRECUENTES (Q&A OPERATIVO) */}
+      {/* PILAR 2: GUÍAS PASO A PASO (STEP-BY-STEP) */}
       {/* ========================================================================= */}
-      {vista === 'preguntas_respuestas' && (
-        <div className="space-y-4 max-w-5xl">
-          {qaFiltradas.length === 0 ? (
-            <div className="rounded-[6px] border border-dashed border-hairline p-12 text-center bg-surface">
-              <HelpCircle className="size-10 text-ink/40 mx-auto mb-3" />
-              <p className="text-sm font-semibold text-ink/85">No se encontraron respuestas para la búsqueda</p>
-              <p className="text-xs text-ink/50 mt-1">
-                Escriba otra palabra clave o explore las categorías en el menú superior.
+      {vista === 'paso_a_paso' && (
+        <div className="space-y-4 max-w-4xl">
+          {guiasFiltradas.length === 0 ? (
+            <div className="rounded-[10px] border border-dashed border-hairline p-12 text-center bg-surface">
+              <ListOrdered className="size-10 text-ink/40 mx-auto mb-3" />
+              <p className="text-base font-semibold text-ink/90">No se encontraron guías para la búsqueda</p>
+              <p className="text-sm text-ink/60 mt-1">
+                Pruebe con otros términos o seleccione «Todo el sistema» en el filtro de áreas.
               </p>
             </div>
           ) : (
-            qaFiltradas.map((qa) => {
-              const estaAbierta = qaAbierto === qa.id
+            guiasFiltradas.map((guia) => {
+              const estaAbierta = guiaAbierta === guia.id
               return (
                 <div
-                  key={qa.id}
-                  className="rounded-[6px] border border-hairline bg-surface transition-all overflow-hidden"
+                  key={guia.id}
+                  className={`rounded-[10px] border transition-all overflow-hidden bg-surface ${
+                    estaAbierta
+                      ? 'border-tierra-600/50 shadow-md ring-1 ring-tierra-600/15'
+                      : 'border-hairline hover:border-ink/30 hover:shadow-sm'
+                  }`}
                 >
                   <button
                     type="button"
-                    onClick={() => setQaAbierto(estaAbierta ? null : qa.id)}
-                    className="w-full p-4 text-left flex items-start justify-between gap-4 hover:bg-ink/2 transition-colors"
+                    onClick={() => setGuiaAbierta(estaAbierta ? null : guia.id)}
+                    className="w-full p-4 sm:p-5 text-left flex items-start justify-between gap-4 transition-colors"
                   >
-                    <div className="space-y-1.5">
+                    <div className="space-y-2 flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-bold text-ink/90 flex items-center gap-2">
-                          <HelpCircle className="size-4 text-tierra-600 dark:text-tierra-300 shrink-0" />
-                          {qa.pregunta}
-                        </span>
-                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-ink/6 text-ink/75">
-                          {AREAS_OPERATIVAS.find((a) => a.id === qa.area)?.label}
+                        <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-tierra-600/10 text-tierra-700 dark:text-tierra-300">
+                          {AREAS_OPERATIVAS.find((a) => a.id === guia.area)?.label}
                         </span>
                       </div>
-                      <p className="text-xs text-ink/75 leading-relaxed">{qa.respuestaCorta}</p>
+                      <h3 className="text-base sm:text-lg font-bold text-ink leading-snug">
+                        {guia.titulo}
+                      </h3>
+                      <p className="text-sm text-ink/75 leading-relaxed max-w-3xl">{guia.resumen}</p>
                     </div>
                     <div className="shrink-0 pt-1">
-                      <ChevronDown
-                        className={`size-5 text-ink/50 transition-transform duration-200 ${
-                          estaAbierta ? 'rotate-180 text-tierra-600' : ''
+                      <div
+                        className={`size-8 rounded-full flex items-center justify-center transition-all ${
+                          estaAbierta ? 'bg-tierra-600 text-white' : 'bg-ink/5 text-ink/60 hover:bg-ink/10'
                         }`}
-                      />
+                      >
+                        <ChevronDown
+                          className={`size-4.5 transition-transform duration-200 ${
+                            estaAbierta ? 'rotate-180' : ''
+                          }`}
+                        />
+                      </div>
                     </div>
                   </button>
 
                   {estaAbierta && (
-                    <div className="p-4 pt-0 border-t border-hairline space-y-4 bg-ink/2">
-                      {/* Causa Raíz */}
-                      <div className="rounded-[6px] border border-hairline bg-surface p-3.5 space-y-1 text-xs">
-                        <p className="font-semibold text-ink/70 uppercase tracking-wider text-[11px]">
-                          ¿Por qué ocurre? (Causa del sistema):
-                        </p>
-                        <p className="text-ink/80 leading-relaxed">{qa.causaRaiz}</p>
-                      </div>
-
-                      {/* Acción y Solución */}
-                      <div className="rounded-[6px] border border-hairline bg-surface p-3.5 space-y-1 text-xs">
-                        <p className="font-semibold text-tierra-600 dark:text-tierra-300 uppercase tracking-wider text-[11px]">
-                          Acción a seguir (Solución):
-                        </p>
-                        <div className="text-ink/80 leading-relaxed whitespace-pre-line font-normal">
-                          {qa.accionSolucion}
+                    <div className="p-4 sm:p-5 pt-0 border-t border-hairline space-y-4 bg-canvas/20">
+                      {/* Metadatos: Rol y Ruta */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs sm:text-sm">
+                        <div className="p-3 rounded-[6px] border border-hairline bg-surface flex items-center justify-between">
+                          <span className="text-ink/80 font-medium">¿Quién puede hacerlo?:</span>
+                          <strong className="text-ink font-bold">{guia.rolRequerido}</strong>
+                        </div>
+                        <div className="p-3 rounded-[6px] border border-hairline bg-surface flex items-center justify-between">
+                          <span className="text-ink/80 font-medium">¿Dónde se encuentra?:</span>
+                          <span className="text-ink font-mono text-xs font-bold">{guia.rutaMenu}</span>
                         </div>
                       </div>
 
-                      {/* Enlace recomendado */}
-                      {qa.rutaRecomendada ? (
-                        <div className="flex justify-end pt-1">
-                          <Link to={qa.rutaRecomendada}>
-                            <Button size="sm" variant="outline" icon={<ExternalLink className="size-3.5" />}>
-                              {qa.textoRuta || 'Ir a la pantalla'}
+                      {/* Lista numerada de pasos */}
+                      <div className="space-y-3">
+                        <p className="text-xs font-bold text-ink uppercase tracking-wider">
+                          Pasos a seguir:
+                        </p>
+                        <div className="space-y-3">
+                          {guia.pasos.map((paso) => (
+                            <div
+                              key={paso.numero}
+                              className="rounded-[8px] border border-hairline bg-surface p-4 flex items-start gap-3.5 shadow-sm"
+                            >
+                              <span className="size-7 rounded-full bg-tierra-600 text-white font-bold text-sm flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                                {paso.numero}
+                              </span>
+                              <div className="min-w-0 flex-1 space-y-1">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <p className="text-sm font-bold text-ink">{paso.titulo}</p>
+                                  {paso.boton ? (
+                                    <span className="px-2.5 py-0.5 rounded-[4px] border border-tierra-600/30 bg-tierra-600/10 text-xs font-mono text-tierra-700 dark:text-tierra-300 font-bold">
+                                      Tocar: «{paso.boton}»
+                                    </span>
+                                  ) : null}
+                                </div>
+                                <p className="text-sm text-ink leading-relaxed font-normal">{paso.detalle}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Resultado esperado */}
+                      <div className="rounded-[8px] border border-success/40 bg-surface p-4 text-sm text-ink flex items-start gap-3 shadow-sm">
+                        <CheckCircle2 className="size-5 text-success shrink-0 mt-0.5" />
+                        <div className="space-y-0.5">
+                          <strong className="text-ink font-bold block">Resultado al finalizar:</strong>
+                          <span className="text-ink leading-relaxed">{guia.resultado}</span>
+                        </div>
+                      </div>
+
+                      {/* Cómo revertir o corregir */}
+                      <div className="rounded-[8px] border border-warning/40 bg-surface p-4 text-sm text-ink flex items-start gap-3 shadow-sm">
+                        <RotateCcw className="size-5 text-warning shrink-0 mt-0.5" />
+                        <div className="space-y-0.5">
+                          <strong className="text-ink font-bold block">↺ Si te equivocaste o necesitas corregir:</strong>
+                          <span className="text-ink leading-relaxed">{guia.revertir}</span>
+                        </div>
+                      </div>
+
+                      {/* Enlace directo a la pantalla */}
+                      {guia.rutaDirecta ? (
+                        <div className="pt-1 flex justify-end">
+                          <Link to={guia.rutaDirecta}>
+                            <Button size="sm" icon={<ExternalLink className="size-4" />}>
+                              Abrir pantalla de la guía
                             </Button>
                           </Link>
                         </div>

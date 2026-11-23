@@ -16,15 +16,15 @@ export interface AreaInfo {
 }
 
 export const AREAS_OPERATIVAS: AreaInfo[] = [
-  { id: 'TODAS', label: 'Todo el sistema', descripcion: 'Todas las áreas y módulos operativos' },
-  { id: 'COMPRAS_RETENCIONES', label: 'Compras y Retenciones', descripcion: 'Órdenes de compra, facturas fiscales, retenciones R14 y reintegros' },
-  { id: 'FACTURACION_VENTAS', label: 'Facturación y Ventas', descripcion: 'Cotizaciones, notas de entrega, clientes y cuentas por cobrar' },
-  { id: 'ROMANA_DESPACHOS', label: 'Romana y Despachos', descripcion: 'Pesaje, formatos de salida autorizada, acarreos y viajes' },
-  { id: 'INVENTARIO_ALMACEN', label: 'Inventario y Almacenes', descripcion: 'Recepciones, existencias de materiales, almacenes y traslados' },
-  { id: 'EXPLOTACION_MINA', label: 'Explotación y Mina', descripcion: 'Plantas, extracción, tolvas y producción diaria' },
-  { id: 'COMBUSTIBLE_MAQUINAS', label: 'Combustible y Maquinaria', descripcion: 'Surtidor de diésel, horómetros y estado de flota' },
-  { id: 'NOMINA_PERSONAL', label: 'Nómina y Asistencia', descripcion: 'Trabajadores, carga masiva Banco del Tesoro y control diario' },
-  { id: 'TESORERIA_TASAS', label: 'Tesorería y Tasas', descripcion: 'Cuentas bancarias, pagos, feriados bancarios y tasa BCV' },
+  { id: 'TODAS', label: 'Todo el sistema', descripcion: 'Todas las áreas' },
+  { id: 'COMPRAS_RETENCIONES', label: '🛒 Compras y Retenciones', descripcion: 'Compras, facturas, retenciones y reintegros' },
+  { id: 'FACTURACION_VENTAS', label: '🧾 Facturación y Ventas', descripcion: 'Cotizaciones, notas de entrega y cobros' },
+  { id: 'ROMANA_DESPACHOS', label: '⚖️ Romana y Despachos', descripcion: 'Pesaje, formatos de salida y viajes' },
+  { id: 'INVENTARIO_ALMACEN', label: '📦 Almacén e Inventario', descripcion: 'Recepciones, existencias y traslados' },
+  { id: 'EXPLOTACION_MINA', label: '⛏️ Mina y Producción', descripcion: 'Plantas, extracción y producción' },
+  { id: 'COMBUSTIBLE_MAQUINAS', label: '⛽ Combustible y Flota', descripcion: 'Surtidor, horómetros y máquinas' },
+  { id: 'NOMINA_PERSONAL', label: '👥 Personal y Nómina', descripcion: 'Trabajadores, asistencias y pagos' },
+  { id: 'TESORERIA_TASAS', label: '💵 Bancos y Tasas', descripcion: 'Cuentas, feriados bancarios y BCV' },
 ]
 
 export interface PasoGuia {
