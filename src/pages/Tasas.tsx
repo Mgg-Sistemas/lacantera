@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/Input'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { cn } from '@/lib/cn'
 import { resolverDiaValorBcv } from '@/lib/calendarioBancario'
+import { CalendarioBancarioView } from '@/components/CalendarioBancarioView'
 import { useTasaEnVivo } from '@/lib/tasaBcv'
 import {
   hoyEnCaracas,
@@ -92,6 +93,13 @@ export function Tasas() {
 
   const hoy = hoyEnCaracas()
   const infoBancario = resolverDiaValorBcv(hoy)
+  const [tab, setTab] = useState<'tasas' | 'calendario'>(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search)
+      if (p.get('tab') === 'calendario') return 'calendario'
+    }
+    return 'tasas'
+  })
   const [valor, setValor] = useState('')
   const [dia, setDia] = useState(hoy)
 
@@ -125,8 +133,43 @@ export function Tasas() {
     <>
       <PageHeader
         title="Tasas de cambio"
-        description="Tasa de cambio aplicada a los documentos. No es la del indicador de la barra superior, que solo informa."
+        description="Tasa de cambio aplicada a los documentos y calendario bancario oficial SUDEBAN."
       />
+
+      {/* Pestañas: Tasas de cambio vs Calendario bancario (SUDEBAN) */}
+      <div className="mb-4 flex flex-wrap items-center gap-1.5 rounded-xl border border-hairline bg-surface p-1 max-w-fit">
+        <button
+          type="button"
+          onClick={() => setTab('tasas')}
+          className={cn(
+            'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs sm:text-sm font-semibold transition-all',
+            tab === 'tasas'
+              ? 'bg-amber-500 text-stone-950 shadow-sm'
+              : 'text-ink/65 hover:text-ink hover:bg-surface-subtle'
+          )}
+        >
+          <span>💵</span>
+          <span>Tasas de cambio</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab('calendario')}
+          className={cn(
+            'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs sm:text-sm font-semibold transition-all',
+            tab === 'calendario'
+              ? 'bg-amber-500 text-stone-950 shadow-sm'
+              : 'text-ink/65 hover:text-ink hover:bg-surface-subtle'
+          )}
+        >
+          <span>📅</span>
+          <span>Calendario bancario (SUDEBAN)</span>
+        </button>
+      </div>
+
+      {tab === 'calendario' ? (
+        <CalendarioBancarioView fechaHoy={hoy} />
+      ) : (
+        <>
 
       {monedas.data && monedas.data.length > 1 ? (
         <div className="mb-4 flex flex-wrap gap-2">
@@ -161,17 +204,26 @@ export function Tasas() {
           />
 
           {infoBancario.esBancario ? (
-            <div className="border-warning/30 bg-warning-soft mt-4 flex items-start gap-2.5 rounded-[6px] border p-3.5">
-              <Banknote className="text-warning mt-px size-[18px] shrink-0" />
-              <div className="min-w-0">
-                <p className="text-ink/80 text-sm font-medium">
-                  Hoy es feriado bancario en Venezuela ({infoBancario.infoFeriado?.motivo}).
-                </p>
-                <p className="text-ink/65 mt-0.5 text-xs leading-relaxed">
-                  Tomando de referencia la tasa del día siguiente según el calendario SUDEBAN, el sistema
-                  aplica la tasa oficial BCV del día <strong className="font-semibold">{infoBancario.diaValorNombre} ({fecha(infoBancario.fechaValor)})</strong>, emitida el día hábil anterior.
-                </p>
+            <div className="border-warning/30 bg-warning-soft mt-4 flex items-start justify-between gap-3 rounded-[6px] border p-3.5">
+              <div className="flex items-start gap-2.5 min-w-0">
+                <Banknote className="text-warning mt-px size-[18px] shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-ink/80 text-sm font-medium">
+                    Hoy es feriado bancario en Venezuela ({infoBancario.infoFeriado?.motivo}).
+                  </p>
+                  <p className="text-ink/65 mt-0.5 text-xs leading-relaxed">
+                    Tomando de referencia la tasa del día siguiente según el calendario SUDEBAN, el sistema
+                    aplica la tasa oficial BCV del día <strong className="font-semibold">{infoBancario.diaValorNombre} ({fecha(infoBancario.fechaValor)})</strong>, emitida el día hábil anterior.
+                  </p>
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={() => setTab('calendario')}
+                className="shrink-0 text-xs font-semibold text-amber-500 hover:underline"
+              >
+                Ver calendario →
+              </button>
             </div>
           ) : null}
 
@@ -417,6 +469,8 @@ export function Tasas() {
           </div>
         ) : null}
       </Card>
+        </>
+      )}
     </>
   )
 }

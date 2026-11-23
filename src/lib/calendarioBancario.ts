@@ -11,6 +11,9 @@ export interface FeriadoBancario {
   fecha: string // YYYY-MM-DD
   motivo: string
   tipo: 'bancario' | 'nacional'
+  diaNombre?: string
+  fechaEfectivaBcv?: string
+  diaEfectivoNombre?: string
   trasladadoDesde?: string
 }
 
@@ -305,6 +308,42 @@ export function infoDiaBancario(fecha: string | Date = new Date()): InfoDiaBanca
     diaValorNombre: res.diaValorNombre,
     fechaValor: res.fechaValor,
   }
+}
+
+/**
+ * Devuelve la lista ordenada de feriados bancarios y nacionales SUDEBAN (opcionalmente filtrados por año).
+ * Incluye nombre de día, fecha efectiva BCV y nombre de día efectivo.
+ */
+export function listarFeriadosSudeban(anio?: number): FeriadoBancario[] {
+  const anioStr = anio ? String(anio) : null
+  const mapa = new Map<string, FeriadoBancario>()
+
+  // 1. Base oficial SUDEBAN
+  for (const item of FERIADOS_SUDEBAN) {
+    if (!anioStr || item.fecha.startsWith(anioStr)) {
+      mapa.set(item.fecha, { ...item })
+    }
+  }
+
+  // 2. Feriados dinámicos
+  for (const [f, item] of feriadosDinamicos.entries()) {
+    if (!anioStr || f.startsWith(anioStr)) {
+      mapa.set(f, { ...item })
+    }
+  }
+
+  const lista: FeriadoBancario[] = []
+  for (const item of mapa.values()) {
+    const fechaEfectiva = siguienteDiaHabilBancario(item.fecha)
+    lista.push({
+      ...item,
+      diaNombre: nombreDiaSemana(item.fecha),
+      fechaEfectivaBcv: fechaEfectiva,
+      diaEfectivoNombre: nombreDiaSemana(fechaEfectiva),
+    })
+  }
+
+  return lista.sort((a, b) => a.fecha.localeCompare(b.fecha))
 }
 
 /**

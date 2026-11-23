@@ -222,6 +222,23 @@ function IndicadorTasa() {
 
       {abierto ? (
         <div className="border-ink/15 bg-surface absolute top-full right-0 z-50 mt-2 w-80 rounded-[10px] border p-4 shadow-xl">
+          {/* Feriado bancario aviso informativo */}
+          {data.esBancario ? (
+            <Link
+              to="/app/tasas?tab=calendario"
+              onClick={() => setAbierto(false)}
+              className="border-amber-500/30 bg-amber-500/10 mb-3 block rounded-[6px] border p-2.5 text-xs text-ink"
+            >
+              <div className="flex items-center gap-1.5 font-semibold text-amber-400">
+                <span>🏦</span>
+                <span>Hoy es feriado bancario ({data.motivoBancario ?? 'SUDEBAN'})</span>
+              </div>
+              <p className="text-ink/75 mt-0.5 text-2xs leading-relaxed">
+                Rige la tasa oficial BCV del día {data.diaValorNombre ?? 'Martes'} ({data.fechaValor}). Ver calendario →
+              </p>
+            </Link>
+          ) : null}
+
           {/* Lo que hay que arreglar va primero: si el sistema valora con una
               tasa vieja, eso importa más que cualquier conversión. */}
           {sinRegistrar ? (
@@ -270,13 +287,23 @@ function IndicadorTasa() {
             <Conversor compacto />
           </div>
 
-          <Link
-            to="/app/tasas"
-            onClick={() => setAbierto(false)}
-            className="text-royal-600 mt-3 block text-xs hover:underline"
-          >
-            Ver y registrar tasas →
-          </Link>
+          <div className="mt-3 flex items-center justify-between border-hairline border-t pt-3 text-xs">
+            <Link
+              to="/app/tasas?tab=tasas"
+              onClick={() => setAbierto(false)}
+              className="text-royal-600 hover:underline"
+            >
+              Ver y registrar tasas →
+            </Link>
+            <Link
+              to="/app/tasas?tab=calendario"
+              onClick={() => setAbierto(false)}
+              className="text-amber-500 font-medium hover:underline inline-flex items-center gap-1"
+            >
+              <span>📅</span>
+              <span>Calendario bancario</span>
+            </Link>
+          </div>
         </div>
       ) : null}
     </div>

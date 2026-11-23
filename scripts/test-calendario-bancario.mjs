@@ -13,6 +13,7 @@ import {
   infoDiaBancario,
   resolverDiaValorBcv,
   siguienteDiaHabilBancario,
+  listarFeriadosSudeban,
 } from '../src/lib/calendarioBancario.ts'
 
 // 1. Detección del Lunes Bancario de hoy (23 de noviembre de 2026 - Virgen de Chiquinquirá)
@@ -58,5 +59,15 @@ assert.equal(siguienteDiaHabilBancario('2026-11-22'), '2026-11-24')
 assert.equal(esFeriadoBancario('2026-01-01'), true, 'Año Nuevo')
 assert.equal(esFeriadoBancario('2026-05-01'), true, 'Día del Trabajador')
 assert.equal(esFeriadoBancario('2026-12-25'), true, 'Navidad')
+
+// 5. Listar feriados SUDEBAN por año
+const feriados2026 = listarFeriadosSudeban(2026)
+assert.ok(feriados2026.length > 20, 'Debe haber más de 20 feriados bancarios y nacionales en 2026')
+const chiquinquira = feriados2026.find((f) => f.fecha === '2026-11-23')
+assert.ok(chiquinquira, 'Debe incluir el 23-11-2026')
+assert.equal(chiquinquira.tipo, 'bancario')
+assert.equal(chiquinquira.diaNombre, 'Lunes')
+assert.equal(chiquinquira.fechaEfectivaBcv, '2026-11-24')
+assert.equal(chiquinquira.diaEfectivoNombre, 'Martes')
 
 console.log('✓ Todas las pruebas de calendario bancario SUDEBAN pasaron limpias.')
