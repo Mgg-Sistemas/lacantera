@@ -33,11 +33,11 @@ export function ModalAnularRetencion({ abierta, onCerrar, retencion }: Props) {
   return (
     <Modal abierto={abierta} onCerrar={onCerrar} titulo="Anular Comprobante de Retención">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="rounded-lg border border-rose-200 bg-rose-50/70 p-3 text-xs text-rose-900 flex gap-2.5 items-start">
-          <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+        <div className="rounded-[6px] border border-danger/30 bg-danger-soft p-3 text-xs text-ink/80 flex gap-2.5 items-start">
+          <AlertTriangle className="w-5 h-5 text-danger shrink-0 mt-0.5" />
           <div>
-            <p className="font-semibold text-rose-950">Acción Fiscal Irreversible</p>
-            <p className="mt-0.5 text-rose-800 leading-relaxed">
+            <p className="font-semibold text-ink/90">Acción Fiscal Irreversible</p>
+            <p className="mt-0.5 text-ink/75 leading-relaxed">
               Está a punto de anular el comprobante <strong>{retencion.numero_comprobante}</strong> (Proveedor:{' '}
               {retencion.proveedor_nombre}). El número no se reutilizará y quedará registrado con el motivo de
               anulación exigido por la ley.
@@ -56,7 +56,7 @@ export function ModalAnularRetencion({ abierta, onCerrar, retencion }: Props) {
 
         {anular.error ? <ErrorDeCarga error={anular.error} /> : null}
 
-        <div className="flex justify-end gap-2 pt-2 border-t border-stone-200">
+        <div className="flex justify-end gap-2 pt-2 border-t border-hairline">
           <Button variant="outline" type="button" onClick={onCerrar} disabled={anular.isPending}>
             Volver
           </Button>

@@ -11,6 +11,7 @@ import {
   useRegistrarRetencion,
 } from '@/lib/api/retenciones'
 import { AlertCircle, FileCheck } from 'lucide-react'
+import { cn } from '@/lib/cn'
 
 interface Props {
   abierta: boolean
@@ -133,11 +134,11 @@ export function ModalRegistrarRetencion({ abierta, onCerrar, facturaPrevia }: Pr
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Banner Informativo si es Post-Pago */}
         {yaPagada ? (
-          <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-900 text-xs flex gap-2.5 items-start">
-            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="rounded-[6px] border border-warning/30 bg-warning-soft p-3 text-warning text-xs flex gap-2.5 items-start">
+            <AlertCircle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-amber-950">Orden de compra ya pagada al 100%</p>
-              <p className="mt-0.5 text-amber-800 leading-relaxed">
+              <p className="font-semibold text-ink/90">Orden de compra ya pagada al 100%</p>
+              <p className="mt-0.5 text-ink/75 leading-relaxed">
                 Esta compra ya fue cancelada al proveedor. La retención se emitirá conforme a la ley y quedará
                 registrada como <strong>REINTEGRO PENDIENTE</strong> por cobrar al proveedor. El sistema rastreará los
                 días en espera hasta que el dinero ingrese a Tesorería.
@@ -156,21 +157,22 @@ export function ModalRegistrarRetencion({ abierta, onCerrar, facturaPrevia }: Pr
                 const aliDef = t.tipo === 'IVA' ? 75 : t.tipo === 'ISLR' ? 2 : 1
                 recalcular(t.tipo, aliDef, baseImponible, impuestoCausado)
               }}
-              className={`p-2.5 rounded-lg border text-left transition-all ${
+              className={cn(
+                'p-2.5 rounded-[6px] border text-left transition-all',
                 tipoImpuesto === t.tipo
-                  ? 'border-[#8c2f1f] bg-[#8c2f1f]/5 text-[#8c2f1f] font-semibold'
-                  : 'border-stone-200 hover:border-stone-300 text-stone-700'
-              }`}
+                  ? 'border-tierra-600 bg-tierra-600/10 text-tierra-600 dark:text-tierra-300 font-semibold'
+                  : 'border-hairline hover:border-ink/30 text-ink/70 hover:text-ink/90',
+              )}
             >
               <div className="text-xs font-bold">{t.tipo}</div>
-              <div className="text-[11px] text-stone-500 truncate">{t.nombre}</div>
+              <div className="text-[11px] text-ink/50 truncate">{t.nombre}</div>
             </button>
           ))}
         </div>
 
         {/* Datos del Documento */}
-        <div className="rounded-lg border border-stone-200 bg-stone-50/50 p-3 space-y-3">
-          <p className="text-xs font-semibold text-stone-700 uppercase tracking-wider">Factura del Proveedor</p>
+        <div className="rounded-[6px] border border-hairline bg-surface/50 p-3.5 space-y-3">
+          <p className="text-xs font-semibold text-ink/80 uppercase tracking-wider">Factura del Proveedor</p>
           <div className="grid grid-cols-2 gap-3">
             <Input
               label="Proveedor"
@@ -232,11 +234,11 @@ export function ModalRegistrarRetencion({ abierta, onCerrar, facturaPrevia }: Pr
         </div>
 
         {/* Montos y Cálculos de Retención */}
-        <div className="rounded-lg border border-stone-200 bg-white p-3 space-y-3">
+        <div className="rounded-[6px] border border-hairline bg-surface/50 p-3.5 space-y-3">
           <div className="flex justify-between items-center">
-            <p className="text-xs font-semibold text-stone-700 uppercase tracking-wider">Cálculo de la Retención</p>
-            <div className="text-xs text-stone-500">
-              Moneda: <strong>{moneda}</strong> | Tasa: Bs. {tasa.toFixed(2)}
+            <p className="text-xs font-semibold text-ink/80 uppercase tracking-wider">Cálculo de la Retención</p>
+            <div className="text-xs text-ink/50">
+              Moneda: <strong className="text-ink/80">{moneda}</strong> | Tasa: <span className="tabular">Bs. {tasa.toFixed(2)}</span>
             </div>
           </div>
 
@@ -297,17 +299,17 @@ export function ModalRegistrarRetencion({ abierta, onCerrar, facturaPrevia }: Pr
           </div>
 
           {/* Resultado del Monto Retenido */}
-          <div className="p-3 bg-stone-100 rounded-lg flex justify-between items-center">
+          <div className="p-3 bg-ink/5 border border-hairline rounded-[6px] flex justify-between items-center">
             <div>
-              <p className="text-xs text-stone-600 font-medium">Monto del Impuesto Retenido:</p>
-              <p className="text-lg font-bold text-[#8c2f1f]">
+              <p className="text-xs text-ink/60 font-medium">Monto del Impuesto Retenido:</p>
+              <p className="text-lg font-bold text-tierra-600 dark:text-tierra-300">
                 {montoRetenido.toLocaleString('es-VE', { minimumFractionDigits: 2 })} {moneda}
               </p>
             </div>
             {moneda !== 'BS' ? (
               <div className="text-right">
-                <p className="text-[11px] text-stone-500">Equivalente en moneda nacional:</p>
-                <p className="text-sm font-semibold text-stone-800">
+                <p className="text-[11px] text-ink/50">Equivalente en moneda nacional:</p>
+                <p className="text-sm font-semibold text-ink/85 tabular">
                   Bs. {(Math.round(montoRetenido * tasa * 100) / 100).toLocaleString('es-VE', { minimumFractionDigits: 2 })}
                 </p>
               </div>
@@ -343,7 +345,7 @@ export function ModalRegistrarRetencion({ abierta, onCerrar, facturaPrevia }: Pr
 
         {registrar.error ? <ErrorDeCarga error={registrar.error} /> : null}
 
-        <div className="flex justify-end gap-2 pt-2 border-t border-stone-200">
+        <div className="flex justify-end gap-2 pt-2 border-t border-hairline">
           <Button variant="outline" type="button" onClick={onCerrar} disabled={registrar.isPending}>
             Cancelar
           </Button>

@@ -90,7 +90,7 @@ export function RetencionesDelProveedor({ proveedorId }: Props) {
             {reintegrosPendientes.map((rp) => (
               <div
                 key={rp.id}
-                className="bg-white/70 dark:bg-stone-900/50 rounded p-2.5 text-xs flex flex-wrap items-center justify-between gap-2 border border-amber-200 dark:border-amber-900/40"
+                className="bg-surface rounded p-2.5 text-xs flex flex-wrap items-center justify-between gap-2 border border-warning/30"
               >
                 <div className="flex items-center gap-2">
                   <Clock className="size-3.5 text-amber-600" />
@@ -155,7 +155,7 @@ export function RetencionesDelProveedor({ proveedorId }: Props) {
               </thead>
               <tbody className="divide-y divide-hairline">
                 {lista.map((r) => (
-                  <tr key={r.id} className="hover:bg-stone-50/60 dark:hover:bg-stone-800/20">
+                  <tr key={r.id} className="hover:bg-ink/3 transition-colors">
                     <td className="py-2.5 px-3 font-mono font-medium text-ink/85">
                       {r.numero_comprobante}
                     </td>

@@ -120,15 +120,15 @@ export function RetencionesPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto p-4 md:p-6">
       {/* Encabezado */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-stone-200 pb-5">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-hairline pb-5">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-stone-900">Retenciones Fiscales</h1>
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#8c2f1f]/10 text-[#8c2f1f]">
+            <h1 className="text-2xl font-bold tracking-tight text-ink/90">Retenciones Fiscales</h1>
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-tierra-500/10 text-tierra-600 dark:text-tierra-300">
               G.O. 43.484
             </span>
           </div>
-          <p className="text-xs md:text-sm text-stone-600 mt-1">
+          <p className="text-xs md:text-sm text-ink/60 mt-1">
             Comprobantes de 14 dígitos (R14), control de reintegros post-pago, libro fiscal y exportador oficial al
             SENIAT.
           </p>
@@ -148,19 +148,19 @@ export function RetencionesPage() {
       </div>
 
       {/* Selector de Pestañas */}
-      <div className="flex border-b border-stone-200 gap-6">
+      <div className="flex border-b border-hairline gap-6">
         <button
           onClick={() => setTab('por_realizar')}
           className={`pb-3 text-sm font-medium transition-all relative flex items-center gap-2 ${
             tab === 'por_realizar'
-              ? 'text-[#8c2f1f] border-b-2 border-[#8c2f1f] font-semibold'
-              : 'text-stone-500 hover:text-stone-800'
+              ? 'text-tierra-600 dark:text-tierra-300 border-b-2 border-tierra-600 dark:border-tierra-400 font-semibold'
+              : 'text-ink/50 hover:text-ink/80'
           }`}
         >
           <Clock className="w-4 h-4" />
           Por realizar
           {cola.length > 0 ? (
-            <span className="px-2 py-0.5 text-xs rounded-full bg-stone-200 text-stone-800 font-bold">
+            <span className="px-2 py-0.5 text-xs rounded-full bg-ink/8 text-ink/80 font-bold">
               {cola.length}
             </span>
           ) : null}
@@ -170,14 +170,14 @@ export function RetencionesPage() {
           onClick={() => setTab('reintegros')}
           className={`pb-3 text-sm font-medium transition-all relative flex items-center gap-2 ${
             tab === 'reintegros'
-              ? 'text-amber-700 border-b-2 border-amber-600 font-semibold'
-              : 'text-stone-500 hover:text-stone-800'
+              ? 'text-warning border-b-2 border-warning font-semibold'
+              : 'text-ink/50 hover:text-ink/80'
           }`}
         >
           <ArrowDownLeft className="w-4 h-4" />
           Reintegros pendientes
           {reintegros.length > 0 ? (
-            <span className="px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-800 font-bold">
+            <span className="px-2 py-0.5 text-xs rounded-full bg-warning-soft text-warning font-bold">
               {reintegros.length}
             </span>
           ) : null}
@@ -187,14 +187,14 @@ export function RetencionesPage() {
           onClick={() => setTab('libro')}
           className={`pb-3 text-sm font-medium transition-all relative flex items-center gap-2 ${
             tab === 'libro'
-              ? 'text-[#8c2f1f] border-b-2 border-[#8c2f1f] font-semibold'
-              : 'text-stone-500 hover:text-stone-800'
+              ? 'text-tierra-600 dark:text-tierra-300 border-b-2 border-tierra-600 dark:border-tierra-400 font-semibold'
+              : 'text-ink/50 hover:text-ink/80'
           }`}
         >
           <Receipt className="w-4 h-4" />
           Libro fiscal
           {retenciones.length > 0 ? (
-            <span className="px-2 py-0.5 text-xs rounded-full bg-stone-200 text-stone-800">{retenciones.length}</span>
+            <span className="px-2 py-0.5 text-xs rounded-full bg-ink/8 text-ink/80">{retenciones.length}</span>
           ) : null}
         </button>
 
@@ -202,8 +202,8 @@ export function RetencionesPage() {
           onClick={() => setTab('reportes')}
           className={`pb-3 text-sm font-medium transition-all relative flex items-center gap-2 ${
             tab === 'reportes'
-              ? 'text-[#8c2f1f] border-b-2 border-[#8c2f1f] font-semibold'
-              : 'text-stone-500 hover:text-stone-800'
+              ? 'text-tierra-600 dark:text-tierra-300 border-b-2 border-tierra-600 dark:border-tierra-400 font-semibold'
+              : 'text-ink/50 hover:text-ink/80'
           }`}
         >
           <FileSpreadsheet className="w-4 h-4" />
@@ -214,28 +214,28 @@ export function RetencionesPage() {
       {/* CONTENIDO 1: POR REALIZAR */}
       {tab === 'por_realizar' && (
         <div className="space-y-4">
-          <div className="rounded-lg border border-stone-200 bg-stone-50/70 p-3 text-xs text-stone-600 flex justify-between items-center">
+          <div className="rounded-[6px] border border-hairline bg-surface/50 p-3 text-xs text-ink/70 flex justify-between items-center">
             <span>
               Mostrando órdenes de compra con <strong>factura declarada</strong> que aún no cuentan con comprobante de
               retención registrado en el libro.
             </span>
-            <span className="text-stone-400">Total pendientes: {cola.length}</span>
+            <span className="text-ink/45">Total pendientes: {cola.length}</span>
           </div>
 
           {cargandoCola ? (
             <Cargando texto="Consultando facturas pendientes..." />
           ) : cola.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-stone-300 p-12 text-center bg-white">
-              <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-3" />
-              <p className="text-sm font-semibold text-stone-800">Al día: no hay compras con retenciones pendientes</p>
-              <p className="text-xs text-stone-500 mt-1 max-w-sm mx-auto">
+            <div className="rounded-[6px] border border-dashed border-hairline p-12 text-center bg-surface">
+              <CheckCircle2 className="w-10 h-10 text-success mx-auto mb-3" />
+              <p className="text-sm font-semibold text-ink/85">Al día: no hay compras con retenciones pendientes</p>
+              <p className="text-xs text-ink/50 mt-1 max-w-sm mx-auto">
                 Todas las compras con soporte Factura ya tienen su comprobante de retención formal emitido.
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-stone-200 bg-white">
+            <div className="overflow-x-auto rounded-[6px] border border-hairline bg-surface">
               <table className="w-full text-xs text-left">
-                <thead className="bg-stone-50 text-stone-700 font-semibold border-b border-stone-200">
+                <thead className="bg-ink/3 text-ink/70 font-semibold border-b border-hairline">
                   <tr>
                     <th className="p-3">OC / Compra</th>
                     <th className="p-3">Proveedor</th>
@@ -246,31 +246,31 @@ export function RetencionesPage() {
                     <th className="p-3 text-right">Acción</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-stone-100">
+                <tbody className="divide-y divide-hairline">
                   {cola.map((item) => (
-                    <tr key={item.orden_id} className="hover:bg-stone-50/80 transition-colors">
-                      <td className="p-3 font-medium text-stone-900">{item.orden_numero}</td>
+                    <tr key={item.orden_id} className="hover:bg-ink/3 transition-colors">
+                      <td className="p-3 font-medium text-ink/90">{item.orden_numero}</td>
                       <td className="p-3">
-                        <div className="font-medium text-stone-800">{item.proveedor_nombre}</div>
-                        <div className="text-[11px] text-stone-500">{item.proveedor_rif}</div>
+                        <div className="font-medium text-ink/85">{item.proveedor_nombre}</div>
+                        <div className="text-[11px] text-ink/50">{item.proveedor_rif}</div>
                       </td>
                       <td className="p-3">
-                        <div className="font-mono text-stone-800">{item.factura_numero}</div>
-                        <div className="text-[11px] text-stone-500">{item.factura_fecha}</div>
+                        <div className="font-mono text-ink/85">{item.factura_numero}</div>
+                        <div className="text-[11px] text-ink/50">{item.factura_fecha}</div>
                       </td>
-                      <td className="p-3 text-right font-medium">
+                      <td className="p-3 text-right font-medium text-ink/85 tabular">
                         ${item.total.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
                       </td>
-                      <td className="p-3 text-right font-semibold text-[#8c2f1f]">
+                      <td className="p-3 text-right font-semibold text-tierra-600 dark:text-tierra-300 tabular">
                         ${item.iva.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
                       </td>
                       <td className="p-3">
                         {item.ya_pagada ? (
-                          <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800">
+                          <span className="px-2 py-0.5 rounded-[4px] text-[11px] font-semibold bg-success-soft text-success">
                             Pagada (Post-pago)
                           </span>
                         ) : (
-                          <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-stone-100 text-stone-700">
+                          <span className="px-2 py-0.5 rounded-[4px] text-[11px] font-semibold bg-ink/6 text-ink/75">
                             Por pagar
                           </span>
                         )}
@@ -298,11 +298,11 @@ export function RetencionesPage() {
       {/* CONTENIDO 2: REINTEGROS PENDIENTES */}
       {tab === 'reintegros' && (
         <div className="space-y-4">
-          <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-3 text-xs text-amber-900 flex gap-2.5 items-start">
-            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="rounded-[6px] border border-warning/30 bg-warning-soft p-3 text-xs text-warning flex gap-2.5 items-start">
+            <AlertCircle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-amber-950">Devoluciones pendientes de proveedores</p>
-              <p className="mt-0.5 text-amber-800 leading-relaxed">
+              <p className="font-semibold text-ink/90">Devoluciones pendientes de proveedores</p>
+              <p className="mt-0.5 text-ink/75 leading-relaxed">
                 Retenciones emitidas después de haber cancelado la orden de compra al 100%. El proveedor debe devolver el
                 monto retenido en banco o caja. Al recibir los fondos, pulse <strong>«Registrar reintegro»</strong> para
                 ingresarlo a Tesorería y cuadrar el saldo.
@@ -313,17 +313,17 @@ export function RetencionesPage() {
           {cargandoReintegros ? (
             <Cargando texto="Consultando reintegros pendientes..." />
           ) : reintegros.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-stone-300 p-12 text-center bg-white">
-              <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-3" />
-              <p className="text-sm font-semibold text-stone-800">No hay reintegros pendientes</p>
-              <p className="text-xs text-stone-500 mt-1 max-w-sm mx-auto">
+            <div className="rounded-[6px] border border-dashed border-hairline p-12 text-center bg-surface">
+              <CheckCircle2 className="w-10 h-10 text-success mx-auto mb-3" />
+              <p className="text-sm font-semibold text-ink/85">No hay reintegros pendientes</p>
+              <p className="text-xs text-ink/50 mt-1 max-w-sm mx-auto">
                 Todos los proveedores con retenciones post-pago han devuelto los importes correspondientes.
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-stone-200 bg-white">
+            <div className="overflow-x-auto rounded-[6px] border border-hairline bg-surface">
               <table className="w-full text-xs text-left">
-                <thead className="bg-stone-50 text-stone-700 font-semibold border-b border-stone-200">
+                <thead className="bg-ink/3 text-ink/70 font-semibold border-b border-hairline">
                   <tr>
                     <th className="p-3">Comprobante (R14)</th>
                     <th className="p-3">Proveedor / Contacto</th>
@@ -334,31 +334,31 @@ export function RetencionesPage() {
                     <th className="p-3 text-right">Acción</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-stone-100">
+                <tbody className="divide-y divide-hairline">
                   {reintegros.map((item) => (
-                    <tr key={item.id} className="hover:bg-amber-50/30 transition-colors">
-                      <td className="p-3 font-mono font-medium text-stone-900">{item.numero_comprobante}</td>
+                    <tr key={item.id} className="hover:bg-ink/3 transition-colors">
+                      <td className="p-3 font-mono font-medium text-ink/90">{item.numero_comprobante}</td>
                       <td className="p-3">
-                        <div className="font-medium text-stone-900">{item.proveedor_nombre}</div>
-                        <div className="text-[11px] text-stone-500">
+                        <div className="font-medium text-ink/90">{item.proveedor_nombre}</div>
+                        <div className="text-[11px] text-ink/50">
                           {item.proveedor_rif} {item.proveedor_telefono ? `· ${item.proveedor_telefono}` : ''}
                         </div>
                       </td>
-                      <td className="p-3 font-mono">{item.factura_numero}</td>
-                      <td className="p-3 text-stone-600">{item.fecha_emision}</td>
-                      <td className="p-3 text-right">
-                        <div className="font-bold text-[#8c2f1f]">
+                      <td className="p-3 font-mono text-ink/85">{item.factura_numero}</td>
+                      <td className="p-3 text-ink/70">{item.fecha_emision}</td>
+                      <td className="p-3 text-right tabular">
+                        <div className="font-bold text-tierra-600 dark:text-tierra-300">
                           {item.reintegro_monto?.toLocaleString('es-VE', { minimumFractionDigits: 2 })} {item.moneda}
                         </div>
                         {item.moneda !== 'BS' ? (
-                          <div className="text-[10px] text-stone-500">
+                          <div className="text-[10px] text-ink/50">
                             Bs. {item.monto_retenido_bs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
                           </div>
                         ) : null}
                       </td>
                       <td className="p-3 text-center">
-                        <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-900 inline-flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-amber-600" />
+                        <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-warning-soft text-warning inline-flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-warning" />
                           {item.dias_espera_reintegro} {item.dias_espera_reintegro === 1 ? 'día' : 'días'}
                         </span>
                       </td>
@@ -387,15 +387,15 @@ export function RetencionesPage() {
       {tab === 'libro' && (
         <div className="space-y-4">
           {/* Barra de Filtros */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-white p-3 rounded-lg border border-stone-200">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-surface p-3 rounded-[6px] border border-hairline">
             <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-3 text-stone-400" />
+              <Search className="w-4 h-4 absolute left-3 top-3 text-ink/40" />
               <input
                 type="text"
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
                 placeholder="Buscar por N°, RIF o Proveedor..."
-                className="w-full pl-9 pr-3 py-2 text-xs border border-stone-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#8c2f1f]"
+                className="w-full pl-9 pr-3 py-2 text-xs border border-hairline bg-surface text-ink/90 rounded-[6px] placeholder:text-ink/40 focus:outline-none focus:ring-1 focus:ring-royal-600"
               />
             </div>
 
@@ -423,7 +423,7 @@ export function RetencionesPage() {
               ]}
             />
 
-            <div className="flex items-center justify-end text-xs text-stone-500 font-medium">
+            <div className="flex items-center justify-end text-xs text-ink/50 font-medium">
               Comprobantes: {retenciones.length}
             </div>
           </div>
@@ -431,17 +431,17 @@ export function RetencionesPage() {
           {cargandoRetenciones ? (
             <Cargando texto="Consultando libro fiscal..." />
           ) : retenciones.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-stone-300 p-12 text-center bg-white">
-              <Receipt className="w-10 h-10 text-stone-400 mx-auto mb-3" />
-              <p className="text-sm font-semibold text-stone-800">No se encontraron comprobantes en el libro</p>
-              <p className="text-xs text-stone-500 mt-1">
+            <div className="rounded-[6px] border border-dashed border-hairline p-12 text-center bg-surface">
+              <Receipt className="w-10 h-10 text-ink/40 mx-auto mb-3" />
+              <p className="text-sm font-semibold text-ink/85">No se encontraron comprobantes en el libro</p>
+              <p className="text-xs text-ink/50 mt-1">
                 Puede registrar una nueva retención manual o esperar a retener desde la pestaña «Por realizar».
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-stone-200 bg-white">
+            <div className="overflow-x-auto rounded-[6px] border border-hairline bg-surface">
               <table className="w-full text-xs text-left">
-                <thead className="bg-stone-50 text-stone-700 font-semibold border-b border-stone-200">
+                <thead className="bg-ink/3 text-ink/70 font-semibold border-b border-hairline">
                   <tr>
                     <th className="p-3">Comprobante (R14)</th>
                     <th className="p-3">Impuesto</th>
@@ -454,53 +454,53 @@ export function RetencionesPage() {
                     <th className="p-3 text-right">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-stone-100">
+                <tbody className="divide-y divide-hairline">
                   {retenciones.map((item) => (
                     <tr
                       key={item.id}
-                      className={`hover:bg-stone-50/80 transition-colors ${
-                        item.estado === 'ANULADA' ? 'opacity-60 bg-stone-50/40' : ''
+                      className={`hover:bg-ink/3 transition-colors ${
+                        item.estado === 'ANULADA' ? 'opacity-60 bg-ink/2' : ''
                       }`}
                     >
-                      <td className="p-3 font-mono font-semibold text-stone-900">{item.numero_comprobante}</td>
+                      <td className="p-3 font-mono font-semibold text-ink/90">{item.numero_comprobante}</td>
                       <td className="p-3">
-                        <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-stone-100 text-stone-800">
+                        <span className="px-2 py-0.5 rounded-[4px] text-[11px] font-bold bg-ink/6 text-ink/80">
                           {item.tipo_impuesto}
                         </span>
                       </td>
                       <td className="p-3">
-                        <div className="font-medium text-stone-900">{item.proveedor_nombre}</div>
-                        <div className="text-[11px] text-stone-500">{item.proveedor_rif}</div>
+                        <div className="font-medium text-ink/90">{item.proveedor_nombre}</div>
+                        <div className="text-[11px] text-ink/50">{item.proveedor_rif}</div>
                       </td>
                       <td className="p-3">
-                        <div className="font-mono text-stone-800">{item.factura_numero}</div>
-                        <div className="text-[11px] text-stone-500 font-mono">
+                        <div className="font-mono text-ink/85">{item.factura_numero}</div>
+                        <div className="text-[11px] text-ink/50 font-mono">
                           Ctrl: {item.factura_control || '—'}
                         </div>
                       </td>
-                      <td className="p-3 text-stone-600">
+                      <td className="p-3 text-ink/70">
                         <div>{item.fecha_emision}</div>
-                        <div className="text-[10px] text-stone-400">
+                        <div className="text-[10px] text-ink/40">
                           {item.fecha_entrega ? `Entr: ${item.fecha_entrega}` : 'Sin entrega'}
                         </div>
                       </td>
-                      <td className="p-3 text-right text-stone-700 font-medium">
+                      <td className="p-3 text-right text-ink/85 font-medium tabular">
                         {item.base_imponible.toLocaleString('es-VE', { minimumFractionDigits: 2 })} {item.moneda}
                       </td>
-                      <td className="p-3 text-right font-bold text-[#8c2f1f]">
+                      <td className="p-3 text-right font-bold text-tierra-600 dark:text-tierra-300 tabular">
                         {item.monto_retenido.toLocaleString('es-VE', { minimumFractionDigits: 2 })} {item.moneda}
                       </td>
                       <td className="p-3">
                         {item.estado === 'ANULADA' ? (
-                          <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-100 text-rose-800">
+                          <span className="px-2 py-0.5 rounded-[4px] text-[11px] font-semibold bg-danger-soft text-danger">
                             Anulada
                           </span>
                         ) : item.estado === 'DECLARADA' ? (
-                          <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-100 text-blue-800">
+                          <span className="px-2 py-0.5 rounded-[4px] text-[11px] font-semibold bg-info-soft text-info">
                             Declarada 🔒
                           </span>
                         ) : (
-                          <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-800">
+                          <span className="px-2 py-0.5 rounded-[4px] text-[11px] font-semibold bg-success-soft text-success">
                             Registrada
                           </span>
                         )}
@@ -514,7 +514,7 @@ export function RetencionesPage() {
                             disabled={generandoPdf}
                             title="Descargar Comprobante PDF oficial"
                           >
-                            <FileText className="w-3.5 h-3.5 text-[#8c2f1f]" />
+                            <FileText className="w-3.5 h-3.5 text-tierra-600 dark:text-tierra-300" />
                           </Button>
                           {item.estado === 'REGISTRADA' ? (
                             <Button
@@ -526,7 +526,7 @@ export function RetencionesPage() {
                               }}
                               title="Anular comprobante"
                             >
-                              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                              <Trash2 className="w-3.5 h-3.5 text-danger" />
                             </Button>
                           ) : null}
                         </div>
@@ -543,14 +543,14 @@ export function RetencionesPage() {
       {/* CONTENIDO 4: REPORTES Y TXT SENIAT */}
       {tab === 'reportes' && (
         <div className="space-y-6">
-          <Card className="p-5 border-stone-200">
+          <Card className="p-5 border-hairline">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h3 className="text-base font-bold text-stone-900 flex items-center gap-2">
-                  <Download className="w-5 h-5 text-[#8c2f1f]" />
+                <h3 className="text-base font-bold text-ink/90 flex items-center gap-2">
+                  <Download className="w-5 h-5 text-tierra-600 dark:text-tierra-300" />
                   Exportación de Retenciones de IVA (TXT para el SENIAT)
                 </h3>
-                <p className="text-xs text-stone-600 mt-1 max-w-2xl leading-relaxed">
+                <p className="text-xs text-ink/60 mt-1 max-w-2xl leading-relaxed">
                   Genera el archivo plano estructurado de 16 columnas reglamentarias exigido por el portal fiscal del
                   SENIAT para la declaración quincenal de retenciones practicadas de IVA.
                 </p>
@@ -558,14 +558,14 @@ export function RetencionesPage() {
 
               <div className="flex items-center gap-3">
                 <div>
-                  <label className="block text-[11px] font-semibold text-stone-500 mb-1">Período (AAAAMM)</label>
+                  <label className="block text-[11px] font-semibold text-ink/60 mb-1">Período (AAAAMM)</label>
                   <input
                     type="text"
                     value={periodoTxt}
                     onChange={(e) => setPeriodoTxt(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     placeholder="202611"
                     maxLength={6}
-                    className="w-28 px-3 py-1.5 text-sm font-mono border border-stone-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#8c2f1f]"
+                    className="w-28 px-3 py-1.5 text-sm font-mono border border-hairline bg-surface text-ink/90 rounded-[6px] focus:outline-none focus:ring-1 focus:ring-royal-600"
                   />
                 </div>
                 <div className="pt-4">
@@ -579,16 +579,16 @@ export function RetencionesPage() {
 
           {/* Resumen del Período */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="p-4 border-stone-200 bg-white">
-              <p className="text-xs text-stone-500 font-medium">Total Retenciones de IVA (Período {periodoTxt})</p>
-              <p className="text-2xl font-bold text-stone-900 mt-1">
+            <Card className="p-4 border-hairline bg-surface">
+              <p className="text-xs text-ink/50 font-medium">Total Retenciones de IVA (Período {periodoTxt})</p>
+              <p className="text-2xl font-bold text-ink/90 mt-1">
                 {retenciones.filter((r) => r.tipo_impuesto === 'IVA' && r.periodo === periodoTxt && r.estado !== 'ANULADA').length}
               </p>
             </Card>
 
-            <Card className="p-4 border-stone-200 bg-white">
-              <p className="text-xs text-stone-500 font-medium">Monto Total Retenido (Bs)</p>
-              <p className="text-2xl font-bold text-[#8c2f1f] mt-1">
+            <Card className="p-4 border-hairline bg-surface">
+              <p className="text-xs text-ink/50 font-medium">Monto Total Retenido (Bs)</p>
+              <p className="text-2xl font-bold text-tierra-600 dark:text-tierra-300 mt-1">
                 Bs.{' '}
                 {retenciones
                   .filter((r) => r.tipo_impuesto === 'IVA' && r.periodo === periodoTxt && r.estado !== 'ANULADA')
@@ -597,9 +597,9 @@ export function RetencionesPage() {
               </p>
             </Card>
 
-            <Card className="p-4 border-stone-200 bg-white">
-              <p className="text-xs text-stone-500 font-medium">Equivalente Divisa (USD)</p>
-              <p className="text-2xl font-bold text-stone-800 mt-1">
+            <Card className="p-4 border-hairline bg-surface">
+              <p className="text-xs text-ink/50 font-medium">Equivalente Divisa (USD)</p>
+              <p className="text-2xl font-bold text-ink/80 mt-1">
                 ${' '}
                 {retenciones
                   .filter((r) => r.tipo_impuesto === 'IVA' && r.periodo === periodoTxt && r.estado !== 'ANULADA')

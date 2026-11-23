@@ -106,7 +106,7 @@ export function RetencionesOrden({ orden }: Props) {
       {error ? <ErrorDeCarga error={error} /> : null}
 
       {!isPending && (!retenciones || retenciones.length === 0) ? (
-        <div className="rounded-[6px] border border-hairline p-4 text-sm mt-3 bg-stone-50/50 dark:bg-stone-900/30">
+        <div className="rounded-[6px] border border-hairline p-4 text-sm mt-3 bg-surface/50">
           <div className="flex items-start gap-3">
             <Receipt className="size-5 text-ink/40 mt-0.5 shrink-0" />
             <div className="min-w-0 flex-1">
@@ -161,7 +161,7 @@ export function RetencionesOrden({ orden }: Props) {
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-ink/85">
+                    <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-ink/6 text-ink/85">
                       {r.numero_comprobante}
                     </span>
                     <Chip tone="neutral">

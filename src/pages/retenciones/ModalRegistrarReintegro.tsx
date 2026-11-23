@@ -49,9 +49,9 @@ export function ModalRegistrarReintegro({ abierta, onCerrar, retencion }: Props)
   return (
     <Modal abierto={abierta} onCerrar={onCerrar} titulo="Registrar Reintegro de Proveedor">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50/70 p-3 text-xs text-emerald-900">
-          <p className="font-semibold text-emerald-950">Ingreso por devolución de retención post-pago</p>
-          <p className="mt-1 leading-relaxed">
+        <div className="rounded-[6px] border border-success/30 bg-success-soft p-3 text-xs text-ink/80">
+          <p className="font-semibold text-ink/90">Ingreso por devolución de retención post-pago</p>
+          <p className="mt-1 leading-relaxed text-ink/75">
             El proveedor <strong>{retencion.proveedor_nombre}</strong> está reintegrando el importe correspondiente al
             comprobante <strong>{retencion.numero_comprobante}</strong> (Factura {retencion.factura_numero}).
           </p>
@@ -108,14 +108,14 @@ export function ModalRegistrarReintegro({ abierta, onCerrar, retencion }: Props)
 
         {registrar.error ? <ErrorDeCarga error={registrar.error} /> : null}
 
-        <div className="flex justify-end gap-2 pt-2 border-t border-stone-200">
+        <div className="flex justify-end gap-2 pt-2 border-t border-hairline">
           <Button variant="outline" type="button" onClick={onCerrar} disabled={registrar.isPending}>
             Cancelar
           </Button>
           <Button
             type="submit"
             disabled={registrar.isPending}
-            icon={<CheckCircle2 className="w-4 h-4 text-emerald-600" />}
+            icon={<CheckCircle2 className="w-4 h-4 text-success" />}
           >
             {registrar.isPending ? 'Asentando...' : 'Asentar ingreso en tesorería'}
           </Button>
