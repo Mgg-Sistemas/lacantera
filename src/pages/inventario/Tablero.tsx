@@ -166,7 +166,7 @@ function QUE_HACER(faltantes: number): GrupoDeAcciones[] {
   LOS ATAJOS A LO QUE HOY NO SE OFRECE NO SE PINTAN
 
   Este tablero es un mapa de por dónde entra y por dónde sale el material, y
-  dos de sus caminos —el parte de turno de Explotación y la nota de entrega de
+  dos de sus caminos —el parte de turno de Explotación y la nota de despacho de
   Ventas— llevan hoy al cartel de obra. Un mapa que enseña calles cortadas se
   deja de leer.
 

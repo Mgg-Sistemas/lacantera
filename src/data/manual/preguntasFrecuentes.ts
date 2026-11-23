@@ -66,9 +66,9 @@ export const PREGUNTAS_FRECUENTES: PreguntaFrecuente[] = [
     causaRaiz:
       'En cantera, un camión puede pedir 15 toneladas de piedra pero cargar 15.42 tn según la báscula. Si el sistema facturara a ciegas la cotización, se generarían descuadres inmediatos de existencias y dinero.',
     accionSolucion:
-      'Cuando el camión pasa por romana:\n1. El operador ingresa a Facturación › Notas de Entrega.\n2. Pulsa «Completar datos» en el despacho pendiente.\n3. Registra el peso bruto, la tara, el chofer y la placa.\n4. Al guardar, se asienta la Nota de Entrega con la cifra real y se descuenta el inventario.',
-    rutaRecomendada: '/app/facturacion/notas',
-    textoRuta: 'Ver Notas de Entrega',
+      'Cuando el camión pasa por romana:\n1. El operador ingresa a Facturación › Notas de Despacho.\n2. Pulsa «Completar datos» en el despacho pendiente.\n3. Registra el peso bruto, la tara, el chofer y la placa.\n4. Al guardar, se asienta la Nota de Despacho con la cifra real y se descuenta el inventario.',
+    rutaRecomendada: '/app/facturacion/notas-entrega',
+    textoRuta: 'Ver Notas de Despacho',
     palabrasClave: ['cotizacion', 'por completar', 'bascula', 'romana', 'peso', 'toneladas'],
   },
   {

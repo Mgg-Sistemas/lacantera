@@ -201,7 +201,7 @@ export function Movimiento({
     if (tipo === 'salida') {
       // `pedir_salida` pide diez letras: es lo que lee quien la aprueba.
       if (motivo.trim().length < 10) return 'Escribí para qué sale (al menos 10 letras): es lo que lee quien la aprueba.'
-      if (venta) return `Dice «${venta}»: una venta no sale por aquí, se registra en Facturación › Notas de entrega.`
+      if (venta) return `Dice «${venta}»: una venta no sale por aquí, se registra en Facturación › Notas de despacho.`
       if (!ambito) return 'Decí quién lo recibe.'
       if (ambito === 'EMPRESA' && !empleado) return 'Elegí la persona que lo recibe.'
       if (ambito === 'FUERA' && (externo.trim().length < 3 || responsable.trim().length < 3)) {
@@ -543,7 +543,7 @@ export function Movimiento({
             placeholder={`${MOTIVOS_SUGERIDOS[tipo][0]}…`}
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
-            error={venta ? `Dice «${venta}»: una venta no sale por aquí, se registra en Facturación › Notas de entrega.` : undefined}
+            error={venta ? `Dice «${venta}»: una venta no sale por aquí, se registra en Facturación › Notas de despacho.` : undefined}
             hint="Obligatorio: este movimiento cambia el stock sin un documento detrás. Queda en el kardex con tu nombre."
           />
           <div className="mt-2 flex flex-wrap gap-1.5">

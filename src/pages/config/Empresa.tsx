@@ -15,6 +15,7 @@ import {
 } from '@/lib/api/empresa'
 import { CIFRAS_DOCUMENTO, comoTelefono, fecha, soloDocumento } from '@/lib/formato'
 import { enCastellano } from '@/lib/castellano'
+import { useConfigFiscal, useGuardarConfigFiscal } from '@/lib/api/seniat'
 
 /**
  * Quién es la empresa, según el registro.
@@ -266,7 +267,7 @@ export function Empresa() {
         la autorizó el SENIAT. Es lo único que faltaba para que la factura
         cumpla, y hasta hoy no existía como dato en ninguna parte.
 
-        Solo va en la factura: una cotización o una nota de entrega no la
+        Solo va en la factura: una cotización o una nota de despacho no la
         necesitan, y ponérsela sería darles un aire fiscal que no tienen.
 
         Mientras esto esté vacío no se imprime nada. Un renglón que dice
@@ -297,7 +298,7 @@ export function Empresa() {
         <div className="grid gap-3">
           <Interruptor
             titulo="Cobra IVA"
-            detalle="Se aplica el 16 % a las cotizaciones, notas de entrega y facturas nuevas."
+            detalle="Se aplica el 16 % a las cotizaciones, notas de despacho y facturas nuevas."
             marcado={tributos.aplica_iva}
             editable={puedeFijarTributos}
             onCambiar={(v) => void fijar.mutateAsync({ ...tributos, aplica_iva: v })}
@@ -315,6 +316,8 @@ export function Empresa() {
           <p className="text-danger mt-3 text-sm">{(fijar.error as Error).message}</p>
         ) : null}
       </Card>
+
+      <TarjetaProvidencia editable={puedeEditarFicha} />
 
       {puedeEditarFicha ? (
         <div className="mt-4 flex items-center justify-end gap-3">
@@ -334,6 +337,98 @@ export function Empresa() {
         </p>
       )}
     </>
+  )
+}
+
+/**
+ * PROVIDENCIA SNAT/2026/00093 (G.O. N° 43.484, 21/10/2026 · 23/11/2026).
+ *
+ * Tres datos con su propio botón: si la empresa es agente de retención (enciende
+ * el comprobante de retención del Art. 18), la fecha de la providencia de la
+ * imprenta (Arts. 9.3 y 11.4) y desde cuándo rige la Providencia (por ley, el
+ * 19/04/2027). Desde esa fecha el papel del sistema sale como pre-factura hasta
+ * registrar la emisión del Portal SENIAT.
+ */
+function TarjetaProvidencia({ editable }: { editable: boolean }) {
+  const fiscal = useConfigFiscal()
+  const guardarFiscal = useGuardarConfigFiscal()
+  const [agente, setAgente] = useState(fiscal.agenteRetencion)
+  const [fechaImprenta, setFechaImprenta] = useState(fiscal.imprentaProvidenciaFecha ?? '')
+  const [desde, setDesde] = useState(fiscal.vigenteDesde)
+  const [listo, setListo] = useState(false)
+
+  useEffect(() => {
+    setAgente(fiscal.agenteRetencion)
+    setFechaImprenta(fiscal.imprentaProvidenciaFecha ?? '')
+    setDesde(fiscal.vigenteDesde)
+  }, [fiscal.agenteRetencion, fiscal.imprentaProvidenciaFecha, fiscal.vigenteDesde])
+
+  return (
+    <Card className="mt-4">
+      <h2 className="text-ink/90 mb-1 text-base font-semibold">
+        Providencia SNAT/2026/00093 · documentos fiscales
+      </h2>
+      <p className="text-ink/50 mb-5 text-xs leading-relaxed">
+        Medio de emisión elegido: <strong>Portal / aplicativo del SENIAT</strong>. Desde la fecha de
+        vigencia, la factura válida es la del portal: el papel del sistema sale como pre-factura hasta
+        registrar en cada factura el número y el control que asignó el SENIAT.{' '}
+        {fiscal.vigente ? 'La Providencia ya rige.' : `Rige desde el ${fecha(fiscal.vigenteDesde)}.`}
+      </p>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Input
+          label="Rige desde"
+          type="date"
+          value={desde}
+          disabled={!editable}
+          onChange={(e) => setDesde(e.target.value)}
+          hint="Por ley, 180 días desde el 21/10/2026: el 19/04/2027."
+        />
+        <Input
+          label="Fecha de la providencia de la imprenta"
+          type="date"
+          value={fechaImprenta}
+          disabled={!editable}
+          onChange={(e) => setFechaImprenta(e.target.value)}
+          hint="La de la imprenta que hace los talonarios de contingencia."
+        />
+      </div>
+
+      <div className="mt-4">
+        <Interruptor
+          titulo="La empresa es agente de retención (contribuyente especial)"
+          detalle="Enciende el comprobante de retención de IVA e ISLR (Art. 18), con numeración AAAAMMSSSSSSSS, en Facturas de proveedor. Confírmelo con el contador: lo dice la notificación del SENIAT."
+          marcado={agente}
+          editable={editable}
+          onCambiar={setAgente}
+        />
+      </div>
+
+      {editable ? (
+        <div className="mt-4 flex items-center justify-end gap-3">
+          {listo ? <span className="text-success text-sm">Guardado.</span> : null}
+          {guardarFiscal.error ? (
+            <span className="text-danger text-sm">{(guardarFiscal.error as Error).message}</span>
+          ) : null}
+          <Button
+            variant="outline"
+            icon={<Save className="size-[18px]" />}
+            disabled={guardarFiscal.isPending}
+            onClick={async () => {
+              setListo(false)
+              await guardarFiscal.mutateAsync({
+                agente_retencion: agente,
+                imprenta_providencia_fecha: fechaImprenta || null,
+                providencia_vigente_desde: desde || null,
+              })
+              setListo(true)
+            }}
+          >
+            {guardarFiscal.isPending ? 'Guardando…' : 'Guardar datos fiscales'}
+          </Button>
+        </div>
+      ) : null}
+    </Card>
   )
 }
 

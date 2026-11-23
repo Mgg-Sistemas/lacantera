@@ -98,7 +98,7 @@ export function textoDelReporteVentasWhatsapp(d: DatosReporteVentasWhatsapp): st
     }
     lineas.push('')
   } else if (d.notas.length === 0) {
-    lineas.push('ℹ️ _Sin notas de entrega registradas en el período._')
+    lineas.push('ℹ️ _Sin notas de despacho registradas en el período._')
     lineas.push('')
   }
 

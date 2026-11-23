@@ -893,7 +893,7 @@ export function ModalSalida({
                 hint="Es lo que lee quien la aprueba, y queda en la nota cuando se entregue."
                 error={
                   ventaEnElMotivo
-                    ? `Dice «${ventaEnElMotivo}»: una venta no se solicita aquí, se registra en Facturación › Notas de entrega. Si no es una venta, dígalo sin esa palabra; quien la aprueba lee el texto entero.`
+                    ? `Dice «${ventaEnElMotivo}»: una venta no se solicita aquí, se registra en Facturación › Notas de despacho. Si no es una venta, dígalo sin esa palabra; quien la aprueba lee el texto entero.`
                     : undefined
                 }
               />
@@ -939,7 +939,7 @@ export function ModalSalida({
               {llevaRecibido ? (
                 <div className="border-hairline bg-canvas mt-3 grid gap-3 rounded-[6px] border border-dashed p-3 sm:grid-cols-2">
                   {/*
-                    De la lista o escrito, como en la nota de entrega. Un almacén
+                    De la lista o escrito, como en la nota de despacho. Un almacén
                     despacha lo mismo a un volteo de la flota que al carro de
                     quien vino a buscarlo, y obligar a cargar ese carro para
                     sacar dos sacos es parar el trabajo por una ficha que nadie

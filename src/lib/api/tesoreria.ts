@@ -271,7 +271,7 @@ export interface ResumenPanel {
   /** Solicitudes de salida en `PEDIDA`. Pide SALIDAS. */
   salidas_por_aprobar: number | null
   /** Solicitudes de despacho en `PEDIDA`. Pide FACTURACION, no DESPACHOS:
-   *  el despacho se pide y se aprueba desde la nota de entrega. */
+   *  el despacho se pide y se aprueba desde la nota de despacho. */
   despachos_por_aprobar: number | null
 
   /*
@@ -287,7 +287,7 @@ export interface ResumenPanel {
   despachos_movimientos: number | null
   /** Traslados entre almacenes. */
   despachos_traslados: number | null
-  /** Notas de entrega que no están anuladas. */
+  /** Notas de despacho que no están anuladas. */
   despachos_notas_vigentes: number | null
   despachos_total_usd: string | null
   despachos_total_bs: string | null

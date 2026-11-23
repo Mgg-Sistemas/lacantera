@@ -121,7 +121,7 @@ export function FormSalida({
     }
     // `pedir_salida` pide diez letras: es lo que lee quien la aprueba.
     if (m.length < 10) return 'Escribe para qué sale (al menos 10 letras): es lo que lee quien la aprueba.'
-    if (venta) return `Dice «${venta}»: una venta no sale por aquí, se registra en Facturación › Notas de entrega.`
+    if (venta) return `Dice «${venta}»: una venta no sale por aquí, se registra en Facturación › Notas de despacho.`
     if (!ambito) return 'Di quién lo recibe.'
     if (ambito === 'EMPRESA' && !empleado) return 'Elige la persona que lo recibe.'
     if (ambito === 'FUERA' && (externo.trim().length < 3 || responsable.trim().length < 3)) {
@@ -261,7 +261,7 @@ export function FormSalida({
         onChange={(e) => setMotivo(e.target.value)}
         error={
           venta && retorna !== true
-            ? `Dice «${venta}»: una venta no sale por aquí, se registra en Facturación › Notas de entrega.`
+            ? `Dice «${venta}»: una venta no sale por aquí, se registra en Facturación › Notas de despacho.`
             : undefined
         }
       />

@@ -7,16 +7,16 @@ import type { NotaPorCobrarDeCliente } from '@/lib/api/ventas'
 import { porcentaje } from '@/lib/antiguedadDeDeuda'
 
 /*
-  EL REPORTE DE LOS CLIENTES QUE DEBEN POR NOTAS DE ENTREGA (07/11/2026).
+  EL REPORTE DE LOS CLIENTES QUE DEBEN POR NOTAS DE DESPACHO (07/11/2026).
 
   Pedido: «un reporte de los clientes que deben con su monto correspondiente».
   Las notas son las pendientes por cobrar, sin cobrar y no anuladas. Cada una
   trae su total en Bs y en $ con la tasa del día en que se hizo —igual que el
-  reporte Bs/$ de Notas de entrega—, y esos dos equivalentes son lo único que
+  reporte Bs/$ de Notas de despacho—, y esos dos equivalentes son lo único que
   se suma.
 
   09/11/2026: pasa al modelo ejecutivo de la casa, el mismo del reporte de
-  notas de entrega —membrete con logo y tarjeta de control, recuadro del total,
+  notas de despacho —membrete con logo y tarjeta de control, recuadro del total,
   tres tarjetas de resumen (clientes, cartera vencida/al día y antigüedad del
   vencido), tabla por cliente con su parte de la deuda y, si se pide, el
   detalle de cada nota con su atraso en una pastilla de color—. Se elige entre
@@ -76,7 +76,7 @@ export interface DatosReporteClientesPorCobrar {
   unCliente?: boolean
 }
 
-// ── Geometría A4 ejecutiva (16 mm de margen, 178 mm útiles), como el reporte de notas de entrega.
+// ── Geometría A4 ejecutiva (16 mm de margen, 178 mm útiles), como el reporte de notas de despacho.
 const IZQ = 16
 const DER = 194
 const ANCHO = DER - IZQ
@@ -324,7 +324,7 @@ export async function armarReporteClientesPorCobrar(d: DatosReporteClientesPorCo
     doc.setDrawColor('#d6d3d1').setLineWidth(0.3).line(xSep, y + 3, xSep, y + ALTO - 3)
 
     doc.setFont('helvetica', 'bold').setFontSize(7.6).setTextColor(ROTULO)
-    doc.text('TOTAL POR COBRAR EN NOTAS DE ENTREGA', IZQ + 4, y + 5.5)
+    doc.text('TOTAL POR COBRAR EN NOTAS DE DESPACHO', IZQ + 4, y + 5.5)
     doc.setTextColor('#111111')
     enUnaLinea(doc, dinero('USD', usd), IZQ + 4, y + 13.5, xSep - IZQ - 8, 18, 'bold')
     doc.setFont('helvetica', 'normal').setFontSize(7.6).setTextColor(GRIS)

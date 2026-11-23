@@ -25,7 +25,7 @@ import {
   LOS REPORTES PDF DE GASTOS (10/11/2026).
 
   Dos papeles desde el mismo sitio: el informe de gastos y el comparativo de
-  gastos con las ventas de material (notas de entrega despachadas, sin las que
+  gastos con las ventas de material (notas de despacho despachadas, sin las que
   siguen por cobrar). Las opciones son las que cambian la respuesta: el
   período (con atajos de mes, trimestre y año, y un mes cualquiera), las
   categorías, cómo se agrupa, en qué moneda se presenta y qué se incluye.
@@ -257,7 +257,7 @@ export function ReportesDeGastos({
               titulo: 'Resumen + detalle',
               texto:
                 que === 'COMPARATIVO'
-                  ? 'El resumen ejecutivo más el desglose individual de cada factura de gasto y nota de entrega.'
+                  ? 'El resumen ejecutivo más el desglose individual de cada factura de gasto y nota de despacho.'
                   : 'El resumen ejecutivo más la relación detallada de cada factura de gasto registrada.',
             },
           ].map((o) => (

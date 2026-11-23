@@ -187,7 +187,7 @@ export interface DocumentoDelInforme {
 
 /**
  * Los documentos de un rango para los reportes PDF de Gastos: los gastos
- * siempre; las notas de entrega despachadas si se compara con las ventas; las
+ * siempre; las notas de despacho despachadas si se compara con las ventas; las
  * órdenes pagadas de Compras si se piden. La base cierra la puerta a quien no
  * ve Ventas/Facturación o Compras, con un mensaje claro.
  */

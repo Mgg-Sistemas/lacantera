@@ -156,7 +156,7 @@ export async function armarInformeEjecutivoDespachos(
 
   doc.setFont('helvetica', 'bold').setFontSize(25).setTextColor('#ffffff')
   const tituloLineas = doc.splitTextToSize(
-    'Informe General de Despachos, Traslados y Notas de Entrega',
+    'Informe General de Despachos, Traslados y Notas de Despacho',
     ANCHO_UTIL,
   ) as string[]
   doc.text(tituloLineas, IZQ, 95, { lineHeightFactor: 1.25 })
@@ -313,10 +313,10 @@ export async function armarInformeEjecutivoDespachos(
     `${d.empresa.razonSocial} · Generado por el sistema · ${fechaLarga(d.momento)}`,
   )
 
-  doc.setProperties({ title: 'Informe General de Despachos, Traslados y Notas de Entrega' })
+  doc.setProperties({ title: 'Informe General de Despachos, Traslados y Notas de Despacho' })
 
   return {
     blob: doc.output('blob'),
-    nombre: 'informe-general-de-despachos-traslados-y-notas-de-entrega.pdf',
+    nombre: 'informe-general-de-despachos-traslados-y-notas-de-despacho.pdf',
   }
 }

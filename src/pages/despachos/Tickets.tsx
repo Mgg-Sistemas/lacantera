@@ -30,7 +30,7 @@ import {
  *
  * La báscula pesa todo lo que cruza el portón, no solo lo que se vende: una
  * gandola de gasoil que llega también se pesa. Por eso el ticket tiene tipo, y
- * por eso vive aquí y no dentro de la nota de entrega.
+ * por eso vive aquí y no dentro de la nota de despacho.
  */
 
 const TONO: Record<string, 'success' | 'royal' | 'neutral'> = {
@@ -125,7 +125,7 @@ export function Tickets() {
           <Vacio
             icono={<Scale />}
             titulo="Sin pesajes registrados"
-            descripcion="Cada ticket registra el peso bruto y la tara; el neto se calcula automáticamente. La nota de entrega toma los pesos del ticket."
+            descripcion="Cada ticket registra el peso bruto y la tara; el neto se calcula automáticamente. La nota de despacho toma los pesos del ticket."
           />
         </Card>
       ) : null}

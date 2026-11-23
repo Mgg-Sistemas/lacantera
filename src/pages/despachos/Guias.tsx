@@ -123,7 +123,7 @@ export function Guias() {
           <Vacio
             icono={<FileCheck />}
             titulo="Sin guías registradas"
-            descripcion="Cada guía copia el papel que emitió el ministerio. Si un despacho la lleva, se elige en su nota de entrega."
+            descripcion="Cada guía copia el papel que emitió el ministerio. Si un despacho la lleva, se elige en su nota de despacho."
           />
         </Card>
       ) : null}

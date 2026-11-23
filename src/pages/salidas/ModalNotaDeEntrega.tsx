@@ -17,10 +17,10 @@ import {
 import { comoNumero } from '@/lib/formato'
 
 /*
-  LO QUE SE LE PREGUNTA A UNA NOTA DE ENTREGA QUE NACE DE UNA SALIDA.
+  LO QUE SE LE PREGUNTA A UNA NOTA DE DESPACHO QUE NACE DE UNA SALIDA.
 
   Christopher, 21/09/2026: «los datos que existan en esa nota de salida deben
-  existir por igual en la nota de entrega; si no hay coincidencias en el
+  existir por igual en la nota de despacho; si no hay coincidencias en el
   sistema, se puede dar opción para crearlo o visualmente denotar que tiene un
   aspecto pendiente». Y de los precios: «con lo exactamente mismo que la nota de
   salida» —que no los tiene—.
@@ -50,7 +50,7 @@ export interface RespuestaDeLaNota {
   /**
    * Con qué se llevó el material. La nota de salida no lo trae, y por eso se
    * pregunta aquí: quien despacha, 22/09/2026, «necesito que cuando se genere
-   * la nota de entrega se pueda subir la información de los camiones y los
+   * la nota de despacho se pueda subir la información de los camiones y los
    * choferes». Vacío si no se dijo nada.
    */
   camiones: CamionParaGuardar[]
@@ -265,7 +265,7 @@ export function ModalNotaDeEntrega({
                 .filter(Boolean)
                 .join(' y ')}
               . Se puede imprimir igual, con el sello PENDIENTE, y se completa en Facturación ›
-              Notas de entrega.
+              Notas de despacho.
             </p>
           </div>
         ) : null}

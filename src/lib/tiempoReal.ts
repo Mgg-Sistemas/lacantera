@@ -207,7 +207,7 @@ const AFECTA: Record<string, string[][]> = {
   produccion_renglones: [['explotacion'], ['existencias']],
 
   // El pesaje y la guía los produce la garita y los consume ventas. Sin esto,
-  // quien está armando la nota de entrega no ve el ticket que acaban de pesar.
+  // quien está armando la nota de despacho no ve el ticket que acaban de pesar.
   romana_tickets: [['despachos'], ['ventas']],
   guias_movilizacion: [['despachos'], ['ventas']],
 
@@ -217,7 +217,7 @@ const AFECTA: Record<string, string[][]> = {
   /*
     Los papeles de una compra los suben tres áreas distintas.
 
-    Tesorería el comprobante del pago, almacén la nota de entrega, compras la
+    Tesorería el comprobante del pago, almacén la nota de despacho, compras la
     factura. Los tres miran la misma compra a la vez —es cuando se está
     cerrando— y sin esto cada uno sube el suyo creyendo que los otros dos
     faltan.

@@ -16,7 +16,7 @@ import { compartirConFotos } from '@/lib/ficha/compartirWhatsapp'
  * El reporte de UN despacho, listo para compartir.
  *
  * Christopher, 16/10/2026: «me están pidiendo un reporte individual de cada
- * salida y nota de entrega». Sale solo apenas se aprueba el despacho —ver el
+ * salida y nota de despacho». Sale solo apenas se aprueba el despacho —ver el
  * aviso en `NotasDeEntrega.tsx`— y también se puede volver a abrir desde el
  * detalle de la nota, por si hay que reenviarlo días después.
  */

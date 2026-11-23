@@ -27,8 +27,8 @@ import { useNotasEntrega } from '@/lib/api/ventas'
  * «Antigüedad», ni total vencido: cada documento está «Por cobrar» hasta que
  * se cobra, y el orden es de quien más debe a quien menos.
  *
- * LAS NOTAS DE ENTREGA PENDIENTES POR COBRAR ENTRAN AL GRUPO DE SU CLIENTE
- * (20/10/2026). Christopher: «las notas de entrega que son cuentas por cobrar
+ * LAS NOTAS DE DESPACHO PENDIENTES POR COBRAR ENTRAN AL GRUPO DE SU CLIENTE
+ * (20/10/2026). Christopher: «las notas de despacho que son cuentas por cobrar
  * debería poder verlas también desde cuentas por cobrar». Nacieron el 12/10
  * como recordatorio aparte, y separadas esta pantalla mentía: decía que un
  * cliente debía dos facturas cuando también se llevó tres gandolas sin
@@ -37,7 +37,7 @@ import { useNotasEntrega } from '@/lib/api/ventas'
  * sería inventarse la deuda.
  */
 
-/** Una factura con saldo o una nota de entrega pendiente, ya igualadas. */
+/** Una factura con saldo o una nota de despacho pendiente, ya igualadas. */
 interface RenglonPorCobrar {
   clave: string
   tipo: 'FACTURA' | 'NOTA'
@@ -130,7 +130,7 @@ export function PorCobrar() {
         clave: `N-${n.id}`,
         tipo: 'NOTA',
         numero: n.numero,
-        detalle: 'Nota de entrega',
+        detalle: 'Nota de despacho',
         emitida: n.fecha,
         moneda: n.moneda,
         total: n.total,
@@ -153,7 +153,7 @@ export function PorCobrar() {
     <>
       <PageHeader
         title="Cuentas por cobrar"
-        description="Facturas con saldo pendiente y notas de entrega pendientes por cobrar, agrupadas por cliente. El saldo se expresa en dólares."
+        description="Facturas con saldo pendiente y notas de despacho pendientes por cobrar, agrupadas por cliente. El saldo se expresa en dólares."
       />
 
       {isPending ? <Cargando /> : null}
@@ -164,7 +164,7 @@ export function PorCobrar() {
           <Vacio
             icono={<Coins />}
             titulo="Sin saldos por cobrar"
-            descripcion="Todas las facturas están cobradas, ninguna nota de entrega espera su pago y ningún proveedor adeuda diferencias. Aparecen aquí las facturas a crédito o con saldo, las notas de entrega marcadas pendientes por cobrar y los pagos con material que dejan un monto por cobrar."
+            descripcion="Todas las facturas están cobradas, ninguna nota de despacho espera su pago y ningún proveedor adeuda diferencias. Aparecen aquí las facturas a crédito o con saldo, las notas de despacho marcadas pendientes por cobrar y los pagos con material que dejan un monto por cobrar."
           />
         </Card>
       ) : null}
@@ -201,7 +201,7 @@ export function PorCobrar() {
                   subtitle={[
                     documento(g.rif),
                     g.facturas > 0 ? `${g.facturas} factura(s)` : null,
-                    g.notas > 0 ? `${g.notas} nota(s) de entrega` : null,
+                    g.notas > 0 ? `${g.notas} nota(s) de despacho` : null,
                   ]
                     .filter(Boolean)
                     .join(' · ')}
@@ -311,9 +311,9 @@ export function PorCobrar() {
             <Link to="/app/facturacion" className="text-royal-600 underline">
               Facturación › Facturas
             </Link>
-            , abriendo la factura. Una nota de entrega se marca cobrada desde{' '}
+            , abriendo la factura. Una nota de despacho se marca cobrada desde{' '}
             <Link to="/app/facturacion/notas-entrega" className="text-royal-600 underline">
-              Facturación › Notas de entrega
+              Facturación › Notas de despacho
             </Link>
             . Lo que debe un proveedor se cobra desde{' '}
             <Link to="/app/compras/proveedores" className="text-royal-600 underline">

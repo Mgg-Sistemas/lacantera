@@ -72,12 +72,17 @@ export function LibroVentas() {
         'Total ventas Bs',
         'IVA retenido Bs',
         'Estado',
+        'Medio de emisión',
       ],
       filas.map((f) => [
         fmtFecha(f.fecha),
         f.rif_cliente,
         f.cliente,
-        f.documento === 'FACTURA' ? 'Factura' : 'Nota de crédito',
+        f.documento === 'FACTURA'
+          ? 'Factura'
+          : f.documento === 'NOTA_DEBITO'
+            ? 'Nota de débito'
+            : 'Nota de crédito',
         f.numero,
         f.numero_control,
         f.afecta_a ?? '',
@@ -88,6 +93,11 @@ export function LibroVentas() {
         f.total_ventas_bs,
         f.iva_retenido_bs,
         f.anulada ? 'ANULADA' : '',
+        f.medio_emision === 'PORTAL_SENIAT'
+          ? 'Portal SENIAT'
+          : f.medio_emision === 'CONTINGENCIA'
+            ? 'Contingencia'
+            : 'Sistema',
       ]),
     )
 
@@ -95,7 +105,7 @@ export function LibroVentas() {
     <>
       <PageHeader
         title="Libro Mayor · Ventas"
-        description="IVA cobrado a declarar. Las facturas suman y las notas de crédito restan."
+        description="IVA cobrado a declarar. Las facturas y notas de débito suman y las notas de crédito restan. Con emisión SENIAT registrada, el número y el control son los del portal."
         actions={
           /* `items-end` alinea el botón con la caja del mes, no con su
              etiqueta. Antes llevaba un `mb-6` a mano que lo levantaba 24 px de
@@ -198,7 +208,14 @@ export function LibroVentas() {
                         <p className="tabular text-ink/85 font-medium">{f.numero}</p>
                         <p className="text-ink/45 text-xs">
                           control {f.numero_control}
-                          {f.afecta_a ? ` · corrige ${f.afecta_a}` : ''}
+                          {f.afecta_a
+                            ? ` · ${f.documento === 'NOTA_DEBITO' ? 'ajusta' : 'corrige'} ${f.afecta_a}`
+                            : ''}
+                          {f.medio_emision === 'PORTAL_SENIAT'
+                            ? ' · SENIAT'
+                            : f.medio_emision === 'CONTINGENCIA'
+                              ? ' · contingencia'
+                              : ''}
                         </p>
                       </td>
                       <td className="px-3 py-3">

@@ -18,7 +18,7 @@ import { enteros } from '@/lib/formato'
  * con la que sale a la calle. Son dos cosas y van en ese orden.
  *
  * Lo que confunde es que «despachar» también existe en ventas, y no es lo
- * mismo: allí la nota de entrega descuenta el patio y deja la venta lista para
+ * mismo: allí la nota de despacho descuenta el patio y deja la venta lista para
  * facturar; aquí se pesa y se emite el permiso de movilización. Una es el
  * negocio, la otra es el trámite. Quien no lo sabe entra a este módulo
  * buscando registrar una venta y no encuentra dónde.
@@ -75,7 +75,7 @@ export function TableroDespachos() {
                 Tickets sin usar
               </p>
               <p className="text-ink/90 tabular mt-3 text-3xl font-light">{enteros(libres)}</p>
-              <p className="text-ink/45 mt-2 text-xs">Pesajes que no están en ninguna nota de entrega</p>
+              <p className="text-ink/45 mt-2 text-xs">Pesajes que no están en ninguna nota de despacho</p>
             </Card>
 
             <Card>
@@ -94,14 +94,14 @@ export function TableroDespachos() {
               <p>
                 Aquí no se registra la venta: se registra <strong>el peso y el permiso</strong>. Si
                 lo que busca es despachar material a un cliente y dejarlo listo para facturar, eso
-                es la nota de entrega, y está en Facturación.
+                es la nota de despacho, y está en Facturación.
               </p>
               <p>
                 <Link
                   to="/app/facturacion/notas-entrega"
                   className="text-royal-600 hover:text-royal-700 dark:text-royal-300 font-medium"
                 >
-                  Ir a las notas de entrega
+                  Ir a las notas de despacho
                 </Link>
               </p>
               <p className="text-ink/50">

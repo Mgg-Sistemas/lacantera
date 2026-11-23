@@ -66,8 +66,8 @@ export function Clientes() {
   const [busqueda, setBusqueda] = useFiltroEnLaDireccion()
 
   /*
-    LO QUE DEBEN POR NOTAS DE ENTREGA (07/11/2026): «un apartado de los clientes
-    que tienen cuentas por cobrar […] desde notas de entregas». Va aparte de
+    LO QUE DEBEN POR NOTAS DE DESPACHO (07/11/2026): «un apartado de los clientes
+    que tienen cuentas por cobrar […] desde notas de despachos». Va aparte de
     «Deuda», que es de facturas y descuenta del límite de crédito.
   */
   const porCobrar = useNotasPorCobrarDeClientes()
@@ -177,7 +177,7 @@ export function Clientes() {
               <Interruptor
                 encendido={soloDeudores}
                 onCambio={setSoloDeudores}
-                etiqueta={`Solo los que deben por notas de entrega (${deudores.filter((d) => d.clave !== 'sin-cliente').length})`}
+                etiqueta={`Solo los que deben por notas de despacho (${deudores.filter((d) => d.clave !== 'sin-cliente').length})`}
                 detalle="Las notas marcadas «por cobrar» que todavía no se han cobrado."
               />
             </div>
@@ -519,7 +519,7 @@ function NotasQueDebe({
       abierto
       onCerrar={onCerrar}
       titulo={deuda.cliente}
-      descripcion="Notas de entrega por cobrar. Se cobran marcándolas en Facturación › Notas de entrega."
+      descripcion="Notas de despacho por cobrar. Se cobran marcándolas en Facturación › Notas de despacho."
       acciones={
         <>
           <Button variant="ghost" onClick={onCerrar}>
@@ -636,7 +636,7 @@ function ModalReportePorCobrar({
       abierto
       onCerrar={onCerrar}
       titulo="Reporte de cuentas por cobrar"
-      descripcion="De todos los clientes con saldo pendiente en notas de entrega, o el estado de cuenta de uno solo."
+      descripcion="De todos los clientes con saldo pendiente en notas de despacho, o el estado de cuenta de uno solo."
       acciones={
         <>
           <Button variant="ghost" onClick={onCerrar}>

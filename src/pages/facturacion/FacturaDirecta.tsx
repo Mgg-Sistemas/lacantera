@@ -31,10 +31,10 @@ import {
 } from '@/pages/ventas/filas'
 
 /*
-  LA FACTURA SIN NOTA DE ENTREGA
+  LA FACTURA SIN NOTA DE DESPACHO
 
-  Christopher, 17/09/2026: «independizar más las notas de entrega y las
-  facturas: que se pueda crear una factura sin necesidad de nota de entrega y
+  Christopher, 17/09/2026: «independizar más las notas de despacho y las
+  facturas: que se pueda crear una factura sin necesidad de nota de despacho y
   viceversa». Hasta entonces una factura solo nacía de notas.
 
   Sus respuestas deciden el formulario:
@@ -42,7 +42,7 @@ import {
     - el material SALE DEL PATIO al emitirla, con patio por renglón como en el
       despacho. Es la casilla de arriba, marcada;
     - si se desmarca, la factura no toca el patio y el material sale después con
-      notas de entrega que se enlazan a ella desde la nota. Una factura que ya
+      notas de despacho que se enlazan a ella desde la nota. Una factura que ya
       sacó el material no admite notas: se descontaría dos veces;
     - IVA e IGTF son casillas, el IVA marcado y el IGTF no, y «las facturas sí o
       sí tendrán IVA o IGTF»: sin ninguno no se emite.
@@ -66,7 +66,7 @@ export function ModalFacturaDirecta({
   const { resuelto: accionesListas } = useMisAcciones()
   /*
     TODA FACTURA SE AUTORIZA. Angélica, 18/09/2026: «las ventas, las facturas,
-    las notas de entrega y las notas de salida llevan autorización: los usuarios
+    las notas de despacho y las notas de salida llevan autorización: los usuarios
     hacen su solicitud y luego otro usuario con permisos aprueba». Ya no hay
     emisión directa, tampoco para quien tiene la casilla: la emite otro.
   */
@@ -123,8 +123,8 @@ export function ModalFacturaDirecta({
       abierto
       ancho="lg"
       onCerrar={onCerrar}
-      titulo="Factura sin nota de entrega"
-      descripcion="Con sus propios renglones. Si el material sale con ella, se descuenta del patio al emitirla; si no, sale después con notas de entrega que se enlazan a esta factura."
+      titulo="Factura sin nota de despacho"
+      descripcion="Con sus propios renglones. Si el material sale con ella, se descuenta del patio al emitirla; si no, sale después con notas de despacho que se enlazan a esta factura."
       acciones={
         <>
           <Button variant="ghost" onClick={onCerrar}>
@@ -219,8 +219,8 @@ export function ModalFacturaDirecta({
             </span>
             <span className="text-ink/50 mt-0.5 block text-xs leading-relaxed">
               {sacaMaterial
-                ? 'Se descuenta al emitirla. A esta factura no se le podrán enlazar notas de entrega: el material ya salió.'
-                : 'No toca el patio. El material sale después con notas de entrega, que se enlazan a esta factura desde la nota.'}
+                ? 'Se descuenta al emitirla. A esta factura no se le podrán enlazar notas de despacho: el material ya salió.'
+                : 'No toca el patio. El material sale después con notas de despacho, que se enlazan a esta factura desde la nota.'}
             </span>
           </span>
         </label>

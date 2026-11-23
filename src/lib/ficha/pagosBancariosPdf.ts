@@ -33,7 +33,7 @@ import type { EstadoPago, NotaCubiertaDeMas, NotaSinPago, PagoBancario } from '@
   - LISTA: lo que la pantalla tiene filtrado, tal cual. No vuelve a consultar
     con sus propios filtros, igual que el historial de salidas.
   - CIERRE: un mes entero, sin importar los filtros de la pantalla. Además de
-    los pagos, dice qué notas de entrega del mes no tienen ningún pago —el
+    los pagos, dice qué notas de despacho del mes no tienen ningún pago —el
     pendiente del otro lado— y deja las rayas para firmar quien elabora y
     quien revisa.
 
@@ -221,7 +221,7 @@ export async function armarReportePagos(d: DatosReportePagos): Promise<ArchivoAr
     datos: [['Generado', fechaLarga(d.momento)]],
   })
   y = tituloDocumento(doc, y, titulo)
-  y = lineaEmpresa(doc, y, `${d.empresa.razonSocial} · RIF ${d.empresa.rif} · Pagos del banco y notas de entrega`)
+  y = lineaEmpresa(doc, y, `${d.empresa.razonSocial} · RIF ${d.empresa.rif} · Pagos del banco y notas de despacho`)
 
   if (d.modo === 'CIERRE') {
     y = totalDelCierre(doc, y, d.resumenDe, d.mes ?? '')
@@ -270,12 +270,12 @@ export async function armarReportePagos(d: DatosReportePagos): Promise<ArchivoAr
     y = notaBajoLaTabla(
       doc,
       y,
-      '«Notas» es lo que cubren las notas de entrega asociadas a cada pago, en la moneda del pago. Diferencia mínima: no suma exacto, pero la diferencia es de redondeo de la tasa.',
+      '«Notas» es lo que cubren las notas de despacho asociadas a cada pago, en la moneda del pago. Diferencia mínima: no suma exacto, pero la diferencia es de redondeo de la tasa.',
     )
   }
 
   if (d.notasSinPago) {
-    y = seccion(doc, y + 2, 'Notas de entrega del período sin pago asociado')
+    y = seccion(doc, y + 2, 'Notas de despacho del período sin pago asociado')
     if (d.notasSinPago.length === 0) {
       y = etiquetaValor(doc, y, [['Pendientes', 'Ninguna: todas las notas del período tienen pago asociado.']])
     } else {

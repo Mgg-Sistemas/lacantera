@@ -465,7 +465,7 @@ export function AlmacenPedirSalida() {
           hint="Es lo que lee quien la aprueba, y queda en la nota cuando se entregue."
           error={
             ventaEnElMotivo
-              ? `Dice «${ventaEnElMotivo}»: una venta no se solicita aquí, se registra en Facturación › Notas de entrega.`
+              ? `Dice «${ventaEnElMotivo}»: una venta no se solicita aquí, se registra en Facturación › Notas de despacho.`
               : undefined
           }
         />

@@ -8,7 +8,7 @@
  * **Minería Internacional TS** y tiene su propio logo, que es el que la gente
  * reconoce y el que ya sale en la pantalla.
  *
- * Mientras tanto, cada nota de entrega y cada recibo de pago salían firmados
+ * Mientras tanto, cada nota de despacho y cada recibo de pago salían firmados
  * con un dibujo que no es de la empresa. Eso no es un detalle de estilo: son
  * papeles que se le entregan a un cliente y a un trabajador.
  *
@@ -55,7 +55,7 @@ function cargar(): Promise<HTMLImageElement> {
   })
 
   // Un logo que no carga no puede impedir que salga el documento. Se pierde el
-  // sello, que es feo; perder la nota de entrega con el camion esperando es
+  // sello, que es feo; perder la nota de despacho con el camion esperando es
   // otra cosa.
   cargando = cargando.catch(() => {
     cargando = null

@@ -8,7 +8,7 @@ import type { RenglonVenta } from './ventas'
  *
  * Se separó de `ventas.ts` el 15/09/2026, cuando la facturación pasó a ser su
  * propio módulo (permiso FACTURACION). Ventas se queda con lo comercial: clientes,
- * precios, cotizaciones y notas de entrega. Lo que sale de aquí es fiscal: gasta
+ * precios, cotizaciones y notas de despacho. Lo que sale de aquí es fiscal: gasta
  * número de control, entra al libro y deja a alguien debiendo.
  *
  * Las claves de react-query se quedan como estaban (`['ventas', 'facturas']`,
@@ -82,7 +82,7 @@ export interface FacturaVenta {
   /** El IGTF de la factura: sobre el total con IVA. Cero si no lleva. */
   alicuota_igtf: string
   igtf: string
-  /** NOTAS: salió de notas de entrega. DIRECTA: con sus propios renglones. */
+  /** NOTAS: salió de notas de despacho. DIRECTA: con sus propios renglones. */
   origen: 'NOTAS' | 'DIRECTA'
   /** Solo en una directa: el material salió del patio al emitirla. */
   saca_material: boolean
@@ -110,7 +110,7 @@ export interface FacturaDeNotas {
   condicion_pago?: string | null
   fecha?: string
   observacion?: string | null
-  /** La decide la factura: las notas de entrega no llevan IVA. */
+  /** La decide la factura: las notas de despacho no llevan IVA. */
   alicuota_iva: number
   alicuota_igtf: number
 }
@@ -136,7 +136,7 @@ export function useFacturarNotas() {
 }
 
 /**
- * La factura sin nota de entrega, con sus propios renglones.
+ * La factura sin nota de despacho, con sus propios renglones.
  *
  * Christopher, 17/09/2026: «que se pueda crear una factura sin necesidad de nota
  * de entrega y viceversa». Si el material sale con ella, la base lo descuenta
@@ -177,7 +177,7 @@ export function useFacturarDirecto() {
 }
 
 /**
- * Enlazar una nota de entrega a una factura que ya existe: la nota pasa a
+ * Enlazar una nota de despacho a una factura que ya existe: la nota pasa a
  * facturada con ese número y la factura no cambia. Solo a una factura sin nota
  * que no haya sacado el material, o se contaría dos veces.
  */

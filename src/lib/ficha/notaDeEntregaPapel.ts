@@ -5,11 +5,12 @@ import { enteros } from '@/lib/formato'
 import { conversionDeRenglon, notaDeConversionDeVenta } from '@/pages/ventas/filas'
 import { armarDocumento, armarVariosDocumentos, type DatosDocumento } from './ventaPdf'
 import type { EmpresaPapel } from './papel'
+import { LEYENDA_GUIA } from '@/lib/fiscal/providencia'
 
 /*
-  EL PAPEL DE LA NOTA DE ENTREGA, EN UN SOLO SITIO.
+  EL PAPEL DE LA NOTA DE DESPACHO, EN UN SOLO SITIO.
 
-  Lo imprimen dos pantallas: Facturación › Notas de entrega, de siempre, y desde
+  Lo imprimen dos pantallas: Facturación › Notas de despacho, de siempre, y desde
   el 21/09/2026 también Salidas, cuando una nota de salida dejó su nota de
   entrega de respaldo (Christopher: «a nivel de sistema se pueden imprimir las
   dos en cualquier momento»). Es el mismo papel, así que se arma aquí y no dos
@@ -97,6 +98,10 @@ function datosDeNota(
         : null,
     empresa,
     emitidoPor,
+    // Providencia SNAT/2026/00093: hora de despacho, factura que la ampara y denominación.
+    emitidoEn: n.despachada_en ?? null,
+    referencias: n.factura_numero ? [{ rotulo: 'Facturada en', valor: n.factura_numero }] : [],
+    leyendaFiscal: LEYENDA_GUIA,
   }
 }
 
@@ -118,10 +123,10 @@ export async function armarNotaDeEntrega(d: {
 }
 
 /**
- * Varias notas de entrega en un solo PDF, cada una completa —con su propia
+ * Varias notas de despacho en un solo PDF, cada una completa —con su propia
  * hoja o sus propias hojas, si le hacen falta—, tal como sale al pedirla sola.
  *
- * Nace el 23/10/2026: «Imprimir notas» en Notas de entrega arma esto con lo
+ * Nace el 23/10/2026: «Imprimir notas» en Notas de despacho arma esto con lo
  * que está filtrado en pantalla, sin un tope de cuántas: Christopher pidió
  * que el propio filtro de categoría (Estado, fechas…) se encargue de acotar
  * cuántas entran, no un límite escrito aquí.
@@ -151,7 +156,7 @@ export async function armarNotasDeEntrega(d: {
   )
 
   return armarVariosDocumentos(lista, {
-    titulo: `Notas de entrega (${d.notas.length})`,
-    archivo: `notas-de-entrega-${d.notas.length}.pdf`,
+    titulo: `Notas de despacho (${d.notas.length})`,
+    archivo: `notas-de-despacho-${d.notas.length}.pdf`,
   })
 }

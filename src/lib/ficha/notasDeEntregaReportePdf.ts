@@ -16,7 +16,7 @@ import { dinero, bolivares, dolares, documento } from '@/lib/formato'
 import type { NotaEntrega } from '@/lib/api/ventas'
 
 /*
-  REPORTE EJECUTIVO DE NOTAS DE ENTREGA (EN BOLÍVARES Y DÓLARES)
+  REPORTE EJECUTIVO DE NOTAS DE DESPACHO (EN BOLÍVARES Y DÓLARES)
 
   Usa la geometría ejecutiva amplia de la casa (16 mm de margen lateral, 178 mm
   de ancho útil) para que el correlativo de la nota, la fecha y los montos en
@@ -286,7 +286,7 @@ function cabeceraEjecutivaReporte(
   doc.setFillColor(MARCA)
   doc.rect(xCaja, yCaja, ANCHO_CAJA, ALTO_CAB, 'F')
   doc.setFont('helvetica', 'bold').setFontSize(8.2).setTextColor('#FFFFFF')
-  doc.text('REPORTE DE NOTAS DE ENTREGA', xCaja + ANCHO_CAJA / 2, yCaja + 4.7, {
+  doc.text('REPORTE DE NOTAS DE DESPACHO', xCaja + ANCHO_CAJA / 2, yCaja + 4.7, {
     align: 'center',
   })
 
@@ -336,7 +336,7 @@ function cabeceraContinuacion(
   const xTxt = logo ? IZQ + LADO + 3.5 : IZQ
 
   doc.setTextColor(MARCA).setFont('helvetica', 'bold').setFontSize(9.5)
-  doc.text('REPORTE DE NOTAS DE ENTREGA', xTxt, ARRIBA + 4.2)
+  doc.text('REPORTE DE NOTAS DE DESPACHO', xTxt, ARRIBA + 4.2)
 
   doc.setFont('helvetica', 'bold').setFontSize(7.4).setTextColor(ROTULO)
   doc.text(
@@ -634,7 +634,7 @@ export async function armarReporteNotasDeEntrega(d: {
   /** Se agrega al nombre del archivo: «-sin-cobro», «-sin-por-cobrar»… */
   sufijoArchivo?: string
 }): Promise<ArchivoArmado> {
-  const titulo = 'Reporte de Notas de Entrega'
+  const titulo = 'Reporte de Notas de Despacho'
   const { jsPDF } = await import('jspdf')
   const logo = await logoComoImagen(600, false)
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
@@ -700,12 +700,12 @@ export async function armarReporteNotasDeEntrega(d: {
   })
 
   // ─────────────────────────────────────────────────────────────────────────
-  // 1. PLANILLA DE NOTAS DE ENTREGA
+  // 1. PLANILLA DE NOTAS DE DESPACHO
   // ─────────────────────────────────────────────────────────────────────────
   y = tituloSeccionEjecutiva(
     doc,
     y,
-    'Planilla de notas de entrega',
+    'Planilla de notas de despacho',
     notasRespaldo.length > 0
       ? 'Incluye notas comerciales (tasa BCV congelada) y notas de respaldo de salida / convenio'
       : 'Montos expresados con la tasa BCV congelada en la fecha de cada nota',
@@ -727,7 +727,7 @@ export async function armarReporteNotasDeEntrega(d: {
     doc.setFillColor('#ffffff')
     doc.rect(IZQ, y, ANCHO_UTIL, altoVacio, 'F')
     doc.setFont('helvetica', 'italic').setFontSize(8.5).setTextColor(GRIS)
-    doc.text('No existen notas de entrega registradas para generar el informe.', IZQ + ANCHO_UTIL / 2, y + 7.2, {
+    doc.text('No existen notas de despacho registradas para generar el informe.', IZQ + ANCHO_UTIL / 2, y + 7.2, {
       align: 'center',
     })
     y += altoVacio
@@ -1111,7 +1111,7 @@ export async function armarReporteNotasDeEntrega(d: {
       const yT = yCab + 5
       doc.setFont('helvetica', 'bold').setFontSize(7).setTextColor('#FFFFFF')
       doc.text('DESTINATARIO / CONVENIO', COL_CONV.cliente.x + 2.5, yT)
-      doc.text('NOTAS ENTREGA', COL_CONV.notas.x + COL_CONV.notas.w / 2, yT, { align: 'center' })
+      doc.text('NOTAS DESPACHO', COL_CONV.notas.x + COL_CONV.notas.w / 2, yT, { align: 'center' })
       doc.text('NOTAS DE SALIDA (NS)', COL_CONV.salidas.x + COL_CONV.salidas.w / 2, yT, {
         align: 'center',
       })
@@ -1585,6 +1585,6 @@ export async function armarReporteNotasDeEntrega(d: {
   doc.setProperties({ title: titulo })
   return {
     blob: doc.output('blob'),
-    nombre: `notas-de-entrega-${d.momento.toISOString().slice(0, 10)}${d.sufijoArchivo ?? ''}.pdf`,
+    nombre: `notas-de-despacho-${d.momento.toISOString().slice(0, 10)}${d.sufijoArchivo ?? ''}.pdf`,
   }
 }
