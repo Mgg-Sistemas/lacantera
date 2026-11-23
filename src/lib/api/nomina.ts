@@ -71,6 +71,27 @@ export interface Empleado {
   tipo_cuenta: 'CORRIENTE' | 'AHORRO' | null
   telefono_pago: string | null
   telefono: string | null
+  /** Datos complementarios opcionales para Apertura / Carga Masiva Banco del Tesoro. */
+  correo?: string | null
+  telefono_local?: string | null
+  calle_avenida?: string | null
+  casa_edificio?: string | null
+  piso_nivel?: string | null
+  apto_local?: string | null
+  referencia_domicilio?: string | null
+  condicion_inmueble?: string | null
+  tipo_vivienda?: string | null
+  tiempo_residencia?: number | null
+  bt_region?: string | null
+  bt_estado?: string | null
+  bt_ciudad?: string | null
+  bt_municipio?: string | null
+  bt_parroquia?: string | null
+  zona_postal?: string | null
+  bt_profesion?: string | null
+  bt_tipo_cargo?: string | null
+  bt_agencia?: string | null
+  bt_tipo_cuenta?: string | null
   /** Hasta dónde estudió. Nulo mientras no se sepa. */
   grado_instruccion: 'PRIMARIA' | 'BACHILLER' | 'TSU' | 'UNIVERSITARIO' | 'POSTGRADO' | null
   /*

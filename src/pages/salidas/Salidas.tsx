@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
-import { FileText, PackageMinus, Printer } from 'lucide-react'
+import { FileText, PackageMinus, Printer, Truck } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { Chip } from '@/components/ui/Chip'
 import { PageHeader } from '@/components/PageHeader'
 import { RangoDeFechas } from '@/components/RangoDeFechas'
 import { SIN_RANGO } from '@/components/rango'
@@ -25,13 +26,20 @@ import {
   useMovimientos,
 } from '@/lib/api/inventario'
 import { fecha, fechaHora } from '@/lib/formato'
-import { leerMotivoDeLaSalida, useSolicitudesDeSalida, type SolicitudDeSalida } from '@/lib/api/salidas'
+import {
+  leerMotivoDeLaSalida,
+  useNotasDeEntregaDeSalidas,
+  useSolicitudesDeSalida,
+  type SolicitudDeSalida,
+} from '@/lib/api/salidas'
 import type { Movimiento } from '@/lib/api/inventario'
+import type { NotaEntrega } from '@/lib/api/ventas'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { armarReporteSalidas } from '@/lib/ficha/historialSalidasPdf'
 import { useNotaDeSalida } from './NotaDeSalida'
 import { useNotaDeTraslado } from './NotaDeTraslado'
 import { CabeceraSalidas } from './CabeceraSalidas'
+import { ModalFormatoSalidaAutorizada } from './ModalFormatoSalidaAutorizada'
 
 /*
   LO QUE SALIÓ Y LO QUE SE MOVIÓ, EN UNA SOLA PANTALLA
@@ -100,6 +108,7 @@ export function Salidas() {
   const [nota, setNota] = useState('')
   const [rango, setRango] = useState<Rango>(SIN_RANGO)
   const [reporte, setReporte] = useState<ArchivoArmado | null>(null)
+  const [abriendoFormato, setAbriendoFormato] = useState(false)
 
   const { data: almacenes } = useAlmacenes()
   const { data: articulos } = useArticulos()
@@ -125,6 +134,15 @@ export function Salidas() {
     ...(rango.desde ? { desde: rango.desde } : {}),
     ...(rango.hasta ? { hasta: rango.hasta } : {}),
   })
+
+  const numerosSalidasExternas = useMemo(
+    () =>
+      (data ?? [])
+        .filter((m) => m.signo < 0 && m.nota_salida && m.destino_externo && m.tipo !== 'SALIDA_INTERCAMBIO')
+        .map((m) => m.nota_salida!),
+    [data],
+  )
+  const { data: notasEntregaPorSalida } = useNotasDeEntregaDeSalidas(numerosSalidasExternas)
 
   /*
     Un enlace viejo que traiga `?sacar=` —guardado, o de antes de ordenar las
@@ -270,14 +288,19 @@ export function Salidas() {
         title="Historial de salidas y traslados"
         description="Consulta de salidas del inventario y traslados entre almacenes. Para registrar o solicitar una salida, vaya a «Salidas»; para trasladar material, a «Traslados»."
         actions={
-          <Button
-            variant="outline"
-            icon={<Printer />}
-            disabled={!data || data.length === 0}
-            onClick={() => void imprimirReporte()}
-          >
-            Reporte en PDF
-          </Button>
+          <>
+            <Button variant="outline" icon={<FileText />} onClick={() => setAbriendoFormato(true)}>
+              Formato de salida
+            </Button>
+            <Button
+              variant="outline"
+              icon={<Printer />}
+              disabled={!data || data.length === 0}
+              onClick={() => void imprimirReporte()}
+            >
+              Reporte en PDF
+            </Button>
+          </>
         }
       />
 
@@ -445,6 +468,7 @@ export function Salidas() {
                       <PapelesDelMovimiento
                         m={m}
                         orden={ordenPorNota.get(m.nota_salida ?? '')}
+                        notaEntrega={m.nota_salida ? notasEntregaPorSalida?.get(m.nota_salida) : undefined}
                         notaDeSalida={notaDeSalida}
                         notaDeTraslado={notaDeTraslado}
                       />
@@ -480,6 +504,11 @@ export function Salidas() {
       {notaDeSalida.visor}
       {notaDeTraslado.visor}
 
+      <ModalFormatoSalidaAutorizada
+        abierto={abriendoFormato}
+        onCerrar={() => setAbriendoFormato(false)}
+      />
+
       <Visor
         abierto={reporte !== null}
         onCerrar={() => setReporte(null)}
@@ -502,16 +531,20 @@ export function Salidas() {
 function PapelesDelMovimiento({
   m,
   orden,
+  notaEntrega,
   notaDeSalida,
   notaDeTraslado,
 }: {
   m: Movimiento
   orden: SolicitudDeSalida | undefined
+  notaEntrega: NotaEntrega | undefined
   notaDeSalida: ReturnType<typeof useNotaDeSalida>
   notaDeTraslado: ReturnType<typeof useNotaDeTraslado>
 }) {
   const esSalida = m.signo < 0 && SALIDAS.includes(m.tipo)
   const esTraslado = m.tipo === 'TRANSFERENCIA_SALIDA'
+  const puedeDejarNotaEntrega =
+    esSalida && Boolean(m.nota_salida) && Boolean(m.destino_externo) && m.tipo !== 'SALIDA_INTERCAMBIO'
   if (!esSalida && !esTraslado) return null
 
   return (
@@ -531,6 +564,50 @@ function PapelesDelMovimiento({
         >
           {notaDeSalida.armando === m.id ? 'Armando…' : `Nota ${m.nota_salida ?? m.numero}`}
         </Button>
+      ) : null}
+      {puedeDejarNotaEntrega ? (
+        notaEntrega ? (
+          <>
+            <Button
+              size="sm"
+              variant="ghost"
+              icon={<FileText />}
+              disabled={notaDeSalida.armandoEntregaId === notaEntrega.id}
+              onClick={() => void notaDeSalida.verNotaDeEntrega(notaEntrega)}
+            >
+              {notaDeSalida.armandoEntregaId === notaEntrega.id ? 'Armando…' : `Entrega ${notaEntrega.numero}`}
+            </Button>
+            {notaEntrega.estado === 'PENDIENTE' ? (
+              <Chip tone="warning">Pendiente</Chip>
+            ) : !notaEntrega.facturable ? (
+              <Chip tone="neutral">Solo respaldo</Chip>
+            ) : null}
+            {notaEntrega.estado !== 'ANULADA' && notaDeSalida.puedoGenerarNotaEntrega ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                icon={<Truck />}
+                onClick={() => notaDeSalida.editarCamionesNotaDeEntrega(notaEntrega)}
+              >
+                Camiones{notaEntrega.camiones?.length ? ` (${notaEntrega.camiones.length})` : ''}
+              </Button>
+            ) : null}
+          </>
+        ) : notaDeSalida.puedoGenerarNotaEntrega ? (
+          <label className="border-hairline hover:border-royal-600/50 bg-surface text-ink/85 inline-flex cursor-pointer items-center gap-1.5 rounded-[6px] border px-2.5 py-1 text-xs font-semibold transition-colors">
+            <input
+              type="checkbox"
+              className="accent-royal-600 size-3.5 shrink-0"
+              checked={notaDeSalida.notaEnCurso === m.nota_salida}
+              onChange={(e) => {
+                if (e.target.checked && m.nota_salida && m.destino_externo) {
+                  void notaDeSalida.pedirNotaDeEntrega(m.nota_salida, m.destino_externo)
+                }
+              }}
+            />
+            Generar nota de entrega
+          </label>
+        ) : null
       ) : null}
       {esTraslado ? (
         <Button

@@ -80,6 +80,7 @@ const COLUMNAS: { nivel: Nivel; etiqueta: string; dice?: string }[] = [
 const EMOJI_DE_PANTALLA: Record<string, string> = {
   'COMBUSTIBLE.SURTIDOR_TELEFONO': '⛽',
   'ALIMENTACION.COCINA_TELEFONO': '🍳',
+  'ALIMENTACION.TELEFONO': '🍽️',
   'INVENTARIO.ALMACEN_TELEFONO': '📦',
   'COMPRAS.TELEFONO': '🛒',
   'INVENTARIO.SOLICITUDES_TELEFONO': '📋',

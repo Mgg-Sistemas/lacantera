@@ -71,6 +71,8 @@ import { ENCUADRE_CENTRADO, type Encuadre } from '@/lib/ficha/encuadre'
 import { dinero, fecha } from '@/lib/formato'
 import { useMetodosPago, nombreDe } from '@/lib/api/metodosPago'
 import type { MetodoPago } from '@/lib/api/metodosPago'
+import { combinarEmpleadoConExtras, useConfigBancoTesoro } from '@/lib/api/bancoTesoro'
+import { nombreAgenciaBt } from '@/lib/bancoTesoro/catalogos'
 
 /** Años y meses de servicio: es lo que decide bono vacacional y prestaciones. */
 function antiguedad(desde: string, hasta: string | null): string {
@@ -135,6 +137,8 @@ function seccionesDe(e: Empleado, metodos: MetodoPago[] | undefined): Seccion[] 
       titulo: 'Contacto',
       campos: [
         { clave: 'Teléfono', valor: e.telefono ?? '—' },
+        ...(e.telefono_local ? [{ clave: 'Teléfono local', valor: e.telefono_local }] : []),
+        ...(e.correo ? [{ clave: 'Correo electrónico', valor: e.correo }] : []),
         // A ancho completo: un nombre con parentesco y un número no caben al
         // lado de su etiqueta en media columna, y recortarlo con puntos
         // suspensivos deja justo el dato que hace falta en una emergencia.
@@ -227,6 +231,41 @@ function seccionesDe(e: Empleado, metodos: MetodoPago[] | undefined): Seccion[] 
     })
   }
 
+  const traeDatosAperturaBt = [
+    e.bt_agencia,
+    e.bt_tipo_cuenta,
+    e.bt_profesion,
+    e.bt_tipo_cargo,
+    e.zona_postal,
+    e.calle_avenida,
+  ].some(Boolean)
+
+  if (traeDatosAperturaBt) {
+    secciones.push({
+      titulo: 'Apertura bancaria (Banco del Tesoro)',
+      campos: [
+        ...(e.bt_agencia
+          ? [{ clave: 'Agencia asignada', valor: `${e.bt_agencia} · ${nombreAgenciaBt(e.bt_agencia)}` }]
+          : []),
+        ...(e.bt_tipo_cuenta ? [{ clave: 'Tipo cuenta nómina', valor: e.bt_tipo_cuenta }] : []),
+        ...(e.bt_tipo_cargo ? [{ clave: 'Código cargo banco', valor: e.bt_tipo_cargo }] : []),
+        ...(e.bt_profesion ? [{ clave: 'Código profesión', valor: e.bt_profesion }] : []),
+        ...(e.zona_postal ? [{ clave: 'Zona postal', valor: e.zona_postal }] : []),
+        ...(e.calle_avenida
+          ? [
+              {
+                clave: 'Domicilio desglosado',
+                valor: [e.calle_avenida, e.casa_edificio, e.piso_nivel, e.apto_local, e.referencia_domicilio]
+                  .filter(Boolean)
+                  .join(' · '),
+                ancho: true,
+              },
+            ]
+          : []),
+      ],
+    })
+  }
+
   if (e.nota) {
     secciones.push({ titulo: 'Observaciones', campos: [{ clave: '', valor: e.nota, ancho: true }] })
   }
@@ -236,8 +275,10 @@ function seccionesDe(e: Empleado, metodos: MetodoPago[] | undefined): Seccion[] 
 
 export function FichaTrabajador() {
   const { data: metodos } = useMetodosPago()
+  const configBt = useConfigBancoTesoro()
   const { id } = useParams()
-  const { data: e, isPending, error } = useEmpleado(id ? Number(id) : undefined)
+  const { data: eBase, isPending, error } = useEmpleado(id ? Number(id) : undefined)
+  const e = eBase ? combinarEmpleadoConExtras(eBase, configBt.extrasPorEmpleado) : eBase
   const { puede } = useMisRoles()
   const { puede: alcanza } = useMisAcciones()
   const puedeVincular = alcanza('NOMINA.VINCULAR_CUENTA')

@@ -133,8 +133,8 @@ export function Parametros() {
   const vigentes = useMemo(() => {
     const vistas = new Set<string>()
     return (data ?? []).filter((p) => {
-      // El régimen no es una cifra: tiene su interruptor arriba y no se corrige aquí.
-      if (p.clave === 'regimen_nomina') return false
+      // El régimen y las configuraciones internas del banco no son cifras legales.
+      if (p.clave === 'regimen_nomina' || p.clave.startsWith('BT_')) return false
       if (vistas.has(p.clave)) return false
       vistas.add(p.clave)
       return true
@@ -142,7 +142,8 @@ export function Parametros() {
   }, [data])
 
   const historicos =
-    (data ?? []).filter((p) => p.clave !== 'regimen_nomina').length - vigentes.length
+    (data ?? []).filter((p) => p.clave !== 'regimen_nomina' && !p.clave.startsWith('BT_')).length -
+    vigentes.length
 
   const hoy = hoyEnCaracas()
   const conceptosHoy = conceptosDeLeyEn(data ?? [], hoy)

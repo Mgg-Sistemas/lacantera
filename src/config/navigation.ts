@@ -370,7 +370,8 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/config/auditoria': 'quien hizo rastro historial cambios',
   '/app/explotacion/voladuras': 'explosivo barreno detonante',
   '/app/explotacion/produccion': 'turno tonelada extraccion',
-  '/app/explotacion/viajes': 'acarreo camion transportista flete planilla aprobar viaje vacio',
+  '/app/explotacion/viajes':
+    'acarreo acarreos internos viajes camion camiones transportista flete planilla aprobar viaje vacio semanal',
   '/app/explotacion/plantas': 'planta mina ruta tarifa operador gobernacion aliado ceder cerrar abrir sitio',
   '/app/explotacion/salidas': 'salida planta producto arena piedra m3 camion sale estimado',
   '/app/control-despacho':
@@ -442,6 +443,7 @@ export const PANTALLAS_DE_TELEFONO: PantallaDeTelefono[] = [
   // pantalla se llega a la otra por su propio menú.
   { accion: 'COMBUSTIBLE.SURTIDOR_TELEFONO', ruta: '/app/combustible/surtidor', label: 'Surtidor', icon: Fuel },
   { accion: 'ALIMENTACION.COCINA_TELEFONO', ruta: '/app/alimentacion/cocina', label: 'Cocina', icon: UtensilsCrossed },
+  { accion: 'ALIMENTACION.TELEFONO', ruta: '/app/alimentacion/cocina', label: 'Alimentación', icon: UtensilsCrossed },
   { accion: 'INVENTARIO.ALMACEN_TELEFONO', ruta: '/app/inventario/almacen', label: 'Almacén', icon: Boxes },
   // La de compras (07/11/2026). Desde la fase 5b lleva a «Pedidos / Compras»:
   // la pantalla de teléfono del flujo anterior se retiró con él.
@@ -546,7 +548,7 @@ export const navigation: NavSection[] = [
         icon: Pickaxe,
         children: [
           { label: 'Tablero', to: '/app/explotacion' },
-          { label: 'Viajes de camiones', to: '/app/explotacion/viajes' },
+          { label: 'Acarreos internos', to: '/app/explotacion/viajes' },
           // Las minas, plantas y bases, quién las opera y las rutas con su
           // tarifa. Existe desde que Christopher preguntó qué pasaba si mañana
           // abre o cierra una planta, o la cede la gobernación.

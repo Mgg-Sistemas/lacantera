@@ -110,6 +110,17 @@ export function useNotaDeSalida(): {
    * solo si es de antes de que las notas se numeraran.
    */
   abrirMovimiento: (m: Movimiento) => Promise<void>
+  /** Abre directamente el cuadro para generar la nota de entrega de una salida hacia fuera. */
+  pedirNotaDeEntrega: (numero: string, destino: string) => Promise<void>
+  /** Abre el PDF de una nota de entrega ya emitida desde una salida. */
+  verNotaDeEntrega: (n: NotaEntrega) => Promise<void>
+  /** Abre el cuadro de camiones de una nota de entrega emitida desde una salida. */
+  editarCamionesNotaDeEntrega: (n: NotaEntrega) => void
+  puedoGenerarNotaEntrega: boolean
+  /** Número de nota de salida cuyo cuadro de nota de entrega está abierto ahora. */
+  notaEnCurso: string | null
+  /** ID de la nota de entrega cuyo PDF se está armando. */
+  armandoEntregaId: number | null
   /** El asiento cuyo papel se está armando, para decir «Armando…» en su fila. */
   armando: number | null
   visor: ReactNode
@@ -169,6 +180,7 @@ export function useNotaDeSalida(): {
   const [asientos, setAsientos] = useState<AsientoDeLaSalida[] | null>(null)
   const [papelDeEntrega, setPapelDeEntrega] = useState<ArchivoArmado | null>(null)
   const [armandoEntrega, setArmandoEntrega] = useState(false)
+  const [armandoEntregaId, setArmandoEntregaId] = useState<number | null>(null)
   /*
     Leer los asientos tarda, y la casilla se puede desmarcar antes de que
     lleguen. Sin este turno, la respuesta vieja volvería a marcarla sola y
@@ -178,6 +190,7 @@ export function useNotaDeSalida(): {
 
   const verLaDeEntrega = async (n: NotaEntrega) => {
     setArmandoEntrega(true)
+    setArmandoEntregaId(n.id)
     try {
       const [renglones, clientes] = await Promise.all([
         supabase.from('nota_entrega_renglones').select('*').eq('nota_id', n.id).order('linea'),
@@ -199,6 +212,21 @@ export function useNotaDeSalida(): {
       console.error(e)
     } finally {
       setArmandoEntrega(false)
+      setArmandoEntregaId(null)
+    }
+  }
+
+  const pedirNotaDeEntrega = async (numero: string, destino: string) => {
+    const turno = ++turnoDeAsientos.current
+    setHaciaFuera({ numero, destino })
+    generar.reset()
+    try {
+      const leidos = await leerAsientosDeLaSalida(numero)
+      if (turnoDeAsientos.current === turno) setAsientos(leidos)
+    } catch {
+      if (turnoDeAsientos.current === turno) {
+        setFallo('No se pudo leer lo que sacó esa salida. Vuelva a intentarlo.')
+      }
     }
   }
 
@@ -481,6 +509,7 @@ export function useNotaDeSalida(): {
           onCerrar={() => {
             turnoDeAsientos.current++
             setAsientos(null)
+            if (nota === null) setHaciaFuera(null)
           }}
           onGuardar={(resp) =>
             void generar
@@ -499,8 +528,10 @@ export function useNotaDeSalida(): {
               )
               .then(async () => {
                 setAsientos(null)
+                void qc.invalidateQueries({ queryKey: ['salidas', 'notas-entrega'] })
                 const hecha = await leerNotaDeEntregaDeLaSalida(haciaFuera.numero)
-                setDeEntrega(hecha)
+                if (nota !== null) setDeEntrega(hecha)
+                else setHaciaFuera(null)
                 if (hecha) await verLaDeEntrega(hecha)
               })
               .catch(() => {})
@@ -515,8 +546,9 @@ export function useNotaDeSalida(): {
           camiones={camionesDe.camiones ?? []}
           onCerrar={async () => {
             setCamionesDe(null)
+            void qc.invalidateQueries({ queryKey: ['salidas', 'notas-entrega'] })
             // Se relee: el papel debe salir con los camiones recién puestos.
-            if (haciaFuera) {
+            if (haciaFuera && nota !== null) {
               setDeEntrega(await leerNotaDeEntregaDeLaSalida(haciaFuera.numero).catch(() => null))
             }
           }}
@@ -546,5 +578,17 @@ export function useNotaDeSalida(): {
     </>
   )
 
-  return { abrir, abrirOrden, abrirMovimiento, armando, visor }
+  return {
+    abrir,
+    abrirOrden,
+    abrirMovimiento,
+    pedirNotaDeEntrega,
+    verNotaDeEntrega: verLaDeEntrega,
+    editarCamionesNotaDeEntrega: (n: NotaEntrega) => setCamionesDe(n),
+    puedoGenerarNotaEntrega: casillaDe(GENERAR_NOTA_ENTREGA),
+    notaEnCurso: asientos !== null && haciaFuera ? haciaFuera.numero : null,
+    armandoEntregaId,
+    armando,
+    visor,
+  }
 }

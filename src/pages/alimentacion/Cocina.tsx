@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Cargando, ErrorDeCarga } from '@/components/ui/Estado'
-import { useMisPermisos } from '@/lib/api/usuarios'
+import { useMisPermisos, useSoloTelefono } from '@/lib/api/usuarios'
 import {
   TIPOS_DE_COMIDA,
   useServirComida,
@@ -264,6 +264,7 @@ export function Cocina() {
 /* ─────────────────────────────────────────────────────────── el acuse */
 
 function Acuse({ texto, porPlato, onOtra }: { texto: string; porPlato: string; onOtra: () => void }) {
+  const { soloTelefono } = useSoloTelefono()
   const compartir = async () => {
     if (navigator.share) {
       try {
@@ -295,12 +296,14 @@ function Acuse({ texto, porPlato, onOtra }: { texto: string; porPlato: string; o
         <Button className="w-full py-3.5" icon={<UtensilsCrossed />} onClick={onOtra}>
           Otra comida
         </Button>
-        <Link
-          to="/app/alimentacion"
-          className="text-ink/45 active:text-ink/80 block pt-1 text-sm underline decoration-dotted underline-offset-4"
-        >
-          Ver toda la alimentación
-        </Link>
+        {!soloTelefono ? (
+          <Link
+            to="/app/alimentacion"
+            className="text-ink/45 active:text-ink/80 block pt-1 text-sm underline decoration-dotted underline-offset-4"
+          >
+            Ver toda la alimentación
+          </Link>
+        ) : null}
       </div>
     </div>
   )

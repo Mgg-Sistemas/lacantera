@@ -30,7 +30,11 @@ import { logoComoImagen } from '@/lib/ficha/logo'
 import { ABAJO, ARRIBA, PIE } from '@/lib/ficha/hoja'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import {
+  FILA_ALTERNA,
+  MARCA,
+  ROTULO,
   TINTA,
+  encajar,
   fechaCorta,
   fechaLarga,
   etiquetaValor,
@@ -41,6 +45,8 @@ import {
   seccion,
   tabla,
   tituloDocumento,
+  type Bordes,
+  type Celda,
   type Columna,
   type EmpresaPapel,
 } from '@/lib/ficha/papel'
@@ -192,11 +198,11 @@ export async function armarRegistroDeViajes(d: DatosRegistroDiario): Promise<Arc
     ],
   })
 
-  y = tituloDocumento(doc, y, 'Registro diario de viajes')
+  y = tituloDocumento(doc, y, 'Registro diario de acarreos internos')
   y = lineaEmpresa(
     doc,
     y,
-    `${d.empresa_papel.razonSocial} · RIF ${d.empresa_papel.rif} · Transporte interno`,
+    `${d.empresa_papel.razonSocial} · RIF ${d.empresa_papel.rif} · Acarreos internos`,
   )
 
   const f = d.firmas
@@ -538,9 +544,499 @@ export async function armarPagoDelDia(d: DatosPagoDelDia): Promise<ArchivoArmado
       : `${empresasDice(d.lineas.length)} · ${cantidad(viajes)} viajes`,
   )
 
-  pieDePagina(doc, `Pago de viajes · ${fechaCorta(d.dia)} · emitido por ${d.emitidoPor}`)
-  doc.setProperties({ title: `Pago de viajes — ${d.dia}` })
+  pieDePagina(doc, `Pago de acarreos · ${fechaCorta(d.dia)} · emitido por ${d.emitidoPor}`)
+  doc.setProperties({ title: `Pago de acarreos — ${d.dia}` })
 
   const sufijo = (d.empresa ?? 'todas').toLowerCase().replace(/[^a-z0-9]+/g, '-')
-  return { blob: doc.output('blob'), nombre: `pago-viajes-${d.dia}-${sufijo}.pdf` }
+  return { blob: doc.output('blob'), nombre: `pago-acarreos-${d.dia}-${sufijo}.pdf` }
+}
+
+/* ═════════════════════════════════════════════ reporte semanal apaisado (A4) */
+
+type Doc = import('jspdf').jsPDF
+
+export interface FilaSemanalPdf {
+  compania: string
+  placa: string
+  nombre: string
+  chofer: string | null
+  /** Los 7 días de lunes a domingo (índice 0 = Lun, 6 = Dom). */
+  porDia: number[]
+  viajes: number
+  porAprobar: number
+  m3: number | null
+  montoUsd: number | null
+}
+
+export interface ResumenRutaSemanalPdf {
+  ruta: string
+  equipos: number
+  viajes: number
+  porAprobar: number
+  m3: number | null
+  montoUsd: number | null
+}
+
+export interface DatosReporteSemanal {
+  desde: string
+  hasta: string
+  diasCortos: string[]
+  companiaFiltro: string | null
+  rutaFiltro: string | null
+  filas: FilaSemanalPdf[]
+  rutas: ResumenRutaSemanalPdf[]
+  hayDinero: boolean
+  empresa_papel: EmpresaPapel
+  emitidoPor: string
+  momento: Date
+}
+
+interface ColPeso {
+  titulo: string
+  ancho: number
+  alDerecha?: boolean
+}
+
+function tablaApaisada(
+  doc: Doc,
+  y0: number,
+  b: Bordes,
+  abajo: number,
+  arriba: number,
+  tituloSeccion: string | null,
+  columnas: ColPeso[],
+  filas: string[][],
+  totales?: string[],
+): number {
+  const util = b.der - b.izq
+  const pesoTotal = columnas.reduce((s, c) => s + c.ancho, 0) || 1
+  const anchos = columnas.map((c) => (c.ancho / pesoTotal) * util)
+  const altoFila = 6.0
+  const altoRenglon = 3.1
+  let fila = y0
+
+  const limpiarRuta = (s: string) => s.replace(/\s*(→|->)\s*/g, ' a ')
+  const medir = (textos: string[], base: number, estilo: 'bold' | 'normal'): Celda[] =>
+    columnas.map((_, j) =>
+      encajar(doc, limpiarRuta(textos[j] ?? ''), Math.max(4, anchos[j] - 2.6), base, estilo),
+    )
+  const altoDe = (c: Celda[]) =>
+    altoFila + (Math.max(1, ...c.map((x) => x.lineas.length)) - 1) * altoRenglon
+
+  const pintar = (celdas: Celda[], alto: number, estilo: 'bold' | 'normal') => {
+    let x = b.izq + 1.3
+    columnas.forEach((c, j) => {
+      doc.setFont('helvetica', estilo).setFontSize(celdas[j].talla)
+      doc.text(celdas[j].lineas, c.alDerecha ? x + anchos[j] - 2.6 : x, fila + 4.1, {
+        align: c.alDerecha ? 'right' : 'left',
+        lineHeightFactor: 1.28,
+      })
+      x += anchos[j]
+    })
+    fila += alto
+  }
+
+  const cabecera = () => {
+    const celdas = medir(
+      columnas.map((c) => c.titulo.toUpperCase()),
+      6.6,
+      'bold',
+    )
+    const alto = altoDe(celdas)
+    doc.setFillColor(MARCA)
+    doc.rect(b.izq, fila, util, alto, 'F')
+    doc.setTextColor('#FFFFFF')
+    pintar(celdas, alto, 'bold')
+  }
+
+  if (tituloSeccion) {
+    if (fila > abajo - 18) {
+      doc.addPage()
+      fila = arriba
+    }
+    doc.setFont('helvetica', 'bold').setFontSize(9.5).setTextColor(ROTULO)
+    doc.text(limpiarRuta(tituloSeccion).toUpperCase(), b.izq, fila + 2)
+    fila += 4.8
+  }
+
+  cabecera()
+
+  filas.forEach((textos, i) => {
+    const celdas = medir(textos, 7.2, 'normal')
+    const alto = altoDe(celdas)
+    if (fila + alto > abajo) {
+      doc.addPage()
+      fila = arriba
+      cabecera()
+    }
+    if (i % 2 === 1) {
+      doc.setFillColor(FILA_ALTERNA)
+      doc.rect(b.izq, fila, util, alto, 'F')
+    }
+    doc.setTextColor(TINTA)
+    pintar(celdas, alto, 'normal')
+  })
+
+  if (totales) {
+    const celdas = medir(totales, 7.3, 'bold')
+    const alto = altoDe(celdas)
+    if (fila + alto > abajo) {
+      doc.addPage()
+      fila = arriba
+    }
+    doc.setFillColor(FILA_ALTERNA)
+    doc.rect(b.izq, fila, util, alto, 'F')
+    doc.setTextColor(TINTA)
+    pintar(celdas, alto, 'bold')
+  }
+
+  return fila + 6.5
+}
+
+/** Reporte semanal de acarreos internos (Lunes a Domingo) en formato horizontal A4. */
+export async function armarReporteSemanalDeAcarreos(
+  d: DatosReporteSemanal,
+): Promise<ArchivoArmado> {
+  const { jsPDF } = await import('jspdf')
+  const logo = await logoComoImagen()
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'landscape', compress: true })
+
+  const bordes: Bordes = { izq: 15, der: 282, pie: 200 }
+  const arriba = 15
+  const abajo = bordes.pie - 10
+  const periodo = periodoDice(d.desde, d.hasta)
+
+  let y = membrete(doc, logo, {
+    empresa: d.empresa_papel,
+    datos: [
+      ['Semana', periodo],
+      ['Generado', fechaLarga(d.momento)],
+    ],
+    bordes,
+    desde: arriba,
+  })
+  y = tituloDocumento(doc, y, 'Reporte semanal de acarreos internos', ROTULO, bordes)
+
+  const totalViajes = d.filas.reduce((s, f) => s + f.viajes, 0)
+  const totalPorAprobar = d.filas.reduce((s, f) => s + f.porAprobar, 0)
+  const conM3 = d.filas.filter((f) => f.m3 !== null)
+  const totalM3 = conM3.reduce((s, f) => s + Number(f.m3 ?? 0), 0)
+  const totalUsd = d.filas.reduce((s, f) => s + Number(f.montoUsd ?? 0), 0)
+
+  const resumenPares: Array<[string, string]> = [
+    ['Compañía', d.companiaFiltro ?? 'Todas'],
+    ['Ruta', (d.rutaFiltro ?? 'Todas').replace(/\s*(→|->)\s*/g, ' a ')],
+    ['Camiones con actividad', String(d.filas.length)],
+    ['Viajes aprobados', cantidad(totalViajes)],
+    ...(totalPorAprobar > 0
+      ? ([['Por aprobar', cantidad(totalPorAprobar)]] as Array<[string, string]>)
+      : []),
+    ['Volumen movido', conM3.length > 0 ? `${cantidad(totalM3)} m³` : '—'],
+    ...(d.hayDinero ? ([['Monto total', `$ ${numero(totalUsd)}`]] as Array<[string, string]>) : []),
+  ]
+
+  doc.setFont('helvetica', 'normal').setFontSize(8.3).setTextColor(TINTA)
+  const resumenLinea = resumenPares.map(([k, v]) => `${k}: ${v}`).join('   ·   ')
+  const lineasRes = doc.splitTextToSize(resumenLinea, bordes.der - bordes.izq) as string[]
+  doc.text(lineasRes, bordes.izq, y, { lineHeightFactor: 1.38 })
+  y += lineasRes.length * 4.1 + 3.5
+
+  const companias = [...new Set(d.filas.map((f) => f.compania))]
+  const etiquetasDia = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((nom, i) =>
+    d.diasCortos[i] ? `${nom} ${d.diasCortos[i]}` : nom,
+  )
+
+  const colsMatriz: ColPeso[] = [
+    { titulo: 'Placa', ancho: 18 },
+    { titulo: 'Descripción · Chofer', ancho: 42 },
+    ...etiquetasDia.map((t) => ({ titulo: t, ancho: 12, alDerecha: true })),
+    { titulo: 'Viajes', ancho: 14, alDerecha: true },
+    ...(d.hayDinero
+      ? [
+          { titulo: 'm³', ancho: 15, alDerecha: true },
+          { titulo: 'Monto $', ancho: 20, alDerecha: true },
+        ]
+      : [{ titulo: 'm³', ancho: 18, alDerecha: true }]),
+  ]
+
+  for (const comp of companias) {
+    const suyas = d.filas.filter((f) => f.compania === comp)
+    const totDias = [0, 1, 2, 3, 4, 5, 6].map((i) =>
+      suyas.reduce((s, f) => s + (f.porDia[i] ?? 0), 0),
+    )
+    const subViajes = suyas.reduce((s, f) => s + f.viajes, 0)
+    const subConM3 = suyas.some((f) => f.m3 !== null)
+    const subM3 = suyas.reduce((s, f) => s + Number(f.m3 ?? 0), 0)
+    const subMonto = suyas.reduce((s, f) => s + Number(f.montoUsd ?? 0), 0)
+
+    y = tablaApaisada(
+      doc,
+      y,
+      bordes,
+      abajo,
+      arriba,
+      `${comp} (${suyas.length} ${suyas.length === 1 ? 'camión' : 'camiones'})`,
+      colsMatriz,
+      suyas.map((f) => {
+        const desc = [f.nombre, f.chofer].filter(Boolean).join(' · ') || '—'
+        const celdasDia = f.porDia.map((n) => (n > 0 ? cantidad(n) : '—'))
+        const celdaViajes =
+          f.porAprobar > 0 ? `${cantidad(f.viajes)} (+${cantidad(f.porAprobar)})` : cantidad(f.viajes)
+        const base = [
+          f.placa,
+          desc,
+          ...celdasDia,
+          celdaViajes,
+          f.m3 !== null ? cantidad(f.m3) : '—',
+        ]
+        return d.hayDinero
+          ? [...base, f.montoUsd !== null ? `$ ${numero(f.montoUsd)}` : '—']
+          : base
+      }),
+      [
+        `Subtotal ${comp}`,
+        '',
+        ...totDias.map((n) => (n > 0 ? cantidad(n) : '—')),
+        cantidad(subViajes),
+        subConM3 ? cantidad(subM3) : '—',
+        ...(d.hayDinero ? [`$ ${numero(subMonto)}`] : []),
+      ],
+    )
+  }
+
+  if (d.rutas.length > 0) {
+    const colsRutas: ColPeso[] = [
+      { titulo: 'Ruta de acarreo', ancho: 56 },
+      { titulo: 'Camiones', ancho: 16, alDerecha: true },
+      { titulo: 'Viajes aprobados', ancho: 20, alDerecha: true },
+      { titulo: 'Por aprobar', ancho: 18, alDerecha: true },
+      { titulo: 'm³ movidos', ancho: 20, alDerecha: true },
+      ...(d.hayDinero ? [{ titulo: 'Monto $', ancho: 24, alDerecha: true }] : []),
+    ]
+
+    y = tablaApaisada(
+      doc,
+      y,
+      bordes,
+      abajo,
+      arriba,
+      'Desglose semanal por ruta',
+      colsRutas,
+      d.rutas.map((r) => [
+        r.ruta,
+        cantidad(r.equipos),
+        cantidad(r.viajes),
+        r.porAprobar > 0 ? cantidad(r.porAprobar) : '—',
+        r.m3 !== null ? cantidad(r.m3) : '—',
+        ...(d.hayDinero ? [r.montoUsd !== null ? `$ ${numero(r.montoUsd)}` : '—'] : []),
+      ]),
+      [
+        'Total rutas',
+        '',
+        cantidad(totalViajes),
+        totalPorAprobar > 0 ? cantidad(totalPorAprobar) : '—',
+        conM3.length > 0 ? cantidad(totalM3) : '—',
+        ...(d.hayDinero ? [`$ ${numero(totalUsd)}`] : []),
+      ],
+    )
+  }
+
+  pieDePagina(
+    doc,
+    `Reporte semanal de acarreos internos · ${periodo} · emitido por ${d.emitidoPor}`,
+    bordes,
+  )
+  doc.setProperties({ title: `Reporte semanal de acarreos — ${periodo}` })
+
+  const sufijo = d.companiaFiltro
+    ? `-${d.companiaFiltro.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
+    : ''
+  return {
+    blob: doc.output('blob'),
+    nombre: `acarreos-semana-${d.desde}_a_${d.hasta}${sufijo}.pdf`,
+  }
+}
+
+/* ═══════════════════════════ ficha individual de viajes de un camión (A4) */
+
+export interface ViajeIndividualPdf {
+  fecha: string
+  secuencia: number
+  ruta: string
+  hora: string | null
+  carga: string
+  m3: string | null
+  precio_usd: string | null
+  estado: string
+}
+
+export interface DatosViajesDeEquipo {
+  desde: string
+  hasta: string
+  placa: string
+  nombre: string
+  compania: string
+  chofer: string | null
+  cargaUtilM3: string | null
+  viajes: ViajeIndividualPdf[]
+  empresa_papel: EmpresaPapel
+  emitidoPor: string
+  momento: Date
+}
+
+const COLUMNAS_EQUIPO: Columna[] = [
+  { titulo: 'Fecha', ancho: 22 },
+  { titulo: 'N.º', ancho: 11, alDerecha: true },
+  { titulo: 'Ruta', ancho: 47 },
+  { titulo: 'Hora', ancho: 14 },
+  { titulo: 'm³', ancho: 18, alDerecha: true },
+  { titulo: 'Precio', ancho: 20, alDerecha: true },
+  { titulo: 'Estado', ancho: 18 },
+]
+
+/** Ficha PDF con todos los viajes de un camión o máquina en un día o rango de fechas. */
+export async function armarViajesDeEquipo(d: DatosViajesDeEquipo): Promise<ArchivoArmado> {
+  const { jsPDF } = await import('jspdf')
+  const logo = await logoComoImagen()
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
+
+  const periodo = periodoDice(d.desde, d.hasta)
+  const vivos = d.viajes.filter((v) => v.estado === 'APROBADO' || v.estado === 'REGISTRADO')
+  const porAprobar = d.viajes.filter((v) => v.estado === 'POR_APROBAR').length
+  const conM3 = vivos.filter((v) => v.m3 !== null)
+  const totalM3 = conM3.reduce((s, v) => s + Number(v.m3 ?? 0), 0)
+  const hayDinero = vivos.some((v) => v.precio_usd !== null)
+  const totalUsd = vivos.reduce((s, v) => s + Number(v.precio_usd ?? 0), 0)
+
+  let y = membrete(doc, logo, {
+    empresa: d.empresa_papel,
+    datos: [
+      ['Período', periodo],
+      ['Equipo', d.placa],
+    ],
+  })
+
+  y = tituloDocumento(doc, y, `Historial de acarreos · ${d.placa}`)
+  y = lineaEmpresa(
+    doc,
+    y,
+    `${d.empresa_papel.razonSocial} · RIF ${d.empresa_papel.rif} · Acarreos internos`,
+  )
+
+  y = seccion(doc, y, 'Ficha del equipo y resumen')
+  y = etiquetaValor(doc, y, [
+    ['Placa / Código', d.placa],
+    ['Descripción', d.nombre || '—'],
+    ['Compañía', d.compania],
+    ['Chofer asignado', d.chofer ?? '—'],
+    ['Carga útil', d.cargaUtilM3 ? `${cantidad(d.cargaUtilM3)} m³` : 'Sin medir'],
+    ['Viajes aprobados', cantidad(vivos.length)],
+    ...(porAprobar > 0
+      ? ([['Viajes por aprobar', cantidad(porAprobar)]] as Array<[string, string]>)
+      : []),
+    ['Volumen total', conM3.length > 0 ? `${cantidad(totalM3)} m³` : '—'],
+    ...(hayDinero ? ([['Monto generado', `$ ${numero(totalUsd)}`]] as Array<[string, string]>) : []),
+  ])
+
+  y = seccion(doc, y, 'Desglose viaje por viaje')
+  tabla(
+    doc,
+    y,
+    COLUMNAS_EQUIPO,
+    d.viajes.map((v) => [
+      fechaCorta(v.fecha),
+      String(v.secuencia),
+      v.ruta.replace(/\s*(→|->)\s*/g, ' a '),
+      v.hora?.slice(0, 5) ?? '—',
+      oNada(v.m3),
+      oNada(v.precio_usd, true),
+      ({
+        APROBADO: 'Aprobado',
+        REGISTRADO: 'Contado',
+        POR_APROBAR: 'Por aprobar',
+        RECHAZADO: 'Rechazado',
+        ANULADO: 'Anulado',
+      } as Record<string, string>)[v.estado] ?? v.estado,
+    ]),
+    hayDinero
+      ? `${d.placa} · ${cantidad(vivos.length)} viajes aprobados   $ ${numero(totalUsd)}`
+      : `${d.placa} · ${cantidad(vivos.length)} viajes aprobados`,
+  )
+
+  pieDePagina(
+    doc,
+    `Historial de acarreos · ${d.placa} · ${periodo} · emitido por ${d.emitidoPor}`,
+  )
+  doc.setProperties({ title: `Acarreos ${d.placa} — ${periodo}` })
+
+  const placaLimpia = d.placa.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+  return {
+    blob: doc.output('blob'),
+    nombre: `acarreos-${placaLimpia}-${d.desde}_a_${d.hasta}.pdf`,
+  }
+}
+
+/** Texto resumen semanal listo para copiar y pegar en WhatsApp. */
+export function textoDelReporteSemanal(d: {
+  desde: string
+  hasta: string
+  razonSocial: string
+  companiaFiltro: string | null
+  filas: FilaSemanalPdf[]
+  rutas: ResumenRutaSemanalPdf[]
+  hayDinero: boolean
+  observaciones?: string
+}): string {
+  const periodo = periodoDice(d.desde, d.hasta)
+  const totalViajes = d.filas.reduce((s, f) => s + f.viajes, 0)
+  const totalPorAprobar = d.filas.reduce((s, f) => s + f.porAprobar, 0)
+  const conM3 = d.filas.filter((f) => f.m3 !== null)
+  const totalM3 = conM3.reduce((s, f) => s + Number(f.m3 ?? 0), 0)
+  const totalUsd = d.filas.reduce((s, f) => s + Number(f.montoUsd ?? 0), 0)
+
+  const lineas: string[] = [
+    `*REPORTE SEMANAL DE ACARREOS INTERNOS*`,
+    d.razonSocial ? `${d.razonSocial}` : '',
+    `Semana: *${periodo}* (Lun a Dom)`,
+    d.companiaFiltro ? `Compañía: *${d.companiaFiltro}*` : '',
+    '',
+    `*RESUMEN GENERAL*`,
+    `• Camiones activos: ${d.filas.length}`,
+    `• Viajes aprobados: ${cantidad(totalViajes)}${totalPorAprobar > 0 ? ` (+${cantidad(totalPorAprobar)} por aprobar)` : ''}`,
+    `• Volumen movido: ${conM3.length > 0 ? `${cantidad(totalM3)} m³` : '—'}`,
+    d.hayDinero ? `• Total generado: $ ${numero(totalUsd)}` : '',
+  ].filter((x, i, arr) => x !== '' || arr[i - 1] !== '')
+
+  if (d.rutas.length > 0) {
+    lineas.push('', `*POR RUTA*`)
+    for (const r of d.rutas) {
+      const m3Txt = r.m3 !== null ? ` · ${cantidad(r.m3)} m³` : ''
+      const usdTxt = d.hayDinero && r.montoUsd !== null ? ` · $ ${numero(r.montoUsd)}` : ''
+      lineas.push(`• ${r.ruta}: ${cantidad(r.viajes)} viajes${m3Txt}${usdTxt}`)
+    }
+  }
+
+  const companias = [...new Set(d.filas.map((f) => f.compania))]
+  if (companias.length > 0) {
+    lineas.push('', `*POR COMPAÑÍA Y CAMIÓN*`)
+    for (const comp of companias) {
+      const suyas = d.filas.filter((f) => f.compania === comp)
+      const subV = suyas.reduce((s, f) => s + f.viajes, 0)
+      const subUsd = suyas.reduce((s, f) => s + Number(f.montoUsd ?? 0), 0)
+      lineas.push(
+        `*${comp}* (${cantidad(subV)} viajes${d.hayDinero ? ` · $ ${numero(subUsd)}` : ''}):`,
+      )
+      for (const f of suyas) {
+        const desc = f.nombre ? ` (${f.nombre})` : ''
+        const m3Txt = f.m3 !== null ? ` · ${cantidad(f.m3)} m³` : ''
+        lineas.push(`  - ${f.placa}${desc}: ${cantidad(f.viajes)} viajes${m3Txt}`)
+      }
+    }
+  }
+
+  if (d.observaciones && d.observaciones.trim()) {
+    lineas.push('', `*OBSERVACIONES*`, d.observaciones.trim())
+  }
+
+  return lineas.join('\n').trim()
 }

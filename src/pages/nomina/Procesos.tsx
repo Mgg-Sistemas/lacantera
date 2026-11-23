@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { BadgeCheck, Ban, Calculator, CalendarPlus, Undo2, Wallet } from 'lucide-react'
+import { BadgeCheck, Ban, Calculator, CalendarPlus, Landmark, Undo2, Wallet } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Pestanas } from '@/components/Pestanas'
 import { PESTANAS_PERIODO } from '@/components/pestanasDeModulos'
@@ -32,6 +32,9 @@ import { hoyEnCaracas, useTasaDeFecha, useTasaVigente } from '@/lib/api/tasas'
 
 import { useMisRoles } from '@/lib/api/catalogo'
 import { bolivares, dolares, fecha } from '@/lib/formato'
+import { Visor } from '@/components/Visor'
+import type { PdfArmado } from '@/lib/ficha/reciboPdf'
+import { ModalPagoBancario } from './ModalPagoBancario'
 
 /**
  * El aviso de que el período va con una tasa que ya no es la de hoy, o `null`.
@@ -176,6 +179,10 @@ export function Procesos() {
   const [pago, setPago] = useState({ referencia: '', fecha: '' })
   const [anulando, setAnulando] = useState<Periodo | null>(null)
   const [motivo, setMotivo] = useState('')
+  const [bancoPeriodoId, setBancoPeriodoId] = useState<number | null>(null)
+  const [vistaPdf, setVistaPdf] = useState<
+    (PdfArmado & { titulo: string; descripcion: string }) | null
+  >(null)
 
   /*
     DEVOLVER PREGUNTA ANTES, Y NO ES CELO: PASÓ.
@@ -385,11 +392,23 @@ export function Procesos() {
                   ) : null}
 
                   {Number(p.recibos ?? 0) > 0 ? (
-                    <Link to={`/app/nomina/recibos?periodo=${p.id}`}>
-                      <Button size="sm" variant="outline">
-                        Ver recibos
-                      </Button>
-                    </Link>
+                    <>
+                      <Link to={`/app/nomina/recibos?periodo=${p.id}`}>
+                        <Button size="sm" variant="outline">
+                          Ver recibos
+                        </Button>
+                      </Link>
+                      {puedeRRHH ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          icon={<Landmark />}
+                          onClick={() => setBancoPeriodoId(p.id)}
+                        >
+                          Pago bancario
+                        </Button>
+                      ) : null}
+                    </>
                   ) : null}
 
                   {puedeGerente && p.estado === 'CALCULADA' ? (
@@ -763,6 +782,22 @@ export function Procesos() {
           ) : null}
         </Modal>
       ) : null}
+
+      <ModalPagoBancario
+        abierto={bancoPeriodoId !== null}
+        onCerrar={() => setBancoPeriodoId(null)}
+        periodoInicialId={bancoPeriodoId}
+        onVerPdf={(pdf) => setVistaPdf(pdf)}
+      />
+
+      <Visor
+        abierto={vistaPdf !== null}
+        onCerrar={() => setVistaPdf(null)}
+        blob={vistaPdf?.blob ?? null}
+        nombreArchivo={vistaPdf?.nombre ?? 'pago-nomina.pdf'}
+        titulo={vistaPdf?.titulo ?? ''}
+        descripcion={vistaPdf?.descripcion}
+      />
     </>
   )
 }

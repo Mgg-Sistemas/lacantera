@@ -8,6 +8,7 @@ import {
   PackageMinus,
   SendHorizontal,
   Smartphone,
+  Truck,
   X,
 } from 'lucide-react'
 import { Ayuda } from '@/components/Ayuda'
@@ -34,6 +35,7 @@ import {
   useCancelarSolicitud,
   useComoAprueboSalidas,
   useEntregarSolicitud,
+  useNotasDeEntregaDeSalidas,
   usePersonasDeLaEmpresa,
   useRechazarSolicitud,
   useSolicitudesDeSalida,
@@ -42,6 +44,7 @@ import type { SolicitudDeSalida } from '@/lib/api/salidas'
 import { ModalSalida } from './ModalSalida'
 import { ModalReporteSalida } from './ModalReporteSalida'
 import { ModalEditarSolicitud } from './ModalEditarSolicitud'
+import { ModalFormatoSalidaAutorizada } from './ModalFormatoSalidaAutorizada'
 import { textoSalidaAprobada, textoSalidaPedida, textoSalidaRechazada } from '@/lib/ficha/salidasWhatsapp'
 import { ModalWhatsappCompra } from '@/pages/compras/ModalWhatsappCompra'
 import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
@@ -115,6 +118,7 @@ const CLAVE_MODO = 'salidas.solicitudes.modo'
 export function Solicitudes() {
   const [verTodas, setVerTodas] = useState(false)
   const [pidiendo, setPidiendo] = useState(false)
+  const [abriendoFormato, setAbriendoFormato] = useState(false)
   const [desdeFila, setDesdeFila] = useState<{ articulo?: string; almacen?: string }>({})
   const [cerrando, setCerrando] = useState<{ s: SolicitudDeSalida; como: 'RECHAZAR' | 'CANCELAR' } | null>(null)
   const [motivo, setMotivo] = useState('')
@@ -220,6 +224,11 @@ export function Solicitudes() {
     o quien sea de fuera—, que es lo que aquí hace de «solicitante» de MGG.
   */
   const cargadas = useMemo(() => solicitudes ?? [], [solicitudes])
+  const numerosEntregadasExternas = useMemo(
+    () => cargadas.filter((s) => s.nota_salida && s.destino_externo).map((s) => s.nota_salida!),
+    [cargadas],
+  )
+  const { data: notasEntregaPorSalida } = useNotasDeEntregaDeSalidas(numerosEntregadasExternas)
   const usuariosOpc = useMemo(() => {
     const ids = [...new Set(cargadas.map((s) => s.pedida_por).filter((u): u is string => Boolean(u)))]
     return ids
@@ -270,8 +279,9 @@ export function Solicitudes() {
     LOS BOTONES DE UNA SOLICITUD, LOS DE SIEMPRE. Los usan la lista y el
     detalle del tablero; la lógica no se toca.
   */
-  const botonesDe = (s: SolicitudDeSalida) => {
+  const botonesDe = (s: SolicitudDeSalida, alActuar?: () => void) => {
     const puedo = quePuedoHacerConLaSolicitud(s, comoApruebo, puedoSacar)
+    const ne = s.nota_salida ? notasEntregaPorSalida?.get(s.nota_salida) : undefined
     return (
       <>
         {puedo.aprobar ? (
@@ -280,6 +290,7 @@ export function Solicitudes() {
             icon={<PackageCheck />}
             disabled={aprobar.isPending}
             onClick={() => {
+              alActuar?.()
               setFallo(null)
               if (tengoFirma) {
                 setConMiFirma(true)
@@ -309,6 +320,7 @@ export function Solicitudes() {
           variant="ghost"
           icon={<FileText />}
           onClick={() => {
+            alActuar?.()
             setFallo(null)
             void nota.abrirOrden(s)
           }}
@@ -322,6 +334,7 @@ export function Solicitudes() {
             variant="ghost"
             icon={<FileText />}
             onClick={() => {
+              alActuar?.()
               setFallo(null)
               void nota.abrir(s.nota_salida!, s.motivo)
             }}
@@ -330,12 +343,69 @@ export function Solicitudes() {
           </Button>
         ) : null}
 
+        {s.nota_salida && s.destino_externo ? (
+          ne ? (
+            <>
+              <Button
+                size="sm"
+                variant="ghost"
+                icon={<FileText />}
+                disabled={nota.armandoEntregaId === ne.id}
+                onClick={() => {
+                  alActuar?.()
+                  setFallo(null)
+                  void nota.verNotaDeEntrega(ne)
+                }}
+              >
+                {nota.armandoEntregaId === ne.id ? 'Armando…' : `Entrega ${ne.numero}`}
+              </Button>
+              {ne.estado === 'PENDIENTE' ? (
+                <Chip tone="warning">Pendiente</Chip>
+              ) : !ne.facturable ? (
+                <Chip tone="neutral">Solo respaldo</Chip>
+              ) : null}
+              {ne.estado !== 'ANULADA' && nota.puedoGenerarNotaEntrega ? (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  icon={<Truck />}
+                  onClick={() => {
+                    alActuar?.()
+                    nota.editarCamionesNotaDeEntrega(ne)
+                  }}
+                >
+                  Camiones{ne.camiones?.length ? ` (${ne.camiones.length})` : ''}
+                </Button>
+              ) : null}
+            </>
+          ) : nota.puedoGenerarNotaEntrega ? (
+            <label className="border-hairline hover:border-royal-600/50 bg-surface text-ink/85 inline-flex cursor-pointer items-center gap-1.5 rounded-[6px] border px-2.5 py-1 text-xs font-semibold transition-colors">
+              <input
+                type="checkbox"
+                className="accent-royal-600 size-3.5 shrink-0"
+                checked={nota.notaEnCurso === s.nota_salida}
+                onChange={(e) => {
+                  if (e.target.checked && s.nota_salida && s.destino_externo) {
+                    alActuar?.()
+                    setFallo(null)
+                    void nota.pedirNotaDeEntrega(s.nota_salida, s.destino_externo)
+                  }
+                }}
+              />
+              Generar nota de entrega
+            </label>
+          ) : null
+        ) : null}
+
         {s.nota_salida ? (
           <Button
             size="sm"
             variant="ghost"
             icon={<MessageCircle />}
-            onClick={() => setVerReporteSalida({ s, notaSalida: s.nota_salida! })}
+            onClick={() => {
+              alActuar?.()
+              setVerReporteSalida({ s, notaSalida: s.nota_salida! })
+            }}
           >
             Reporte
           </Button>
@@ -345,6 +415,7 @@ export function Solicitudes() {
             variant="ghost"
             icon={<MessageCircle />}
             onClick={() => {
+              alActuar?.()
               const empresa = empresaDelPapel(datosEmpresa).razonSocial
               setWs({
                 titulo: `Avisar por WhatsApp · ${s.numero}`,
@@ -372,6 +443,7 @@ export function Solicitudes() {
             variant="ghost"
             icon={<X />}
             onClick={() => {
+              alActuar?.()
               setMotivo('')
               setCerrando({ s, como: 'RECHAZAR' })
             }}
@@ -386,6 +458,7 @@ export function Solicitudes() {
             icon={<PackageMinus />}
             disabled={entregar.isPending}
             onClick={() => {
+              alActuar?.()
               setFallo(null)
               entregar.mutate(s.id, {
                 onSuccess: (numero) => {
@@ -415,7 +488,10 @@ export function Solicitudes() {
             size="sm"
             variant="ghost"
             title={s.estado === 'APROBADA' ? 'Al guardar, vuelve a Por aprobar' : 'Cambiar materiales o el para qué'}
-            onClick={() => setEditando(s)}
+            onClick={() => {
+              alActuar?.()
+              setEditando(s)
+            }}
           >
             ✎ Editar
           </Button>
@@ -426,6 +502,7 @@ export function Solicitudes() {
             size="sm"
             variant="ghost"
             onClick={() => {
+              alActuar?.()
               setMotivo('')
               setCerrando({ s, como: 'CANCELAR' })
             }}
@@ -449,6 +526,9 @@ export function Solicitudes() {
                 Vista de teléfono
               </Button>
             </Link>
+            <Button variant="outline" icon={<FileText />} onClick={() => setAbriendoFormato(true)}>
+              Formato de salida
+            </Button>
             <Button icon={<SendHorizontal />} onClick={() => setPidiendo(true)}>
               Solicitar salida
             </Button>
@@ -715,13 +795,8 @@ export function Solicitudes() {
           titulo={`Solicitud ${detalle.numero}`}
           ancho="lg"
           acciones={
-            <div
-              className="flex flex-wrap items-center justify-end gap-2"
-              onClickCapture={(e) => {
-                if ((e.target as HTMLElement).closest('button')) setDetalleId(null)
-              }}
-            >
-              {botonesDe(detalle)}
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {botonesDe(detalle, () => setDetalleId(null))}
               <Button variant="ghost" onClick={() => setDetalleId(null)}>
                 Cerrar
               </Button>
@@ -861,6 +936,11 @@ export function Solicitudes() {
       ) : null}
 
       {nota.visor}
+
+      <ModalFormatoSalidaAutorizada
+        abierto={abriendoFormato}
+        onCerrar={() => setAbriendoFormato(false)}
+      />
 
       {verReporteSalida ? (
         <ModalReporteSalida

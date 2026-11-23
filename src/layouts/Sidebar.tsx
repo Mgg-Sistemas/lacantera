@@ -70,7 +70,12 @@ function menuVisible(
  * resto) y el manual, que se ve siempre.
  */
 function seccionesSoloTelefono(puedeAccion: (accion: string) => boolean): NavSection[] {
-  const pantallas = PANTALLAS_DE_TELEFONO.filter((p) => puedeAccion(p.accion))
+  const vistas = new Set<string>()
+  const pantallas = PANTALLAS_DE_TELEFONO.filter((p) => {
+    if (!puedeAccion(p.accion) || vistas.has(p.ruta)) return false
+    vistas.add(p.ruta)
+    return true
+  })
 
   return [
     {

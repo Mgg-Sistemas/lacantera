@@ -1,78 +1,55 @@
 /*
-  Viajes de camiones.
+  Acarreos internos (antes «Viajes de camiones»).
 
-  Sustituye tres hojas de Excel: la planilla diaria por camión, el registro de
-  pago por empresa, y el resumen de transporte del reporte de operaciones.
-
-  DOS DECISIONES QUE SE VEN EN LA PANTALLA
-
-  1. Se carga por cantidad y la cantidad SUMA. Debajo del campo se dice qué va
-     a quedar —«ya tiene 3, quedarán 8»— porque el error del otro proyecto fue
-     que alguien tecleara el total del día creyendo que reemplazaba.
-
-  2. Lo que no se sabe va en blanco. Un camión sin carga útil cargada enseña un
-     guion en los metros cúbicos, no un cero, y el pie de la lista dice cuántos
-     camiones no están sumando. Un total corto sin explicación es peor que no
-     tener total.
-
-  Y DESDE EL 16/09/2026, TRES MÁS
-
-  3. Las columnas son RUTAS, no tres tramos fijos. Christopher: «¿qué pasa si
-     mañana cierra o abre una nueva planta?». Una ruta nueva aparece sola como
-     columna, y una apagada deja de ofrecerse sin que desaparezcan sus viajes.
-
-  4. Todo viaje nuevo nace POR APROBAR y no cuenta para el pago hasta que lo
-     aprueba «por lo mínimo un analista o responsable». La tabla enseña los que
-     cuentan y, al lado, los que esperan; arriba está lo que hay que decidir.
-
-  5. El viaje dice cómo volvió: completo, parcial o vacío. «En cada viaje se
-     debe obtener material, aunque debemos evaluar la posibilidad de que algún
-     camión vuelva sin carga o sin carga completa».
+  Sustituye las hojas de control diario por camión, el corte semanal de lunes a
+  domingo, el registro de pago por compañía y el resumen de transporte del
+  reporte de operaciones.
 */
-import { useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import {
-  Ban,
   Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ClipboardCopy,
   Coins,
   Download,
+  Filter,
   MessageSquare,
-  Pencil,
   Plus,
   Printer,
   Route,
+  Search,
   Truck,
-  Undo2,
   X,
 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Select } from '@/components/ui/Select'
+import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { Visor } from '@/components/Visor'
 import {
   CARGA_DEL_VIAJE,
-  ESTADO_VIAJE,
+  claveEquipo,
+  esEquipo,
+  esFechaIso,
+  lunesDeSemana,
   puedoDecidirViaje,
+  sumarDiasIso,
   tarifaEnPalabras,
   useAcarreosDelDia,
-  useAcarreosDeEquipo,
   useAcarreosDia,
   useAjustarPrecioDeViajes,
-  useAnularAcarreo,
-  useDevolverViajes,
   useAprobarViajes,
   useComoApruebo,
-  useCorregirAcarreo,
   useEquiposEnOperacion,
-  useMaquinasParaViajes,
   usePagoDeAcarreosEntre,
   useRechazarViajes,
   useRegistrarViajes,
@@ -80,9 +57,10 @@ import {
   type Acarreo,
   type AcarreoDia,
   type CargaDelViaje,
+  type EquipoAcarreo,
   type RutaAcarreo,
 } from '@/lib/api/acarreos'
-import { useVehiculos, type Vehiculo } from '@/lib/api/vehiculos'
+import { useVehiculos } from '@/lib/api/vehiculos'
 import { leerFirmasEncendidas, useMiFirma } from '@/lib/api/firmas'
 import type { FirmaDelDia, FirmasDelDia } from '@/lib/ficha/viajesPdf'
 import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
@@ -99,6 +77,8 @@ import { useMisPermisos } from '@/lib/api/usuarios'
 import { hoyEnCaracas } from '@/lib/api/tasas'
 import { dolares, enteros, fecha as fmtFecha } from '@/lib/formato'
 import { cn } from '@/lib/cn'
+import { DetalleEquipoModal } from './DetalleEquipoModal'
+import { PestanaSemanal } from './PestanaSemanal'
 
 /** Un número que puede no saberse. El guion es la respuesta, no un hueco. */
 function Cifra({ valor, comoDinero = false }: { valor: string | null; comoDinero?: boolean }) {
@@ -106,25 +86,16 @@ function Cifra({ valor, comoDinero = false }: { valor: string | null; comoDinero
   return <>{comoDinero ? dolares(valor) : enteros(valor)}</>
 }
 
-/** Quién hizo los viajes: un camión de tercero o una máquina propia. */
-interface Equipo {
-  vehiculoId: number | null
-  maquinaId: number | null
-  placa: string
-  detalle: string
-}
-
-const esDe = (f: { vehiculo_id: number | null; maquina_id: number | null }, e: Equipo) =>
-  e.vehiculoId !== null ? f.vehiculo_id === e.vehiculoId : f.maquina_id === e.maquinaId
+type PestanaPrincipal = 'dia' | 'semanal' | 'pago'
 
 export function Viajes() {
-  const [pestana, setPestana] = useState<'dia' | 'pago'>('dia')
+  const [pestana, setPestana] = useState<PestanaPrincipal>('dia')
 
   return (
     <>
       <PageHeader
-        title="Viajes de camiones"
-        description="Viajes por camión o máquina y por ruta. Cada viaje nuevo queda pendiente de aprobación del responsable de la mina o planta, o de quien tenga ese permiso; hasta entonces no cuenta para el pago."
+        title="Acarreos internos"
+        description="Control diario y semanal de viajes por camión, compañía y ruta. Cada viaje nuevo queda pendiente de aprobación del responsable antes de contar para el pago."
         actions={
           <Link to="/app/explotacion/plantas">
             <Button variant="outline" icon={<Route />}>
@@ -134,10 +105,11 @@ export function Viajes() {
         }
       />
 
-      <div className="border-hairline mb-5 flex gap-1 border-b">
+      <div className="border-hairline mb-5 flex flex-wrap gap-1 border-b">
         {(
           [
-            { id: 'dia', etiqueta: 'Viajes del día' },
+            { id: 'dia', etiqueta: 'Acarreos del día' },
+            { id: 'semanal', etiqueta: 'Reporte semanal' },
             { id: 'pago', etiqueta: 'Registro de pago' },
           ] as const
         ).map((p) => (
@@ -158,23 +130,42 @@ export function Viajes() {
         ))}
       </div>
 
-      {pestana === 'dia' ? <PestanaDia /> : <PestanaPago />}
+      {pestana === 'dia' ? (
+        <PestanaDia />
+      ) : pestana === 'semanal' ? (
+        <PestanaSemanal />
+      ) : (
+        <PestanaPago />
+      )}
     </>
   )
 }
 
-/* ══════════════════════════════════════════════════════ los viajes del día */
+/* ═══════════════════════════════════════════════════ los acarreos del día */
 
 function PestanaDia() {
-  const [dia, setDia] = useState(hoyEnCaracas())
-  const [detalle, setDetalle] = useState<Equipo | null>(null)
+  const hoy = hoyEnCaracas()
+  const [dia, setDia] = useState(hoy)
+  const [detalle, setDetalle] = useState<EquipoAcarreo | null>(null)
   const [pdf, setPdf] = useState<ArchivoArmado | null>(null)
   const [conDescartados, setConDescartados] = useState(false)
   const [rehaciendo, setRehaciendo] = useState(false)
   const [reporte, setReporte] = useState(false)
+  const [verTarifas, setVerTarifas] = useState(false)
+
+  // Búsqueda y filtros de desglose (por defecto muestra toda la flota como hoy)
+  const [busqueda, setBusqueda] = useState('')
+  const [companiaFiltro, setCompaniaFiltro] = useState('')
+  const [rutaFiltro, setRutaFiltro] = useState('')
+  const [soloConViajes, setSoloConViajes] = useState(false)
+  const [plegadas, setPlegadas] = useState<Record<string, boolean>>({})
+
+  // Formulario unificado de registro rápido
+  const [mostrarCarga, setMostrarCarga] = useState(true)
+  const [clavePreseleccionada, setClavePreseleccionada] = useState('')
+  const refCarga = useRef<HTMLDivElement>(null)
 
   const vehiculos = useVehiculos(true)
-  const maquinas = useMaquinasParaViajes()
   const rutas = useRutasAcarreo()
   const dias = useAcarreosDia(dia)
   const todos = useAcarreosDelDia(dia)
@@ -184,56 +175,144 @@ function PestanaDia() {
   const { puede } = useMisPermisos()
   const escribe = puede('EXPLOTACION', 'ESCRITURA')
 
-  const filas = dias.data ?? []
-  const flota = vehiculos.data ?? []
-  const listaRutas = rutas.data ?? []
-  const usables = listaRutas.filter((r) => r.se_puede_usar)
+  // Solo registros de camiones (se ocultan las maquinarias operativas)
+  const filas = useMemo(
+    () => (dias.data ?? []).filter((f) => f.vehiculo_id !== null),
+    [dias.data],
+  )
+  const viajesDelDia = useMemo(
+    () => (todos.data ?? []).filter((v) => v.vehiculo_id !== null),
+    [todos.data],
+  )
+  const flota = useMemo(() => vehiculos.data ?? [], [vehiculos.data])
+  const listaRutas = useMemo(() => rutas.data ?? [], [rutas.data])
 
-  /* Las columnas: las rutas que se pueden usar, y además las que tienen
-     viajes ese día aunque ya estén apagadas o su planta cerrada. Un viaje no
-     desaparece de la tabla porque su ruta se apague después. */
-  const columnas = listaRutas.filter(
-    (r) => r.se_puede_usar || filas.some((f) => f.ruta_id === r.id),
+  const usables = useMemo(() => listaRutas.filter((r) => r.se_puede_usar), [listaRutas])
+
+  const columnas = useMemo(
+    () => listaRutas.filter((r) => r.se_puede_usar || filas.some((f) => f.ruta_id === r.id)),
+    [listaRutas, filas],
   )
 
-  // Lo que ya tiene cada equipo hoy en una ruta, esperen o no, para decir «quedarán 8».
-  const yaTiene = (e: Equipo, rutaId: number) =>
-    filas
-      .filter((f) => esDe(f, e) && f.ruta_id === rutaId)
+  // Solo el registro de camiones
+  const todosLosEquipos = useMemo<EquipoAcarreo[]>(
+    () =>
+      flota.map((v) => ({
+        vehiculoId: v.id,
+        maquinaId: null,
+        placa: v.placa,
+        nombre: v.descripcion ?? '',
+        chofer: v.chofer_actual,
+        compania: v.propio ? 'Flota propia' : (v.transportista ?? 'Sin transportista'),
+        cargaUtilM3: v.carga_util_m3,
+        capacidadM3: v.capacidad_m3,
+      })),
+    [flota],
+  )
+
+  // Índice rápido de filas del día por camión
+  const filasPorEquipo = useMemo(() => {
+    const mapa = new Map<string, AcarreoDia[]>()
+    for (const f of filas) {
+      if (f.vehiculo_id === null) continue
+      const k = `v:${f.vehiculo_id}`
+      mapa.set(k, [...(mapa.get(k) ?? []), f])
+    }
+    return mapa
+  }, [filas])
+
+  const yaTiene = (e: EquipoAcarreo, rutaId: number) =>
+    (filasPorEquipo.get(claveEquipo(e)) ?? [])
+      .filter((f) => f.ruta_id === rutaId)
       .reduce((s, f) => s + f.viajes + f.por_aprobar, 0)
 
-  const totalViajes = filas.reduce((s, f) => s + f.viajes, 0)
-  const totalPorAprobar = filas.reduce((s, f) => s + f.por_aprobar, 0)
-  const totalM3 = filas.reduce((s, f) => s + Number(f.m3 ?? 0), 0)
-  const sinCarga = filas.reduce((s, f) => s + f.sin_carga, 0)
-  const hayDinero = filas.some((f) => f.monto_usd !== null)
-  const totalUsd = filas.reduce((s, f) => s + Number(f.monto_usd ?? 0), 0)
+  const companiasDisponibles = useMemo(
+    () => [...new Set(todosLosEquipos.map((eq) => eq.compania))].sort(),
+    [todosLosEquipos],
+  )
 
-  // Los camiones se agrupan por empresa porque es a la empresa a quien se le
-  // paga, no al camión.
-  const porEmpresa = new Map<string, Vehiculo[]>()
-  for (const v of flota) {
-    const empresa = v.propio ? 'Flota propia' : (v.transportista ?? 'Sin transportista')
-    porEmpresa.set(empresa, [...(porEmpresa.get(empresa) ?? []), v])
+  const termino = busqueda.trim().toLowerCase()
+
+  // Camiones filtrados por búsqueda, compañía, ruta y botón «Solo con viajes»
+  const seccionesPorCompania = useMemo(() => {
+    const mapa = new Map<string, EquipoAcarreo[]>()
+    for (const eq of todosLosEquipos) {
+      const suyas = filasPorEquipo.get(claveEquipo(eq)) ?? []
+      const movioHoy = suyas.some(
+        (f) => f.viajes > 0 || f.por_aprobar > 0 || f.rechazados > 0 || f.anulados > 0,
+      )
+
+      if (companiaFiltro && eq.compania !== companiaFiltro) continue
+
+      if (rutaFiltro) {
+        const movioEnRuta = suyas.some(
+          (f) => String(f.ruta_id) === rutaFiltro && (f.viajes > 0 || f.por_aprobar > 0),
+        )
+        if (!movioEnRuta) continue
+      }
+
+      if (soloConViajes && !movioHoy) continue
+
+      if (termino) {
+        const choferDia = suyas.find((f) => f.chofer)?.chofer ?? ''
+        const bolsa = [eq.placa, eq.nombre, eq.chofer ?? '', choferDia, eq.compania]
+          .join(' ')
+          .toLowerCase()
+        if (!bolsa.includes(termino)) continue
+      }
+
+      mapa.set(eq.compania, [...(mapa.get(eq.compania) ?? []), eq])
+    }
+    return [...mapa.entries()].sort((a, b) => a[0].localeCompare(b[0]))
+  }, [todosLosEquipos, filasPorEquipo, companiaFiltro, rutaFiltro, soloConViajes, termino])
+
+  // KPIs del día (calculados sobre las filas del día coherentes con los filtros si hay alguno activo)
+  const kpisDia = useMemo(() => {
+    const hayFiltro = Boolean(companiaFiltro || rutaFiltro || termino)
+    const clavesPermitidas = hayFiltro
+      ? new Set(seccionesPorCompania.flatMap(([, eqs]) => eqs.map(claveEquipo)))
+      : null
+
+    const consideradas = filas.filter((f) => {
+      if (rutaFiltro && String(f.ruta_id) !== rutaFiltro) return false
+      if (clavesPermitidas) {
+        const k = f.vehiculo_id !== null ? `v:${f.vehiculo_id}` : `m:${f.maquina_id ?? 0}`
+        if (!clavesPermitidas.has(k)) return false
+      }
+      return true
+    })
+
+    const equiposActivos = new Set(
+      consideradas
+        .filter((f) => f.viajes > 0 || f.por_aprobar > 0)
+        .map((f) => (f.vehiculo_id !== null ? `v:${f.vehiculo_id}` : `m:${f.maquina_id ?? 0}`)),
+    ).size
+
+    return {
+      viajes: consideradas.reduce((s, f) => s + f.viajes, 0),
+      porAprobar: consideradas.reduce((s, f) => s + f.por_aprobar, 0),
+      m3: consideradas.reduce((s, f) => s + Number(f.m3 ?? 0), 0),
+      conM3: consideradas.some((f) => f.m3 !== null),
+      sinCarga: consideradas.reduce((s, f) => s + f.sin_carga, 0),
+      hayDinero: consideradas.some((f) => f.monto_usd !== null),
+      usd: consideradas.reduce((s, f) => s + Number(f.monto_usd ?? 0), 0),
+      equiposActivos,
+    }
+  }, [filas, companiaFiltro, rutaFiltro, termino, seccionesPorCompania])
+
+  const seleccionarParaCargar = (eq: EquipoAcarreo) => {
+    setClavePreseleccionada(claveEquipo(eq))
+    setMostrarCarga(true)
+    requestAnimationFrame(() => {
+      refCarga.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    })
   }
 
-  const deCamion = (v: Vehiculo): Equipo => ({
-    vehiculoId: v.id,
-    maquinaId: null,
-    placa: v.placa,
-    detalle: [v.chofer_actual, v.descripcion].filter(Boolean).join(' · ') || 'Sin chofer asignado',
-  })
-
-  const listaMaquinas = maquinas.data ?? []
-  const maquinasDelDia = listaMaquinas.filter((m) => filas.some((f) => f.maquina_id === m.id))
-
-  /* El papel se arma de los viajes sueltos, no de la vista agrupada: la
-     planilla imprime viaje por viaje, con su número y su hora. */
-  const imprimir = async (conDescartados = false) => {
-    const viajes = todos.data ?? []
+  const imprimir = async (incluirDescartados = false) => {
+    const viajes = companiaFiltro
+      ? viajesDelDia.filter((v) => v.transportista === companiaFiltro)
+      : viajesDelDia
     const placas = [...new Set(viajes.map((v) => v.placa ?? '—'))]
-    // Leídas al armar: con la consulta en camino, el papel saldría sin las
-    // firmas que sus dueños eligieron poner.
     const guardadas = await qc.fetchQuery({
       queryKey: ['firmas'],
       queryFn: leerFirmasEncendidas,
@@ -243,11 +322,9 @@ function PestanaDia() {
     setPdf(
       await armarRegistroDeViajes({
         dia,
-        empresa: null,
-        // Quien solo cargó viajes que luego se descartaron no firma un papel
-        // que no los lista.
+        empresa: companiaFiltro || null,
         firmas: quienesFirmanElDia(
-          conDescartados
+          incluirDescartados
             ? viajes
             : viajes.filter((v) => v.estado !== 'ANULADO' && v.estado !== 'RECHAZADO'),
           guardadas.porPerfil,
@@ -270,7 +347,7 @@ function PestanaDia() {
             })),
           }
         }),
-        conDescartados,
+        conDescartados: incluirDescartados,
         empresa_papel: empresaDelPapel(laEmpresa),
         emitidoPor: yo ?? '',
         momento: new Date(),
@@ -278,93 +355,270 @@ function PestanaDia() {
     )
   }
 
-  /*
-    Lo anulado y lo rechazado no va en el papel salvo que se pida. La casilla
-    solo aparece si ese día hubo alguno: sin ninguno, no hay nada que decidir.
-  */
-  const hayDescartados = (todos.data ?? []).some(
+  const hayDescartados = viajesDelDia.some(
     (v) => v.estado === 'ANULADO' || v.estado === 'RECHAZADO',
   )
 
-  const tabla = (equipos: Equipo[]) => (
-    <Card flush>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[760px] text-sm">
-          <thead>
-            <tr className="text-ink/45 border-hairline border-b text-left text-xs">
-              <th className="px-5 py-3 font-medium">Camión o máquina</th>
-              {columnas.map((r) => (
-                <th key={r.id} className="max-w-40 px-3 py-3 text-right font-medium" title={r.nombre}>
-                  {r.nombre}
-                </th>
-              ))}
-              <th className="px-3 py-3 text-right font-medium">m³</th>
-              <th className="px-3 py-3 text-right font-medium">Monto a pagar</th>
-              <th className="px-5 py-3 text-right font-medium" />
-            </tr>
-          </thead>
-          <tbody>
-            {equipos.map((e) => (
-              <FilaEquipo
-                key={`${e.vehiculoId ?? 'm'}-${e.maquinaId ?? 'v'}`}
-                equipo={e}
-                columnas={columnas}
-                filas={filas.filter((f) => esDe(f, e))}
-                onDetalle={() => setDetalle(e)}
-              />
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </Card>
+  const columnasMostradas = useMemo(
+    () => (rutaFiltro ? columnas.filter((c) => String(c.id) === rutaFiltro) : columnas),
+    [columnas, rutaFiltro],
   )
+
+  const conTarifaVisible = usables.some((r) => r.precio_usd !== null || r.precio_libre)
 
   return (
     <>
+      {/* Barra superior: selector de fecha rápido y acciones del día */}
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        <div className="flex flex-wrap items-end gap-3">
-          <Input
-            label="Día"
-            type="date"
-            value={dia}
-            max={hoyEnCaracas()}
-            onChange={(e) => setDia(e.target.value)}
-            className="w-48"
-          />
+        <div className="flex flex-wrap items-end gap-2">
+          <div>
+            <p className="text-ink/55 mb-1.5 text-xs font-medium">Fecha de operación</p>
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant="outline"
+                size="sm"
+                icon={<ChevronLeft />}
+                onClick={() => setDia(sumarDiasIso(dia, -1))}
+                title="Día anterior"
+              />
+              <input
+                type="date"
+                value={dia}
+                max={hoy}
+                aria-label="Fecha de operación"
+                onChange={(e) => {
+                  if (esFechaIso(e.target.value)) setDia(e.target.value)
+                }}
+                className="rounded-control border-ink/20 bg-surface text-ink/90 h-9 border px-2.5 text-sm"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                icon={<ChevronRight />}
+                disabled={dia >= hoy}
+                onClick={() => {
+                  const sig = sumarDiasIso(dia, 1)
+                  setDia(sig > hoy ? hoy : sig)
+                }}
+                title="Día siguiente"
+              />
+              {dia !== hoy ? (
+                <Button variant="ghost" size="sm" onClick={() => setDia(hoy)}>
+                  Ir a hoy
+                </Button>
+              ) : null}
+            </div>
+          </div>
+
           <Button
             variant="outline"
             icon={<Printer />}
-            disabled={(todos.data ?? []).length === 0}
-            onClick={() => void imprimir()}
-            className="mb-0.5"
+            disabled={viajesDelDia.length === 0}
+            onClick={() => void imprimir(conDescartados)}
           >
             Imprimir el día
           </Button>
-          <Button
-            variant="outline"
-            icon={<MessageSquare />}
-            onClick={() => setReporte(true)}
-            className="mb-0.5"
-          >
+          <Button variant="outline" icon={<MessageSquare />} onClick={() => setReporte(true)}>
             Reporte de operaciones
           </Button>
+          {conTarifaVisible ? (
+            <Button
+              variant={verTarifas ? 'primary' : 'ghost'}
+              icon={<Coins />}
+              onClick={() => setVerTarifas((v) => !v)}
+            >
+              Tarifas vigentes
+            </Button>
+          ) : null}
         </div>
-        <CajaDeTarifas rutas={usables} />
+
+        {escribe && usables.length > 0 && todosLosEquipos.length > 0 ? (
+          <Button
+            variant={mostrarCarga ? 'outline' : 'primary'}
+            icon={<Plus />}
+            onClick={() => setMostrarCarga((v) => !v)}
+          >
+            {mostrarCarga ? 'Ocultar carga rápida' : 'Registrar acarreo'}
+          </Button>
+        ) : null}
       </div>
+
+      {/* Tarifas vigentes desplegables */}
+      {verTarifas && conTarifaVisible ? (
+        <div className="border-hairline bg-ink/2 mb-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-[6px] border px-3.5 py-2.5 text-xs">
+          <span className="text-ink/50 font-medium">Tarifa por viaje:</span>
+          {usables
+            .filter((r) => r.precio_usd !== null || r.precio_libre)
+            .map((r) => (
+              <span key={r.id} className="text-ink/80 tabular">
+                <strong>{r.nombre}:</strong> {tarifaEnPalabras(r, dolares)}
+              </span>
+            ))}
+        </div>
+      ) : null}
+
+      {/* Tarjetas KPI arriba (visibilidad inmediata del día) */}
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Card>
+          <p className="text-ink/45 text-2xs font-mono tracking-[0.14em] uppercase">
+            Viajes aprobados
+          </p>
+          <p className="tabular text-ink/90 mt-2 text-2xl font-semibold">
+            {enteros(kpisDia.viajes)}
+          </p>
+          <p className="text-ink/50 mt-1 text-xs">
+            {kpisDia.porAprobar > 0 ? (
+              <span className="text-warning">
+                +{enteros(kpisDia.porAprobar)} esperando aprobación
+              </span>
+            ) : (
+              'Contabilizados en el día'
+            )}
+          </p>
+        </Card>
+
+        <Card>
+          <p className="text-ink/45 text-2xs font-mono tracking-[0.14em] uppercase">
+            Volumen del día
+          </p>
+          <p className="tabular text-ink/90 mt-2 text-2xl font-semibold">
+            {kpisDia.conM3 || kpisDia.viajes > 0 ? `${enteros(kpisDia.m3)} m³` : '—'}
+          </p>
+          <p className="text-ink/50 mt-1 text-xs">
+            {kpisDia.sinCarga > 0 ? (
+              <span className="text-warning">
+                {enteros(kpisDia.sinCarga)} sin carga útil medida
+              </span>
+            ) : (
+              'Según carga útil de cada camión'
+            )}
+          </p>
+        </Card>
+
+        <Card>
+          <p className="text-ink/45 text-2xs font-mono tracking-[0.14em] uppercase">
+            Camiones activos hoy
+          </p>
+          <p className="tabular text-ink/90 mt-2 text-2xl font-semibold">
+            {enteros(kpisDia.equiposActivos)}
+          </p>
+          <p className="text-ink/50 mt-1 text-xs">De {enteros(flota.length)} camiones en flota</p>
+        </Card>
+
+        <Card>
+          <p className="text-ink/45 text-2xs font-mono tracking-[0.14em] uppercase">
+            Monto del día
+          </p>
+          <p className="tabular text-ink/90 mt-2 text-2xl font-semibold">
+            {kpisDia.hayDinero ? dolares(kpisDia.usd) : '—'}
+          </p>
+          <p className="text-ink/50 mt-1 text-xs">Solo viajes aprobados</p>
+        </Card>
+      </div>
+
+      {/* Panel unificado de registro rápido con buscador inteligente */}
+      {escribe && mostrarCarga && usables.length > 0 && todosLosEquipos.length > 0 ? (
+        <div ref={refCarga} className="mb-5">
+          <CargarViajesUnificado
+            dia={dia}
+            equipos={todosLosEquipos}
+            rutas={usables}
+            clavePreseleccionada={clavePreseleccionada}
+            onCambioClave={setClavePreseleccionada}
+            yaTiene={yaTiene}
+          />
+        </div>
+      ) : null}
 
       {vehiculos.isPending || dias.isPending || rutas.isPending ? <Cargando /> : null}
       {vehiculos.error ? <ErrorDeCarga error={vehiculos.error} /> : null}
       {dias.error ? <ErrorDeCarga error={dias.error} /> : null}
       {rutas.error ? <ErrorDeCarga error={rutas.error} /> : null}
 
-      <PorAprobar viajes={todos.data ?? []} />
+      <PorAprobar viajes={viajesDelDia} />
+
+      {/* Barra de búsqueda y filtro por desglose (compañía, nombre, placa, ruta, solo con viajes) */}
+      {flota.length > 0 ? (
+        <Card className="mb-5">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="relative min-w-[240px] flex-1">
+              <Input
+                label="Buscar camión por placa, nombre/modelo, chofer o compañía"
+                value={busqueda}
+                sinNormalizar
+                onChange={(e) => setBusqueda(e.target.value)}
+                placeholder="Ej. 02GBAB, Kodia rojo, Sinotruk, Savanna, chofer…"
+              />
+              {busqueda ? (
+                <button
+                  type="button"
+                  aria-label="Limpiar búsqueda"
+                  onClick={() => setBusqueda('')}
+                  className="text-ink/40 hover:text-ink/80 absolute right-2.5 bottom-2.5"
+                >
+                  <X className="size-4" />
+                </button>
+              ) : (
+                <Search className="text-ink/35 pointer-events-none absolute right-3 bottom-3 size-4" />
+              )}
+            </div>
+
+            <Select
+              label="Compañía"
+              value={companiaFiltro}
+              onChange={(e) => setCompaniaFiltro(e.target.value)}
+              opciones={[
+                { valor: '', etiqueta: 'Todas las compañías' },
+                ...companiasDisponibles.map((c) => ({ valor: c, etiqueta: c })),
+              ]}
+              className="w-52"
+            />
+
+            <Select
+              label="Ruta"
+              value={rutaFiltro}
+              onChange={(e) => setRutaFiltro(e.target.value)}
+              opciones={[
+                { valor: '', etiqueta: 'Todas las rutas' },
+                ...columnas.map((r) => ({ valor: String(r.id), etiqueta: r.nombre })),
+              ]}
+              className="w-56"
+            />
+
+            <Button
+              variant={soloConViajes ? 'primary' : 'outline'}
+              icon={<Filter />}
+              onClick={() => setSoloConViajes((v) => !v)}
+              className="mb-0.5"
+            >
+              {soloConViajes ? 'Solo con viajes (activo)' : 'Solo con viajes'}
+            </Button>
+
+            {busqueda || companiaFiltro || rutaFiltro || soloConViajes ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setBusqueda('')
+                  setCompaniaFiltro('')
+                  setRutaFiltro('')
+                  setSoloConViajes(false)
+                }}
+                className="mb-1"
+              >
+                Limpiar filtros
+              </Button>
+            ) : null}
+          </div>
+        </Card>
+      ) : null}
 
       {!rutas.isPending && usables.length === 0 ? (
         <Card className="mb-4">
           <Vacio
             icono={<Route />}
             titulo="Sin rutas abiertas"
-            descripcion="Los viajes se registran por ruta. Las rutas se crean en Explotación › Plantas y rutas."
+            descripcion="Los acarreos se registran por ruta. Las rutas se crean en Explotación › Plantas y rutas."
           />
         </Card>
       ) : null}
@@ -374,98 +628,134 @@ function PestanaDia() {
           <Vacio
             icono={<Truck />}
             titulo="Sin camiones registrados"
-            descripcion="Los viajes se registran por camión. Registre primero la flota en Maquinaria › Equipos, con placa y capacidad."
+            descripcion="Registre primero la flota en Maquinaria › Equipos, con placa, modelo y capacidad."
           />
         </Card>
       ) : null}
 
-      {flota.length > 0 || maquinasDelDia.length > 0 ? (
-        <div className="space-y-5">
-          {[...porEmpresa.entries()].map(([empresa, camiones]) => (
-            <section key={empresa}>
-              <h2 className="text-ink/80 mb-2 text-sm font-semibold">{empresa}</h2>
-              {tabla(camiones.map(deCamion))}
+      {/* Si hay filtros activos y ningún camión coincide */}
+      {!vehiculos.isPending &&
+      flota.length > 0 &&
+      seccionesPorCompania.length === 0 ? (
+        <Card>
+          <Vacio
+            icono={<Search />}
+            titulo="Ningún camión coincide con los filtros actuales"
+            descripcion={
+              soloConViajes
+                ? 'No hay camiones con viajes registrados para este filtro. Desactive «Solo con viajes» para ver toda la flota.'
+                : 'Pruebe con otra palabra clave, placa o compañía.'
+            }
+          />
+        </Card>
+      ) : null}
 
-              {escribe ? (
-                <CargarViajes
-                  dia={dia}
-                  equipos={camiones.map(deCamion)}
-                  rutas={usables}
-                  yaTiene={yaTiene}
-                />
-              ) : null}
-            </section>
-          ))}
+      {/* Tablas agrupadas por compañía (plegables y clicables para abrir viajes) */}
+      {seccionesPorCompania.length > 0 ? (
+        <div className="space-y-4">
+          {seccionesPorCompania.map(([empresa, equiposEmpresa]) => {
+            const filasEmpresa = equiposEmpresa.flatMap(
+              (eq) => filasPorEquipo.get(claveEquipo(eq)) ?? [],
+            )
+            const filtradasRuta = rutaFiltro
+              ? filasEmpresa.filter((f) => String(f.ruta_id) === rutaFiltro)
+              : filasEmpresa
+            const subViajes = filtradasRuta.reduce((s, f) => s + f.viajes, 0)
+            const subPend = filtradasRuta.reduce((s, f) => s + f.por_aprobar, 0)
+            const subM3 = filtradasRuta.reduce((s, f) => s + Number(f.m3 ?? 0), 0)
+            const subConM3 = filtradasRuta.some((f) => f.m3 !== null)
+            const subUsd = filtradasRuta.reduce((s, f) => s + Number(f.monto_usd ?? 0), 0)
+            const subHayDinero = filtradasRuta.some((f) => f.monto_usd !== null)
+            const activosComp = equiposEmpresa.filter((eq) =>
+              (filasPorEquipo.get(claveEquipo(eq)) ?? []).some(
+                (f) => f.viajes > 0 || f.por_aprobar > 0,
+              ),
+            ).length
+            const estaPlegada = Boolean(plegadas[empresa])
 
-          {/*
-            LAS MÁQUINAS PROPIAS, APARTE.
+            return (
+              <section key={empresa}>
+                <button
+                  type="button"
+                  onClick={() => setPlegadas((p) => ({ ...p, [empresa]: !p[empresa] }))}
+                  className="mb-2 flex w-full flex-wrap items-center justify-between gap-2 text-left"
+                >
+                  <span className="flex flex-wrap items-center gap-2">
+                    <ChevronDown
+                      className={cn(
+                        'text-ink/50 size-4 transition-transform',
+                        estaPlegada && '-rotate-90',
+                      )}
+                    />
+                    <span className="text-ink/90 text-sm font-semibold">{empresa}</span>
+                    <span className="text-ink/45 text-xs">
+                      ({activosComp} de {equiposEmpresa.length}{' '}
+                      {equiposEmpresa.length === 1 ? 'camión con viajes' : 'camiones con viajes'})
+                    </span>
+                  </span>
+                  <span className="text-ink/65 tabular text-xs">
+                    {enteros(subViajes)} viajes
+                    {subPend > 0 ? (
+                      <span className="text-warning"> (+{enteros(subPend)} por aprobar)</span>
+                    ) : null}
+                    {subConM3 ? ` · ${enteros(subM3)} m³` : ''}
+                    {subHayDinero ? ` · ${dolares(subUsd)}` : ''}
+                  </span>
+                </button>
 
-            Un payloader o un articulado que mueve material entre la mina y las
-            plantas no es un camión de tercero ni se le paga a una empresa. Sale
-            aquí para que su viaje quede contado con su ruta; cuánto se paga, lo
-            dice la ruta como con cualquier otro.
-          */}
-          {escribe || maquinasDelDia.length > 0 ? (
-            <section>
-              <h2 className="text-ink/80 mb-2 text-sm font-semibold">Máquinas propias</h2>
-              {maquinasDelDia.length > 0 ? (
-                tabla(
-                  maquinasDelDia.map((m) => ({
-                    vehiculoId: null,
-                    maquinaId: m.id,
-                    placa: m.codigo,
-                    detalle: m.nombre,
-                  })),
-                )
-              ) : (
-                <p className="text-ink/45 text-xs">Sin viajes de máquinas propias este día.</p>
-              )}
-              {escribe && listaMaquinas.length > 0 ? (
-                <CargarViajes
-                  dia={dia}
-                  equipos={listaMaquinas.map((m) => ({
-                    vehiculoId: null,
-                    maquinaId: m.id,
-                    placa: m.codigo,
-                    detalle: m.nombre,
-                  }))}
-                  rutas={usables}
-                  yaTiene={yaTiene}
-                />
-              ) : null}
-            </section>
-          ) : null}
-
-          <Card>
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <p className="text-ink/45 text-xs">Total del día (lo aprobado y lo anterior a la aprobación)</p>
-                <p className="tabular text-ink/90 text-lg font-semibold">
-                  {enteros(totalViajes)} viajes · {enteros(totalM3)} m³
-                  {hayDinero ? ` · ${dolares(totalUsd)}` : ''}
-                </p>
-                {totalPorAprobar > 0 ? (
-                  <p className="text-warning mt-0.5 text-xs">
-                    Además, {enteros(totalPorAprobar)}{' '}
-                    {totalPorAprobar === 1 ? 'viaje espera' : 'viajes esperan'} aprobación y todavía no
-                    cuentan.
-                  </p>
+                {!estaPlegada ? (
+                  <Card flush>
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[760px] text-sm">
+                        <thead>
+                          <tr className="text-ink/45 border-hairline border-b text-left text-xs">
+                            <th className="px-5 py-3 font-medium">Camión / Modelo</th>
+                            {columnasMostradas.map((r) => (
+                              <th
+                                key={r.id}
+                                className="max-w-40 px-3 py-3 text-right font-medium"
+                                title={r.nombre}
+                              >
+                                {r.nombre}
+                              </th>
+                            ))}
+                            <th className="px-3 py-3 text-right font-medium">m³</th>
+                            <th className="px-3 py-3 text-right font-medium">Monto a pagar</th>
+                            <th className="px-4 py-3 text-right font-medium">Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {equiposEmpresa.map((e) => (
+                            <FilaEquipo
+                              key={claveEquipo(e)}
+                              equipo={e}
+                              columnas={columnasMostradas}
+                              filas={(filasPorEquipo.get(claveEquipo(e)) ?? []).filter(
+                                (f) => !rutaFiltro || String(f.ruta_id) === rutaFiltro,
+                              )}
+                              puedeCargar={escribe && usables.length > 0}
+                              onDetalle={() => setDetalle(e)}
+                              onPreseleccionar={() => seleccionarParaCargar(e)}
+                            />
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Card>
                 ) : null}
-              </div>
-              {sinCarga > 0 ? (
-                <p className="text-warning max-w-md text-xs leading-relaxed">
-                  {enteros(sinCarga)} {sinCarga === 1 ? 'viaje no suma' : 'viajes no suman'} metros
-                  cúbicos: esos camiones no tienen carga útil cargada. Cuentan y cobran, pero el
-                  total de m³ no los incluye.
-                </p>
-              ) : null}
-            </div>
-          </Card>
+              </section>
+            )
+          })}
         </div>
       ) : null}
 
       {detalle ? (
-        <DetalleDelEquipo dia={dia} equipo={detalle} onCerrar={() => setDetalle(null)} />
+        <DetalleEquipoModal
+          equipo={detalle}
+          fechaBase={dia}
+          alcanceInicial="dia"
+          onCerrar={() => setDetalle(null)}
+        />
       ) : null}
 
       {reporte ? (
@@ -482,7 +772,7 @@ function PestanaDia() {
         onCerrar={() => setPdf(null)}
         blob={pdf?.blob ?? null}
         nombreArchivo={pdf?.nombre ?? ''}
-        titulo="Registro diario de viajes"
+        titulo="Registro diario de acarreos internos"
         descripcion={
           hayDescartados && !conDescartados
             ? 'No lista los viajes anulados ni los rechazados: nunca sumaron. Siguen en la pantalla.'
@@ -511,6 +801,332 @@ function PestanaDia() {
   )
 }
 
+/* ═══════════════════════════ formulario unificado con buscador de camiones */
+
+function CargarViajesUnificado({
+  dia,
+  equipos,
+  rutas,
+  clavePreseleccionada,
+  onCambioClave,
+  yaTiene,
+}: {
+  dia: string
+  equipos: EquipoAcarreo[]
+  rutas: RutaAcarreo[]
+  clavePreseleccionada: string
+  onCambioClave: (clave: string) => void
+  yaTiene: (e: EquipoAcarreo, rutaId: number) => number
+}) {
+  const registrar = useRegistrarViajes()
+  const { data: miFirma } = useMiFirma()
+  const [conMiFirma, setConMiFirma] = useState(false)
+  const [rutaId, setRutaId] = useState('')
+  const [carga, setCarga] = useState<CargaDelViaje>('COMPLETA')
+  const [m3, setM3] = useState('')
+  const [cantidad, setCantidad] = useState('')
+  const [precio, setPrecio] = useState('')
+  const [avisoCargado, setAvisoCargado] = useState<string | null>(null)
+
+  const opcionesEquipo = useMemo(
+    () =>
+      equipos.map((e) => ({
+        valor: claveEquipo(e),
+        codigo: e.placa,
+        nombre: e.nombre || e.compania,
+        detalle: [e.compania, e.chofer ? `Chofer: ${e.chofer}` : null, e.cargaUtilM3 ? `${enteros(e.cargaUtilM3)} m³` : null]
+          .filter(Boolean)
+          .join(' · '),
+      })),
+    [equipos],
+  )
+
+  const opcionesRuta = useMemo(
+    () =>
+      rutas.map((r) => ({
+        valor: String(r.id),
+        etiqueta: r.nombre,
+        detalle: r.precio_usd !== null || r.precio_libre ? tarifaEnPalabras(r, dolares) : undefined,
+      })),
+    [rutas],
+  )
+
+  const equipo = equipos.find((e) => claveEquipo(e) === clavePreseleccionada) ?? null
+  const ruta = rutas.find((r) => String(r.id) === rutaId) ?? null
+  const cuantos = Number(cantidad)
+  const deMaquina = equipo !== null && equipo.maquinaId !== null
+
+  const pideM3 = carga === 'PARCIAL'
+  const ofreceM3 = pideM3 || (carga === 'COMPLETA' && deMaquina)
+  const pidePrecio = Boolean(ruta?.pide_precio) && !deMaquina
+
+  const valido =
+    equipo !== null &&
+    ruta !== null &&
+    cuantos >= 1 &&
+    cuantos <= 60 &&
+    (!pideM3 || Number(m3) > 0) &&
+    (!pidePrecio || (precio !== '' && Number(precio) >= 0))
+
+  const pistaPrecio = !ruta
+    ? undefined
+    : ruta.precio_libre
+      ? 'Ruta de precio libre: indique tarifa acordada.'
+      : ruta.precio_hasta_usd !== null && ruta.precio_usd !== null
+        ? `Rango permitido: ${dolares(ruta.precio_usd)} a ${dolares(ruta.precio_hasta_usd)}.`
+        : 'Indique el monto del viaje.'
+
+  const enviar = async () => {
+    if (!equipo || !ruta) return
+    await registrar.mutateAsync({
+      fecha: dia,
+      ruta_id: ruta.id,
+      carga,
+      cantidad: cuantos,
+      vehiculo_id: equipo.vehiculoId,
+      maquina_id: equipo.maquinaId,
+      carga_m3: ofreceM3 && m3 !== '' ? Number(m3) : null,
+      precio_usd: pidePrecio ? Number(precio) : null,
+      con_firma: miFirma?.usar === true && conMiFirma,
+    })
+    setAvisoCargado(
+      `${cuantos === 1 ? '1 viaje cargado' : `${cuantos} viajes cargados`} a ${equipo.placa} (${equipo.compania}) en ${ruta.nombre}. Quedan pendientes de aprobación.`,
+    )
+    setCantidad('')
+    setPrecio('')
+    setM3('')
+  }
+
+  return (
+    <Card className="border-royal-600/25">
+      <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-ink/85 text-xs font-semibold tracking-wide uppercase">
+          Registrar acarreo rápido · {fmtFecha(dia)}
+        </p>
+        {equipo ? (
+          <span className="text-ink/55 text-xs">
+            Seleccionado: <strong className="text-ink/85">{equipo.placa}</strong>
+            {equipo.nombre ? ` · ${equipo.nombre}` : ''} ({equipo.compania})
+          </span>
+        ) : (
+          <span className="text-ink/45 text-xs">
+            Busque por placa, modelo («Kodia rojo»), chofer o compañía, o pulse «+» en la tabla
+          </span>
+        )}
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-12 lg:items-start">
+        <div className="lg:col-span-4">
+          <SelectBuscable
+            label="Camión"
+            vacio="Buscar placa, modelo, chofer o compañía…"
+            valor={clavePreseleccionada}
+            onCambio={(v) => {
+              onCambioClave(v)
+              setAvisoCargado(null)
+            }}
+            opciones={opcionesEquipo}
+          />
+        </div>
+
+        <div className="lg:col-span-3">
+          <SelectBuscable
+            label="Ruta"
+            vacio="Seleccione la ruta…"
+            valor={rutaId}
+            onCambio={(v) => {
+              setRutaId(v)
+              setPrecio('')
+              setAvisoCargado(null)
+            }}
+            opciones={opcionesRuta}
+          />
+        </div>
+
+        <div className="lg:col-span-2">
+          <Select
+            label="Carga"
+            value={carga}
+            onChange={(e) => {
+              setCarga(e.target.value as CargaDelViaje)
+              setM3('')
+            }}
+            opciones={(Object.keys(CARGA_DEL_VIAJE) as CargaDelViaje[]).map((c) => ({
+              valor: c,
+              etiqueta: CARGA_DEL_VIAJE[c].texto,
+            }))}
+          />
+        </div>
+
+        <div className="lg:col-span-2">
+          <Input
+            label="Cant. viajes"
+            type="number"
+            min="1"
+            max="60"
+            inputMode="numeric"
+            value={cantidad}
+            onChange={(e) => {
+              setCantidad(e.target.value)
+              setAvisoCargado(null)
+            }}
+            hint={
+              equipo && ruta && cuantos >= 1
+                ? `Ya tiene ${yaTiene(equipo, ruta.id)} → quedarán ${yaTiene(equipo, ruta.id) + cuantos}.`
+                : 'Se suma al día.'
+            }
+          />
+        </div>
+
+        <div className="flex items-end lg:col-span-1 lg:pt-6">
+          <Button
+            icon={<Plus />}
+            disabled={!valido || registrar.isPending}
+            onClick={() => void enviar()}
+            className="w-full"
+          >
+            {registrar.isPending ? '…' : 'Cargar'}
+          </Button>
+        </div>
+      </div>
+
+      {ofreceM3 || pidePrecio ? (
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {ofreceM3 ? (
+            <Input
+              label="Metros cúbicos por viaje"
+              type="number"
+              min="0"
+              step="0.01"
+              inputMode="decimal"
+              value={m3}
+              onChange={(e) => setM3(e.target.value)}
+            />
+          ) : null}
+          {pidePrecio ? (
+            <Input
+              label="Precio por viaje (USD)"
+              type="number"
+              min="0"
+              step="0.01"
+              inputMode="decimal"
+              value={precio}
+              onChange={(e) => setPrecio(e.target.value)}
+              hint={pistaPrecio}
+            />
+          ) : null}
+        </div>
+      ) : null}
+
+      {miFirma?.usar ? (
+        <label className="text-ink/75 mt-3 flex cursor-pointer items-start gap-2.5 text-xs">
+          <input
+            type="checkbox"
+            className="accent-royal-600 mt-0.5 size-4 shrink-0"
+            checked={conMiFirma}
+            onChange={(e) => setConMiFirma(e.target.checked)}
+          />
+          <span>
+            Estampar mi firma digital en «Registrado por» del registro diario (si se marca en todos
+            los viajes del día).
+          </span>
+        </label>
+      ) : null}
+
+      {deMaquina ? (
+        <p className="text-ink/45 mt-2 text-xs">
+          Las máquinas propias no generan monto por pagar: el acarreo queda contado en volumen y
+          ruta.
+        </p>
+      ) : null}
+
+      {avisoCargado ? (
+        <p className="text-success mt-2 text-xs font-medium">{avisoCargado}</p>
+      ) : null}
+
+      {registrar.error ? <ErrorDeCarga error={registrar.error} className="mt-3" /> : null}
+    </Card>
+  )
+}
+
+function FilaEquipo({
+  equipo,
+  columnas,
+  filas,
+  puedeCargar,
+  onDetalle,
+  onPreseleccionar,
+}: {
+  equipo: EquipoAcarreo
+  columnas: RutaAcarreo[]
+  filas: AcarreoDia[]
+  puedeCargar: boolean
+  onDetalle: () => void
+  onPreseleccionar: () => void
+}) {
+  const deRuta = (rutaId: number) => filas.filter((f) => esEquipo(f, equipo) && f.ruta_id === rutaId)
+  const total = filas.reduce((s, f) => s + f.viajes + f.por_aprobar + f.rechazados + f.anulados, 0)
+  const m3 = filas.reduce((s, f) => s + Number(f.m3 ?? 0), 0)
+  const hayM3 = filas.some((f) => f.m3 !== null)
+  const hayDinero = filas.some((f) => f.monto_usd !== null)
+  const monto = filas.reduce((s, f) => s + Number(f.monto_usd ?? 0), 0)
+  const subtitulo =
+    [equipo.nombre, equipo.chofer].filter(Boolean).join(' · ') || 'Sin descripción ni chofer'
+
+  return (
+    <tr
+      onClick={onDetalle}
+      title={`Abrir viajes e historial de ${equipo.placa}`}
+      className="border-hairline hover:bg-ink/4 cursor-pointer border-b transition-colors last:border-0"
+    >
+      <td className="px-5 py-3">
+        <p className="tabular text-ink/90 font-medium">{equipo.placa}</p>
+        <p className="text-ink/45 text-xs">{subtitulo}</p>
+      </td>
+      {columnas.map((r) => {
+        const suyas = deRuta(r.id)
+        const cuentan = suyas.reduce((s, f) => s + f.viajes, 0)
+        const esperan = suyas.reduce((s, f) => s + f.por_aprobar, 0)
+        return (
+          <td key={r.id} className="tabular text-ink/75 px-3 py-3 text-right">
+            {cuentan > 0 ? (
+              enteros(cuentan)
+            ) : esperan > 0 ? null : (
+              <span className="text-ink/20">—</span>
+            )}
+            {esperan > 0 ? (
+              <span className="text-warning block text-2xs">+{enteros(esperan)} por aprobar</span>
+            ) : null}
+          </td>
+        )
+      })}
+      <td className="tabular text-ink/85 px-3 py-3 text-right font-medium">
+        <Cifra valor={hayM3 ? String(m3) : null} />
+      </td>
+      <td className="tabular text-ink/85 px-3 py-3 text-right font-medium">
+        <Cifra valor={hayDinero ? String(monto) : null} comoDinero />
+      </td>
+      <td className="px-4 py-3 text-right whitespace-nowrap" onClick={(ev) => ev.stopPropagation()}>
+        <div className="inline-flex items-center gap-1">
+          {puedeCargar ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              icon={<Plus />}
+              title={`Cargar viaje a ${equipo.placa}`}
+              aria-label={`Cargar viaje a ${equipo.placa}`}
+              onClick={onPreseleccionar}
+            />
+          ) : null}
+          <Button size="sm" variant="ghost" onClick={onDetalle}>
+            {total > 0 ? `Ver (${enteros(total)})` : 'Viajes'}
+          </Button>
+        </div>
+      </td>
+    </tr>
+  )
+}
+
 /* ═════════════════════════════════════════════════════════════ por aprobar */
 
 interface GrupoPorAprobar {
@@ -529,24 +1145,11 @@ interface GrupoPorAprobar {
   hayDinero: boolean
 }
 
-/**
- * Lo que espera una decisión, arriba y agrupado.
- *
- * Por equipo y ruta, porque así se aprueba en la vida real: «los 12 del
- * A74AB3P a la planta fija». Cada grupo dice cómo volvieron sus viajes —un
- * vacío no se aprueba sin verlo— y los botones solo salen a quien puede
- * decidir sobre esa ruta.
- */
 function PorAprobar({ viajes }: { viajes: Acarreo[] }) {
   const como = useComoApruebo()
   const aprobar = useAprobarViajes()
   const [rechazando, setRechazando] = useState<GrupoPorAprobar | null>(null)
   const [ajustando, setAjustando] = useState<GrupoPorAprobar | null>(null)
-  /*
-    La firma de quien aprueba, marcada de entrada y una sola vez para toda la
-    bandeja: aprobar es de a grupos, y preguntarlo en cada botón sería pedir lo
-    mismo doce veces. Solo a quien tiene una firma encendida.
-  */
   const { data: miFirma } = useMiFirma()
   const tengoFirma = miFirma?.usar === true
   const [conMiFirma, setConMiFirma] = useState(true)
@@ -604,14 +1207,13 @@ function PorAprobar({ viajes }: { viajes: Acarreo[] }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-ink/85 text-sm font-semibold">
-            Por aprobar · {enteros(esperando.length)} {esperando.length === 1 ? 'viaje' : 'viajes'}
+            Por aprobar · {enteros(esperando.length)}{' '}
+            {esperando.length === 1 ? 'viaje' : 'viajes'}
           </h2>
           <p className="text-ink/55 mt-0.5 max-w-2xl text-xs leading-relaxed">
             Todavía no cuentan para el pago. Los aprueba o rechaza el responsable de la mina o
             planta de origen o de destino, o quien tenga la casilla «Aprobar o rechazar viajes».
-            {decidibles.length === 0
-              ? ' Usted no puede decidir sobre ninguno de estos.'
-              : ''}
+            {decidibles.length === 0 ? ' Usted no puede decidir sobre ninguno de estos.' : ''}
           </p>
         </div>
         {decidibles.length > 1 ? (
@@ -649,17 +1251,25 @@ function PorAprobar({ viajes }: { viajes: Acarreo[] }) {
       <ul className="divide-hairline mt-3 divide-y">
         {lista.map((g) => {
           const puedo = puedoDecidirViaje(como.data, g)
+          const comp = g.viajes[0]?.transportista
+          const modelo = g.viajes[0]?.vehiculo
           return (
             <li key={g.clave} className="flex flex-wrap items-center justify-between gap-3 py-2.5">
               <div className="min-w-0 text-sm">
                 <p className="text-ink/85">
-                  <span className="tabular font-medium">{g.equipo}</span> · {g.ruta}
+                  <span className="tabular font-medium">{g.equipo}</span>
+                  {modelo ? <span className="text-ink/55"> ({modelo})</span> : null}
+                  {comp ? <span className="text-ink/50"> · {comp}</span> : null} · {g.ruta}
                 </p>
                 <p className="text-ink/50 text-xs">
                   {enteros(g.ids.length)} {g.ids.length === 1 ? 'viaje' : 'viajes'}:{' '}
                   {comoVolvieron(g.cargas) || 'sin decir cómo volvieron'}
                   {g.hayM3 ? ` · ${enteros(g.m3)} m³` : ''}
-                  {g.deMaquina ? ' · máquina propia: no se paga por viaje' : g.hayDinero ? ` · ${dolares(g.monto)}` : ''}
+                  {g.deMaquina
+                    ? ' · máquina propia: no se paga por viaje'
+                    : g.hayDinero
+                      ? ` · ${dolares(g.monto)}`
+                      : ''}
                 </p>
                 {g.viajes.some((v) => v.motivo_ajuste) ? (
                   <p className="text-ink/45 text-xs">
@@ -669,10 +1279,13 @@ function PorAprobar({ viajes }: { viajes: Acarreo[] }) {
               </div>
               {puedo ? (
                 <div className="flex gap-2">
-                  {/* Un parcial o un vacío se paga lo que diga quien aprueba. Para
-                      decidirlo hay que ver el dinero, y una máquina propia no cobra. */}
                   {!g.deMaquina && g.hayDinero ? (
-                    <Button size="sm" variant="ghost" icon={<Coins />} onClick={() => setAjustando(g)}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      icon={<Coins />}
+                      onClick={() => setAjustando(g)}
+                    >
                       Ajustar precio
                     </Button>
                   ) : null}
@@ -684,7 +1297,12 @@ function PorAprobar({ viajes }: { viajes: Acarreo[] }) {
                   >
                     Aprobar
                   </Button>
-                  <Button size="sm" variant="ghost" icon={<X />} onClick={() => setRechazando(g)}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    icon={<X />}
+                    onClick={() => setRechazando(g)}
+                  >
                     Rechazar
                   </Button>
                 </div>
@@ -701,22 +1319,11 @@ function PorAprobar({ viajes }: { viajes: Acarreo[] }) {
       {rechazando ? (
         <RechazarViajes grupo={rechazando} onCerrar={() => setRechazando(null)} />
       ) : null}
-      {ajustando ? (
-        <AjustarPrecio grupo={ajustando} onCerrar={() => setAjustando(null)} />
-      ) : null}
+      {ajustando ? <AjustarPrecio grupo={ajustando} onCerrar={() => setAjustando(null)} /> : null}
     </Card>
   )
 }
 
-/*
-  AJUSTAR EL PRECIO ANTES DE APROBAR.
-
-  Christopher, sobre un viaje que vuelve a medias o vacío: «lo decide quien
-  aprueba». Aquí se ve cómo volvió cada uno y lo que trae de su ruta, y se le
-  pone otro precio a los que se marquen, con motivo. Vienen marcados los
-  parciales y los vacíos, que son los que suelen cambiar; los completos se marcan
-  a mano si también hace falta.
-*/
 function AjustarPrecio({ grupo, onCerrar }: { grupo: GrupoPorAprobar; onCerrar: () => void }) {
   const ajustar = useAjustarPrecioDeViajes()
   const [marcados, setMarcados] = useState<number[]>(
@@ -725,7 +1332,8 @@ function AjustarPrecio({ grupo, onCerrar }: { grupo: GrupoPorAprobar; onCerrar: 
   const [precio, setPrecio] = useState('')
   const [motivo, setMotivo] = useState('')
 
-  const listo = marcados.length > 0 && precio !== '' && Number(precio) >= 0 && motivo.trim().length >= 4
+  const listo =
+    marcados.length > 0 && precio !== '' && Number(precio) >= 0 && motivo.trim().length >= 4
 
   return (
     <Modal
@@ -762,7 +1370,9 @@ function AjustarPrecio({ grupo, onCerrar }: { grupo: GrupoPorAprobar; onCerrar: 
                 className="accent-royal-600 size-4 shrink-0"
                 checked={marcados.includes(v.id)}
                 onChange={(e) =>
-                  setMarcados((m) => (e.target.checked ? [...m, v.id] : m.filter((x) => x !== v.id)))
+                  setMarcados((m) =>
+                    e.target.checked ? [...m, v.id] : m.filter((x) => x !== v.id),
+                  )
                 }
               />
               <span className="tabular text-ink/70 w-10">N.º {v.secuencia}</span>
@@ -851,16 +1461,6 @@ function RechazarViajes({ grupo, onCerrar }: { grupo: GrupoPorAprobar; onCerrar:
 
 /* ════════════════════════════════════ el mensaje del reporte de operaciones */
 
-/**
- * El reporte que hoy se escribe a mano en WhatsApp cada tarde.
- *
- * Se enseña el texto completo y se copia de un botón. No se guarda en ningún
- * sitio: es un mensaje, no un documento. Las novedades se teclean aquí porque
- * son lo único que el sistema no puede saber.
- *
- * Cuenta también lo que espera aprobación: el reporte dice lo que pasó ese día,
- * y la aprobación suele llegar después de mandarlo.
- */
 function ReporteDeOperaciones({
   dia,
   filas,
@@ -921,7 +1521,7 @@ function ReporteDeOperaciones({
       abierto
       onCerrar={onCerrar}
       titulo="Reporte diario de operaciones"
-      descripcion="El mensaje que se manda por WhatsApp. Se copia y se pega tal cual: no se guarda en el sistema. Cuenta los viajes a planta fija, a lavado y de coraza, también los que esperan aprobación."
+      descripcion="El mensaje que se manda por WhatsApp. Se copia y se pega tal cual: no se guarda en el sistema. Cuenta los acarreos a planta fija, a lavado y de coraza, también los que esperan aprobación."
       ancho="lg"
       acciones={
         <>
@@ -955,78 +1555,10 @@ function ReporteDeOperaciones({
       <pre className="bg-ink/4 text-ink/80 max-h-80 overflow-auto rounded-[6px] p-3 text-xs leading-relaxed whitespace-pre-wrap">
         {texto}
       </pre>
-
-      {copiado ? null : (
-        <p className="text-ink/45 mt-2 text-xs">
-          Si el botón de copiar no funciona, el texto de arriba se puede seleccionar a mano.
-        </p>
-      )}
     </Modal>
   )
 }
 
-function FilaEquipo({
-  equipo,
-  columnas,
-  filas,
-  onDetalle,
-}: {
-  equipo: Equipo
-  columnas: RutaAcarreo[]
-  filas: AcarreoDia[]
-  onDetalle: () => void
-}) {
-  const deRuta = (rutaId: number) => filas.filter((f) => f.ruta_id === rutaId)
-  const total = filas.reduce((s, f) => s + f.viajes + f.por_aprobar + f.rechazados + f.anulados, 0)
-  const m3 = filas.reduce((s, f) => s + Number(f.m3 ?? 0), 0)
-  const hayM3 = filas.some((f) => f.m3 !== null)
-  const hayDinero = filas.some((f) => f.monto_usd !== null)
-  const monto = filas.reduce((s, f) => s + Number(f.monto_usd ?? 0), 0)
-
-  return (
-    <tr className="border-hairline hover:bg-ink/3 border-b transition-colors last:border-0">
-      <td className="px-5 py-3">
-        <p className="tabular text-ink/85 font-medium">{equipo.placa}</p>
-        <p className="text-ink/45 text-xs">{equipo.detalle}</p>
-      </td>
-      {columnas.map((r) => {
-        const suyas = deRuta(r.id)
-        const cuentan = suyas.reduce((s, f) => s + f.viajes, 0)
-        const esperan = suyas.reduce((s, f) => s + f.por_aprobar, 0)
-        return (
-          <td key={r.id} className="tabular text-ink/75 px-3 py-3 text-right">
-            {cuentan > 0 ? enteros(cuentan) : esperan > 0 ? null : <span className="text-ink/20">—</span>}
-            {esperan > 0 ? (
-              <span className="text-warning block text-2xs">+{enteros(esperan)} por aprobar</span>
-            ) : null}
-          </td>
-        )
-      })}
-      <td className="tabular text-ink/85 px-3 py-3 text-right font-medium">
-        <Cifra valor={hayM3 ? String(m3) : null} />
-      </td>
-      <td className="tabular text-ink/85 px-3 py-3 text-right font-medium">
-        <Cifra valor={hayDinero ? String(monto) : null} comoDinero />
-      </td>
-      <td className="px-5 py-3 text-right">
-        {total > 0 ? (
-          <Button size="sm" variant="ghost" onClick={onDetalle}>
-            Ver los {enteros(total)}
-          </Button>
-        ) : null}
-      </td>
-    </tr>
-  )
-}
-
-/*
-  QUIÉN VA EN CADA RAYA DEL REGISTRO DEL DÍA.
-
-  Firma quien más viajes cargó —o aprobó—, y los demás se nombran en el resumen.
-  Su firma digital solo se estampa si la eligió en TODOS sus viajes de ese día:
-  una tanda cargada sin firma basta para no ponerla en un papel que también
-  cubre esa tanda.
-*/
 function quienesFirmanElDia(viajes: Acarreo[], firmas: Record<string, string>): FirmasDelDia {
   const firmaDe = (
     lista: Acarreo[],
@@ -1075,591 +1607,33 @@ function quienesFirmanElDia(viajes: Acarreo[], firmas: Record<string, string>): 
   }
 }
 
-/** El formulario de carga: quién, por qué ruta, cómo volvió y cuántos. */
-function CargarViajes({
-  dia,
-  equipos,
-  rutas,
-  yaTiene,
-}: {
-  dia: string
-  equipos: Equipo[]
-  rutas: RutaAcarreo[]
-  yaTiene: (e: Equipo, rutaId: number) => number
-}) {
-  const registrar = useRegistrarViajes()
-  // Quien carga no autoriza nada: su firma se ofrece sin marcar.
-  const { data: miFirma } = useMiFirma()
-  const [conMiFirma, setConMiFirma] = useState(false)
-  const [indice, setIndice] = useState('')
-  const [rutaId, setRutaId] = useState('')
-  const [carga, setCarga] = useState<CargaDelViaje>('COMPLETA')
-  const [m3, setM3] = useState('')
-  const [cantidad, setCantidad] = useState('')
-  const [precio, setPrecio] = useState('')
-  const [cargados, setCargados] = useState<number | null>(null)
-
-  const equipo = indice === '' ? null : equipos[Number(indice)]
-  const ruta = rutas.find((r) => String(r.id) === rutaId) ?? null
-  const cuantos = Number(cantidad)
-  const deMaquina = equipo?.maquinaId !== null && equipo !== null
-
-  const pideM3 = carga === 'PARCIAL'
-  const ofreceM3 = pideM3 || (carga === 'COMPLETA' && deMaquina)
-  // Una máquina propia no se paga por viaje: no se le pregunta precio aunque la ruta lo pida.
-  const pidePrecio = Boolean(ruta?.pide_precio) && !deMaquina
-
-  const valido =
-    equipo !== null &&
-    ruta !== null &&
-    cuantos >= 1 &&
-    cuantos <= 60 &&
-    (!pideM3 || Number(m3) > 0) &&
-    (!pidePrecio || (precio !== '' && Number(precio) >= 0))
-
-  const pistaPrecio = !ruta
-    ? undefined
-    : ruta.precio_libre
-      ? 'Esta ruta no tiene tarifa fija: se cuadra con el pedido.'
-      : ruta.precio_hasta_usd !== null && ruta.precio_usd !== null
-        ? `La tarifa va de ${dolares(ruta.precio_usd)} a ${dolares(ruta.precio_hasta_usd)}.`
-        : 'La tarifa de esta ruta es un rango: diga cuánto se paga.'
-
-  const enviar = async () => {
-    if (!equipo || !ruta) return
-    await registrar.mutateAsync({
-      fecha: dia,
-      ruta_id: ruta.id,
-      carga,
-      cantidad: cuantos,
-      vehiculo_id: equipo.vehiculoId,
-      maquina_id: equipo.maquinaId,
-      carga_m3: ofreceM3 && m3 !== '' ? Number(m3) : null,
-      precio_usd: pidePrecio ? Number(precio) : null,
-      con_firma: miFirma?.usar === true && conMiFirma,
-    })
-    setCargados(cuantos)
-    setCantidad('')
-    setPrecio('')
-    setM3('')
-  }
-
-  return (
-    <div className="border-hairline mt-2 rounded-[6px] border border-dashed p-3">
-      <div className="flex flex-wrap items-end gap-3">
-        <Select
-          label={equipos[0]?.maquinaId != null ? 'Máquina' : 'Camión'}
-          vacio={equipos[0]?.maquinaId != null ? 'Seleccione la máquina' : 'Seleccione el camión'}
-          value={indice}
-          onChange={(e) => {
-            setIndice(e.target.value)
-            setCargados(null)
-          }}
-          opciones={equipos.map((e, i) => ({
-            valor: String(i),
-            etiqueta: e.maquinaId !== null ? `${e.placa} · ${e.detalle}` : e.placa,
-          }))}
-          className="w-52"
-        />
-        <Select
-          label="Ruta"
-          vacio="Seleccione la ruta"
-          value={rutaId}
-          onChange={(e) => {
-            setRutaId(e.target.value)
-            setPrecio('')
-            setCargados(null)
-          }}
-          opciones={rutas.map((r) => ({ valor: String(r.id), etiqueta: r.nombre }))}
-          className="w-72"
-        />
-        <Select
-          label="Carga"
-          value={carga}
-          onChange={(e) => {
-            setCarga(e.target.value as CargaDelViaje)
-            setM3('')
-          }}
-          opciones={(Object.keys(CARGA_DEL_VIAJE) as CargaDelViaje[]).map((c) => ({
-            valor: c,
-            etiqueta: CARGA_DEL_VIAJE[c].texto,
-          }))}
-          hint={CARGA_DEL_VIAJE[carga].explica}
-          className="w-56"
-        />
-        {ofreceM3 ? (
-          <Input
-            label="Metros cúbicos"
-            type="number"
-            min="0"
-            step="0.01"
-            inputMode="decimal"
-            value={m3}
-            onChange={(e) => setM3(e.target.value)}
-            className="w-44"
-          />
-        ) : null}
-        <Input
-          label="Cantidad de viajes"
-          type="number"
-          min="1"
-          max="60"
-          inputMode="numeric"
-          value={cantidad}
-          onChange={(e) => {
-            setCantidad(e.target.value)
-            setCargados(null)
-          }}
-          hint={
-            equipo && ruta && cuantos >= 1
-              ? `Ya tiene ${yaTiene(equipo, ruta.id)} en esta ruta: quedarán ${yaTiene(equipo, ruta.id) + cuantos}.`
-              : 'Se suma a los que ya tenga.'
-          }
-          className="w-44"
-        />
-        {pidePrecio ? (
-          <Input
-            label="Precio de cada viaje"
-            type="number"
-            min="0"
-            step="0.01"
-            inputMode="decimal"
-            value={precio}
-            onChange={(e) => setPrecio(e.target.value)}
-            hint={pistaPrecio}
-            className="w-52"
-          />
-        ) : null}
-        <Button
-          icon={<Plus />}
-          disabled={!valido || registrar.isPending}
-          onClick={() => void enviar()}
-          className="mb-0.5"
-        >
-          {registrar.isPending ? 'Cargando…' : 'Cargar'}
-        </Button>
-      </div>
-      {miFirma?.usar ? (
-        <label className="text-ink/75 mt-3 flex cursor-pointer items-start gap-2.5 text-sm">
-          <input
-            type="checkbox"
-            className="accent-royal-600 mt-0.5 size-4 shrink-0"
-            checked={conMiFirma}
-            onChange={(e) => setConMiFirma(e.target.checked)}
-          />
-          <span>
-            Poner mi firma digital en «Registrado por» del registro del día
-            <span className="text-ink/50 mt-0.5 block text-xs">
-              Solo se estampa si la pone en todos los viajes que cargue ese día.
-            </span>
-          </span>
-        </label>
-      ) : null}
-      {equipos[0]?.maquinaId != null ? (
-        <p className="text-ink/45 mt-2 text-xs">
-          Las máquinas propias no se pagan por viaje: el viaje queda contado sin precio.
-        </p>
-      ) : null}
-      {cargados !== null ? (
-        <p className="text-ink/55 mt-2 text-xs">
-          {cargados === 1 ? 'Cargado 1 viaje' : `Cargados ${cargados} viajes`}: quedan por aprobar y
-          todavía no cuentan para el pago. Si alguno volvió a medias o vacío, quien aprueba ajusta su
-          precio.
-        </p>
-      ) : null}
-      {registrar.error ? <ErrorDeCarga error={registrar.error} className="mt-3" /> : null}
-    </div>
-  )
-}
-
-/* ═══════════════════════════════════════════════════ el detalle del equipo */
-
-function DetalleDelEquipo({
-  dia,
-  equipo,
-  onCerrar,
-}: {
-  dia: string
-  equipo: Equipo
-  onCerrar: () => void
-}) {
-  const viajes = useAcarreosDeEquipo(dia, equipo)
-  const [anulando, setAnulando] = useState<Acarreo | null>(null)
-  const [corrigiendo, setCorrigiendo] = useState<Acarreo | null>(null)
-  const [devolviendo, setDevolviendo] = useState<Acarreo | null>(null)
-  /* Devolver lo decide quien pudo aprobarlo: la misma regla, el mismo helper. */
-  const comoApruebo = useComoApruebo()
-  const { puede } = useMisPermisos()
-
-  return (
-    <>
-      <Modal
-        abierto
-        onCerrar={onCerrar}
-        titulo={equipo.placa}
-        descripcion={`Viaje por viaje · ${fmtFecha(dia)}`}
-        ancho="lg"
-      >
-        {viajes.isPending ? <Cargando /> : null}
-        {viajes.error ? <ErrorDeCarga error={viajes.error} /> : null}
-
-        {(viajes.data ?? []).length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[680px] text-sm">
-              <thead>
-                <tr className="text-ink/45 border-hairline border-b text-left text-xs">
-                  <th className="py-2 pr-3 font-medium">N.º</th>
-                  <th className="px-3 py-2 font-medium">Ruta</th>
-                  <th className="px-3 py-2 font-medium">Hora</th>
-                  <th className="px-3 py-2 font-medium">Carga</th>
-                  <th className="px-3 py-2 text-right font-medium">m³</th>
-                  <th className="px-3 py-2 text-right font-medium">Precio</th>
-                  <th className="px-3 py-2 font-medium">Estado</th>
-                  <th className="py-2 pl-3 text-right font-medium" />
-                </tr>
-              </thead>
-              <tbody>
-                {(viajes.data ?? []).map((v) => {
-                  const estado = ESTADO_VIAJE[v.estado]
-                  const muerto = v.estado === 'ANULADO' || v.estado === 'RECHAZADO'
-                  return (
-                    <tr
-                      key={v.id}
-                      className={cn('border-hairline border-b last:border-0', muerto && 'opacity-55')}
-                    >
-                      <td className="tabular text-ink/70 py-2 pr-3">{v.secuencia}</td>
-                      <td className="text-ink/70 px-3 py-2">{v.tramo_dice}</td>
-                      <td className="tabular text-ink/60 px-3 py-2">
-                        {v.hora?.slice(0, 5) ?? <span className="text-ink/25">—</span>}
-                      </td>
-                      <td className="text-ink/60 px-3 py-2 text-xs">
-                        {v.carga ? CARGA_DEL_VIAJE[v.carga].texto : <span className="text-ink/25">—</span>}
-                      </td>
-                      <td className="tabular text-ink/80 px-3 py-2 text-right">
-                        <Cifra valor={v.carga_m3} />
-                      </td>
-                      <td className="tabular text-ink/80 px-3 py-2 text-right">
-                        <Cifra valor={v.precio_usd} comoDinero />
-                        {v.precio_antes_de_ajuste !== null ? (
-                          <span className="text-ink/45 block text-2xs" title={v.motivo_ajuste ?? ''}>
-                            ajustado; de la ruta {dolares(v.precio_antes_de_ajuste)}
-                          </span>
-                        ) : null}
-                      </td>
-                      <td className="px-3 py-2">
-                        <Chip
-                          tone={estado.tono}
-                          title={v.motivo_rechazo ?? v.motivo_anulacion ?? v.decidido_por_nombre ?? ''}
-                        >
-                          {estado.texto}
-                        </Chip>
-                        {v.motivo_rechazo ? (
-                          <span className="text-ink/45 mt-0.5 block text-2xs">{v.motivo_rechazo}</span>
-                        ) : null}
-                        {/* Que volvió a la cola se queda dicho aunque luego se decida otra vez. */}
-                        {v.motivo_devolucion ? (
-                          <span className="text-ink/45 mt-0.5 block text-2xs">
-                            Devuelto{v.devuelto_por_nombre ? ` por ${v.devuelto_por_nombre}` : ''}:{' '}
-                            {v.motivo_devolucion}
-                          </span>
-                        ) : null}
-                      </td>
-                      <td className="py-2 pl-3 text-right whitespace-nowrap">
-                        {(v.estado === 'POR_APROBAR' || v.estado === 'REGISTRADO') &&
-                        puede('EXPLOTACION', 'ESCRITURA') ? (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            icon={<Pencil />}
-                            onClick={() => setCorrigiendo(v)}
-                          >
-                            Corregir
-                          </Button>
-                        ) : null}
-                        {/*
-                          DEVOLVER NO ES RECHAZAR NI ANULAR. Rechazar dice
-                          «estos no se pagan» y anular borra del conteo un viaje
-                          que ocurrió; esto solo dice «me equivoqué al decidir» y
-                          lo deja otra vez esperando. Sale sobre lo decidido,
-                          que es lo único que tiene decisión que deshacer.
-                        */}
-                        {(v.estado === 'APROBADO' || v.estado === 'RECHAZADO') &&
-                        puedoDecidirViaje(comoApruebo.data, v) ? (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            icon={<Undo2 />}
-                            onClick={() => setDevolviendo(v)}
-                          >
-                            Devolver
-                          </Button>
-                        ) : null}
-                        {!muerto && puede('EXPLOTACION', 'TOTAL') ? (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            icon={<Ban />}
-                            className="text-danger"
-                            onClick={() => setAnulando(v)}
-                          >
-                            Anular
-                          </Button>
-                        ) : null}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : null}
-      </Modal>
-
-      {corrigiendo ? (
-        <CorregirViaje viaje={corrigiendo} onCerrar={() => setCorrigiendo(null)} />
-      ) : null}
-      {anulando ? <AnularViaje viaje={anulando} onCerrar={() => setAnulando(null)} /> : null}
-      {devolviendo ? (
-        <DevolverViaje viaje={devolviendo} onCerrar={() => setDevolviendo(null)} />
-      ) : null}
-    </>
-  )
-}
-
-function CorregirViaje({ viaje, onCerrar }: { viaje: Acarreo; onCerrar: () => void }) {
-  const corregir = useCorregirAcarreo()
-  const [hora, setHora] = useState(viaje.hora?.slice(0, 5) ?? '')
-  const [carga, setCarga] = useState(viaje.carga_m3 ?? '')
-  const [precio, setPrecio] = useState(viaje.precio_usd ?? '')
-
-  // El precio solo se enseña a quien lo puede ver. A quien no, la vista se lo
-  // manda nulo y corregirlo a ciegas sería escribir sobre algo que no ve. Y el
-  // de un viaje por aprobar es de quien aprueba: se ajusta desde «Por aprobar».
-  const veElDinero = viaje.precio_usd !== null && viaje.estado !== 'POR_APROBAR'
-  const volvioVacio = viaje.carga === 'VACIO'
-
-  return (
-    <Modal
-      abierto
-      onCerrar={onCerrar}
-      titulo={`Viaje ${viaje.secuencia} · ${viaje.placa ?? ''}`}
-      descripcion={`${viaje.tramo_dice}. Solo se corrige lo que todavía no se ha aprobado.`}
-      acciones={
-        <>
-          <Button variant="ghost" onClick={onCerrar}>
-            Cancelar
-          </Button>
-          <Button
-            disabled={corregir.isPending}
-            onClick={async () => {
-              await corregir.mutateAsync({
-                id: viaje.id,
-                hora: hora === '' ? null : hora,
-                carga_m3: volvioVacio || carga === '' ? null : Number(carga),
-                precio_usd: veElDinero && precio !== '' ? Number(precio) : null,
-              })
-              onCerrar()
-            }}
-          >
-            {corregir.isPending ? 'Guardando…' : 'Guardar'}
-          </Button>
-        </>
-      }
-    >
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Input label="Hora" type="time" value={hora} onChange={(e) => setHora(e.target.value)} />
-        {volvioVacio ? (
-          <p className="text-ink/55 self-end text-xs">
-            Volvió vacío: no lleva metros cúbicos. Si traía carga, anúlelo y cárguelo de nuevo.
-          </p>
-        ) : (
-          <Input
-            label="Metros cúbicos"
-            type="number"
-            min="0"
-            step="0.01"
-            inputMode="decimal"
-            value={carga}
-            onChange={(e) => setCarga(e.target.value)}
-            hint={
-              viaje.capacidad_m3 !== null
-                ? `El camión carga hasta ${enteros(viaje.capacidad_m3)} m³.`
-                : undefined
-            }
-          />
-        )}
-        {veElDinero ? (
-          <Input
-            label="Precio del viaje"
-            type="number"
-            min="0"
-            step="0.01"
-            inputMode="decimal"
-            value={precio}
-            onChange={(e) => setPrecio(e.target.value)}
-          />
-        ) : null}
-      </div>
-      {corregir.error ? <ErrorDeCarga error={corregir.error} className="mt-4" /> : null}
-    </Modal>
-  )
-}
-
-/**
- * Devolver un viaje decidido a la cola.
- *
- * El motivo es obligatorio y no es burocracia: lo lee quien tenga que
- * decidirlo otra vez, que puede ser alguien distinto y días después. Sin él,
- * un viaje reaparece en la bandeja sin que nadie sepa por qué volvió.
- */
-function DevolverViaje({ viaje, onCerrar }: { viaje: Acarreo; onCerrar: () => void }) {
-  const devolver = useDevolverViajes()
-  const [motivo, setMotivo] = useState('')
-
-  return (
-    <Modal
-      abierto
-      onCerrar={onCerrar}
-      titulo={`Devolver el viaje ${viaje.secuencia} de ${viaje.placa ?? ''}`}
-      descripcion={`Vuelve a «por aprobar» y deja de contar hasta que alguien lo decida otra vez. El viaje no se borra ni se rechaza: solo se deshace la decisión${
-        viaje.decidido_por_nombre ? ` de ${viaje.decidido_por_nombre}` : ''
-      }.`}
-      ancho="sm"
-      acciones={
-        <>
-          <Button variant="ghost" onClick={onCerrar}>
-            Volver
-          </Button>
-          <Button
-            disabled={devolver.isPending || motivo.trim().length < 4}
-            onClick={async () => {
-              await devolver.mutateAsync({ ids: [viaje.id], motivo })
-              onCerrar()
-            }}
-          >
-            {devolver.isPending ? 'Devolviendo…' : 'Devolver a por aprobar'}
-          </Button>
-        </>
-      }
-    >
-      <Textarea
-        label="Motivo"
-        hint="Lo lee quien tenga que decidirlo otra vez. Queda guardado aunque después se apruebe."
-        placeholder="Se aprobó por error junto con otro lote"
-        rows={3}
-        value={motivo}
-        onChange={(e) => setMotivo(e.target.value)}
-        required
-      />
-      {devolver.error ? <ErrorDeCarga error={devolver.error} className="mt-3" /> : null}
-    </Modal>
-  )
-}
-
-function AnularViaje({ viaje, onCerrar }: { viaje: Acarreo; onCerrar: () => void }) {
-  const anular = useAnularAcarreo()
-  const [motivo, setMotivo] = useState('')
-
-  return (
-    <Modal
-      abierto
-      onCerrar={onCerrar}
-      titulo={`Anular el viaje ${viaje.secuencia} de ${viaje.placa ?? ''}`}
-      descripcion="El viaje deja de contar y de cobrarse, pero la fila se queda, y su número no se reutiliza."
-      acciones={
-        <>
-          <Button variant="ghost" onClick={onCerrar}>
-            No anular
-          </Button>
-          <Button
-            disabled={anular.isPending || motivo.trim().length < 4}
-            onClick={async () => {
-              await anular.mutateAsync({ id: viaje.id, motivo })
-              onCerrar()
-            }}
-          >
-            {anular.isPending ? 'Anulando…' : 'Anular el viaje'}
-          </Button>
-        </>
-      }
-    >
-      <Textarea
-        label="Motivo"
-        hint="Queda en el registro de auditoría con su nombre y la hora."
-        rows={3}
-        value={motivo}
-        onChange={(e) => setMotivo(e.target.value)}
-        required
-      />
-      {anular.error ? <ErrorDeCarga error={anular.error} className="mt-4" /> : null}
-    </Modal>
-  )
-}
-
-/* ═══════════════════════════════════════════════════════════ las tarifas */
-
-/**
- * Lo que se paga hoy por cada ruta abierta.
- *
- * Cambiar una tarifa ya no se hace aquí: vive con las rutas, en Plantas y
- * rutas, que es donde se decide qué rutas existen. Sin la casilla del dinero
- * las tarifas llegan nulas y la caja no se dibuja.
- */
-function CajaDeTarifas({ rutas }: { rutas: RutaAcarreo[] }) {
-  const conDinero = rutas.filter((r) => r.precio_usd !== null)
-  if (conDinero.length === 0) return null
-
-  return (
-    <div className="border-hairline flex items-center gap-3 rounded-[6px] border px-3 py-2">
-      <Coins className="text-ink/35 size-4 shrink-0" />
-      <div className="text-xs">
-        <p className="text-ink/45">Tarifa por viaje</p>
-        <p className="text-ink/80 tabular">
-          {rutas
-            .filter((r) => r.precio_usd !== null || r.precio_libre)
-            .map((r) => `${r.nombre}: ${tarifaEnPalabras(r, dolares)}`)
-            .join(' · ')}
-        </p>
-      </div>
-    </div>
-  )
-}
-
 /* ════════════════════════════════════════════════════ el registro de pago */
-
-const esFecha = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v)
-
-/** Suma días a una fecha AAAA-MM-DD sin pasar por la zona horaria del navegador. */
-function sumarDias(iso: string, dias: number): string {
-  const d = new Date(`${iso}T12:00:00Z`)
-  d.setUTCDate(d.getUTCDate() + dias)
-  return d.toISOString().slice(0, 10)
-}
 
 interface Periodo {
   desde: string
   hasta: string
 }
 
-/**
- * Los atajos de fecha, calculados desde hoy en Caracas.
- *
- * Son los que se piden de verdad: el día para pagarle a un transportista, la
- * semana y el mes para cuadrar. Cualquier otro rango se escribe a mano.
- */
 function atajos(hoy: string): Array<{ id: string; etiqueta: string; periodo: Periodo }> {
-  const deLunes = (new Date(`${hoy}T12:00:00Z`).getUTCDay() + 6) % 7
+  const lunesEsta = lunesDeSemana(hoy)
+  const lunesPasada = sumarDiasIso(lunesEsta, -7)
+  const domingoPasada = sumarDiasIso(lunesPasada, 6)
   const primeroDelMes = `${hoy.slice(0, 8)}01`
-  const finDelMesPasado = sumarDias(primeroDelMes, -1)
-  const ayer = sumarDias(hoy, -1)
+  const finDelMesPasado = sumarDiasIso(primeroDelMes, -1)
+  const ayer = sumarDiasIso(hoy, -1)
 
   return [
     { id: 'hoy', etiqueta: 'Hoy', periodo: { desde: hoy, hasta: hoy } },
     { id: 'ayer', etiqueta: 'Ayer', periodo: { desde: ayer, hasta: ayer } },
     {
       id: 'semana',
-      etiqueta: 'Esta semana',
-      periodo: { desde: sumarDias(hoy, -deLunes), hasta: hoy },
+      etiqueta: 'Esta semana (Lun–Dom)',
+      periodo: { desde: lunesEsta, hasta: hoy },
+    },
+    {
+      id: 'semana-pasada',
+      etiqueta: 'Semana pasada (Lun–Dom)',
+      periodo: { desde: lunesPasada, hasta: domingoPasada },
     },
     { id: 'mes', etiqueta: 'Este mes', periodo: { desde: primeroDelMes, hasta: hoy } },
     {
@@ -1670,26 +1644,12 @@ function atajos(hoy: string): Array<{ id: string; etiqueta: string; periodo: Per
   ]
 }
 
-/*
-  UN DÍA O UN RANGO, Y NO «MES» CON «VER»
-
-  Antes se elegía el mes y dentro de él un día de los que tenían viajes. Eso
-  no dejaba ver del 25 al 5, ni una quincena, ni dos meses seguidos. Ahora se
-  elige lo que se quiere mirar: un día, o un rango con sus dos fechas. El mes
-  sigue a un clic en los atajos.
-
-  Los dos modos no son el mismo papel recortado. El día es lo que se le
-  entrega a un transportista y dice solo cuánto se le debe. El rango es para
-  cuadrar: la matriz de días con el acumulado de cada empresa dentro de esas
-  fechas.
-*/
 function PestanaPago() {
   const hoy = hoyEnCaracas()
   const [modo, setModo] = useState<'dia' | 'rango'>('rango')
   const [dia, setDia] = useState(hoy)
-  const [desde, setDesde] = useState(`${hoy.slice(0, 8)}01`)
+  const [desde, setDesde] = useState(lunesDeSemana(hoy))
   const [hasta, setHasta] = useState(hoy)
-  /* Vacía quiere decir «todas». */
   const [empresaPedida, setEmpresaPedida] = useState('')
   const [pdf, setPdf] = useState<ArchivoArmado | null>(null)
   const { data: laEmpresa } = useEmpresa()
@@ -1698,7 +1658,7 @@ function PestanaPago() {
   const porDia = modo === 'dia'
   const periodo: Periodo = porDia ? { desde: dia, hasta: dia } : { desde, hasta }
   const periodoValido =
-    esFecha(periodo.desde) && esFecha(periodo.hasta) && periodo.desde <= periodo.hasta
+    esFechaIso(periodo.desde) && esFechaIso(periodo.hasta) && periodo.desde <= periodo.hasta
 
   const pago = usePagoDeAcarreosEntre(periodo.desde, periodo.hasta)
 
@@ -1715,16 +1675,9 @@ function PestanaPago() {
 
   const todas = pago.data ?? []
   const empresasDelPeriodo = [...new Set(todas.map((f) => f.transportista))].sort()
-
-  /* Al cambiar de fechas, la empresa elegida puede no tener viajes en ellas.
-     En vez de enseñar una tabla vacía sin explicación, el filtro se suelta. */
   const empresa = empresasDelPeriodo.includes(empresaPedida) ? empresaPedida : ''
-
   const filas = todas.filter((f) => empresa === '' || f.transportista === empresa)
 
-  /* El acumulado se calcula aquí, dentro del período, y no se toma de la
-     vista: el de la vista cuenta desde el primero del mes. Las filas llegan
-     ordenadas por empresa y fecha, así que basta con ir sumando. */
   const corrido = new Map<string, number>()
   const conAcumulado = filas.map((f) => {
     if (f.monto_usd === null) return { ...f, acumulado: null as string | null }
@@ -1734,7 +1687,6 @@ function PestanaPago() {
   })
 
   const empresas = [...new Set(filas.map((f) => f.transportista))].sort()
-  // Las columnas de la matriz son los días que tienen viajes dentro del período.
   const dias = [...new Set(todas.map((f) => f.fecha))].sort()
 
   const sumaDinero = (lista: typeof filas) =>
@@ -1743,7 +1695,6 @@ function PestanaPago() {
       : String(lista.reduce((s, f) => s + Number(f.monto_usd ?? 0), 0))
 
   const totalFilas = sumaDinero(filas)
-
   const enCruce = (e: string, d: string) =>
     filas.find((f) => f.transportista === e && f.fecha === d)
 
@@ -1789,21 +1740,19 @@ function PestanaPago() {
     )
   }
 
-  /* El CSV sale con los montos crudos, sin formatear: así la hoja de cálculo
-     los lee como números y el acumulado se puede recalcular allí. */
   const exportar = () => {
     if (porDia) {
       descargarCsv(
-        `pago-viajes-${dia}.csv`,
-        ['Empresa', 'Fecha', 'Viajes', 'Metros cubicos', 'Monto USD'],
+        `pago-acarreos-${dia}.csv`,
+        ['Compania', 'Fecha', 'Viajes', 'Metros cubicos', 'Monto USD'],
         filas.map((f) => [f.transportista, f.fecha, f.viajes, f.m3 ?? '', f.monto_usd ?? '']),
       )
       return
     }
 
     descargarCsv(
-      `pago-viajes-${desde}_a_${hasta}.csv`,
-      ['Empresa', 'Fecha', 'Viajes', 'Metros cubicos', 'Monto USD', 'Acumulado USD'],
+      `pago-acarreos-${desde}_a_${hasta}.csv`,
+      ['Compania', 'Fecha', 'Viajes', 'Metros cubicos', 'Monto USD', 'Acumulado USD'],
       conAcumulado.map((f) => [
         f.transportista,
         f.fecha,
@@ -1858,8 +1807,6 @@ function PestanaPago() {
           />
         ) : (
           <>
-            {/* Una fecha no puede quedar del lado equivocado de la otra: si
-                se mueve una más allá, la otra la sigue. */}
             <Input
               label="Desde"
               type="date"
@@ -1868,7 +1815,7 @@ function PestanaPago() {
               onChange={(e) => {
                 const v = e.target.value
                 setDesde(v)
-                if (esFecha(v) && esFecha(hasta) && v > hasta) setHasta(v)
+                if (esFechaIso(v) && esFechaIso(hasta) && v > hasta) setHasta(v)
               }}
               className="w-48"
             />
@@ -1880,7 +1827,7 @@ function PestanaPago() {
               onChange={(e) => {
                 const v = e.target.value
                 setHasta(v)
-                if (esFecha(v) && esFecha(desde) && v < desde) setDesde(v)
+                if (esFechaIso(v) && esFechaIso(desde) && v < desde) setDesde(v)
               }}
               className="w-48"
             />
@@ -1888,7 +1835,7 @@ function PestanaPago() {
         )}
 
         <Select
-          label="Empresa"
+          label="Compañía"
           value={empresa}
           onChange={(e) => setEmpresaPedida(e.target.value)}
           opciones={[
@@ -1945,7 +1892,7 @@ function PestanaPago() {
           <Vacio
             icono={<Coins />}
             titulo={porDia ? 'Seleccione un día' : 'Seleccione las dos fechas'}
-            descripcion="Con la fecha completa se muestra lo adeudado a cada empresa."
+            descripcion="Con la fecha completa se muestra lo adeudado a cada compañía."
           />
         </Card>
       ) : null}
@@ -1960,14 +1907,14 @@ function PestanaPago() {
             titulo={
               todas.length === 0
                 ? porDia
-                  ? 'Sin viajes registrados ese día'
-                  : 'Sin viajes registrados en esas fechas'
+                  ? 'Sin acarreos aprobados ese día'
+                  : 'Sin acarreos aprobados en esas fechas'
                 : 'Sin resultados'
             }
             descripcion={
               todas.length === 0
-                ? 'Seleccione otras fechas o registre los viajes en la pestaña «Viajes del día».'
-                : 'La empresa no registra viajes en esas fechas. Seleccione otras o elija «Todas» en empresa.'
+                ? 'Seleccione otras fechas o registre los viajes en la pestaña «Acarreos del día».'
+                : 'La compañía no registra viajes aprobados en esas fechas.'
             }
           />
         </Card>
@@ -1979,7 +1926,7 @@ function PestanaPago() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-ink/45 border-hairline border-b text-left text-xs">
-                  <th className="px-5 py-3 font-medium">Empresa</th>
+                  <th className="px-5 py-3 font-medium">Compañía</th>
                   <th className="px-3 py-3 text-right font-medium">Viajes</th>
                   <th className="px-3 py-3 text-right font-medium">m³</th>
                   <th className="px-5 py-3 text-right font-medium">Monto a pagar</th>
@@ -2000,15 +1947,21 @@ function PestanaPago() {
                     </td>
                   </tr>
                 ))}
-                <tr className="bg-ink/4">
-                  <td className="text-ink/85 px-5 py-3 text-sm font-semibold">
-                    Total del {fmtFecha(dia)}
-                  </td>
-                  <td className="tabular text-ink/85 px-3 py-3 text-right text-sm font-semibold">
+                <tr className="bg-ink/3 font-semibold">
+                  <td className="text-ink/85 px-5 py-3">Total del día</td>
+                  <td className="tabular text-ink/85 px-3 py-3 text-right">
                     {enteros(filas.reduce((s, f) => s + f.viajes, 0))}
                   </td>
-                  <td />
-                  <td className="tabular text-ink/90 px-5 py-3 text-right text-sm font-semibold">
+                  <td className="tabular text-ink/85 px-3 py-3 text-right">
+                    <Cifra
+                      valor={
+                        filas.some((f) => f.m3 !== null)
+                          ? String(filas.reduce((s, f) => s + Number(f.m3 ?? 0), 0))
+                          : null
+                      }
+                    />
+                  </td>
+                  <td className="tabular text-ink/95 px-5 py-3 text-right">
                     <Cifra valor={totalFilas} comoDinero />
                   </td>
                 </tr>
@@ -2021,53 +1974,72 @@ function PestanaPago() {
       {filas.length > 0 && !porDia ? (
         <Card flush>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[680px] text-sm">
               <thead>
                 <tr className="text-ink/45 border-hairline border-b text-left text-xs">
-                  <th className="px-5 py-3 font-medium">Empresa</th>
+                  <th className="px-5 py-3 font-medium">Compañía</th>
                   {dias.map((d) => (
-                    <th key={d} className="px-3 py-3 text-right font-medium whitespace-nowrap">
+                    <th
+                      key={d}
+                      className="px-2.5 py-3 text-right font-medium whitespace-nowrap"
+                      title={fmtFecha(d)}
+                    >
                       {d.slice(8, 10)}/{d.slice(5, 7)}
                     </th>
                   ))}
+                  <th className="px-3 py-3 text-right font-medium">Viajes</th>
                   <th className="px-5 py-3 text-right font-medium">Acumulado</th>
                 </tr>
               </thead>
               <tbody>
-                {empresas.map((e) => (
-                  <tr key={e} className="border-hairline border-b last:border-0">
-                    <td className="text-ink/85 px-5 py-3 font-medium">{e}</td>
-                    {dias.map((d) => {
-                      const celda = enCruce(e, d)
-                      return (
-                        <td key={d} className="tabular text-ink/75 px-3 py-3 text-right">
-                          {celda ? (
-                            <Cifra valor={celda.monto_usd} comoDinero />
-                          ) : (
-                            <span className="text-ink/20">—</span>
-                          )}
-                        </td>
-                      )
-                    })}
-                    <td className="tabular text-ink/90 px-5 py-3 text-right font-semibold">
-                      <Cifra
-                        valor={sumaDinero(filas.filter((f) => f.transportista === e))}
-                        comoDinero
-                      />
-                    </td>
-                  </tr>
-                ))}
-                <tr className="bg-ink/4">
-                  <td className="text-ink/85 px-5 py-3 text-sm font-semibold">Total diario</td>
-                  {dias.map((d) => (
-                    <td
-                      key={d}
-                      className="tabular text-ink/85 px-3 py-3 text-right text-sm font-semibold"
-                    >
-                      <Cifra valor={sumaDinero(filas.filter((f) => f.fecha === d))} comoDinero />
-                    </td>
-                  ))}
-                  <td className="tabular text-ink/90 px-5 py-3 text-right text-sm font-semibold">
+                {empresas.map((e) => {
+                  const deEsta = filas.filter((f) => f.transportista === e)
+                  const totalEmpresa = sumaDinero(deEsta)
+                  const viajesEmpresa = deEsta.reduce((s, f) => s + f.viajes, 0)
+                  return (
+                    <tr key={e} className="border-hairline border-b last:border-0">
+                      <td className="text-ink/85 px-5 py-3 font-medium whitespace-nowrap">{e}</td>
+                      {dias.map((d) => {
+                        const celda = enCruce(e, d)
+                        return (
+                          <td
+                            key={d}
+                            className="tabular text-ink/75 px-2.5 py-3 text-right whitespace-nowrap"
+                          >
+                            {celda ? (
+                              <Cifra valor={celda.monto_usd} comoDinero />
+                            ) : (
+                              <span className="text-ink/20">—</span>
+                            )}
+                          </td>
+                        )
+                      })}
+                      <td className="tabular text-ink/80 px-3 py-3 text-right">
+                        {enteros(viajesEmpresa)}
+                      </td>
+                      <td className="tabular text-ink/90 px-5 py-3 text-right font-semibold whitespace-nowrap">
+                        <Cifra valor={totalEmpresa} comoDinero />
+                      </td>
+                    </tr>
+                  )
+                })}
+                <tr className="bg-ink/3 font-semibold">
+                  <td className="text-ink/85 px-5 py-3">Total del período</td>
+                  {dias.map((d) => {
+                    const delDia = filas.filter((f) => f.fecha === d)
+                    return (
+                      <td
+                        key={d}
+                        className="tabular text-ink/85 px-2.5 py-3 text-right whitespace-nowrap"
+                      >
+                        <Cifra valor={sumaDinero(delDia)} comoDinero />
+                      </td>
+                    )
+                  })}
+                  <td className="tabular text-ink/85 px-3 py-3 text-right">
+                    {enteros(filas.reduce((s, f) => s + f.viajes, 0))}
+                  </td>
+                  <td className="tabular text-ink/95 px-5 py-3 text-right whitespace-nowrap">
                     <Cifra valor={totalFilas} comoDinero />
                   </td>
                 </tr>
@@ -2082,7 +2054,7 @@ function PestanaPago() {
         onCerrar={() => setPdf(null)}
         blob={pdf?.blob ?? null}
         nombreArchivo={pdf?.nombre ?? ''}
-        titulo={porDia ? 'Pago de viajes del día' : 'Registro de pago de viajes'}
+        titulo={porDia ? 'Pago de acarreos del día' : 'Registro de pago de acarreos'}
       />
     </>
   )

@@ -1,11 +1,10 @@
 import { useState } from 'react'
-import { useMonedasUsables } from '@/lib/api/tasas'
+import { hoyEnCaracas, useMonedasUsables, useTasaVigente } from '@/lib/api/tasas'
 import { Printer, Tag } from 'lucide-react'
 import { Interruptor } from '@/components/ui/Interruptor'
 import { Visor } from '@/components/Visor'
 import { empresaDelPapel, useEmpresa } from '@/lib/api/empresa'
 import { useMiPerfil } from '@/lib/api/usuarios'
-import { hoyEnCaracas } from '@/lib/api/tasas'
 import type { ArchivoArmado } from '@/lib/ficha/armado'
 import { armarListaDePrecios } from '@/lib/ficha/listaDePreciosPdf'
 import { PageHeader } from '@/components/PageHeader'
@@ -99,13 +98,19 @@ export function Precios() {
   const conPrecio = (data ?? []).filter((p) => p.activo && Number(p.precio) > 0).length
 
   /*
-    EL PDF DE LA LISTA (11/11/2026): hoja horizontal para el cliente, con los
-    precios y los datos para el pago, que salen de Tesorería al armarlo.
+    EL PDF DE LA LISTA (11/11/2026): hoja horizontal ejecutiva para el cliente,
+    con la ficha institucional de Minería Internacional TS, C.A., catálogo
+    numerado de materiales, equivalente opcional en Bs. (Tasa BCV) y los datos
+    bancarios de Tesorería.
   */
   const { data: empresa } = useEmpresa()
   const { data: yo } = useMiPerfil()
+  const { data: tasaUsd } = useTasaVigente('USD')
+  const valorTasaBcv = tasaUsd?.tasa && Number(tasaUsd.tasa) > 0 ? Number(tasaUsd.tasa) : null
+
   const [pdfAbierto, setPdfAbierto] = useState(false)
   const [conCuentas, setConCuentas] = useState(true)
+  const [conEquivalenteBs, setConEquivalenteBs] = useState(false)
   const [conLogo, setConLogo] = useState(true)
   const [armando, setArmando] = useState(false)
   const [fallaPdf, setFallaPdf] = useState<unknown>(null)
@@ -117,18 +122,25 @@ export function Precios() {
     try {
       const cuentas = conCuentas ? await traerCuentasParaPagos() : []
       if (conCuentas && cuentas.length === 0) {
-        throw new Error('No hay ninguna cuenta bancaria activa en Tesorería para poner en el papel.')
+        throw new Error('No hay ninguna cuenta bancaria activa en Tesorería para incluir en el informe.')
       }
+      let sufijo = ''
+      if (conEquivalenteBs && valorTasaBcv) sufijo += '-bcv'
+      if (!conCuentas) sufijo += '-sin-cuentas'
+      if (!conLogo) sufijo += '-sin-logo'
+
       setArchivo(
         await armarListaDePrecios({
           precios: data ?? [],
           cuentas,
           conCuentas,
+          conEquivalenteBs: conEquivalenteBs && Boolean(valorTasaBcv),
+          tasaBcv: valorTasaBcv,
           conLogo,
           empresa: empresaDelPapel(empresa),
           emitidoPor: yo?.nombre ?? '',
           momento: new Date(),
-          nombreArchivo: `lista-de-precios-${hoyEnCaracas()}${conLogo ? '' : '-sin-logo'}.pdf`,
+          nombreArchivo: `lista-de-precios-${hoyEnCaracas()}${sufijo}.pdf`,
         }),
       )
       setPdfAbierto(false)
@@ -169,8 +181,8 @@ export function Precios() {
       <Modal
         abierto={pdfAbierto}
         onCerrar={() => setPdfAbierto(false)}
-        titulo="PDF de la lista de precios"
-        descripcion="Hoja horizontal para enviar al cliente: producto, unidad y precio. No lleva códigos internos ni precios mínimos."
+        titulo="Informe PDF · Lista oficial de precios"
+        descripcion="Formato ejecutivo A4 horizontal con los datos institucionales de Minería Internacional TS, C.A., catálogo comercial de materiales y cuentas bancarias autorizadas."
         acciones={
           <>
             <Button variant="ghost" onClick={() => setPdfAbierto(false)}>
@@ -186,13 +198,24 @@ export function Precios() {
           <Interruptor
             encendido={conCuentas}
             onCambio={setConCuentas}
-            etiqueta="Incluir los datos para el pago"
-            detalle="Banco, titular, RIF y número de las cuentas bancarias activas de Tesorería."
+            etiqueta="Incluir datos bancarios y condiciones comerciales"
+            detalle="Entidad bancaria, titular, RIF, número de cuenta de Tesorería y normas de despacho."
+          />
+          <Interruptor
+            encendido={conEquivalenteBs && Boolean(valorTasaBcv)}
+            onCambio={setConEquivalenteBs}
+            deshabilitado={!valorTasaBcv}
+            etiqueta="Mostrar columna de equivalente en Bolívares (Tasa BCV)"
+            detalle={
+              valorTasaBcv
+                ? `Añade el precio equivalente en Bolívares calculado a la tasa oficial BCV del día (Bs ${valorTasaBcv.toLocaleString('es-VE', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}).`
+                : 'No hay una tasa BCV registrada para la fecha actual.'
+            }
           />
           <Interruptor encendido={conLogo} onCambio={setConLogo} etiqueta="Incluir logo institucional" />
         </div>
         <p className="text-ink/50 mt-4 text-xs">
-          Salen {conPrecio} {conPrecio === 1 ? 'precio' : 'precios'}. Los productos sin precio no aparecen en el papel.
+          Se incluirán {conPrecio} {conPrecio === 1 ? 'producto activo' : 'productos activos'}. Los artículos sin precio asignado y los precios mínimos internos no se muestran en el documento.
         </p>
         {fallaPdf ? <ErrorDeCarga error={fallaPdf} className="mt-4" /> : null}
       </Modal>

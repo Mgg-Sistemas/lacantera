@@ -90,7 +90,7 @@ export function Plantas() {
           <>
             <Link to="/app/explotacion/viajes">
               <Button variant="outline" icon={<Truck />}>
-                Viajes de camiones
+                Acarreos internos
               </Button>
             </Link>
             {gestiona ? (

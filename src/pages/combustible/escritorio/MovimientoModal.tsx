@@ -69,6 +69,10 @@ import { Calculado } from './piezas'
 */
 
 const TOPE_AL_DIA = 3
+/** El motivo del vale («Acarreo y movimiento dentro de la cantera») con el que se registra el acarreo interno. */
+const MOTIVO_ACARREO = 'OPERACION'
+/** Cómo queda anotado en el libro y en el vale. */
+const EQUIPO_ACARREO = 'ACARREO INTERNO'
 
 export function MovimientoModal({
   tanques,
@@ -102,6 +106,7 @@ export function MovimientoModal({
   const [referencia, setReferencia] = useState('')
   const [destinoId, setDestinoId] = useState('')
   const [equipo, setEquipo] = useState('')
+  const [acarreo, setAcarreo] = useState(false)
   const [autorizado, setAutorizado] = useState('')
   const [ubicacion, setUbicacion] = useState('')
   const [observacion, setObservacion] = useState('')
@@ -130,7 +135,18 @@ export function MovimientoModal({
   const error = usar.error ?? entrar.error ?? trasladar.error ?? retornar.error ?? mermar.error
 
   const tanque = tanques.find((t) => String(t.almacen_id) === tanqueId)
-  const elegido = leerOpcionEquipo(equipo)
+  /*
+    ACARREO INTERNO (13/11/2026). Pedido: «una opción que se llame acarreo
+    interno con un check; cuando se marque deje de pedir equipo y destino, solo
+    queda quien autoriza». Solo aplica al «uso». El combustible sale del tanque
+    para el movimiento dentro de la cantera, sin equipo ni destino ni vale que
+    llenar: se registra con el motivo «Operación» del vale («Acarreo y
+    movimiento dentro de la cantera»), con el equipo «ACARREO INTERNO», y quien
+    autoriza queda también como quien recibió. No hace falta tocar la base: el
+    vale de siempre ya admite un uso sin ficha de máquina.
+  */
+  const esAcarreo = acarreo && tipo === 'uso'
+  const elegido = esAcarreo ? null : leerOpcionEquipo(equipo)
   const maquinaId = elegido?.maquina_id ?? null
   const maquina = maquinas.find((m) => m.id === maquinaId)
   const esVehiculo = maquina?.clase === 'VEHICULO'
@@ -140,6 +156,8 @@ export function MovimientoModal({
   const llevaVale = (tipo === 'uso' && !!elegido) || (tipo === 'traslado' && destinoEsBidon)
   const llevaMedidorEquipo = tipo === 'uso' && maquinaId != null
   const llevaContador = pasaPorSurtidor(tipo)
+  // El motivo del vale que usa el acarreo interno: «Operación».
+  const motivoAcarreo = motivos.data?.find((m) => m.codigo === MOTIVO_ACARREO)
 
   // El HI y el kilometraje vigentes de la máquina; su operador es quien recibe por defecto.
   const lectura = useLecturaVigente(tipo === 'uso' ? maquinaId : null)
@@ -249,7 +267,11 @@ export function MovimientoModal({
   if (!(litrosNum > 0)) falta.push('los litros')
   if (errSaldo) falta.push('litros que alcancen')
   if (tipo === 'traslado' && !destino) falta.push('el tanque destino')
-  if (tipo === 'uso' && !elegido) falta.push('el equipo')
+  if (tipo === 'uso' && !elegido && !esAcarreo) falta.push('el equipo')
+  if (esAcarreo) {
+    if (autorizado.trim().length < 3) falta.push('quién autoriza')
+    if (motivos.data && !motivoAcarreo) falta.push('el motivo «Operación» activo en 🗂 Catálogos')
+  }
   if (llevaVale) falta.push(...faltaDelVale(vale, motivos.data))
   if (llevaMedidorEquipo) {
     // EL HORÓMETRO Y EL KILOMETRAJE SON OPCIONALES (12/11/2026): «todavía no
@@ -274,7 +296,7 @@ export function MovimientoModal({
     fecha,
     hora: hora || null,
     autorizado: autorizado || null,
-    ubicacion: ubicacion || null,
+    ubicacion: esAcarreo ? null : ubicacion || null,
     articulo_id: tanque?.articulo_id ?? null,
   }
   const cuadernoDatos = {
@@ -299,6 +321,23 @@ export function MovimientoModal({
           recibidos: leerNumero(recibidos),
           merma_motivo: motivoMerma.trim() || null,
           confirmado,
+        })
+      } else if (esAcarreo) {
+        // Sin equipo, sin destino y sin vale que llenar: solo quien autoriza,
+        // que también consta como quien recibió (la base exige ese nombre).
+        await usar.mutateAsync({
+          ...comunes,
+          ...cuadernoDatos,
+          almacen_id: tanque.almacen_id,
+          litros: litrosNum,
+          motivo: MOTIVO_ACARREO,
+          motivo_detalle: motivoAcarreo?.exige_detalle ? EQUIPO_ACARREO : null,
+          maquina_id: null,
+          equipo: EQUIPO_ACARREO,
+          recibio_nombre: autorizado.trim(),
+          observacion: observacion.trim() || null,
+          contador_ini: leerNumero(ci),
+          contador_fin: leerNumero(cf),
         })
       } else if (tipo === 'uso' && !aBidon) {
         await usar.mutateAsync({
@@ -508,8 +547,36 @@ export function MovimientoModal({
         </div>
       ) : null}
 
+      {tipo === 'uso' ? (
+        <label className="border-hairline mt-4 flex cursor-pointer items-start gap-3 rounded-lg border p-3">
+          <input
+            type="checkbox"
+            className="mt-0.5 size-4 cursor-pointer"
+            checked={acarreo}
+            onChange={(e) => {
+              setAcarreo(e.target.checked)
+              if (e.target.checked) {
+                // Sin equipo ni destino: lo que se había elegido se suelta.
+                setEquipo('')
+                setUbicacion('')
+                setHi('')
+                setHf('')
+                setKm('')
+                setHiAuto(false)
+              }
+            }}
+          />
+          <span>
+            <span className="text-ink/90 text-sm font-semibold">Acarreo interno</span>
+            <span className="text-ink/55 mt-0.5 block text-xs">
+              Movimiento dentro de la cantera: no pide equipo ni destino, solo quién autoriza.
+            </span>
+          </span>
+        </label>
+      ) : null}
+
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        {tipo === 'uso' || tipo === 'retorno' ? (
+        {(tipo === 'uso' && !esAcarreo) || tipo === 'retorno' ? (
           <SelectBuscable
             label="Equipo"
             vacio="Elegí el equipo"
@@ -530,20 +597,22 @@ export function MovimientoModal({
           />
         ) : null}
         <SelectBuscable
-          label="Autorizado por"
+          label={esAcarreo ? 'Autorizado por (obligatorio)' : 'Autorizado por'}
           vacio="Elegí quién autorizó"
           valor={autorizado}
           onCambio={setAutorizado}
           opciones={opcionesAutorizado}
         />
-        <SelectBuscable
-          label="Destino"
-          vacio="Elegí el destino"
-          valor={ubicacion}
-          onCambio={setUbicacion}
-          opciones={cat('ubicacion').map((c) => ({ valor: c.valor, etiqueta: c.valor }))}
-          hint="¿Falta un destino? Agregalo en 🗂 Catálogos → Ubicaciones."
-        />
+        {esAcarreo ? null : (
+          <SelectBuscable
+            label="Destino"
+            vacio="Elegí el destino"
+            valor={ubicacion}
+            onCambio={setUbicacion}
+            opciones={cat('ubicacion').map((c) => ({ valor: c.valor, etiqueta: c.valor }))}
+            hint="¿Falta un destino? Agregalo en 🗂 Catálogos → Ubicaciones."
+          />
+        )}
         <Input
           label={etiquetaObservacion}
           value={observacion}
