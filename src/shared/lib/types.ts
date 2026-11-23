@@ -1,0 +1,2213 @@
+/**
+ * Los roles ahora se manejan dinámicamente vía la tabla `custom_roles` en Supabase.
+ * Se mantiene el alias `string` para conservar la firma histórica sin restringir nuevos valores.
+ */
+export type Role = string;
+export type EstadoGenerico = 'activo' | 'inactivo';
+/** Retener antes o después de pagar (OC con factura · nuevo flujo de Compras). */
+export type RetencionMomento = 'antes_de_pagar' | 'despues_de_pagar';
+export const INTERRUPTOR_RETENCION_MOMENTO = 'compras_retencion_momento';
+
+export type EstadoOrden = 'revision_almacen' | 'pendiente' | 'aprobada' | 'oc_creada' | 'confirmada_metodo' | 'oc_aprobada' | 'pagada' | 'oc_emitida' | 'rechazada' | 'recibida' | 'finalizada' | 'cancelada' | 'desistida_proveedor' | 'reasignada' | 'por_recibir' | 'cuenta_abierta';
+
+/** Condiciones de pago de una oferta. */
+export type CondicionPago = 'contra_entrega' | 'anticipado' | 'credito';
+
+/** Una pata del pago de una OC (puede haber varias = multipago). */
+export interface PagoMetodo {
+  metodo: string;   // 'efectivo' | 'divisas_efectivo' | 'transferencia' | 'pago_movil' | 'binance_usdt' | 'zelle' | 'otro'
+  moneda: string;   // Bs, USD, USDT, COP, …
+  monto: number;
+  datos?: Record<string, string>; // datos de pago del proveedor (pago móvil / transferencia / zelle / binance)
+}
+export type EstadoFactura = 'pendiente' | 'pagada' | 'anulada';
+export type TipoMovimiento = 'creacion' | 'entrada' | 'salida' | 'consumo' | 'transferencia' | 'ajuste' | 'fundicion' | 'fin_fundicion';
+export type NotifKind = 'info' | 'success' | 'warning' | 'error';
+export type TipoInventario = 'inicial' | 'proceso' | 'final';
+
+export interface Usuario {
+  id: string;
+  email: string;
+  nombre: string;
+  apellido?: string | null;
+  role: Role;
+  ci?: string | null;
+  telefono?: string | null;
+  departamento?: string | null;
+  estado: EstadoGenerico;
+  must_change_password?: boolean;
+  /** Bloqueo por 3 intentos de clave fallidos (solo el admin desbloquea). */
+  bloqueado?: boolean;
+  bloqueado_en?: string | null;
+  intentos_fallidos?: number;
+  /** Archivado: sigue `inactivo` (la base lo exige) pero no aparece en la lista principal. */
+  archivado_en?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+export interface Almacen {
+  id: string;
+  nombre: string;
+  ubicacion?: string | null;
+  /** Sede física (Matanzas, Los Pinos…) que agrupa la vista de almacenes. */
+  sede?: string | null;
+  /** Subalmacén: id del almacén padre. null/ausente = almacén principal. */
+  parent_id?: string | null;
+  estado: EstadoGenerico;
+  created_at: string;
+  created_by?: string | null;
+  updated_at?: string | null;
+}
+
+/** Horno de producción/producción. Se administra como las categorías:
+ *  alta, renombrado e inhabilitación (con motivo). */
+export interface Horno {
+  id: string;
+  nombre: string;
+  estado: EstadoGenerico;
+  /** Motivo por el cual se deshabilitó (obligatorio al inhabilitar). */
+  motivo_inhabilitacion?: string | null;
+  created_at: string;
+  created_by?: string | null;
+  updated_at?: string | null;
+}
+
+/** Moneda de la tesorería (legacy, caja de una sola moneda). */
+export type Moneda = 'USD' | 'Bs';
+
+/** Monedas de la caja multimoneda. */
+export type MonedaCaja = 'Bs' | 'USD' | 'USDT' | 'COP';
+
+/** Cuentas dentro de una caja (Bs se divide en jurídica/personal). */
+export type CuentaCaja = 'general' | 'juridica' | 'personal';
+
+/** Moneda con tasa de cambio referenciada (BCV/Binance/TRM). */
+export type MonedaTasa = 'USD' | 'EUR' | 'USDT' | 'COP' | 'BRL';
+
+/** Saldo de una caja por (cuenta, moneda) con su tasa promedio ponderada.
+ *  `moneda` es texto libre: además de las base (Bs/USD/USDT/COP) admite
+ *  monedas registradas por el usuario. */
+export interface CajaSaldo {
+  id: string;
+  caja_id: string;
+  cuenta: CuentaCaja;
+  moneda: string;
+  saldo: number;
+  /** Costo promedio ponderado en Bs por 1 unidad de la moneda (null/1 para Bs). */
+  tasa_prom?: number | null;
+  updated_at?: string | null;
+  /** Solo en consultas con join. */
+  caja?: { nombre: string } | null;
+}
+
+/** Lote de ingreso de divisa (trazabilidad de a qué tasa entró cada parte). */
+export interface CajaLote {
+  id: string;
+  caja_id: string;
+  cuenta: CuentaCaja;
+  moneda: string;
+  monto: number;
+  tasa_bs?: number | null;   // Bs por 1 unidad al comprar
+  origen?: string | null;
+  motivo?: string | null;
+  actor?: string | null;
+  actor_name?: string | null;
+  created_at: string;
+}
+
+/** Punto de la serie histórica de tasas (para el gráfico). */
+export interface TasaSnapshot {
+  id: string;
+  par: string;       // 'USDT_VES','USD_VES','COP_USD'
+  tasa: number;
+  fuente: string;
+  at: string;
+}
+
+/** Fila del historial de tasas de cambio (BCV). */
+export interface TasaCambio {
+  id: string;
+  fecha: string;        // YYYY-MM-DD
+  moneda: MonedaTasa;
+  tasa: number;         // Bs por 1 unidad de la moneda
+  fuente: string;       // 'bcv' | 'manual'
+  created_by?: string | null;
+  at: string;
+}
+
+/** Tasa del día (snapshot): Bs por 1 USD y por 1 EUR. */
+export interface TasaHoy {
+  usd: number | null;
+  eur: number | null;
+  fecha: string | null;
+  fuente?: string | null;
+  /** En feriados bancarios o fines de semana: fecha valor efectiva (ej. martes tras lunes bancario) */
+  fechaValor?: string | null;
+  esBancario?: boolean;
+  motivoBancario?: string | null;
+  diaNombre?: string | null;
+  etiquetaBancaria?: string | null;
+}
+
+/** Caja de la tesorería (cuenta de dinero con saldo). */
+export interface Caja {
+  id: string;
+  nombre: string;
+  moneda: Moneda;
+  saldo: number;
+  estado: EstadoGenerico;
+  tipo?: string;   // 'caja' (normal) | 'centro_acopio'
+  /** El centro de acopio vive en otra Supabase (otro sistema): el traslado se replica vía puente. */
+  externo?: boolean;
+  /** Identificador acordado entre ambos sistemas (ej. 'peramanal'). */
+  empresa_codigo?: string | null;
+  created_at: string;
+  created_by?: string | null;
+  updated_at?: string | null;
+}
+
+/* ───────── Transferencias inter-sistema (puente entre dos Supabase) ───────── */
+export type DireccionTransfer = 'saliente' | 'entrante';
+export type EstadoTransfer = 'enviada' | 'por_confirmar' | 'recibida' | 'rechazada' | 'error';
+
+/** Una pata por moneda de la transferencia (igual que un leg de traslado). */
+export interface TransferLeg { cuenta: CuentaCaja; moneda: string; monto: number; tasa_bs?: number | null; }
+
+/** Transferencia de dinero entre dos sistemas independientes (cada uno su Supabase).
+ *  `transf_id` es el id GLOBAL compartido por ambos lados (idempotencia). */
+export interface TransferenciaInter {
+  id: string;
+  transf_id: string;
+  direccion: DireccionTransfer;
+  estado: EstadoTransfer;
+  empresa_origen: string;
+  empresa_destino: string;
+  caja_id?: string | null;
+  caja_nombre?: string | null;
+  legs: TransferLeg[];
+  resumen?: string | null;
+  motivo?: string | null;
+  callback_base?: string | null;
+  mensaje_error?: string | null;
+  actor?: string | null;
+  actor_name?: string | null;
+  created_at: string;
+  confirmada_at?: string | null;
+  /** Dinero entrante: cada módulo acepta su copia por separado; la transferencia
+   *  pasa a 'recibida' (y se ACKea) recién cuando AMBOS aceptaron. */
+  aceptado_acopio?: boolean | null;
+  aceptado_tesoreria?: boolean | null;
+  /** Rechazo por módulo: quita la entrante de la cola de ese módulo sin acreditar. */
+  rechazado_acopio?: boolean | null;
+  rechazado_tesoreria?: boolean | null;
+}
+
+export type TipoMovimientoCaja = 'ingreso' | 'salida' | 'traslado_salida' | 'traslado_entrada' | 'ajuste';
+export type EstadoMineral = 'pendiente' | 'conciliada';
+
+/** Movimiento del libro de una caja. Para `tipo='salida'` puede llevar la
+ *  conciliación con la recepción de mineral equivalente al dinero enviado. */
+export interface MovimientoCaja {
+  id: string;
+  caja_id: string;
+  tipo: TipoMovimientoCaja;
+  monto: number;
+  moneda: Moneda;
+  saldo_antes: number;
+  saldo_despues: number;
+  motivo?: string | null;
+  destino?: string | null;
+  /** Texto de la nota de entrega (se imprime en el PDF cuando está marcada). */
+  nota_entrega?: string | null;
+  ref_caja_id?: string | null;
+  estado_mineral?: EstadoMineral | null;
+  mineral_producto_id?: string | null;
+  mineral_producto_nombre?: string | null;
+  mineral_cantidad?: number | null;
+  mineral_unidad?: string | null;
+  mineral_costo_unit?: number | null;
+  mineral_descripcion?: string | null;
+  mineral_mov_id?: string | null;
+  conciliada_at?: string | null;
+  /** Tesorería: etiqueta del egreso ('gasto' / 'pago_personal' / 'pago_oc'). */
+  categoria?: string | null;
+  /** Tesorería · gasto: categoría/subcategoría del catálogo y correlativo (RECEPCIÓN/EXPORTACIÓN). */
+  gasto_categoria?: string | null;
+  gasto_subcategoria?: string | null;
+  gasto_correlativo?: number | null;
+  /** Tesorería: cierre de mes que archiva el movimiento (null = abierto). */
+  cierre_id?: string | null;
+  beneficiario?: string | null;
+  beneficiario_id?: string | null;
+  ref_orden_id?: string | null;
+  /** Enlace a la venta que generó el movimiento: el cobro (categoría
+   *  'cobro_venta') o su reversa al anular ('reverso_venta'). */
+  ref_venta_id?: string | null;
+  reverso_de_id?: string | null;
+  revertido_en?: string | null;
+  reflejar_acopio?: boolean | null;
+  /** Enlace al renglón de nómina pagado (categoría 'pago_nomina'). */
+  ref_nomina_renglon_id?: string | null;
+  /** Multimoneda: cuenta (Bs jurídica/personal) y tasa aplicada (Bs por unidad). */
+  cuenta?: string | null;
+  tasa_bs?: number | null;
+  actor: string;
+  actor_name?: string | null;
+  at: string;
+  /** Solo en consultas con join: la caja de este movimiento. */
+  caja?: { nombre: string; moneda: Moneda } | null;
+}
+
+/* ───────────── Retenciones e impuestos (Tesorería) ───────────── */
+
+export type TipoRetencion = 'IVA' | 'ISLR' | 'MUNICIPAL';
+
+export interface Retencion {
+  id: string;
+  tipo: TipoRetencion;
+  proveedor_id?: string | null;
+  orden_id?: string | null;
+  base: number;
+  porcentaje: number;
+  monto: number;
+  moneda: string;
+  comprobante_nro?: string | null;
+  fecha: string;
+  descripcion?: string | null;
+  actor?: string | null;
+  actor_name?: string | null;
+  created_at: string;
+}
+
+/* ───────────── Combustible ───────────── */
+
+/** Tipo de combustible con su stock (litros) y costo promedio por litro. */
+export interface Combustible {
+  id: string;
+  nombre: string;
+  litros: number;
+  costo_litro: number;
+  estado: EstadoGenerico;
+  /** Producto del inventario al que está vinculado este combustible. */
+  producto_id?: string | null;
+  /** Almacén "casa" del combustible (el del producto vinculado). Derivado al listar. */
+  home_almacen?: string | null;
+  created_at: string;
+  created_by?: string | null;
+  updated_at?: string | null;
+}
+
+export type TipoMovCombustible = 'ingreso' | 'salida' | 'ajuste';
+
+export interface MovimientoCombustible {
+  id: string;
+  combustible_id: string;
+  tipo: TipoMovCombustible;
+  litros: number;
+  costo_litro?: number | null;
+  litros_antes: number;
+  litros_despues: number;
+  ref_solicitud_id?: string | null;
+  detalle?: string | null;
+  actor?: string | null;
+  actor_name?: string | null;
+  at: string;
+}
+
+/* ───────────── Combustible · Tanques (réplica del Excel) ───────────── */
+
+export type TipoCatalogoCombustible = 'equipo' | 'autorizado' | 'ubicacion';
+
+export interface CatalogoCombustible {
+  id: string;
+  tipo: TipoCatalogoCombustible;
+  valor: string;
+  activo: boolean;
+  orden: number;
+  created_at: string;
+  tanques_permitidos?: string[] | null;
+}
+
+export type TipoTanque = 'cilindrico_horizontal' | 'rectangular';
+
+export interface TanqueCombustible {
+  id: string;
+  nombre: string;
+  /** Geometría para la cubicación automática (altura cm → litros). */
+  tipo: TipoTanque;
+  es_movil: boolean;
+  radio_m?: number | null;   // cilíndrico horizontal
+  largo_m?: number | null;   // rectangular / largo del cilindro
+  ancho_m?: number | null;   // rectangular
+  alto_m?: number | null;    // rectangular (altura total)
+  /** Capacidad rotulada (tope operativo manual). */
+  capacidad_litros: number;
+  /** Capacidad calculada por fórmula a la altura total. */
+  capacidad_calculada_litros?: number | null;
+  saldo_litros: number;
+  saldo_usd: number;
+  /** Saldo de APERTURA (litros con que se creó el tanque). No es un movimiento, pero
+   *  el saldo corrido del libro arranca de aquí para que la última fila iguale el header. */
+  saldo_inicial_litros?: number | null;
+  /** Valor $ de APERTURA (fijo). Base del saldo corrido para derivar el PMP del tanque. */
+  saldo_inicial_usd?: number | null;
+  /** Tasa $/L del tanque: es el PROMEDIO PONDERADO (PMP) = saldo_usd / saldo_litros. */
+  tasa_usd_litro: number;
+  ubicacion?: string | null;
+  /** Merma máxima admitida al recibir una entrada o un traslado, en % de lo enviado (10 por defecto). */
+  margen_merma_pct?: number | null;
+  /** Margen de merma técnica/implícita sugerida por movimiento, en % (0.5 por defecto). */
+  merma_implicita_pct?: number | null;
+  estado: 'activo' | 'inactivo';
+  orden: number;
+  created_by?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+export type TipoMovTanque = 'entrada' | 'uso' | 'traslado' | 'retorno' | 'merma';
+
+/** Transferencia de combustible entre sistemas (puente inter-sistema · litros).
+ *  Mismo contrato que MGG (tabla transferencias_combustible_inter). */
+/** Estados de una transferencia entre sistemas.
+ *  `rechazada` es «el otro sistema no la quiso»; `revertida` es «la trajimos de vuelta
+ *  nosotros porque nunca llegó». Son dos hechos distintos y los dos hacen falta para
+ *  cuadrar el material entre las dos empresas. */
+export type EstadoTransferenciaInter =
+  'enviada' | 'por_confirmar' | 'recibida' | 'rechazada' | 'error' | 'revertida';
+
+export interface TransferenciaCombustibleInter {
+  id: string;
+  transf_id: string;
+  direccion: 'saliente' | 'entrante';
+  estado: EstadoTransferenciaInter;
+  empresa_origen: string;
+  empresa_destino: string;
+  combustible_nombre: string;
+  litros: number;
+  costo_litro?: number | null;
+  /** Tanque que recibe en el destino (se elige al confirmar la entrante). */
+  tanque_id?: string | null;
+  tanque_nombre?: string | null;
+  resumen?: string | null;
+  motivo?: string | null;
+  callback_base?: string | null;
+  mensaje_error?: string | null;
+  actor?: string | null;
+  actor_name?: string | null;
+  created_at: string;
+  confirmada_at?: string | null;
+  /** Cuándo y quién devolvió el combustible al tanque tras una entrega fallida. */
+  revertida_at?: string | null;
+  revertida_por?: string | null;
+}
+
+/** 10/11/2026 · Un renglón del puente de MATERIAL (Los Pinos GT → Los Pinos MGG). */
+export interface ItemMaterialInter {
+  producto_id?: string | null;
+  sku: string | null;
+  nombre: string;
+  unidad: string | null;
+  categoria?: string | null;
+  cantidad: number;
+  costo_unitario: number | null;
+  /** Lo completa MGG al recibirla: con qué producto suyo entró. */
+  destino_producto_id?: string | null;
+  destino_sku?: string | null;
+  destino_nombre?: string | null;
+}
+
+/** 10/11/2026 · Puente de MATERIAL: GT envía productos de Los Pinos a MGG Los Pinos,
+ *  que los recibe «por confirmar» (el almacenista los empareja y acepta o rechaza). */
+export interface TransferenciaMaterialInter {
+  id: string;
+  transf_id: string;
+  direccion: 'saliente' | 'entrante';
+  estado: 'enviada' | 'por_confirmar' | 'recibida' | 'rechazada' | 'error' | 'devuelta';
+  empresa_origen: string | null;
+  empresa_destino: string | null;
+  almacen_origen: string | null;
+  almacen_destino: string | null;
+  items: ItemMaterialInter[];
+  total_usd: number | null;
+  resumen: string | null;
+  motivo: string | null;
+  callback_base: string | null;
+  mensaje_error: string | null;
+  actor: string | null;
+  actor_name: string | null;
+  created_at: string;
+  confirmada_at: string | null;
+  confirmada_por: string | null;
+  rechazo_motivo: string | null;
+  devuelta_at: string | null;
+  devuelta_por: string | null;
+}
+
+/** Puente inter-sistema de CASITERITA (mineral): este sistema envía Kg al otro,
+ *  que los recibe (automático) en el almacén "LOS PINOS - CASITERITA". */
+export interface TransferenciaCasiteritaInter {
+  id: string;
+  transf_id: string;
+  direccion: 'saliente' | 'entrante';
+  estado: EstadoTransferenciaInter;
+  empresa_origen: string;
+  empresa_destino: string;
+  producto_id?: string | null;
+  producto_nombre: string;
+  sku?: string | null;
+  kg: number;
+  costo_unitario?: number | null;
+  almacen_origen?: string | null;
+  almacen_destino?: string | null;
+  resumen?: string | null;
+  motivo?: string | null;
+  callback_base?: string | null;
+  mensaje_error?: string | null;
+  actor?: string | null;
+  actor_name?: string | null;
+  created_at: string;
+  confirmada_at?: string | null;
+  /** Cuándo y quién devolvió la casiterita al almacén tras una entrega fallida. */
+  revertida_at?: string | null;
+  revertida_por?: string | null;
+}
+
+export interface MovimientoTanque {
+  id: string;
+  tanque_id: string;
+  fecha: string;
+  hora?: string | null;
+  tipo: TipoMovTanque;
+  equipo?: string | null;
+  autorizado_por?: string | null;
+  ubicacion?: string | null;
+  observacion?: string | null;
+  litros: number;
+  tanque_destino_id?: string | null;
+  /** Par del traslado entre tanques (la entrada del destino ↔ el traslado del origen). */
+  mov_vinculado_id?: string | null;
+  /** Merma de recepción: la entrada o el traslado del que sale esta merma. */
+  merma_de_id?: string | null;
+  /** Por qué la merma pasó el margen del tanque (obligatorio en ese caso). */
+  merma_motivo?: string | null;
+  /** Lo que marcaba EL APARATO (11/11/2026). Si al tanque le cambiaron el contador,
+   *  el acumulado del sistema y la lectura del contador dejan de ser el mismo numero:
+   *  el acumulado va por 208.891 y el contador nuevo marca 30. Estos dos campos los
+   *  calcula listMovimientosTanque y son los que deben verse en pantalla. */
+  contador_marcaba_ini?: number | null;
+  contador_marcaba_fin?: number | null;
+  contador_global_ini?: number | null;
+  contador_global_fin?: number | null;
+  contador_global_dif?: number | null;
+  horometro_ini?: number | null;
+  horometro_fin?: number | null;
+  horas_utilizadas?: number | null;
+  /** Kilometraje (odómetro) del vehículo al momento del movimiento. Lectura absoluta. */
+  kilometraje?: number | null;
+  /** Indica si el movimiento fue asentado en el cuaderno físico de campo. */
+  registrado_en_cuaderno?: boolean | null;
+  /** Cantidad de litros registrados en el cuaderno físico (si fue registrado). */
+  cuaderno_litros?: number | null;
+  /** Indica si el movimiento fue asentado en la hoja de control de Google Drive. */
+  registrado_en_drive?: boolean | null;
+  /** Saldo reportado en la hoja de Google Drive al momento del movimiento. */
+  saldo_drive?: number | null;
+  tasa_usd_litro: number;
+  monto_usd?: number | null;
+  orden: number;
+  created_by?: string | null;
+  actor_name?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+  /** Saldos corridos (litros y USD), calculados al listar. */
+  saldo_litros?: number;
+  saldo_usd?: number;
+}
+
+export interface ConciliacionCombustible {
+  id: string;
+  tanque_id: string;
+  periodo?: string | null;
+  fecha: string;
+  saldo_libros: number;
+  saldo_reportado_mina: number;
+  diferencia?: number | null;
+  /** Conciliación vs medición física (cubicación). */
+  saldo_cubicacion?: number | null;
+  dif_cubicacion?: number | null;
+  notas?: string | null;
+  created_by?: string | null;
+  created_at: string;
+}
+
+/** Lectura de medidores de un equipo (horómetro + contador del surtidor). */
+export interface MedidorCombustible {
+  id: string;
+  equipo: string;
+  fecha: string;
+  horometro_ini?: number | null;
+  horometro_fin?: number | null;
+  horas?: number | null;
+  contador_ini?: number | null;
+  contador_fin?: number | null;
+  contador_dif?: number | null;
+  observacion?: string | null;
+  created_by?: string | null;
+  actor_name?: string | null;
+  created_at: string;
+}
+
+/** Lectura física de cubicación (altura→litros) guardada, con diferencia vs libros. */
+export interface CubicacionCombustible {
+  id: string;
+  tanque_id: string;
+  fecha: string;
+  altura_cm: number;
+  litros_cubicacion: number;
+  saldo_libros: number;
+  diferencia?: number | null;
+  notas?: string | null;
+  created_by?: string | null;
+  created_at: string;
+}
+
+export type EstadoSolicitudCombustible = 'por_aprobar' | 'aprobada' | 'finalizada' | 'cancelada';
+
+/** Solicitud de salida de combustible (flujo por aprobar → aprobada → finalizada). */
+export interface SolicitudCombustible {
+  id: string;
+  codigo: string;
+  combustible_id: string | null;
+  combustible_nombre: string;
+  solicitante: string;
+  destino: string;
+  /** Almacén del inventario de donde sale el combustible al finalizar. */
+  almacen?: string | null;
+  litros: number;
+  estado: EstadoSolicitudCombustible;
+  motivo?: string | null;
+  historial: EventoHistorial[];
+  aprobada_por?: string | null;
+  aprobada_en?: string | null;
+  finalizada_por?: string | null;
+  finalizada_en?: string | null;
+  mov_id?: string | null;
+  actor?: string | null;
+  actor_name?: string | null;
+  created_at: string;
+}
+
+/* ───────────── Centro de Acopio PERAMANAL ───────────── */
+
+export type EstadoRecepcionAcopio = 'abierta' | 'cerrada' | 'anulada';
+
+/** Un renglón de lote dentro de una recepción. Los campos `*_calc`/diferencias
+ *  son columnas GENERADAS en la base (no se envían al guardar). */
+export interface RecepcionAcopioLote {
+  id: string;
+  recepcion_id: string;
+  orden: number;
+  nro_lote?: string | null;
+  cantidad_bolsas: number;
+  peso_bolsa_kg: number;
+  /** 🧮 generado: cantidad_bolsas × peso_bolsa_kg */
+  peso_bruto_total: number;
+  peso_neto_kg: number;
+  /** 🧮 generado: peso_bruto_total − peso_neto_kg */
+  dif_bruto_neto: number;
+  precinto_inicio?: string | null;
+  peso_recepcionado_kg: number;
+  /** 🧮 generado: peso_neto_kg − peso_recepcionado_kg */
+  dif_neto_recepcionado: number;
+  precinto_final?: string | null;
+  verificado: boolean;
+  created_at?: string;
+}
+
+/** Recepción de mineral por centro de acopio (maestro). Al cerrar suma stock. */
+export interface RecepcionAcopio {
+  id: string;
+  numero: string;
+  fecha: string;
+  centro_acopio?: string | null;
+  aliado?: string | null;
+  /** Producto del inventario al que se suma el mineral recibido al cerrar. */
+  producto_id?: string | null;
+  /** Almacén destino del stock al cerrar. */
+  almacen?: string | null;
+  entregado_nombre?: string | null;
+  entregado_ci?: string | null;
+  recibido_nombre?: string | null;
+  recibido_ci?: string | null;
+  observaciones?: string | null;
+  estado: EstadoRecepcionAcopio;
+  /** Traza del movimiento de inventario generado al cerrar (para revertir al anular). */
+  mov_id?: string | null;
+  mov_producto_id?: string | null;
+  mov_almacen?: string | null;
+  mov_cantidad?: number | null;
+  cerrada_por?: string | null;
+  cerrada_en?: string | null;
+  anulada_por?: string | null;
+  anulada_en?: string | null;
+  created_by?: string | null;
+  actor_name?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+  /** Lotes embebidos (cuando se cargan juntos). */
+  lotes?: RecepcionAcopioLote[];
+}
+
+/* ───────────── Contratos de producción (Centro de Acopio) ───────────── */
+
+export type TipoCatalogoAcopio = 'lugar_extraccion' | 'supervisor';
+
+/** Catálogo editable del acopio (lugares de extracción, etc.). */
+export interface CatalogoAcopio {
+  id: string;
+  tipo: TipoCatalogoAcopio;
+  valor: string;
+  activo: boolean;
+  orden: number;
+  created_at: string;
+}
+
+export type EstadoContratoAcopio = 'activo' | 'cerrado';
+
+/** Contrato de producción correlativo ("Producción GT-01", -02, …). */
+export interface ContratoAcopio {
+  id: string;
+  numero: string;
+  seq: number;
+  /** Tipo de contrato: 'produccion' (molienda) o 'minero' (compra a minero). */
+  tipo?: string | null;
+  fecha: string;
+  hora?: string | null;
+  supervisor?: string | null;
+  lugar_extraccion?: string | null;
+  molino?: string | null;
+  /** Contrato minero: sacos (UND), precio de la casiterita ($/Kg) y tasa establecida. */
+  cantidad_sacos?: number | null;
+  precio_casiterita?: number | null;
+  tasa?: number | null;
+  /** Contrato minero (columnas generadas): utilidad del minero (70%) y de GT (30%) en Kg,
+   *  y monto a pagar al minero (= utilidad minero × precio casiterita). */
+  utilidad_minero?: number | null;
+  utilidad_gt?: number | null;
+  monto_pagar_minero?: number | null;
+  // Inputs principales (réplica del Excel).
+  ton_procesadas: number;
+  kg_humedo: number;
+  kg_secos: number;
+  /** Kg seco, limpio = Casiterita final obtenida (= Kg seco Limpio Finales). */
+  kg_seco_limpio: number;
+  // Fórmulas automáticas (columnas generadas en la BD).
+  tolva?: number | null;
+  pct_recuperado_impurezas?: number | null;
+  pct_humedad?: number | null;
+  pct_recuperacion_casiterita?: number | null;
+  kg_hierro?: number | null;
+  pct_hierro?: number | null;
+  // KG MESAS (merma por humedad): inputs manuales + fórmulas de la BD.
+  mesa_peso_mojado?: number | null;
+  mesa_peso_seco?: number | null;
+  mesa_merma_kg?: number | null;     // = mesa_peso_seco − mesa_peso_mojado (admite negativo)
+  mesa_pct_merma?: number | null;    // = merma / mesa_peso_mojado × 100
+  estado: EstadoContratoAcopio;
+  cerrado_at?: string | null;
+  cerrado_por?: string | null;
+  // Enlace con el inventario al cerrar (entrada de casiterita; para revertir al reabrir).
+  mov_id?: string | null;
+  mov_producto_id?: string | null;
+  mov_almacen?: string | null;
+  mov_cantidad?: number | null;
+  observaciones?: string | null;
+  /** Contrato MINERO: personas involucradas (nombre + cédula). Vacío en producción. */
+  personas?: PersonaContrato[] | null;
+  /** Archivado en Históricos: no aparece en la lista principal ni suma en los KG de
+   *  Casiterita obtenidos (su casiterita ya entró al inventario al cerrarse; esto solo
+   *  lo saca de las métricas/lista vigentes). */
+  historico?: boolean | null;
+  created_by?: string | null;
+  actor_name?: string | null;
+  created_at: string;
+}
+
+/** Persona (nombre + cédula) asociada a un contrato minero. */
+export interface PersonaContrato {
+  nombre: string;
+  cedula: string;
+}
+
+/* ───────────── Caja Peramanal (Centro de Acopio) ───────────── */
+
+/** Los 5 grupos de clasificación de la hoja CLASIFICACIONES del Excel. */
+export type GrupoClasificacion = 'contratos' | 'gastos_caja' | 'movimientos_caja' | 'nomina' | 'traslado';
+
+export interface ClasificacionAcopio {
+  id: string;
+  grupo: GrupoClasificacion;
+  valor: string;
+  orden: number;
+  activo: boolean;
+}
+
+/** Un movimiento del libro de caja (réplica de una fila de "CAJA PERAMANAL"). */
+export interface CajaMovimiento {
+  id: string;
+  fecha: string;
+  descripcion?: string | null;
+  usd_entregado: number;   // D · entrada de caja
+  kg_cerrados: number;     // E · Kg de casiterita cerrados
+  facturados: number;      // G · $Usd facturados
+  gastos: number;          // H · Gastos GT
+  nominas: number;         // I · Nóminas GT
+  traslado: number;        // J · Traslado de caja
+  inversion: number;       // K · Inversión (sale del saldo; NO suma a la tasa ni a Gastos GT)
+  kg_recibidos: number;    // L · Kg recibidos por MGG
+  clasif_grupo?: GrupoClasificacion | null;
+  clasif_valor?: string | null;
+  /** Clasificación de costo en 2 niveles (análisis de costos del cierre). */
+  costo_clasificacion?: string | null;
+  costo_subclasificacion?: string | null;
+  /** Equipo/vehículo atado (gastos "…REPUESTOS - REPARACIONES - SERVICIOS"). */
+  equipo?: string | null;
+  /** Caja/cierre al que pertenece el movimiento. */
+  caja_id?: string | null;
+  orden: number;
+  created_by?: string | null;
+  actor_name?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+  /** Saldos corrientes calculados en el front (K y M del Excel). */
+  saldo_usd?: number;
+  saldo_kg?: number;
+}
+
+/** Taxonomía de costos en 2 niveles (Clasificación → Sub-clasificación). */
+export interface CostoClase {
+  id: string;
+  clasificacion: string;
+  subclasificacion: string;
+  orden: number;
+  activo: boolean;
+}
+
+/** Una caja / cierre de la Caja Peramanal (período con número y recepción). */
+export interface CajaCierre {
+  id: string;
+  numero: string;
+  nombre?: string | null;
+  recepcion?: string | null;
+  fecha_inicio: string;
+  fecha_fin?: string | null;
+  estado: 'abierta' | 'cerrada';
+  saldo_final?: number | null;
+  /** Saldos de APERTURA arrastrados del cierre anterior (saldo viejo). */
+  saldo_inicial_usd?: number | null;
+  saldo_inicial_kg?: number | null;
+  /** Foto congelada del cierre (saldos de las tarjetas + filas de movimientos). */
+  resumen_json?: CierreSnapshot | null;
+  /** 11/11/2026: ediciones hechas con la caja ya cerrada (cada una con su motivo). */
+  ediciones?: EdicionCajaCerrada[] | null;
+  cerrada_por?: string | null;
+  cerrada_en?: string | null;
+  created_by?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+/** Una edición de una caja de acopio YA cerrada (supabase/2026-11-11-acopio-editar-caja-cerrada.sql). */
+export interface EdicionCajaCerrada {
+  at: string;
+  actor: string;
+  actor_name?: string | null;
+  motivo: string;
+  /** Qué se cambió (movimiento editado/borrado, o arrastre desde la caja anterior). */
+  cambio: string;
+  saldo_antes: number | null;
+  saldo_despues: number;
+}
+
+/** Foto congelada que se guarda en histórico al cerrar una caja de acopio. */
+export interface CierreSnapshot {
+  numero: string;
+  nombre?: string | null;
+  fechaInicio: string | null;
+  fechaCierre: string;
+  /** Saldos de las tarjetas al momento del cierre. */
+  resumen: {
+    saldoUsd: number;
+    saldoKg: number;
+    tasa: number;
+    usdEntregado: number;
+    gastos: number;
+    nominas: number;
+    facturado: number;
+    totalKg: number;
+    /** Columnas J, K y M del Excel (cierres viejos no las traen). */
+    traslado?: number;
+    inversion?: number;
+    kgRecibidos?: number;
+  };
+  /** Filas de la tabla de movimientos al cierre (para mostrarlas tal cual en el histórico). */
+  filas: CierreSnapshotFila[];
+  /** Contratos de producción aún ACTIVOS al momento del cierre (referencia; NO se cierran). */
+  contratosActivos?: CierreSnapshotContrato[];
+}
+
+/** Referencia de un contrato activo dentro de la foto del cierre de caja. */
+export interface CierreSnapshotContrato {
+  numero: string;
+  fecha: string;
+  supervisor?: string | null;
+  lugarExtraccion?: string | null;
+  kgSecoLimpio: number;
+}
+
+export interface CierreSnapshotFila {
+  fecha: string;
+  descripcion: string;
+  usdEntregado: number | null;
+  kgCerrados: number;
+  usdFacturados: number;
+  gastosGt: number | null;
+  nominasGt: number | null;
+  trasladoCaja?: number | null;
+  inversion?: number | null;
+  saldoUsd: number;
+  saldoKgCasiterita: number;
+}
+
+/** Agregados de la caja (cabecera del Excel: D3,E3,F3,G3,H3,I3,J3,K3,M3). */
+export interface CajaResumen {
+  usdEntregado: number;   // D3
+  kgCerrados: number;     // E3
+  facturados: number;     // G3
+  gastos: number;         // H3
+  nominas: number;        // I3
+  traslado: number;       // J3
+  inversion: number;      // K3 · Inversión (fuera de la tasa)
+  saldoUsd: number;       // L3 = D - G - H - I - J - K
+  kgRecibidos: number;    // M3
+  saldoKg: number;        // N3 = E - M
+  /** Tasa del material = (facturados + gastos + nominas) / kgCerrados (F3). */
+  tasa: number;
+}
+
+/* ───────────── Cuadre de Caja (Efectivo) · Centro de Acopio ───────────── */
+
+export type TipoMovCuadre = 'entrada' | 'salida';
+export type CategoriaCuadre = 'nomina' | 'adelanto_vale' | 'compra_casiterita' | 'compra_comida' | 'refuerzo' | 'traslado' | 'otro';
+
+/** Conteo físico de billetes (denominación × cantidad). */
+export interface ConteoBillete {
+  denom: number;
+  cantidad: number;
+}
+
+export interface CuadreMovimiento {
+  id: string;
+  cuadre_id: string;
+  fecha?: string | null;
+  tipo: TipoMovCuadre;
+  categoria?: CategoriaCuadre | null;
+  descripcion?: string | null;
+  beneficiario?: string | null;
+  monto: number;
+  monto_bs: number;
+  es_vale: boolean;
+  pagado: boolean;
+  nota?: string | null;
+  orden: number;
+  created_at?: string;
+  /** Saldo corriente tras este movimiento (calculado en el front). */
+  saldo?: number;
+}
+
+export interface Cuadre {
+  id: string;
+  numero: string;
+  fecha: string;
+  fuente?: string | null;
+  responsable?: string | null;
+  monto_recibido: number;
+  billetes: ConteoBillete[];
+  verificado: boolean;
+  observaciones?: string | null;
+  estado: 'abierto' | 'cerrado';
+  cerrado_por?: string | null;
+  cerrado_en?: string | null;
+  created_by?: string | null;
+  actor_name?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+  movimientos?: CuadreMovimiento[];
+}
+
+/** Una celda de una hoja del Excel montada como grilla fiel. */
+export interface CeldaExcel {
+  v?: string;   // texto mostrado
+  c?: string;   // color de fondo (#hex)
+  t?: string;   // color de texto (#hex)
+  b?: 1;        // negrita
+  cs?: number;  // colspan
+  rs?: number;  // rowspan
+  x?: 1;        // cubierta por un merge (no se renderiza)
+}
+
+/** Una hoja del libro Excel, como snapshot de referencia. */
+export interface HojaExcel {
+  id: string;
+  nombre: string;
+  orden: number;
+  cols: number;
+  datos: CeldaExcel[][];
+  updated_at?: string | null;
+}
+
+/* ───────────── Salidas Temporales (material a mantenimiento y retorno) ───────────── */
+
+/** pendiente → (aprobar) en_transito → (finalizar) finalizada. */
+export type EstadoSalidaTemporal = 'pendiente' | 'en_transito' | 'finalizada';
+
+/** Renglón de material de una salida temporal (del inventario o nuevo). */
+export interface ItemSalidaTemporal {
+  /** null cuando es un material nuevo aún no dado de alta (se crea al guardar). */
+  producto_id: string | null;
+  producto_nombre: string;
+  producto_sku?: string | null;
+  unidad?: string | null;
+  cantidad: number;
+  /** Almacén del que sale (existente) / al que retorna. */
+  almacen?: string | null;
+  /** true = material nuevo (no estaba en inventario): al finalizar entra al inventario. */
+  es_nuevo?: boolean;
+  observacion?: string | null;
+}
+
+export interface SalidaTemporal {
+  id: string;
+  codigo: string;                 // ST-001, ST-002…
+  correlativo?: number | null;
+  estado: EstadoSalidaTemporal;
+  items: ItemSalidaTemporal[];
+  solicitante: string;
+  unidad_solicitante?: string | null;
+  motivo?: string | null;
+  // responsable (catálogo de choferes) + vehículo + direcciones
+  chofer_id?: string | null;
+  chofer_nombre?: string | null;
+  chofer_cedula?: string | null;
+  vehiculo_id?: string | null;
+  vehiculo_descripcion?: string | null;
+  vehiculo_placa?: string | null;
+  direccion_despacho?: string | null;
+  direccion_destino?: string | null;
+  fecha?: string | null;
+  // aprobación (firma según quién aprueba: Leydis o Jesús Lozada)
+  aprobada_por?: string | null;
+  aprobada_por_nombre?: string | null;
+  aprobada_en?: string | null;
+  firma?: 'leydis' | 'gerente' | null;
+  // tránsito / mantenimiento
+  en_transito_en?: string | null;
+  finalizada_en?: string | null;
+  /** Minutos que estuvo en tránsito/mantenimiento (finalizada_en − en_transito_en). */
+  duracion_min?: number | null;
+  historial: EventoHistorial[];
+  actor?: string | null;
+  actor_name?: string | null;
+  created_by?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+/* ───────────── Solicitudes de salida/traslado (con aprobación) ───────────── */
+
+export type EstadoSolicitudSalida = 'por_aprobar' | 'aprobada' | 'ejecutada' | 'cancelada';
+export type ScopeSalida = 'salida' | 'traslado';
+export type TipoSalida = 'material' | 'dinero';
+
+/**
+ * Solicitud unificada de salida/traslado (material o dinero) con flujo de
+ * aprobación: el obrero la crea (por_aprobar); admin/analista la aprueba y la
+ * ejecuta (recién ahí se descuenta el stock / sale el dinero).
+ */
+/** Un renglón de material dentro de una solicitud de salida/traslado.
+ *  El almacén origen/destino vive a nivel de la solicitud (es común a todos
+ *  los renglones); cada ítem aporta su producto, cantidad y costo (PMP). */
+export interface ItemSalida {
+  producto_id: string;
+  producto_nombre: string;
+  producto_sku?: string | null;
+  unidad?: string | null;
+  cantidad: number;
+  precio_unit: number;
+  /** Almacén del que sale ESTE material. En salidas cada renglón puede salir de
+   *  un almacén distinto (se descuenta del que corresponde). En traslados todos
+   *  comparten el origen de la solicitud (queda en null). */
+  almacen?: string | null;
+  /** Observación por ítem (p. ej. "será trasladado para reparación"). */
+  observacion?: string | null;
+  /** true = vale de entrega a Cocina: comida que va a la unidad COCINA. Sigue el
+   *  documento, la nota y las firmas, pero NO descuenta stock (lo descuenta
+   *  Distribución de comidas al servir el plato). */
+  vale_cocina?: boolean;
+}
+
+export interface SolicitudSalida {
+  id: string;
+  codigo: string;
+  /** Correlativo POR USUARIO (cada actor tiene su propia secuencia por scope). */
+  correlativo_usuario?: number | null;
+  scope: ScopeSalida;
+  tipo: TipoSalida;
+  estado: EstadoSolicitudSalida;
+  // material
+  producto_id?: string | null;
+  producto_nombre?: string | null;
+  /** Varios materiales en una misma solicitud (como una OC). Si falta o está
+   *  vacío, la solicitud es de un solo producto (campos producto_id/cantidad). */
+  items?: ItemSalida[] | null;
+  almacen_origen?: string | null;
+  almacen_destino?: string | null;
+  cantidad?: number | null;
+  precio_unit?: number | null;
+  fecha_entrega?: string | null;
+  nota_entrega?: string | null;
+  // dinero
+  caja_id?: string | null;
+  caja_destino_id?: string | null;
+  monto?: number | null;
+  moneda?: Moneda | null;
+  cuenta?: string | null;
+  // comunes
+  solicitante: string;
+  unidad_solicitante?: string | null;
+  /** Sede de la que sale el material. Se elige del catálogo `sede_origen`. */
+  sede_origen?: string | null;
+  destino?: string | null;
+  motivo?: string | null;
+  // transporte / formato salida en tránsito
+  chofer_id?: string | null;
+  chofer_nombre?: string | null;
+  chofer_cedula?: string | null;
+  vehiculo_id?: string | null;
+  vehiculo_descripcion?: string | null;
+  vehiculo_placa?: string | null;
+  direccion_despacho?: string | null;
+  direccion_destino?: string | null;
+  /** Marca la salida/traslado como consumo interno (se refleja en detalle y trazabilidad). */
+  consumo_interno?: boolean | null;
+  /** 12/11/2026: el material va al mantenimiento de esta máquina (al ejecutarse le llega a Maquinaria). */
+  equipo_mant_id?: string | null;
+  equipo_mant_nota?: string | null;
+  historial: EventoHistorial[];
+  aprobada_por?: string | null;
+  aprobada_en?: string | null;
+  ejecutada_por?: string | null;
+  ejecutada_en?: string | null;
+  mov_id?: string | null;
+  mov_ref?: string | null;
+  actor?: string | null;
+  actor_name?: string | null;
+  created_at: string;
+}
+
+/** Stock y costo (PMP) de un producto en un almacén concreto. */
+export interface Existencia {
+  producto_id: string;
+  almacen: string;
+  stock: number;
+  costo_promedio: number;
+  updated_at?: string | null;
+}
+
+export interface Proveedor {
+  id: string;
+  rif: string;
+  razon_social: string;
+  contacto?: string | null;
+  telefono?: string | null;
+  email?: string | null;
+  direccion?: string | null;
+  categorias: string[];
+  origen: OrigenProveedor;
+  estado: EstadoGenerico;
+  /** Código CIIU (SENIAT) del catálogo `actividades_economicas` (14/10/2026). */
+  actividad_economica?: string | null;
+  /** Número de administración del proveedor: se pide la primera vez al indicar el método
+   *  de pago y queda aquí; las siguientes OC lo traen solo (14/10/2026). */
+  numero_administracion?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+export type OrigenProveedor = 'nacional' | 'internacional';
+
+export type RecetaFundicion = 'RECETA 1' | 'RECETA 2' | 'RECETA 3';
+export const RECETAS_FUNDICION: RecetaFundicion[] = ['RECETA 1', 'RECETA 2', 'RECETA 3'];
+
+export interface Producto {
+  id: string;
+  sku: string;
+  /** Códigos que tuvo antes (al cambiar de categoría el SKU se recodifica). */
+  sku_anteriores?: string[] | null;
+  nombre: string;
+  categoria: string;
+  unidad: string;
+  stock: number;
+  stock_min: number;
+  precio: number;
+  almacen: string;
+  estado: EstadoGenerico;
+  restock_pct?: number | null;
+  tipo?: TipoInventario | null;
+  receta_fundicion?: RecetaFundicion | null;
+  precio_promedio?: number | null;
+  /** Precio de venta (para calcular posible ganancia en producción). */
+  precio_venta?: number | null;
+  /** Es un insumo de receta (aparece en el checklist de producción). */
+  es_receta?: boolean;
+  /** Es un producto terminado producible (catálogo de "qué producir"). */
+  es_producible?: boolean;
+  en_fundicion?: boolean;
+  /** Genérico/surtido que NO se stockea: se compra pero no entra al inventario
+   *  (p. ej. "MONTE SURTIDO" = una serie de cosas). Se omite en toda entrada de stock. */
+  no_inventariable?: boolean;
+  // Detalle del producto (todos opcionales): identificación y ficha técnica.
+  /** Nombre/alias de búsqueda (p. ej. "CLORO" para "HIPOCLORITO DE SODIO"). */
+  nombre_busqueda?: string | null;
+  marca?: string | null;
+  modelo?: string | null;
+  serial?: string | null;
+  /** Código de fábrica / barra / parte. */
+  codigo?: string | null;
+  /** N° (de parte, activo, etc.). */
+  numero?: string | null;
+  descripcion?: string | null;
+  /** Ubicación física dentro del almacén (estante, fila…). */
+  ubicacion?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+  /** Cuándo pasó a inactivo. Lo sella un trigger de la base, no la pantalla.
+   *  En las bajas anteriores al 09/09/2026 es una aproximación (`updated_at`). */
+  desactivado_at?: string | null;
+  /** Quién lo dio de baja (correo, tomado del token de la sesión).
+   *  NULL en las bajas anteriores al 09/09/2026: entonces no se registraba. */
+  desactivado_por?: string | null;
+}
+
+export interface Movimiento {
+  id: string;
+  reverso_de_id?: string | null;
+  revertido_en?: string | null;
+  costo_antes?: number | null;
+  producto_id: string;
+  tipo: TipoMovimiento;
+  delta: number;
+  stock_antes: number;
+  stock_despues: number;
+  actor: string;
+  actor_name?: string | null;
+  ref_tipo?: string | null;
+  ref_id?: string | null;
+  ref_codigo?: string | null;
+  proveedor_id?: string | null;
+  detalle?: string | null;
+  /** A quién va dirigida la salida/traslado de material. */
+  destino?: string | null;
+  /** Persona que solicitó el movimiento (salida/traslado). */
+  solicitante?: string | null;
+  /** Texto de la nota de entrega (se imprime en el PDF cuando está marcada). */
+  nota_entrega?: string | null;
+  /** Fecha en que se entregó la salida/traslado de material al destino (YYYY-MM-DD). */
+  fecha_entrega?: string | null;
+  /** Almacén donde ocurrió el movimiento. */
+  almacen?: string | null;
+  /** Solo en consultas con join: el producto del movimiento. */
+  producto?: { sku: string; nombre: string; unidad: string } | null;
+  /** Costo unitario informado en este movimiento (lo pagado al proveedor en una entrada). */
+  precio_unitario?: number | null;
+  /** Costo base resultante (PMP) del producto tras aplicar este movimiento. */
+  costo_promedio?: number | null;
+  at: string;
+  created_at: string;
+}
+
+export interface ItemOrden {
+  sku: string;
+  nombre: string;
+  cantidad: number;
+  precio: number;
+  /** Precio unitario si se paga en USD/divisa (efectivo). `precio` es el de pago en Bs a BCV. */
+  precio_usd?: number | null;
+  /** Producto o servicio exento de IVA (Art. 18 Ley del IVA). Si es true, no genera base gravada de IVA. */
+  exento?: boolean;
+  /** Descuento (monto, en la moneda de la oferta) aplicado a este ítem sobre el total en Bs. */
+  descuento?: number | null;
+  /** Marca/modelo de este producto. Se escribe en la SOLICITUD (el que pide sabe qué
+   *  marca necesita), viaja a la cotización como valor de arranque y llega al inventario:
+   *  al recibir se suma a la descripción del producto y al detalle del movimiento.
+   *  El proveedor puede ofertar otra: puede cotizar el MISMO producto en varias
+   *  marcas/modelos (varias filas con el mismo sku) y su precio. */
+  marca?: string | null;
+  modelo?: string | null;
+  productoId?: string;
+  /** Unidad de medida del renglón (KG, L, und…), traída del inventario. Si se compra en
+   *  una PRESENTACIÓN (`factor`), es la unidad de compra (SACO) y `cantidad`/`precio` van
+   *  en ella; la de uso queda en `unidad_uso`. */
+  unidad?: string;
+  /** Presentación de compra: cuántas unidades de USO trae una de compra (SACO = 25 KG → 25).
+   *  Falta o 1 = se compra en la misma unidad en que se usa. */
+  factor?: number | null;
+  /** Unidad de uso (la del inventario) cuando el renglón se compra en una presentación. */
+  unidad_uso?: string | null;
+  /** Si se compra este ítem. La OP guarda todos; solo los marcados se cotizan/compran. Falta = true. */
+  comprar?: boolean;
+  /** Finalidad de la compra de este producto en concreto (para qué se pide). */
+  finalidad?: string;
+  /** Área a la que pertenece este producto: Administrativa o Producción. */
+  area?: string | null;
+  /** Cantidad realmente recibida (recepción parcial). Si falta = aún no recibido. */
+  cantidad_recibida?: number;
+  /** Marca/modelo que LLEGÓ (06/10/2026). Se guarda al recepcionar; si no coincide con
+   *  `marca`/`modelo` (lo pedido), la orden muestra «llegó otra marca». */
+  marca_recibida?: string | null;
+  modelo_recibido?: string | null;
+  /** SERVICIOS: este ítem es un servicio (no un producto de inventario). */
+  es_servicio?: boolean;
+  /** SERVICIOS: categoría del servicio (RECARGA / MANTENIMIENTO / OTRO…). */
+  categoria_servicio?: string | null;
+  /** SERVICIOS: equipo de Control de Maquinaria casado al servicio (cuando es MANTENIMIENTO). */
+  equipo_id?: string | null;
+  equipo_nombre?: string | null;
+  /** SERVICIOS de recarga: cantidad de recipientes y volumen — bombonas y KG
+   *  (gas / oxígeno / extintores) o cisternas y litros (agua). */
+  bombonas?: number | null;
+  kg_recarga?: number | null;
+  /** SERVICIOS de MANTENIMIENTO: insumo del inventario asociado (p. ej. el caucho que
+   *  se cambia), elegido de un buscador. Es opcional. */
+  insumo_producto_id?: string | null;
+  insumo_nombre?: string | null;
+  /** MANTENIMIENTO: se declaró que el servicio NO lleva repuesto del inventario
+   *  (mano de obra, diagnóstico, reparación sin pieza). Es la otra mitad de la
+   *  decisión: o va `insumo_producto_id`, o va esto. Dejarlo en blanco no se
+   *  puede — lo impide `mantenimiento_declara_insumo` en la base. */
+  sin_insumo?: boolean | null;
+  /** Repuesto pedido desde Control de Maquinaria (30/10/2026): llega a la Solicitud de
+   *  Servicio con un NOMBRE GENERAL y el analista, al cotizar, le pone el producto del
+   *  inventario (o da de alta uno nuevo). Ver `piezasMaquinaria.ts`. */
+  pieza_maquinaria?: boolean | null;
+  /** Renglón de una Solicitud de Pedido escrito con un NOMBRE GENÉRICO (31/10/2026, flujo
+   *  nuevo con revisión de Almacén): la montó alguien que no es analista de compras, no
+   *  está casado a ningún producto del inventario y el analista le pone el producto al
+   *  cotizar. Ver `nombresGenericos.ts` y `piezasMaquinaria.ts`. */
+  nombre_generico?: boolean | null;
+  /** Orden de servicio de Maquinaria (OS-…) de la que salió el renglón. */
+  orden_servicio?: string | null;
+  /** Nombre general con que se pidió (Maquinaria o SP con nombres genéricos), si el
+   *  analista lo cambió por un producto. */
+  nombre_solicitado?: string | null;
+}
+
+export interface EventoHistorial {
+  at: string;
+  evento: string;
+  actor: string;
+  motivo?: string;
+  /** Documentos adjuntos a la OC (nota de entrega / despacho). */
+  documentos?: string[];
+}
+
+/** Un renglón del "detalle del servicio": qué pieza/parte y qué se le hará.
+ *  Opcional; sirve p. ej. para detallar una reparación (piezas + descripción). */
+export interface DetalleServicioItem {
+  parte: string;
+  descripcion: string;
+  /** Precio de ese renglón (opcional). Los precios de los renglones van sumando
+   *  el "Total del detalle", que se muestra en el formulario y en el PDF. */
+  precio?: number | null;
+}
+
+export interface Orden {
+  id: string;
+  codigo: string;
+  /** Tipo de orden: 'producto' (compra normal, SP→OC) | 'servicio' (Solicitud→Control de Servicio, SS→CS). */
+  tipo?: 'producto' | 'servicio' | null;
+  /** Detalle del servicio (piezas a reparar + descripción). Solo aplica a tipo='servicio'. */
+  detalle_servicio?: DetalleServicioItem[] | null;
+  /** Pago anticipado (adelanto de referencia, no toca caja): monto en su moneda. Solo servicios. */
+  anticipo_monto?: number | null;
+  anticipo_moneda?: string | null;
+  anticipo_en?: string | null;
+  oc_codigo?: string | null;
+  proveedor_id: string | null;
+  solicitante_email: string;
+  /** Nombre de la persona solicitante. */
+  solicitante?: string | null;
+  /** Unidad / área que solicita (separada del solicitante persona). */
+  unidad_solicitante?: string | null;
+  /** Dónde entrega el delivery (04/11/2026): Almacén Los Pinos o Matanza. */
+  sede_entrega?: 'los_pinos' | 'matanza' | null;
+  /** 04/11/2026: quién entrega la OC pagada (null = delivery). Se marca en el método de pago. */
+  modalidad_entrega?: ModalidadEntrega | null;
+  ci_solicitante?: string | null;
+  items: ItemOrden[];
+  total: number;
+  /** Moneda en que está expresado `total`. Por defecto 'USD' (el modelo valoriza en $).
+   *  Algunas órdenes (p. ej. servicios cotizados directo en bolívares) están en 'Bs'. */
+  total_moneda?: string | null;
+  /** Descuento obtenido (monto $) restado del total de la OC. Opcional; editable. */
+  descuento_obtenido?: number | null;
+  /** Total alternativo si se paga en divisa/efectivo (precio con descuento del proveedor). */
+  total_divisa?: number | null;
+  /** Se marcó que el pago se hizo en divisa → el monto a pagar es `total_divisa`. */
+  pago_en_divisa?: boolean | null;
+  /** OC hija generada al repartir una OP entre varios proveedores (apunta a la OP madre). */
+  op_padre_id?: string | null;
+  estado: EstadoOrden;
+  notas?: string | null;
+  /** Motivo y finalidad de la OP (el "porqué" de la solicitud). */
+  motivo?: string | null;
+  finalidad?: string | null;
+  /** Clasificación del pedido: Producción, Bienes, Servicios (multi-selección). */
+  clasificacion?: string[] | null;
+  /** OP marcada como URGENTE por el solicitante. */
+  urgente?: boolean | null;
+  /** Imagen adjunta a la OP (path en el bucket `op-imagenes`). */
+  imagen_path?: string | null;
+  /** Subtotal exento de IVA (0% IVA). */
+  exento?: number | null;
+  /** OC por factura: si se aplicó IVA (16%) sobre el monto y cuánto. */
+  iva_aplicado?: boolean | null;
+  /** 05/11/2026: los precios ya traen el IVA: se guarda pero no suma al total. */
+  iva_incluido?: boolean | null;
+  /** % de IVA aplicado a la OC (16 por defecto, editable al confirmar el método de pago). */
+  iva_pct?: number | null;
+  iva_monto?: number | null;
+  /** IGTF (impuesto a las grandes transacciones financieras) al indicar el método de pago:
+   *  por % (3 sugerido) o monto manual. Suma al total. */
+  igtf_aplicado?: boolean | null;
+  igtf_pct?: number | null;
+  igtf_monto?: number | null;
+  /** Descuento indicado al confirmar el método de pago: RESTA del total a pagar (monto manual). */
+  descuento_pago_aplicado?: boolean | null;
+  descuento_pago_monto?: number | null;
+  historial: EventoHistorial[];
+  aprobada_por?: string | null;
+  aprobada_en?: string | null;
+  oc_emitida_por?: string | null;
+  oc_emitida_en?: string | null;
+  /** OC creada (oferta elegida, proveedor casado · sin confirmar). */
+  oc_creada_por?: string | null;
+  oc_creada_en?: string | null;
+  /** Justificación del analista al elegir la oferta (por qué ese proveedor) + adjuntos
+   *  (PDF/imágenes de respaldo). Los ve el Gerente General (al aprobar) y Tesorería. */
+  oc_seleccion_observacion?: string | null;
+  oc_seleccion_adjuntos?: AdjuntoOferta[] | null;
+  /** OC aprobada/confirmada en lote (checklist). */
+  oc_aprobada_por?: string | null;
+  oc_aprobada_en?: string | null;
+  /** Almacén destino de la mercancía (se elige al confirmar la OC). */
+  almacen_destino?: string | null;
+  /** Condiciones de pago (copiadas de la oferta elegida). */
+  condiciones_pago?: string | null;
+  /** Método(s) de pago indicados antes de enviar a pagar (multipago). */
+  metodo_pago?: PagoMetodo[] | null;
+  /** 08/11/2026: impuestos que se pagan en Bs (solo en Tesorería, no en el WhatsApp). null = todos en $. */
+  impuestos_moneda?: Partial<Record<'iva' | 'igtf' | 'islr' | 'isae', 'Bs'>> | null;
+  metodo_pago_por?: string | null;
+  metodo_pago_en?: string | null;
+  /** Imagen adjunta al método de pago (ej. QR de Binance/CR20). Path en bucket `op-imagenes`;
+   *  Tesorería la ve al pagar para escanear directo. */
+  metodo_pago_imagen_path?: string | null;
+  /** Pago de la OC desde Tesorería. */
+  pagada_por?: string | null;
+  pagada_en?: string | null;
+  /** 06/11/2026: marcada pagada SIN descontar saldo de cajas (sin egreso), con su motivo. */
+  pagada_sin_caja?: boolean | null;
+  pagada_sin_caja_motivo?: string | null;
+  /** 06/11/2026: Compras confirmó el retiro de la OC pagada (sin esto el delivery no la ve). */
+  retiro_confirmado_en?: string | null;
+  retiro_confirmado_por?: string | null;
+  caja_id?: string | null;
+  caja_mov_id?: string | null;
+  factura_path?: string | null;
+  factura_nombre?: string | null;
+  /** Comprobantes del pago (hasta 6). El primero es el mismo de `factura_path`. */
+  comprobantes_pago?: { path: string; nombre: string }[] | null;
+  /** Factura del proveedor adjuntada al finalizar la OC (bucket compras-oc). */
+  factura_recepcion_path?: string | null;
+  factura_recepcion_nombre?: string | null;
+  retencion_path?: string | null;
+  retencion_nombre?: string | null;
+  /** Retenciones fiscales (módulo Retenciones): comprobantes por tipo + estado. */
+  comprobante_tipo?: 'nota_entrega' | 'factura' | null;
+  /** Número de administración del proveedor (se coloca con el método de pago; lo ven
+   *  Retenciones y Tesorería). 14/10/2026. */
+  numero_administracion?: string | null;
+  retencion_modo?: 'se_paga_despues' | 'completo_reembolso' | null;
+  /** Cuándo se retiene (nuevo flujo de Compras, 30/10/2026): antes de pagar → Retenciones
+   *  primero y Tesorería paga el neto (BAJA); después → Tesorería paga completo (SUBE). */
+  retencion_momento?: RetencionMomento | null;
+  retencion_iva_path?: string | null;
+  retencion_iva_nombre?: string | null;
+  retencion_islr_path?: string | null;
+  retencion_islr_nombre?: string | null;
+  retencion_municipal_path?: string | null;
+  retencion_municipal_nombre?: string | null;
+  retencion_finalizada?: boolean | null;
+  retencion_finalizada_por?: string | null;
+  retencion_finalizada_en?: string | null;
+  retencion_pagada?: boolean | null;
+  retencion_pagada_en?: string | null;
+  /** Al pagar en Tesorería se marcó que la factura tenía retención. */
+  retencion_aplicada?: boolean | null;
+  /** Monto retenido (moneda de la OC). Se restó del total de la factura al pagar. */
+  retencion_monto?: number | null;
+  /** Retención en bolívares, tal como se cargó al pagar. */
+  retencion_monto_bs?: number | null;
+  /** Tasa (Bs por $) con la que se convirtió la retención. */
+  retencion_tasa?: number | null;
+  /** Lo pagado DE MÁS, en USD equivalente. Salió en egresos «REEMBOLSO DE ORDEN DE COMPRA». */
+  reembolso_usd?: number | null;
+  /** Egresos de reembolso de esta OC (movimientos_caja). */
+  reembolso_caja_mov_ids?: string[] | null;
+  /** Recepción (parcial): total realmente recibido + nota de diferencias. */
+  recibido_total?: number | null;
+  nota_recepcion?: string | null;
+  recibida_por?: string | null;
+  recibida_en?: string | null;
+  /** Si la recepción INGRESA la mercancía al inventario. false = ya cargada a mano
+   *  (al recibir no se aumenta el stock, para no duplicar). Por defecto true. */
+  afecta_inventario?: boolean | null;
+  /** Compras a crédito: total abonado acumulado. */
+  abonado_total?: number | null;
+  /** Seriales de los billetes entregados al pagar la OC en USD físico (efectivo). */
+  seriales_billetes?: string[] | null;
+  finalizada_por?: string | null;
+  finalizada_en?: string | null;
+  rechazada_por?: string | null;
+  rechazada_en?: string | null;
+  motivo_rechazo?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+/** Abono de una compra a crédito (egreso real de caja). */
+export interface AbonoCredito {
+  id: string;
+  orden_id: string;
+  monto: number;
+  moneda: string;
+  caja_id?: string | null;
+  caja_mov_id?: string | null;
+  saldo_restante?: number | null;
+  actor: string;
+  actor_name?: string | null;
+  nota?: string | null;
+  comprobante_path?: string | null;
+  comprobante_nombre?: string | null;
+  /** Comisión bancaria del abono: monto en su moneda + equivalente USD, egresado
+   *  aparte de la caja (no reduce la deuda de la OC). */
+  comision_monto?: number | null;
+  comision_moneda?: string | null;
+  comision_usd?: number | null;
+  comision_caja_mov_id?: string | null;
+  at: string;
+}
+
+/** Clave de la empresa (nómina): GT, MTO o las que se creen en RRHH (tabla rrhh_empresas,
+ *  14/10/2026). Son independientes: cada una con su gente y sus períodos. */
+export type EmpresaRrhh = string;
+
+/** Personal de nómina (no necesariamente usuario del sistema). */
+export interface Personal {
+  id: string;
+  /** A qué nómina pertenece. Una persona está en una sola. */
+  empresa: EmpresaRrhh;
+  /**
+   * Número de ficha. TEXTO, no número: así «001» se guarda «001» y no como 1,
+   * y además entra un código como «GT-07». Mínimo 3 caracteres.
+   * Se escribe al dar de alta; si se deja vacío lo asigna la base
+   * (correlativo por empresa). Una vez puesto NO se puede cambiar.
+   */
+  ficha_nro?: string | null;
+  nombre: string;
+  apellido: string;
+  cedula?: string | null;
+  /** RIF del trabajador (V-12345678-9). Es otro dato que la cédula.
+   *  El ARCHIVO del RIF no está aquí: va en `personal_documentos`. */
+  rif?: string | null;
+  cargo?: string | null;
+  departamento?: string | null;
+  sueldo_base: number;          // sueldo MENSUAL (USD)
+  activo: boolean;
+  fecha_ingreso?: string | null;
+  /** De aquí sale la EDAD: no se guarda, se calcula (un número guardado envejece mal). */
+  fecha_nacimiento?: string | null;
+  genero?: 'M' | 'F' | 'O' | null;
+  estado_civil?: 'soltero' | 'casado' | 'divorciado' | 'viudo' | 'concubinato' | null;
+  grupo_sanguineo?: string | null;
+  nacionalidad?: string | null;
+  direccion?: string | null;
+  /** Hasta cuándo vale el carnet (va impreso en el frente). Ver vigenciaCarnet.ts. */
+  carnet_vence?: string | null;
+  /** Lo que lleva el QR del carnet (/c/<token>). Lo pone la base. */
+  carnet_token?: string | null;
+  /** Contacto de la persona (para el carnet y el QR). */
+  telefono?: string | null;
+  /** Correo del TRABAJADOR (el de la empresa vive en shared/lib/empresa.ts).
+   *  Se guarda en minúsculas y sin espacios; vacío se guarda como null. */
+  correo?: string | null;
+  /**
+   * Condiciones de salud, de la hoja de ingreso. Los booleanos admiten NULO a
+   * propósito: son TRES estados (sí / no / no se preguntó), y mostrar «no
+   * tiene alergias» por una ficha que nadie completó es peor que no mostrar
+   * nada. El detalle solo existe si la respuesta es «sí»: la base lo borra
+   * sola si pasa a «no» (ver saludPersonal.ts).
+   */
+  tiene_alergias?: boolean | null;
+  alergias_detalle?: string | null;
+  tiene_enfermedad?: boolean | null;
+  enfermedad_detalle?: string | null;
+  /**
+   * Grado de instrucción de la hoja de ingreso y el título que obtuvo
+   * (28/09/2026). El título cuelga del grado: sin grado marcado no se guarda,
+   * porque un título suelto no se sabe si creer (ver instruccionYTrabajo.ts).
+   */
+  grado_instruccion?: 'primaria' | 'bachiller' | 'universitario' | null;
+  titulo_obtenido?: string | null;
+  /**
+   * El último trabajo, como lo cuenta la persona en la hoja de ingreso: dónde
+   * estuvo, qué cargo tenía, cuánto duró y cuánto cobraba. La DURACIÓN es
+   * texto a propósito («2 años y 3 meses», «de 2021 a 2024»): pedir dos fechas
+   * exactas deja el campo vacío cuando no las recuerda, que es lo habitual.
+   */
+  trabajo_anterior_empresa?: string | null;
+  trabajo_anterior_cargo?: string | null;
+  trabajo_anterior_duracion?: string | null;
+  trabajo_anterior_sueldo?: number | null;
+  /** Contacto de emergencia: nombre, parentesco y teléfono (van al carnet y al QR). */
+  contacto_emergencia?: string | null;
+  contacto_emergencia_parentesco?: 'hijo' | 'conyuge' | 'padre' | 'madre' | 'hermano' | 'otro' | null;
+  telefono_emergencia?: string | null;
+  /** Foto de la persona (bucket `personal-fotos`) para el carnet. */
+  foto_path?: string | null;
+  /**
+   * Encuadre de la foto: cuánto se acerca y qué punto queda centrado.
+   * `null` = cubrir y centrar, que es como se dibujaba antes de poder
+   * ajustarla. El archivo original nunca se recorta: esto se aplica al
+   * dibujar, así que se puede reencuadrar cuantas veces haga falta.
+   */
+  foto_encuadre?: { zoom: number; x: number; y: number } | null;
+  datos_pago?: Record<string, unknown> | null;
+  created_at: string;
+  created_by?: string | null;
+}
+
+/** Un integrante de la carga familiar del trabajador. */
+export interface PersonalFamiliar {
+  id: string;
+  personal_id: string;
+  nombre: string;
+  parentesco: 'hijo' | 'conyuge' | 'padre' | 'madre' | 'hermano' | 'otro';
+  fecha_nacimiento?: string | null;
+  cedula?: string | null;
+  genero?: 'M' | 'F' | 'O' | null;
+  estudia: boolean;
+  discapacidad: boolean;
+  observacion?: string | null;
+  created_at: string;
+  created_by?: string | null;
+}
+
+/** Los documentos que se le guardan a un trabajador. */
+/**
+ * Tipo de documento. Los tres primeros son los que el sistema pide siempre y
+ * de los que hay UNO por persona: cargar otro reemplaza al anterior.
+ * `otro` es el documento libre —título, certificado médico, referencia
+ * laboral— del que puede haber VARIOS, cada uno con el nombre que se le dé.
+ */
+export type TipoDocumento = 'rif' | 'ci' | 'cv' | 'otro';
+
+/**
+ * Un documento del trabajador (PDF o imagen) en el almacén privado
+ * `personal-documentos`. De los tres fijos hay uno por tipo y por persona
+ * —cargar otro reemplaza al anterior—; de los libres (`otro`) puede haber
+ * varios.
+ */
+export interface PersonalDocumento {
+  id: string;
+  personal_id: string;
+  tipo: TipoDocumento;
+  /** Ruta dentro del bucket; no es una URL (el almacén es privado). */
+  path: string;
+  /** El nombre con el que llegó el archivo, para mostrarlo y descargarlo. */
+  nombre: string;
+  mime?: string | null;
+  tamano?: number | null;
+  created_at: string;
+  created_by?: string | null;
+}
+
+/**
+ * Un renglón del histórico de sueldo: de cuánto a cuánto, cuándo y POR QUÉ.
+ * Se escribe una vez y no se edita (la base no tiene política de UPDATE).
+ */
+export interface PersonalSueldo {
+  id: string;
+  personal_id: string;
+  /** Lo que ganaba antes. Nulo en el primer renglón (el sueldo de alta). */
+  sueldo_anterior?: number | null;
+  sueldo_nuevo: number;
+  motivo: string;
+  nota?: string | null;
+  /** Desde cuándo rige el sueldo nuevo (puede ser anterior a la carga). */
+  fecha: string;
+  created_at: string;
+  created_by?: string | null;
+  /** Sueldo viejo cargado a posteriori (Excel o a mano): no movió el sueldo de la ficha. */
+  historico?: boolean;
+}
+
+/** Anticipo o préstamo a una persona; se descuenta de la nómina hasta saldar.
+ *  El saldo lo mantiene la base: monto_total − Σ abonos (anticipos_pagos). */
+export interface AnticipoPrestamo {
+  id: string;
+  personal_id: string;
+  tipo: 'anticipo' | 'prestamo';
+  /** Día en que se dio el préstamo (YYYY-MM-DD). Puede ser anterior a la carga. */
+  fecha: string;
+  monto_total: number;
+  saldo: number;
+  cuota_sugerida?: number | null;
+  estado: 'activo' | 'saldado';
+  motivo?: string | null;
+  /** Cargado en modo histórico: existía antes del sistema, con lo ya abonado. */
+  historico?: boolean;
+  creado_por?: string | null;
+  actor_name?: string | null;
+  created_at: string;
+}
+
+/** Un abono a un anticipo/préstamo: por nómina, a mano o traído del histórico. */
+export interface AnticipoPago {
+  id: string;
+  anticipo_id: string;
+  fecha: string;
+  monto: number;
+  origen: 'nomina' | 'manual' | 'historico';
+  renglon_id?: string | null;
+  nota?: string | null;
+  created_at: string;
+  created_by?: string | null;
+  actor_name?: string | null;
+}
+
+/** Período de nómina (una por quincena), cargado desde RRHH. */
+export interface NominaPeriodo {
+  id: string;
+  codigo: string;
+  /** Nombre con el que se busca la nómina en la lista («2da quincena de
+   *  septiembre 2026»). El codigo sigue siendo el identificador; esto es
+   *  para encontrarla, porque nadie recuerda el correlativo. */
+  nombre?: string | null;
+  /** De qué nómina es el período: GT o MTO (son independientes). */
+  empresa: EmpresaRrhh;
+  tipo: string;
+  periodo_desde?: string | null;
+  periodo_hasta?: string | null;
+  dias_base: number;
+  /** Qué parte del total acordado se declara como sueldo (el resto es bono). */
+  sueldo_pct?: number | null;
+  /** Tasa Bs/$ de CIERRE de la quincena: con esta se arma el recibo en bolívares. */
+  tasa_bcv?: number | null;
+  /** R$ por 1 USD usado al cargar la nómina (solo empresas con moneda de pago Real brasileño). */
+  tasa_brl?: number | null;
+  /** Fecha de esa tasa del Real. */
+  tasa_brl_fecha?: string | null;
+  estado: 'cargada' | 'en_pago' | 'pagada';
+  total_usd: number;
+  notas?: string | null;
+  creada_por?: string | null;
+  actor_name?: string | null;
+  created_at: string;
+  /** Papelera: si tiene fecha, la nómina se eliminó (con motivo) y no se lista
+   *  ni se paga. Solo un administrador la recupera o la borra del todo. */
+  eliminado_en?: string | null;
+  eliminado_por?: string | null;
+  eliminado_por_nombre?: string | null;
+  eliminado_motivo?: string | null;
+}
+
+/** Una deducción concreta aplicada a un renglón (referencia al anticipo/préstamo). */
+export interface DeduccionRef {
+  id: string;                   // id del anticipo_prestamo
+  tipo: 'anticipo' | 'prestamo';
+  monto: number;
+}
+
+/** Renglón de nómina = pago individual de una persona (su histórico quincenal). */
+export interface NominaRenglon {
+  id: string;
+  periodo_id: string;
+  personal_id?: string | null;
+  nombre: string;
+  cargo?: string | null;
+  departamento?: string | null;
+  /** Total acordado POR MES, en dólares. */
+  sueldo_base_mensual: number;
+  dias_trabajados: number;
+  /** Días de descanso: van como renglón aparte del recibo, igual que en la planilla. */
+  dias_descanso?: number | null;
+  sueldo_pct?: number | null;
+  /** Tasa con la que se convirtió ESTE renglón. Se congela al cargar. */
+  tasa_bs?: number | null;
+  /** La parte sueldo y la parte bono de la quincena, en dólares. */
+  sueldo_quincena_usd?: number | null;
+  bono_quincena_usd?: number | null;
+  /** El monto del recibo, en bolívares a la tasa de cierre. */
+  sueldo_quincena_bs?: number | null;
+  /** Lo que recibe por la quincena en dólares: sueldo + bono. */
+  salario_bruto: number;
+  asignaciones: number;
+  deduc_anticipos: number;
+  deduc_prestamos: number;
+  deducciones: DeduccionRef[];
+  neto_usd: number;
+  estado: 'por_pagar' | 'pagada';
+  pagada_por?: string | null;
+  pagada_en?: string | null;
+  caja_id?: string | null;
+  caja_mov_id?: string | null;
+  monto_pagado?: number | null;
+  moneda_pago?: string | null;
+  tasa_pago?: number | null;
+  seriales_billetes?: string[] | null;
+  comprobante_path?: string | null;
+  comprobante_nombre?: string | null;
+  created_at: string;
+  /** Solo en consultas con join: el período al que pertenece. */
+  periodo?: Pick<NominaPeriodo, 'codigo' | 'tipo' | 'periodo_desde' | 'periodo_hasta' | 'tasa_bcv' | 'nombre' | 'sueldo_pct'> | null;
+}
+
+/** Evento administrativo de RRHH (Fase 3): vacaciones, permisos, utilidades, notas. */
+export interface RrhhEvento {
+  id: string;
+  personal_id: string;
+  tipo: 'vacacion' | 'permiso' | 'utilidad' | 'nota';
+  fecha_desde?: string | null;
+  fecha_hasta?: string | null;
+  dias?: number | null;
+  monto?: number | null;
+  descripcion?: string | null;
+  estado: string;
+  procesada?: boolean;
+  nomina_renglon_id?: string | null;
+  creado_por?: string | null;
+  actor_name?: string | null;
+  created_at: string;
+}
+
+export interface Factura {
+  id: string;
+  numero: string;
+  orden_id?: string | null;
+  proveedor_id: string;
+  items: ItemOrden[];
+  subtotal: number;
+  iva: number;
+  total: number;
+  estado: EstadoFactura;
+  emision: string;
+  vencimiento?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+export interface Notificacion {
+  id: string;
+  destino: string;
+  kind: NotifKind;
+  title: string;
+  message?: string | null;
+  link?: string | null;
+  dedup_key?: string | null;
+  read: boolean;
+  at: string;
+}
+
+export type EstadoOferta = 'pendiente' | 'aceptada' | 'descartada';
+
+/** Indica si un costo logístico está incluido en el precio o corre por cuenta del comprador. */
+export type CostoLogistico = 'incluido' | 'comprador';
+
+/** Cómo funciona una cuenta a crédito desde Compras: plazo en días o primero se recibe y luego se paga. */
+export type CreditoModalidad = 'dias' | 'primero_recibe';
+
+/** Condiciones de vencimiento / recepción cuando la compra o servicio es a crédito (`condiciones_pago === 'credito'`). */
+export interface CreditoDetalle {
+  modalidad?: CreditoModalidad | null;
+  /** Plazo en días en que vence el crédito (ej. 7, 15, 30). */
+  dias?: number | null;
+  /** true = la compra primero se recibe y luego se paga. */
+  primero_recibe?: boolean | null;
+  /** Fecha base YYYY-MM-DD desde la que corre el plazo del crédito. */
+  fecha_inicio?: string | null;
+  /** Fecha de vencimiento YYYY-MM-DD del crédito. */
+  fecha_vencimiento?: string | null;
+}
+
+/** Ficha técnica/comercial que el proveedor carga junto a su oferta. */
+export interface FichaOferta {
+  marca?: string | null;
+  modelo?: string | null;
+  procedencia?: string | null;
+  materiales?: string | null;
+  dimensiones?: string | null;
+  peso?: string | null;
+  nivel_calidad?: string | null;
+  /** Costos logísticos: por cada uno, si está incluido o corre por cuenta del comprador. */
+  logistica?: {
+    flete?: CostoLogistico | null;
+    transporte?: CostoLogistico | null;
+    embalaje?: CostoLogistico | null;
+    seguros?: CostoLogistico | null;
+  } | null;
+  credito?: CreditoDetalle | null;
+}
+
+/** Archivo adjunto a una oferta (PDF o imagen) en el bucket `ofertas-pdf`. */
+export interface AdjuntoOferta {
+  path: string;
+  filename: string;
+}
+
+export interface OfertaProveedor {
+  id: string;
+  orden_id: string;
+  proveedor_id: string;
+  /** Actividad económica (CIIU) del proveedor al cotizar; también queda en su ficha. */
+  actividad_economica?: string | null;
+  items: ItemOrden[];
+  precio_total: number;
+  fecha_entrega_prometida?: string | null;
+  condiciones_pago?: string | null;
+  notas?: string | null;
+  estado: EstadoOferta;
+  score_calculado?: number | null;
+  registrada_por_email: string;
+  registrada_en: string;
+  decidida_por_email?: string | null;
+  decidida_en?: string | null;
+  motivo_descarte?: string | null;
+  pdf_path?: string | null;
+  pdf_filename?: string | null;
+  /** Adjuntos (PDF o imágenes) de la cotización. Permite múltiples archivos. */
+  adjuntos?: AdjuntoOferta[] | null;
+  /** Ficha del producto ofertado + costos logísticos. */
+  ficha?: FichaOferta | null;
+  /** Precio total si se paga en divisa/efectivo (precio_total es el de referencia BCV). */
+  precio_divisa?: number | null;
+  /** Descuento obtenido (monto $) que el proveedor concede; se resta del total de la
+   *  factura/OC. Opcional. */
+  descuento_obtenido?: number | null;
+  /** Pago anticipado (adelanto parcial) cuando la condición es 'anticipado' y la orden es
+   *  de servicio: monto + moneda del adelanto dado. Al aceptar la oferta se aplica como
+   *  anticipo (no toca caja, se resta del total, el resto queda a crédito). Opcional. */
+  anticipo_monto?: number | null;
+  anticipo_moneda?: string | null;
+  /** Subtotal exento de IVA (0% IVA). */
+  exento?: number | null;
+  /** IVA de la factura del proveedor: por % o monto manual. Se SUMA al total de la OC y
+   *  se arrastra a Tesorería (precargado al indicar el método de pago). */
+  iva_pct?: number | null;
+  iva_monto?: number | null;
+  iva_aplicado?: boolean | null;
+  /** 05/11/2026: los precios ya traen el IVA: se guarda pero no suma al total. */
+  iva_incluido?: boolean | null;
+  /** IGTF (impuesto a las grandes transacciones financieras): por % o monto manual.
+   *  También se suma al total y se arrastra a Tesorería. */
+  igtf_pct?: number | null;
+  igtf_monto?: number | null;
+  igtf_aplicado?: boolean | null;
+}
+
+export interface EvaluacionRecepcion {
+  id: string;
+  orden_id: string;
+  proveedor_id: string;
+  calidad: number;                  // 1-5
+  puntualidad_dias: number;         // signed
+  comentario?: string | null;
+  evaluado_por_email: string;
+  evaluado_por_rol: string;
+  evaluado_en: string;
+  ajustado_por_jefe: boolean;
+  rating_original?: number | null;
+  ajustado_en?: string | null;
+}
+
+export type EstadoProduccion = 'produccion' | 'finalizado';
+
+export interface ProduccionMaterial {
+  id: string;
+  produccion_id: string;
+  producto_id?: string | null;
+  material_nombre: string;
+  almacen: string;
+  cantidad: number;
+  costo_unitario: number;
+  subtotal: number;
+}
+
+export interface Produccion {
+  id: string;
+  producto_id?: string | null;
+  producto_nombre: string;
+  cantidad: number;
+  almacen_destino: string;
+  estado: EstadoProduccion;
+  costo_material: number;       // CTM
+  mano_obra: number;
+  costos_indirectos: number;
+  costo_unitario: number;       // CP / cantidad
+  precio_venta?: number | null;
+  ganancia?: number | null;
+  receta_num?: number | null;   // nº de receta secuencial por producto (1, 2, 3…)
+  horno?: string | null;        // nombre del horno utilizado
+  inicio_at: string;
+  fin_at?: string | null;
+  created_by?: string | null;
+  created_at: string;
+  materiales?: ProduccionMaterial[];
+}
+
+export interface PesosScore {
+  precio: number;
+  puntualidad: number;
+  calidad: number;
+  cumplimiento: number;
+}
+
+export const DEFAULT_PESOS_SCORE: PesosScore = {
+  precio: 0.40,
+  puntualidad: 0.25,
+  calidad: 0.25,
+  cumplimiento: 0.10,
+};
+
+/* ───────────── RRHH · Minutas de reunión ───────────── */
+
+export type EstadoMinuta = 'borrador' | 'finalizada';
+
+export interface MinutaParticipante {
+  /** `null` = invitado externo escrito a mano (no está en el personal). */
+  personal_id: string | null;
+  nombre: string;
+  cargo: string;
+}
+
+export interface MinutaAcuerdo {
+  responsable: string;
+  actividad: string;
+  fecha_compromiso: string | null;
+}
+
+export interface MinutaAvance {
+  actividad: string;
+  responsable: string;
+  fecha_programada: string | null;
+  revision_fecha: string | null;
+  pct_inicial: number | null;
+  revision_final: string;
+  pct_avance: number | null;
+}
+
+export interface Minuta {
+  id: string;
+  numero: string;
+  estado: EstadoMinuta;
+  lugar: string | null;
+  fecha: string;
+  hora_inicio: string | null;
+  objetivo: string | null;
+  orden_dia: string[];
+  participantes: MinutaParticipante[];
+  acuerdos: MinutaAcuerdo[];
+  otros_asuntos: string | null;
+  proxima_fecha: string | null;
+  proximos_puntos: string[];
+  avances: MinutaAvance[];
+  observaciones: string | null;
+  anexar_adjuntos_pdf: boolean;
+  /** 05/11/2026: 'cargada' = minuta ya hecha subida con su documento (sin dato = del sistema). */
+  origen?: 'sistema' | 'cargada' | null;
+  busq?: string | null;
+  creada_por?: string | null;
+  creada_en: string;
+  modificada_por?: string | null;
+  modificada_en?: string | null;
+}
+
+export interface MinutaAdjunto {
+  id: string;
+  minuta_id: string;
+  nombre: string;
+  path: string;
+  tipo: string;
+  bytes: number;
+  subido_por?: string | null;
+  subido_en: string;
+}
+
+/* ───────────── Geodesta · Informes ───────────── */
+
+export type EstadoInforme = 'borrador' | 'finalizado';
+export type TipoColumna = 'texto' | 'imagen';
+
+export interface ColumnaCuadro {
+  id: string;
+  nombre: string;
+  tipo: TipoColumna;
+}
+
+export interface FilaCuadro {
+  id: string;
+  /** clave = id de columna. Si la columna es de imagen, el valor es el id de una `ImagenGeodesta`. */
+  celdas: Record<string, string>;
+}
+
+export interface ApartadoCuadro {
+  id: string;
+  tipo: 'cuadro';
+  titulo: string;
+  columnas: ColumnaCuadro[];
+  filas: FilaCuadro[];
+}
+
+export interface ImagenEnTexto {
+  imagen_id: string;
+  pie: string;
+}
+
+export interface ApartadoTexto {
+  id: string;
+  tipo: 'texto';
+  titulo: string;
+  texto: string;
+  imagenes: ImagenEnTexto[];
+}
+
+export type Apartado = ApartadoCuadro | ApartadoTexto;
+
+/** Logo adicional del membrete del informe (12/10/2026): imagen reducida guardada en el propio informe. */
+export interface LogoExtra {
+  id: string;
+  nombre: string;
+  /** dataUrl de la imagen ya reducida. */
+  data: string;
+  /** Tamaño en píxeles, para respetar la proporción en el PDF. */
+  w: number;
+  h: number;
+}
+
+export interface InformeGeodesta {
+  id: string;
+  codigo: string;
+  codigo_anio: number | null;
+  codigo_nro: number | null;
+  fecha: string;
+  estado: EstadoInforme;
+  ciudad: string | null;
+  para_nombre: string | null;
+  para_cargo: string | null;
+  de_nombre: string | null;
+  de_cargo: string | null;
+  firma_nombre: string | null;
+  firma_cargo: string | null;
+  direccion_pie: string | null;
+  logo_gt: boolean;
+  logo_cvm: boolean;
+  /** Logos adicionales del membrete (máximo 4). */
+  logos_extra?: LogoExtra[];
+  apartados: Apartado[];
+  busq?: string | null;
+  creado_por?: string | null;
+  creado_en: string;
+  modificado_por?: string | null;
+  modificado_en?: string | null;
+}
+
+export interface ImagenGeodesta {
+  id: string;
+  informe_id: string;
+  nombre: string;
+  path: string;
+  tipo: string;
+  bytes: number;
+  subido_por?: string | null;
+  subido_en: string;
+}
+
+export interface GeodestaConfig {
+  id: number;
+  ciudad: string;
+  para_nombre: string | null;
+  para_cargo: string | null;
+  de_nombre: string | null;
+  de_cargo: string | null;
+  firma_nombre: string | null;
+  firma_cargo: string | null;
+  direccion_pie: string | null;
+  logo_gt: boolean;
+  logo_cvm: boolean;
+  actualizado_en: string;
+}
+
+export type EstadoPlan = 'planificada' | 'cumplida' | 'no_se_hizo';
+
+export interface PlanificacionGeodesta {
+  id: string;
+  titulo: string;
+  desde: string;
+  hasta: string;
+  lugar: string | null;
+  nota: string | null;
+  estado: EstadoPlan;
+  estado_nota: string | null;
+  busq?: string | null;
+  creado_por?: string | null;
+  creado_en: string;
+  modificado_por?: string | null;
+  modificado_en?: string | null;
+}
+
+/* ── Sede de entrega del delivery (04/11/2026) ── */
+export const SEDES_ENTREGA: { sede: 'los_pinos' | 'matanza'; etiqueta: string }[] = [
+  { sede: 'los_pinos', etiqueta: 'Los Pinos' },
+  { sede: 'matanza', etiqueta: 'Matanza' },
+];
+export const etiquetaSedeEntrega = (s: string | null | undefined): string | null =>
+  SEDES_ENTREGA.find((x) => x.sede === s)?.etiqueta ?? null;
+
+/* ───────────── 04/11/2026 · ¿Quién entrega la OC? (segmento DELIVERY del método de pago) ───────────── */
+
+export type ModalidadEntrega = 'delivery' | 'carga_pesada' | 'proveedor';
+
+export const MODALIDADES_ENTREGA: { key: ModalidadEntrega; label: string; icono: string; ayuda: string }[] = [
+  { key: 'delivery', label: 'Delivery', icono: '🛵', ayuda: 'Una vez pagada y con el retiro confirmado por Compras, la orden va a la vista Delivery.' },
+  { key: 'carga_pesada', label: 'Carga pesada', icono: '🚚', ayuda: 'Una vez pagada y con el retiro confirmado por Compras, la orden va a la vista CARGA PESADA (solo la ve ese rol).' },
+  { key: 'proveedor', label: 'Con entrega a domicilio', icono: '🏠', ayuda: 'La trae el mismo proveedor: NO va a Delivery ni a Carga pesada.' },
+];
+
+/** Etiqueta de la modalidad (sin dato = Delivery, como las OC de antes). */
+export function etiquetaModalidadEntrega(m: ModalidadEntrega | null | undefined): string {
+  const x = MODALIDADES_ENTREGA.find((v) => v.key === (m ?? 'delivery'));
+  return x ? `${x.icono} ${x.label}` : '🛵 Delivery';
+}

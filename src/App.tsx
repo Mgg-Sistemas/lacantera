@@ -159,6 +159,11 @@ const Maquinaria = pagina(() =>
 const Movimientos = pagina(() =>
   import('@/pages/inventario/Movimientos').then((m) => ({ default: m.Movimientos })),
 )
+const AdministracionPage = pagina(() =>
+  import('@/modules/administracion/AdministracionPage').then((m) => ({
+    default: m.AdministracionPageApp,
+  })),
+)
 /*
   EL ALMACÉN DEL TELÉFONO, EN SUS PROPIOS TROZOS, por lo mismo que la cocina
   y el surtidor: quien registra una entrada o entrega material en el patio no
@@ -414,6 +419,7 @@ const paginas: Record<string, ReactNode> = {
     vieja cae en la nueva; lo que se cargó antes se consulta, solo para leer,
     en Histórico › «Compras anteriores». Las tablas y los datos no se tocaron.
   */
+  '/app/administracion': <AdministracionPage />,
   '/app/compras': <Navigate to="/app/pedidos" replace />,
   '/app/pedidos': <PedidosPage />,
   '/app/pedidos/historico': <HistoricoPedidos />,

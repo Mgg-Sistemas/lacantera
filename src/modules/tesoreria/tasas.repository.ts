@@ -1,0 +1,754 @@
+/* ============================================================
+   Golden Touch · Tesorería · Tasas de cambio (BCV)
+   Tasa oficial del BCV para USD y EUR. La trae una Edge Function
+   (`tasa-bcv`) desde una API pública y la cachea por día en `config`
+   + historial en `tasa_cambio`. El euro es solo referencial (no hay
+   caja en euros). Conversión con la fórmula del BCV, 2 decimales.
+   ============================================================ */
+import { supabase } from '@/shared/lib/supabase';
+import type { MonedaTasa, TasaCambio, TasaHoy, TasaSnapshot } from '@/shared/lib/types';
+import { infoDiaBancario, sincronizarCalendarioBancarioApi } from '@/lib/calendarioBancario';
+
+const CONFIG_KEY = 'tesoreria.tasa_hoy';
+
+/** Redondeo a 2 decimales (se aplica en cada cálculo). */
+export function round2(n: number): number {
+  return Math.round((Number(n) || 0) * 100) / 100;
+}
+
+/** Redondeo a 4 decimales: el Real vale ~5 por dólar y con 2 decimales se perdería más del 1 %. */
+export function round4(n: number): number {
+  return Math.round((Number(n) || 0) * 10000) / 10000;
+}
+
+/** Real brasileño = dólares × tasa (R$ por 1 USD). Ej.: 20 $ × 5,0428 = R$ 100,86. */
+export function aReal(usd: number, tasaBrl: number): number {
+  return round2((Number(usd) || 0) * (Number(tasaBrl) || 0));
+}
+
+/** Dólares = Real brasileño ÷ tasa (R$ por 1 USD). */
+export function aDolaresDesdeReal(brl: number, tasaBrl: number): number {
+  const t = Number(tasaBrl) || 0;
+  if (t <= 0) return 0;
+  return round2((Number(brl) || 0) / t);
+}
+
+/** Bs = monto extranjero × tasa BCV. */
+export function aBs(montoExtranjero: number, tasa: number): number {
+  return round2((Number(montoExtranjero) || 0) * (Number(tasa) || 0));
+}
+
+/** Monto extranjero = Bs ÷ tasa BCV. */
+export function aExtranjero(montoBs: number, tasa: number): number {
+  const t = Number(tasa) || 0;
+  if (t <= 0) return 0;
+  return round2((Number(montoBs) || 0) / t);
+}
+
+/** Fecha de hoy (YYYY-MM-DD) en horario de Venezuela. */
+export function hoyVE(): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Caracas' }).format(new Date());
+}
+
+/** Lee el snapshot guardado en config (puede ser de un día anterior). */
+async function leerSnapshot(): Promise<TasaHoy | null> {
+  const { data } = await supabase.from('config').select('value').eq('key', CONFIG_KEY).maybeSingle();
+  const v = data?.value as { usd?: number; eur?: number; fecha?: string; fuente?: string } | undefined;
+  if (!v || typeof v.usd !== 'number') return null;
+  return { usd: v.usd, eur: typeof v.eur === 'number' ? v.eur : null, fecha: v.fecha ?? null, fuente: v.fuente ?? null };
+}
+
+/**
+ * Tasa del día. Si el snapshot no es de hoy, invoca la Edge Function para
+ * traerla (cache on-demand: el primer acceso del día la actualiza). Si la
+ * API falla, cae a la última tasa conocida para no romper el navbar.
+ */
+/* ── Cache TTL en memoria para lecturas repetidas (tasa del día / mercado) ──
+   Estas dos se piden en casi todos los modales de Tesorería/Compras (conversor,
+   pagar, traslado, detalle de caja, compra directa…). Como las tasas cambian
+   ~2×/día, un cache corto evita decenas de lecturas/Edge calls al abrir cada
+   modal. Los botones "↻ Actualizar" lo invalidan con bustTasasCache(). */
+const TASAS_TTL_MS = 60_000;
+let _tasaHoyCache: { at: number; val: TasaHoy } | null = null;
+let _mercadoCache: { at: number; val: TasasMercado } | null = null;
+
+/** Invalida el cache en memoria de tasas (lo llaman las funciones de refresco y guardado). */
+export function bustTasasCache(): void { _tasaHoyCache = null; _mercadoCache = null; }
+
+export function diaSemanaNombre(fechaISO: string): string {
+  const parts = fechaISO.slice(0, 10).split('-').map(Number);
+  if (parts.length !== 3 || parts.some(Number.isNaN)) return '';
+  const [y, m, d] = parts;
+  const dt = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+  const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+  return dias[dt.getUTCDay()] ?? '';
+}
+
+export async function getTasaHoy(): Promise<TasaHoy> {
+  if (_tasaHoyCache && Date.now() - _tasaHoyCache.at < TASAS_TTL_MS) return _tasaHoyCache.val;
+  const val = await _resolverTasaHoy();
+  _tasaHoyCache = { at: Date.now(), val };
+  return val;
+}
+
+async function _resolverTasaHoy(): Promise<TasaHoy> {
+  const hoy = hoyVE();
+  const info = infoDiaBancario(hoy);
+  const fechaEfectiva = info.fechaEfectivaBcv;
+  const diaNombre = diaSemanaNombre(fechaEfectiva);
+
+  // Sincronizar en segundo plano si hay conexión
+  void sincronizarCalendarioBancarioApi().catch(() => {});
+
+  // 1. Consultar en tasa_cambio las filas más recientes (USD y EUR).
+  // Trae tanto fechas futuras (día siguiente/feriado), como hoy e histórico reciente.
+  let rows: Array<{ fecha: string; moneda: string; tasa: number; fuente: string | null }> = [];
+  try {
+    const { data } = await supabase
+      .from('tasa_cambio')
+      .select('fecha, moneda, tasa, fuente')
+      .in('moneda', ['USD', 'EUR'])
+      .order('fecha', { ascending: false })
+      .limit(30);
+    if (data) rows = data as typeof rows;
+  } catch {
+    /* si falla red o Supabase, continúa con snapshot/reserva */
+  }
+
+  const usdRows = rows.filter((r) => r.moneda === 'USD');
+  const eurRows = rows.filter((r) => r.moneda === 'EUR');
+
+  // PRIORIDAD 1: Corrección manual activa para hoy o día siguiente/futuro (fecha >= hoy con fuente 'manual').
+  // La corrección manual del administrador SIEMPRE manda sobre cualquier API o snapshot.
+  const manualUsd = usdRows.find((r) => r.fecha >= hoy && r.fuente === 'manual');
+  if (manualUsd) {
+    const manualEur = eurRows.find((r) => r.fecha === manualUsd.fecha && r.fuente === 'manual')
+      ?? eurRows.find((r) => r.fecha === manualUsd.fecha)
+      ?? eurRows[0];
+    return {
+      usd: Number(manualUsd.tasa),
+      eur: manualEur ? Number(manualEur.tasa) : null,
+      fecha: manualUsd.fecha,
+      fuente: 'manual',
+    };
+  }
+
+  // PRIORIDAD 2: Tasa del día siguiente disponible (fecha > hoy).
+  // Clave en feriados bancarios (ej. lunes bancario) o fines de semana donde ya está
+  // disponible la tasa con fecha valor del siguiente día hábil (ej. martes).
+  const siguienteUsd = usdRows.find((r) => r.fecha > hoy);
+  if (siguienteUsd) {
+    const siguienteEur = eurRows.find((r) => r.fecha === siguienteUsd.fecha) ?? eurRows[0];
+    return {
+      usd: Number(siguienteUsd.tasa),
+      eur: siguienteEur ? Number(siguienteEur.tasa) : null,
+      fecha: siguienteUsd.fecha,
+      fuente: siguienteUsd.fuente ?? 'bcv',
+    };
+  }
+
+  // PRIORIDAD 3: Tasa de hoy (fecha === hoy) en tasa_cambio.
+  const hoyUsd = usdRows.find((r) => r.fecha === hoy);
+  if (hoyUsd) {
+    const hoyEur = eurRows.find((r) => r.fecha === hoy) ?? eurRows[0];
+    return {
+      usd: Number(hoyUsd.tasa),
+      eur: hoyEur ? Number(hoyEur.tasa) : null,
+      fecha: hoy,
+      fuente: hoyUsd.fuente ?? 'bcv',
+    };
+  }
+
+  // PRIORIDAD 4: Snapshot en config (si ya tiene fecha >= hoy).
+  let snap: TasaHoy | null = null;
+  try { snap = await leerSnapshot(); } catch { /* ignore */ }
+  if (snap && snap.fecha && (snap.fecha === fechaEfectiva || snap.fecha >= hoy) && snap.usd != null) {
+    return {
+      ...snap,
+      fecha: fechaEfectiva,
+      fechaValor: fechaEfectiva,
+      esBancario: info.esBancario,
+      motivoBancario: info.motivo,
+      diaNombre,
+      etiquetaBancaria: info.esBancario ? `Tasa efectiva para el ${diaNombre}` : null,
+    };
+  }
+
+  // PRIORIDAD 5: Si no hay tasa para hoy ni mañana en BD, intentar Edge Function `tasa-bcv`.
+  try {
+    const { data, error } = await supabase.functions.invoke<
+      { ok: true; usd: number; eur: number | null; fecha: string } | { error: string }
+    >('tasa-bcv', { body: {} });
+    if (!error && data && 'ok' in data && data.usd != null) {
+      return {
+        usd: data.usd,
+        eur: data.eur ?? null,
+        fecha: fechaEfectiva,
+        fechaValor: fechaEfectiva,
+        fuente: 'bcv',
+        esBancario: info.esBancario,
+        motivoBancario: info.motivo,
+        diaNombre,
+        etiquetaBancaria: info.esBancario ? `Tasa efectiva para el ${diaNombre}` : null,
+      };
+    }
+  } catch {
+    /* sin conexión / función no desplegada: usamos lo último conocido */
+  }
+
+  // Fallback directo a API oficial
+  try {
+    const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial', {
+      headers: { accept: 'application/json' },
+      signal: AbortSignal.timeout(4000),
+    });
+    if (res.ok) {
+      const dataApi = (await res.json()) as { promedio?: number; price?: number };
+      const valorUsd = Number(dataApi?.promedio ?? dataApi?.price);
+      if (Number.isFinite(valorUsd) && valorUsd > 0) {
+        const u = round2(valorUsd);
+        void Promise.resolve(supabase.from('config').upsert(
+          { key: CONFIG_KEY, value: { usd: u, eur: snap?.eur ?? null, fecha: fechaEfectiva }, updated_at: new Date().toISOString() },
+          { onConflict: 'key' },
+        )).catch(() => {});
+        return {
+          usd: u,
+          eur: snap?.eur ?? null,
+          fecha: fechaEfectiva,
+          fechaValor: fechaEfectiva,
+          esBancario: info.esBancario,
+          motivoBancario: info.motivo,
+          diaNombre,
+          etiquetaBancaria: info.esBancario ? `Tasa efectiva para el ${diaNombre}` : null,
+          fuente: 'bcv',
+        };
+      }
+    }
+  } catch { /* offline */ }
+
+  // PRIORIDAD 6: Snapshot guardado en config (aunque sea de día anterior).
+  if (snap && snap.usd != null) {
+    return {
+      ...snap,
+      fecha: fechaEfectiva,
+      fechaValor: fechaEfectiva,
+      esBancario: info.esBancario,
+      motivoBancario: info.motivo,
+      diaNombre,
+    };
+  }
+
+  // PRIORIDAD 7: Última fila por moneda en tasa_cambio.
+  if (usdRows.length > 0) {
+    const u = usdRows[0];
+    const e = eurRows.find((r) => r.fecha === u.fecha) ?? eurRows[0];
+    return {
+      usd: Number(u.tasa),
+      eur: e ? Number(e.tasa) : null,
+      fecha: fechaEfectiva,
+      fechaValor: fechaEfectiva,
+      fuente: u.fuente ?? null,
+      esBancario: info.esBancario,
+      motivoBancario: info.motivo,
+      diaNombre,
+    };
+  }
+
+  // Último recurso: última fila por moneda del historial.
+  const ult = await ultimaConocida();
+  return {
+    ...ult,
+    fecha: fechaEfectiva,
+    fechaValor: fechaEfectiva,
+    esBancario: info.esBancario,
+    motivoBancario: info.motivo,
+    diaNombre,
+  };
+}
+
+/** Fuerza la actualización vía Edge Function o API directa (botón "Actualizar"). */
+export async function refrescarTasa(): Promise<TasaHoy> {
+  const hoy = hoyVE();
+  const info = infoDiaBancario(hoy);
+  const fechaEfectiva = info.fechaEfectivaBcv;
+  const diaNombre = diaSemanaNombre(fechaEfectiva);
+
+  let respData: { usd: number; eur: number | null; fecha: string } | null = null;
+  try {
+    const { data, error } = await supabase.functions.invoke<
+      { ok: true; usd: number; eur: number | null; fecha: string } | { error: string }
+    >('tasa-bcv', { body: { force: true } });
+    if (!error && data && 'ok' in data) {
+      respData = data;
+    }
+  } catch { /* fallback a API */ }
+
+  if (!respData) {
+    const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial', {
+      headers: { accept: 'application/json' },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) throw new Error('No se pudo consultar la API del BCV');
+    const dataApi = (await res.json()) as { promedio?: number; price?: number };
+    const valor = Number(dataApi?.promedio ?? dataApi?.price);
+    if (!Number.isFinite(valor) || valor <= 0) throw new Error('Respuesta inválida de la API BCV');
+    respData = { usd: round2(valor), eur: null, fecha: fechaEfectiva };
+  }
+
+  bustTasasCache();
+  const resFinal: TasaHoy = {
+    usd: respData.usd,
+    eur: respData.eur ?? null,
+    fecha: fechaEfectiva,
+    fechaValor: fechaEfectiva,
+    esBancario: info.esBancario,
+    motivoBancario: info.motivo,
+    diaNombre,
+    etiquetaBancaria: info.esBancario ? `Tasa efectiva para el ${diaNombre}` : null,
+  };
+  return resFinal;
+}
+
+/** Última tasa conocida (por si no hay snapshot ni conexión). */
+async function ultimaConocida(): Promise<TasaHoy> {
+  const { data } = await supabase
+    .from('tasa_cambio')
+    .select('fecha, moneda, tasa, fuente')
+    .order('fecha', { ascending: false })
+    .limit(8);
+  const rows = (data ?? []) as Array<{ fecha: string; moneda: MonedaTasa; tasa: number; fuente?: string | null }>;
+  const usdRow = rows.find((r) => r.moneda === 'USD');
+  const eurRow = rows.find((r) => r.moneda === 'EUR');
+  return {
+    usd: usdRow ? Number(usdRow.tasa) : null,
+    eur: eurRow ? Number(eurRow.tasa) : null,
+    fecha: usdRow?.fecha ?? eurRow?.fecha ?? null,
+    fuente: usdRow?.fuente ?? null,
+  };
+}
+
+/** Tasa USD del BCV de una fecha (YYYY-MM-DD), o null si no está registrada. La manual manda. */
+export async function getTasaUsdDeFecha(fecha: string): Promise<number | null> {
+  const { data, error } = await supabase.from('tasa_cambio').select('tasa, fuente')
+    .eq('moneda', 'USD').eq('fecha', fecha);
+  if (error) throw error;
+  const rows = (data ?? []) as Array<{ tasa: number; fuente: string | null }>;
+  const r = rows.find((x) => x.fuente === 'manual') ?? rows[0];
+  if (r) return Number(r.tasa);
+
+  const hoy = hoyVE();
+  const info = infoDiaBancario(hoy);
+  if (fecha === hoy || (info.esBancario && fecha === info.fechaEfectivaBcv)) {
+    const hoyTasa = await getTasaHoy();
+    if (hoyTasa.usd != null) return hoyTasa.usd;
+  }
+
+  // Fallback para fechas no hábiles pasadas (ej. sábado/domingo): tomar la tasa más cercana anterior
+  const { data: antData } = await supabase.from('tasa_cambio').select('tasa, fuente')
+    .eq('moneda', 'USD').lte('fecha', fecha).order('fecha', { ascending: false }).limit(4);
+  const antRows = (antData ?? []) as Array<{ tasa: number; fuente: string | null }>;
+  const antR = antRows.find((x) => x.fuente === 'manual') ?? antRows[0];
+  if (antR) return Number(antR.tasa);
+
+  return null;
+}
+
+/** Tasas USD del BCV de varias fechas (fecha → tasa; la manual manda). Las que no estén registradas no vienen. */
+export async function getTasasUsdDeFechas(fechas: string[]): Promise<Map<string, number>> {
+  const unicas = [...new Set(fechas.filter(Boolean))];
+  const out = new Map<string, number>();
+  if (!unicas.length) return out;
+  const { data, error } = await supabase.from('tasa_cambio').select('fecha, tasa, fuente')
+    .eq('moneda', 'USD').in('fecha', unicas);
+  if (error) throw error;
+  for (const r of (data ?? []) as Array<{ fecha: string; tasa: number; fuente: string | null }>) {
+    if (!out.has(r.fecha) || r.fuente === 'manual') out.set(r.fecha, Number(r.tasa));
+  }
+  return out;
+}
+
+/** Fecha (YYYY-MM-DD) en horario de Venezuela de un instante ISO. */
+export function diaVE(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '' : new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Caracas' }).format(d);
+}
+
+/** Corrección / carga manual de la tasa de una moneda (admin). Acepta cualquier
+ *  moneda registrada (USD/EUR/USDT/COP o personalizada). */
+export async function setTasaManual(input: { moneda: string; tasa: number; fecha?: string }): Promise<void> {
+  // El Real lleva 4 decimales (vale ~5 por dólar); las demás, 2.
+  const tasa = input.moneda === 'BRL' ? round4(Number(input.tasa) || 0) : round2(Number(input.tasa) || 0);
+  if (tasa <= 0) throw new Error('La tasa debe ser mayor que 0.');
+  const fecha = input.fecha || hoyVE();
+
+  // Invalida cache antes y después de escribir
+  bustTasasCache();
+
+  const { error } = await supabase
+    .from('tasa_cambio')
+    .upsert({ fecha, moneda: input.moneda, tasa, fuente: 'manual' }, { onConflict: 'fecha,moneda,fuente' });
+  if (error) throw error;
+
+  // Si es la tasa de hoy o una fecha siguiente/futura (ej. feriado bancario cargando la tasa de mañana),
+  // actualizamos de inmediato el snapshot en config para que los chips y el sistema la tomen.
+  if (fecha >= hoyVE()) {
+    const snap = (await leerSnapshot()) ?? { usd: null, eur: null, fecha };
+    const nuevo = {
+      usd: input.moneda === 'USD' ? tasa : snap.usd,
+      eur: input.moneda === 'EUR' ? tasa : snap.eur,
+      fecha,
+      fuente: 'manual',
+    };
+    try {
+      await supabase.from('config').upsert(
+        { key: CONFIG_KEY, value: nuevo, updated_at: new Date().toISOString() },
+        { onConflict: 'key' },
+      );
+    } catch (e) {
+      console.warn('setTasaManual: config snapshot no pudo ser actualizado:', e);
+    }
+  }
+
+  // USDT/COP cargadas a mano también alimentan el gráfico (serie histórica).
+  const par = input.moneda === 'USDT' ? 'USDT_VES' : input.moneda === 'COP' ? 'COP_USD' : input.moneda === 'BRL' ? 'BRL_USD' : null;
+  if (par) await supabase.from('tasa_snapshot').insert({ par, tasa, fuente: 'manual' });
+
+  bustTasasCache();
+}
+
+/** Historial de tasas filtrable por rango de fecha y moneda. */
+export async function listHistorialTasas(filtros: { desde?: string; hasta?: string; moneda?: string } = {}): Promise<TasaCambio[]> {
+  let q = supabase.from('tasa_cambio').select('*').order('fecha', { ascending: false }).order('moneda', { ascending: true });
+  if (filtros.desde) q = q.gte('fecha', filtros.desde);
+  if (filtros.hasta) q = q.lte('fecha', filtros.hasta);
+  if (filtros.moneda) q = q.eq('moneda', filtros.moneda);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []) as TasaCambio[];
+}
+
+/* ───────────── Tasas de mercado (USDT/VES Binance, COP/USD) ───────────── */
+
+/** Tasas vigentes para el módulo multimoneda. */
+export interface TasasMercado {
+  bcvUsd: number | null;    // Bs por 1 USD (BCV)
+  usdtVes: number | null;   // Bs por 1 USDT (Binance P2P)
+  copUsd: number | null;    // COP por 1 USD
+  fecha: string | null;
+}
+
+/** Última tasa conocida de una moneda en `tasa_cambio` (cualquier fuente). */
+async function ultimaTasaMoneda(moneda: MonedaTasa): Promise<{ tasa: number; fecha: string } | null> {
+  const { data } = await supabase
+    .from('tasa_cambio')
+    .select('tasa, fecha')
+    .eq('moneda', moneda)
+    .order('fecha', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!data) return null;
+  return { tasa: Number(data.tasa), fecha: data.fecha as string };
+}
+
+/** Las 3 tasas de referencia del P2P de Binance (Bs por 1 USDT). */
+export interface Binance3 {
+  buy: number | null;       // COMPRA (lo que cobran al vender USDT)
+  sell: number | null;      // VENTA (lo que pagan por USDT)
+  promedio: number | null;  // punto medio
+  at: string | null;
+}
+
+/** Fuerza la actualización (Edge Function Binance P2P) y devuelve las 3 tasas. */
+export async function refrescarBinanceP2P(): Promise<Binance3> {
+  const { data, error } = await supabase.functions.invoke<
+    { ok: true; promedio: number; buy: number | null; sell: number | null; at: string } | { error: string }
+  >('tasa-binance-p2p', { body: {} });
+  if (error) throw new Error(await mensajeDeFuncion(error, 'No se pudo actualizar la tasa Binance'));
+  if (!data || 'error' in data) throw new Error((data as { error?: string })?.error || 'Respuesta inválida');
+  bustTasasCache();
+  return { buy: data.buy ?? null, sell: data.sell ?? null, promedio: data.promedio ?? null, at: data.at };
+}
+
+/** Últimas 3 tasas Binance guardadas (compra/venta/promedio). */
+export async function getBinance3(): Promise<Binance3> {
+  const { data } = await supabase
+    .from('tasa_snapshot')
+    .select('par, tasa, at')
+    .in('par', ['USDT_VES', 'USDT_VES_BUY', 'USDT_VES_SELL'])
+    .order('at', { ascending: false })
+    .limit(30);
+  const rows = (data ?? []) as Array<{ par: string; tasa: number; at: string }>;
+  const ultima = (par: string): number | null => {
+    const r = rows.find((x) => x.par === par);
+    return r ? Number(r.tasa) : null;
+  };
+  return { buy: ultima('USDT_VES_BUY'), sell: ultima('USDT_VES_SELL'), promedio: ultima('USDT_VES'), at: rows[0]?.at ?? null };
+}
+
+/** Fuerza la actualización de la tasa COP/USD (Edge Function). */
+export async function refrescarCop(): Promise<number> {
+  const { data, error } = await supabase.functions.invoke<
+    { ok: true; cop_usd: number } | { error: string }
+  >('tasa-cop', { body: {} });
+  if (error) throw new Error(await mensajeDeFuncion(error, 'No se pudo actualizar la tasa COP'));
+  if (!data || 'error' in data) throw new Error((data as { error?: string })?.error || 'Respuesta inválida');
+  bustTasasCache();
+  return data.cop_usd;
+}
+
+/* ───────────── Real brasileño (RRHH) ───────────── */
+
+/** Última tasa guardada del Real (R$ por 1 USD), de cualquier fuente. Sin consultar la API. */
+export async function ultimaTasaBrl(): Promise<{ tasa: number; fecha: string } | null> {
+  return ultimaTasaMoneda('BRL');
+}
+
+/** Fuerza la actualización de la tasa BRL/USD (Edge Function `tasa-brl`). */
+export async function refrescarBrl(): Promise<{ tasa: number; fecha: string }> {
+  const { data, error } = await supabase.functions.invoke<
+    { ok: true; brl_usd: number; fecha: string } | { error: string }
+  >('tasa-brl', { body: {} });
+  if (error) throw new Error(await mensajeDeFuncion(error, 'No se pudo actualizar la tasa del Real'));
+  if (!data || 'error' in data) throw new Error((data as { error?: string })?.error || 'Respuesta inválida');
+  bustTasasCache();
+  return { tasa: data.brl_usd, fecha: data.fecha };
+}
+
+/**
+ * La tasa del Real para hoy. Si la última guardada no es de hoy, la trae de la API; si
+ * la API falla, queda la última conocida (con su fecha) para que se pueda seguir trabajando.
+ */
+export async function getTasaBrl(): Promise<{ tasa: number | null; fecha: string | null }> {
+  const ultima = await ultimaTasaBrl().catch(() => null);
+  if (ultima && ultima.fecha === hoyVE()) return ultima;
+  try { return await refrescarBrl(); } catch { /* sin función o sin red */ }
+  return ultima ?? { tasa: null, fecha: null };
+}
+
+/**
+ * Tasas de mercado para conversor/caja: BCV (USD), USDT/VES y COP/USD.
+ * Lee lo último de BD; si USDT no está cargado hoy, intenta el Edge Function.
+ */
+export async function getTasasMercado(): Promise<TasasMercado> {
+  if (_mercadoCache && Date.now() - _mercadoCache.at < TASAS_TTL_MS) return _mercadoCache.val;
+  const val = await _resolverTasasMercado();
+  _mercadoCache = { at: Date.now(), val };
+  return val;
+}
+
+async function _resolverTasasMercado(): Promise<TasasMercado> {
+  // Binance USDT/VES: la fuente de verdad es el ÚLTIMO snapshot en vivo
+  // (par USDT_VES, por timestamp), el MISMO que muestra la Vista de Tasas.
+  // Así el chip del navbar y la tarjeta "Promedio" nunca se desincronizan.
+  // Fallback: el valor del día en `tasa_cambio` (por fecha) y, si no hay nada,
+  // se dispara el Edge Function.
+  const [bcv, usdtSnap, usdtDia, cop] = await Promise.all([
+    getTasaHoy().catch(() => ({ usd: null, eur: null, fecha: null } as TasaHoy)),
+    ultimoSnapshot('USDT_VES'),
+    ultimaTasaMoneda('USDT'),
+    ultimaTasaMoneda('COP'),
+  ]);
+  let usdtVes = usdtSnap?.tasa ?? usdtDia?.tasa ?? null;
+  if (usdtVes == null) {
+    try { usdtVes = (await refrescarBinanceP2P()).promedio; } catch { /* sin función desplegada */ }
+  }
+  let copUsd = cop?.tasa ?? null;
+  if (copUsd == null) {
+    try { copUsd = await refrescarCop(); } catch { /* sin función desplegada */ }
+  }
+  return {
+    bcvUsd: bcv.usd,
+    usdtVes,
+    copUsd,
+    fecha: bcv.fecha ?? usdtDia?.fecha ?? cop?.fecha ?? null,
+  };
+}
+
+/* ───────────── Cripto (CoinGecko, CORS público — se trae en el cliente) ───────────── */
+
+export interface CriptoTasa {
+  key: string;      // par snapshot (BTC_USD…)
+  label: string;    // "Bitcoin (BTC)"
+  usd: number | null;
+  at: string | null;
+}
+
+const CRIPTO_DEF: Array<{ id: string; key: string; label: string }> = [
+  { id: 'bitcoin', key: 'BTC_USD', label: 'Bitcoin (BTC)' },
+  { id: 'ethereum', key: 'ETH_USD', label: 'Ethereum (ETH)' },
+  { id: 'solana', key: 'SOL_USD', label: 'Solana (SOL)' },
+  { id: 'binancecoin', key: 'BNB_USD', label: 'BNB (BNB)' },
+];
+
+/** Lectura rápida de cripto desde los últimos snapshots (sin red), en paralelo.
+ *  Para la carga inicial: el cron y CoinGecko mantienen la serie al día. */
+export async function getCriptoCache(): Promise<CriptoTasa[]> {
+  const lasts = await Promise.all(CRIPTO_DEF.map((c) => ultimoSnapshot(c.key)));
+  return CRIPTO_DEF.map((c, i) => ({ key: c.key, label: c.label, usd: lasts[i]?.tasa ?? null, at: lasts[i]?.at ?? null }));
+}
+
+/** Precios cripto en USD desde CoinGecko (CORS habilitado). Guarda snapshot
+ *  para el historial, como máximo una vez por hora para no saturar la serie. */
+export async function getCripto(): Promise<CriptoTasa[]> {
+  const ids = CRIPTO_DEF.map((c) => c.id).join(',');
+  let precios: Record<string, { usd?: number }> = {};
+  try {
+    const resp = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`, {
+      headers: { accept: 'application/json' },
+    });
+    if (resp.ok) precios = await resp.json();
+  } catch { /* sin conexión: caemos a último snapshot */ }
+
+  const out: CriptoTasa[] = [];
+  const aGuardar: Array<{ par: string; tasa: number; fuente: string }> = [];
+  for (const c of CRIPTO_DEF) {
+    const usd = Number(precios?.[c.id]?.usd);
+    if (Number.isFinite(usd) && usd > 0) {
+      out.push({ key: c.key, label: c.label, usd: round2(usd), at: null });
+      aGuardar.push({ par: c.key, tasa: round2(usd), fuente: 'coingecko' });
+    } else {
+      const last = await ultimoSnapshot(c.key);
+      out.push({ key: c.key, label: c.label, usd: last?.tasa ?? null, at: last?.at ?? null });
+    }
+  }
+  if (aGuardar.length) await guardarSnapshotsThrottled(aGuardar, 'BTC_USD', 60);
+  return out;
+}
+
+/** Mensaje legible de un error de Edge Function: si la función respondió con
+ *  un JSON { error } o { motivo } (status no-2xx), se usa ese texto. */
+async function mensajeDeFuncion(error: unknown, porDefecto: string): Promise<string> {
+  let msg = (error as { message?: string } | null)?.message || porDefecto;
+  try {
+    const ctx = (error as { context?: { json?: () => Promise<{ error?: string; motivo?: string }> } } | null)?.context;
+    if (ctx?.json) {
+      const j = await ctx.json();
+      if (j?.error) msg = j.error;
+      else if (j?.motivo) msg = j.motivo;
+    }
+  } catch { /* sin cuerpo JSON */ }
+  return msg;
+}
+
+/** Fuerza la actualización de metales (Edge Function tasa-metales).
+ *  Lanza con el motivo real (key no configurada o rechazada, límite del plan,
+ *  la API no devolvió precios…) para que la vista lo muestre.
+ *  Si actualizó solo algunos (oro/plata/cobre por la fuente gratis), devuelve
+ *  los que faltaron y el motivo. */
+export async function refrescarMetales(): Promise<{ faltantes: string[]; motivo: string | null }> {
+  const { data, error } = await supabase.functions.invoke<
+    { ok: true; precios: Record<string, number>; faltantes?: string[]; motivo?: string } | { ok: false; motivo?: string; error?: string }
+  >('tasa-metales', { body: {} });
+  if (error) throw new Error(await mensajeDeFuncion(error, 'No se pudo actualizar metales'));
+  if (!data || data.ok !== true) {
+    const d = data as { motivo?: string; error?: string } | null;
+    throw new Error(d?.motivo || d?.error || 'No se pudo actualizar metales');
+  }
+  return { faltantes: data.faltantes ?? [], motivo: data.motivo ?? null };
+}
+
+/** Nombre visible de un par de metal (METAL_ESTANO → Estaño). */
+export function nombreMetal(par: string): string {
+  return METAL_DEF.find((m) => m.key === par)?.label ?? par;
+}
+
+/* ───────────── Metales (requiere fuente con API key vía Edge Function tasa-metales) ───────────── */
+
+export interface MetalTasa {
+  key: string;      // par snapshot (METAL_ESTANO…)
+  label: string;
+  usd: number | null;
+  unidad: string;
+  at: string | null;
+  manual?: boolean; // true = no lo trae la API (se carga a mano), p. ej. estaño
+}
+
+/** Guarda manualmente el precio (USD) de un metal (admin). Alimenta la tarjeta y el historial. */
+export async function setMetalManual(key: string, usd: number): Promise<void> {
+  const v = round2(Number(usd) || 0);
+  if (v <= 0) throw new Error('El precio debe ser mayor que 0.');
+  await supabase.from('tasa_snapshot').insert({ par: key, tasa: v, fuente: 'manual' });
+}
+
+// Fuente: commoditypriceapi.com (incluye estaño/TIN). Unidades según la API.
+const METAL_DEF: Array<{ key: string; label: string; unidad: string; manual?: boolean }> = [
+  { key: 'METAL_ESTANO', label: 'Estaño', unidad: 'Tonelada' },
+  { key: 'METAL_COBRE', label: 'Cobre', unidad: 'Libra' },
+  { key: 'METAL_ALUMINIO', label: 'Aluminio', unidad: 'Tonelada' },
+  { key: 'METAL_NIQUEL', label: 'Níquel', unidad: 'Tonelada' },
+  { key: 'METAL_ZINC', label: 'Zinc', unidad: 'Tonelada' },
+  { key: 'METAL_PLOMO', label: 'Plomo', unidad: 'Tonelada' },
+  { key: 'METAL_ORO', label: 'Oro', unidad: 'Onza' },
+  { key: 'METAL_PLATA', label: 'Plata', unidad: 'Onza' },
+];
+
+/** Precios de metales (USD) desde el último snapshot guardado por la Edge
+ *  Function `tasa-metales`. Si no hay key configurada, devuelven null. */
+export async function getMetales(): Promise<MetalTasa[]> {
+  // Lecturas en paralelo (antes eran 8 consultas en serie).
+  const lasts = await Promise.all(METAL_DEF.map((m) => ultimoSnapshot(m.key)));
+  return METAL_DEF.map((m, i) => ({
+    key: m.key, label: m.label, unidad: m.unidad,
+    usd: lasts[i]?.tasa ?? null, at: lasts[i]?.at ?? null, manual: m.manual,
+  }));
+}
+
+/* ───────────── Auto-refresco "2× al día" del lado del cliente (respaldo del cron) ───────────── */
+
+/** Último snapshot de un par. */
+async function ultimoSnapshot(par: string): Promise<{ tasa: number; at: string } | null> {
+  const { data } = await supabase
+    .from('tasa_snapshot')
+    .select('tasa, at')
+    .eq('par', par)
+    .order('at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!data) return null;
+  return { tasa: Number(data.tasa), at: data.at as string };
+}
+
+/** Inserta snapshots solo si el par "ancla" no se guardó en los últimos `minutos`. */
+async function guardarSnapshotsThrottled(
+  snaps: Array<{ par: string; tasa: number; fuente: string }>,
+  parAncla: string,
+  minutos: number,
+): Promise<void> {
+  const last = await ultimoSnapshot(parAncla);
+  if (last) {
+    const edadMin = (Date.now() - new Date(last.at).getTime()) / 60000;
+    if (edadMin < minutos) return;
+  }
+  await supabase.from('tasa_snapshot').insert(snaps).select('id').then(() => {}, () => {});
+}
+
+/**
+ * Refresco "perezoso" de respaldo: si la última tasa de mercado tiene más de
+ * `horas` (por defecto 11), dispara los Edge Functions de BCV/Binance/COP. El
+ * cron del servidor (8:00 y 16:00) es la vía principal; esto cubre cuando el
+ * cron no está activo y alguien abre Tesorería.
+ */
+export async function refrescarTasasSiVencido(horas = 11): Promise<void> {
+  const anclas = ['USDT_VES', 'COP_USD'];
+  let masReciente = 0;
+  for (const par of anclas) {
+    const s = await ultimoSnapshot(par);
+    if (s) masReciente = Math.max(masReciente, new Date(s.at).getTime());
+  }
+  const venc = masReciente === 0 || (Date.now() - masReciente) / 3600000 >= horas;
+  if (!venc) return;
+  await Promise.allSettled([refrescarTasa(), refrescarBinanceP2P(), refrescarCop()]);
+}
+
+/** Serie histórica de un par para el gráfico (más reciente primero). */
+export async function listSnapshots(
+  filtros: { par: string; desde?: string; hasta?: string; limit?: number } ,
+): Promise<TasaSnapshot[]> {
+  let q = supabase.from('tasa_snapshot').select('*').eq('par', filtros.par).order('at', { ascending: false });
+  if (filtros.desde) q = q.gte('at', filtros.desde);
+  if (filtros.hasta) q = q.lte('at', filtros.hasta);
+  q = q.limit(filtros.limit ?? 200);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []) as TasaSnapshot[];
+}

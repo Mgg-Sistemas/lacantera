@@ -7,6 +7,7 @@ import {
   Wrench,
   BookOpen,
   Boxes,
+  Briefcase,
   ClipboardList,
   Gauge,
   Landmark,
@@ -174,6 +175,7 @@ const MODULO_POR_PREFIJO: [string, string][] = [
   // `RequireModule module="inventario"`).
   ['/app/solicitudes-pedido', 'INVENTARIO'],
   ['/app/despachos', 'DESPACHOS'],
+  ['/app/administracion', 'COMPRAS'],
   ['/app/compras', 'COMPRAS'],
   ['/app/retenciones', 'COMPRAS'],
   // Abierta a todos por `RUTAS_PROPIAS`; el módulo decide solo quién la ve
@@ -745,6 +747,11 @@ export const navigation: NavSection[] = [
         vacío. Este es una caja: lo que entra para operar, lo que cuesta
         producir y a cuánto sale el metro cúbico, congelado al cerrar.
       */
+      {
+        label: 'Administración',
+        icon: Briefcase,
+        to: '/app/administracion',
+      },
       {
         label: 'Compras',
         icon: ShoppingCart,
