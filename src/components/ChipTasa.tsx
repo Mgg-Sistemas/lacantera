@@ -103,14 +103,22 @@ export function ChipTasa({ className }: { className?: string }) {
 
   return (
     <span
-      title={`No hay tasa de hoy registrada. Lo que se emita ahora se valora con la del ${fechaCorta}.`}
+      title={
+        data.esBancario
+          ? `Feriado bancario (${data.motivoBancario ?? 'Bancario'}): Se valora con la tasa del ${data.diaValorNombre ?? fechaCorta}.`
+          : `No hay tasa de hoy registrada. Lo que se emita ahora se valora con la del ${fechaCorta}.`
+      }
       className={cn(
         'border-warning/40 bg-warning-soft text-warning text-2xs inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-medium',
         className,
       )}
     >
       <AlertTriangle className="size-3.5 shrink-0" />
-      <span>Se valora con la tasa del {fechaCorta}</span>
+      <span>
+        {data.esBancario
+          ? `Feriado bancario · Tasa ${data.diaValorNombre ?? fechaCorta}`
+          : `Se valora con la tasa del ${fechaCorta}`}
+      </span>
       <span className="tabular font-semibold">Bs {formatearTasa(Number(data.tasa))}</span>
     </span>
   )

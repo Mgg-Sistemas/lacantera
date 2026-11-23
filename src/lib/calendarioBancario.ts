@@ -1,174 +1,283 @@
-/* ============================================================
-   La Cantera · Tesorería · Calendario Bancario de Venezuela
-   ------------------------------------------------------------
-   Superintendencia de las Instituciones del Sector Bancario
-   (SUDEBAN) y Banco Central de Venezuela (BCV).
+/* ============================================================================
+   Minería Internacional TS · Calendario Bancario Oficial SUDEBAN (Venezuela)
+   - Días feriados bancarios y nacionales no laborables según normativa SUDEBAN.
+   - Manejo automático de «Lunes Bancarios» y feriados religiosos trasladados.
+   - Cálculo del siguiente día hábil bancario (Fecha Valor BCV).
+   - En feriado bancario (ej. lunes bancario), la tasa oficial del BCV que rige
+     es la del siguiente día hábil (martes), la cual es emitida el día hábil anterior.
+   ============================================================================ */
 
-   En Venezuela, cuando un día es feriado bancario («Lunes Bancario»
-   o feriado nacional bancario), los bancos no operan y el BCV no
-   realiza mesas de cambio interbancarias.
-   La tasa publicada el día hábil anterior (generalmente el viernes)
-   sale con «Fecha Valor» del PRÓXIMO DÍA HÁBIL BANCARIO (por ejemplo,
-   el martes siguiente si el lunes es bancario).
-
-   Esta utilidad centraliza el calendario bancario oficial de SUDEBAN,
-   la sincronización opcional con APIs de feriados y el cálculo
-   automático del próximo día hábil para la tasa del BCV.
-   ============================================================ */
-
-/** Feriados bancarios oficiales y Lunes Bancarios de SUDEBAN (Venezuela). */
-export const FERIADOS_BANCARIOS_VE: Record<string, string> = {
-  // ─── 2025 ──────────────────────────────────────────
-  '2025-01-01': 'Año Nuevo (Feriado Nacional)',
-  '2025-01-06': 'Día de Reyes (Lunes Bancario)',
-  '2025-03-03': 'Lunes de Carnaval (Feriado Nacional)',
-  '2025-03-04': 'Martes de Carnaval (Feriado Nacional)',
-  '2025-03-19': 'Día de San José (Feriado Bancario)',
-  '2025-04-17': 'Jueves Santo (Feriado Nacional)',
-  '2025-04-18': 'Viernes Santo (Feriado Nacional)',
-  '2025-04-19': 'Declaración de la Independencia (Feriado Nacional)',
-  '2025-05-01': 'Día del Trabajador (Feriado Nacional)',
-  '2025-06-02': 'Ascensión del Señor (Lunes Bancario)',
-  '2025-06-23': 'Corpus Christi (Lunes Bancario)',
-  '2025-06-24': 'Batalla de Carabobo (Feriado Nacional)',
-  '2025-06-30': 'San Pedro y San Pablo (Lunes Bancario)',
-  '2025-07-05': 'Día de la Independencia (Feriado Nacional)',
-  '2025-07-24': 'Natalicio de Simón Bolívar (Feriado Nacional)',
-  '2025-08-18': 'Asunción de Nuestra Señora (Lunes Bancario)',
-  '2025-09-15': 'Virgen del Valle (Lunes Bancario)',
-  '2025-10-12': 'Día de la Resistencia Indígena (Feriado Nacional)',
-  '2025-10-20': 'Dr. José Gregorio Hernández (Lunes Bancario)',
-  '2025-11-03': 'Día de Todos los Santos (Lunes Bancario)',
-  '2025-11-24': 'Virgen del Rosario de Chiquinquirá (Lunes Bancario)',
-  '2025-12-08': 'Inmaculada Concepción (Feriado Bancario)',
-  '2025-12-24': 'Feriado Bancario (Víspera de Navidad)',
-  '2025-12-25': 'Natividad de Nuestro Señor (Feriado Nacional)',
-  '2025-12-31': 'Feriado Bancario (Fin de Año)',
-
-  // ─── 2026 (Año Actual) ──────────────────────────────
-  '2026-01-01': 'Año Nuevo (Feriado Nacional)',
-  '2026-01-12': 'Día de Reyes (Lunes Bancario)',
-  '2026-02-16': 'Lunes de Carnaval (Feriado Nacional)',
-  '2026-02-17': 'Martes de Carnaval (Feriado Nacional)',
-  '2026-03-23': 'Día de San José (Lunes Bancario)',
-  '2026-04-02': 'Jueves Santo (Feriado Nacional)',
-  '2026-04-03': 'Viernes Santo (Feriado Nacional)',
-  '2026-04-19': 'Declaración de la Independencia (Feriado Nacional)',
-  '2026-05-01': 'Día del Trabajador (Feriado Nacional)',
-  '2026-05-18': 'Ascensión del Señor (Lunes Bancario)',
-  '2026-06-08': 'Corpus Christi (Lunes Bancario)',
-  '2026-06-15': 'Día de San Antonio (Lunes Bancario)',
-  '2026-06-24': 'Batalla de Carabobo (Feriado Nacional)',
-  '2026-06-29': 'Día de San Pedro y San Pablo (Lunes Bancario)',
-  '2026-07-05': 'Día de la Independencia (Feriado Nacional)',
-  '2026-07-24': 'Natalicio de Simón Bolívar (Feriado Nacional)',
-  '2026-08-17': 'Asunción de Nuestra Señora (Lunes Bancario)',
-  '2026-09-14': 'Día de la Virgen del Valle (Lunes Bancario)',
-  '2026-10-12': 'Día de la Resistencia Indígena (Feriado Nacional)',
-  '2026-10-26': 'Día del Dr. José Gregorio Hernández (Lunes Bancario)',
-  '2026-11-02': 'Día de Todos los Santos (Lunes Bancario)',
-  '2026-11-23': 'Día de la Virgen del Rosario de Chiquinquirá (Lunes Bancario)',
-  '2026-12-14': 'Día de la Inmaculada Concepción (Lunes Bancario)',
-  '2026-12-24': 'Feriado Bancario (Víspera de Navidad)',
-  '2026-12-25': 'Natividad de Nuestro Señor (Feriado Nacional)',
-  '2026-12-31': 'Feriado Bancario (Fin de Año)',
-
-  // ─── 2027 ──────────────────────────────────────────
-  '2027-01-01': 'Año Nuevo (Feriado Nacional)',
-  '2027-01-11': 'Día de Reyes (Lunes Bancario)',
-  '2027-02-08': 'Lunes de Carnaval (Feriado Nacional)',
-  '2027-02-09': 'Martes de Carnaval (Feriado Nacional)',
-  '2027-03-19': 'Día de San José (Feriado Bancario)',
-  '2027-03-25': 'Jueves Santo (Feriado Nacional)',
-  '2027-03-26': 'Viernes Santo (Feriado Nacional)',
-  '2027-04-19': 'Declaración de la Independencia (Feriado Nacional)',
-  '2027-05-01': 'Día del Trabajador (Feriado Nacional)',
-  '2027-05-10': 'Ascensión del Señor (Lunes Bancario)',
-  '2027-05-31': 'Corpus Christi (Lunes Bancario)',
-  '2027-06-14': 'Día de San Antonio (Lunes Bancario)',
-  '2027-06-24': 'Batalla de Carabobo (Feriado Nacional)',
-  '2027-07-05': 'Día de la Independencia (Feriado Nacional)',
-  '2027-07-24': 'Natalicio de Simón Bolívar (Feriado Nacional)',
-  '2027-08-16': 'Asunción de Nuestra Señora (Lunes Bancario)',
-  '2027-09-13': 'Día de la Virgen del Valle (Lunes Bancario)',
-  '2027-10-12': 'Día de la Resistencia Indígena (Feriado Nacional)',
-  '2027-10-25': 'Día del Dr. José Gregorio Hernández (Lunes Bancario)',
-  '2027-11-01': 'Día de Todos los Santos (Lunes Bancario)',
-  '2027-11-22': 'Día de la Virgen del Rosario de Chiquinquirá (Lunes Bancario)',
-  '2027-12-13': 'Día de la Inmaculada Concepción (Lunes Bancario)',
-  '2027-12-24': 'Feriado Bancario (Víspera de Navidad)',
-  '2027-12-25': 'Natividad de Nuestro Señor (Feriado Nacional)',
-  '2027-12-31': 'Feriado Bancario (Fin de Año)',
+export interface FeriadoBancario {
+  fecha: string // YYYY-MM-DD
+  motivo: string
+  tipo: 'bancario' | 'nacional'
+  trasladadoDesde?: string
 }
 
-/** Almacenamiento en memoria para feriados sincronizados por API. */
-const feriadosDinamicos: Map<string, string> = new Map()
+/**
+ * Calendario oficial SUDEBAN de feriados bancarios y nacionales para Venezuela.
+ * Incluye los calendarios 2025, 2026 y 2027 oficiales.
+ */
+export const FERIADOS_SUDEBAN: FeriadoBancario[] = [
+  // ── 2025 ──
+  { fecha: '2025-01-01', motivo: 'Año Nuevo', tipo: 'nacional' },
+  { fecha: '2025-01-06', motivo: 'Día de Reyes', tipo: 'bancario' },
+  { fecha: '2025-01-20', motivo: 'Día de la Divina Pastora', tipo: 'bancario', trasladadoDesde: '2025-01-14' },
+  { fecha: '2025-03-03', motivo: 'Carnaval', tipo: 'nacional' },
+  { fecha: '2025-03-04', motivo: 'Carnaval', tipo: 'nacional' },
+  { fecha: '2025-03-24', motivo: 'Día de San José', tipo: 'bancario', trasladadoDesde: '2025-03-19' },
+  { fecha: '2025-04-17', motivo: 'Jueves Santo', tipo: 'nacional' },
+  { fecha: '2025-04-18', motivo: 'Viernes Santo', tipo: 'nacional' },
+  { fecha: '2025-04-19', motivo: 'Proclamación de la Independencia', tipo: 'nacional' },
+  { fecha: '2025-05-01', motivo: 'Día del Trabajador', tipo: 'nacional' },
+  { fecha: '2025-06-02', motivo: 'Ascensión del Señor', tipo: 'bancario', trasladadoDesde: '2025-05-29' },
+  { fecha: '2025-06-23', motivo: 'Corpus Christi', tipo: 'bancario', trasladadoDesde: '2025-06-19' },
+  { fecha: '2025-06-24', motivo: 'Batalla de Carabobo', tipo: 'nacional' },
+  { fecha: '2025-06-30', motivo: 'San Pedro y San Pablo', tipo: 'bancario', trasladadoDesde: '2025-06-29' },
+  { fecha: '2025-07-05', motivo: 'Día de la Independencia', tipo: 'nacional' },
+  { fecha: '2025-07-24', motivo: 'Natalicio del Libertador', tipo: 'nacional' },
+  { fecha: '2025-08-18', motivo: 'Asunción de Nuestra Señora', tipo: 'bancario', trasladadoDesde: '2025-08-15' },
+  { fecha: '2025-09-15', motivo: 'Virgen de Coromoto', tipo: 'bancario', trasladadoDesde: '2025-09-11' },
+  { fecha: '2025-10-12', motivo: 'Día de la Resistencia Indígena', tipo: 'nacional' },
+  { fecha: '2025-11-24', motivo: 'Día de la Virgen del Rosario de Chiquinquirá', tipo: 'bancario', trasladadoDesde: '2025-11-18' },
+  { fecha: '2025-12-08', motivo: 'Día de la Inmaculada Concepción', tipo: 'bancario' },
+  { fecha: '2025-12-24', motivo: 'Víspera de Navidad', tipo: 'bancario' },
+  { fecha: '2025-12-25', motivo: 'Navidad', tipo: 'nacional' },
+  { fecha: '2025-12-31', motivo: 'Fin de Año', tipo: 'bancario' },
 
-/** Registra o sincroniza un feriado en caliente. */
-export function registrarFeriadoBancario(fechaISO: string, motivo: string): void {
-  const f = fechaISO.trim()
+  // ── 2026 (Año en curso) ──
+  { fecha: '2026-01-01', motivo: 'Año Nuevo', tipo: 'nacional' },
+  { fecha: '2026-01-06', motivo: 'Día de Reyes', tipo: 'bancario' },
+  { fecha: '2026-01-14', motivo: 'Día de la Divina Pastora', tipo: 'bancario' },
+  { fecha: '2026-02-16', motivo: 'Carnaval', tipo: 'nacional' },
+  { fecha: '2026-02-17', motivo: 'Carnaval', tipo: 'nacional' },
+  { fecha: '2026-03-19', motivo: 'Día de San José', tipo: 'bancario' },
+  { fecha: '2026-04-02', motivo: 'Jueves Santo', tipo: 'nacional' },
+  { fecha: '2026-04-03', motivo: 'Viernes Santo', tipo: 'nacional' },
+  { fecha: '2026-04-19', motivo: 'Proclamación de la Independencia', tipo: 'nacional' },
+  { fecha: '2026-05-01', motivo: 'Día del Trabajador', tipo: 'nacional' },
+  { fecha: '2026-05-14', motivo: 'Ascensión del Señor', tipo: 'bancario' },
+  { fecha: '2026-06-04', motivo: 'Corpus Christi', tipo: 'bancario' },
+  { fecha: '2026-06-24', motivo: 'Batalla de Carabobo', tipo: 'nacional' },
+  { fecha: '2026-06-29', motivo: 'Día de San Pedro y San Pablo', tipo: 'bancario' },
+  { fecha: '2026-07-05', motivo: 'Día de la Independencia', tipo: 'nacional' },
+  { fecha: '2026-07-24', motivo: 'Natalicio del Libertador', tipo: 'nacional' },
+  { fecha: '2026-09-11', motivo: 'Día de la Virgen de Coromoto', tipo: 'bancario' },
+  { fecha: '2026-10-12', motivo: 'Día de la Resistencia Indígena', tipo: 'nacional' },
+  { fecha: '2026-10-26', motivo: 'Día de San José Gregorio Hernández', tipo: 'bancario' },
+  // Lunes Bancario actual (23-11-2026): trasladado desde el 18 de noviembre
+  { fecha: '2026-11-23', motivo: 'Día de la Virgen del Rosario de Chiquinquirá', tipo: 'bancario', trasladadoDesde: '2026-11-18' },
+  { fecha: '2026-12-08', motivo: 'Día de la Inmaculada Concepción', tipo: 'bancario' },
+  { fecha: '2026-12-24', motivo: 'Nochebuena', tipo: 'bancario' },
+  { fecha: '2026-12-25', motivo: 'Navidad', tipo: 'nacional' },
+  { fecha: '2026-12-31', motivo: 'Fin de Año', tipo: 'bancario' },
+
+  // ── 2027 ──
+  { fecha: '2027-01-01', motivo: 'Año Nuevo', tipo: 'nacional' },
+  { fecha: '2027-01-06', motivo: 'Día de Reyes', tipo: 'bancario' },
+  { fecha: '2027-01-18', motivo: 'Día de la Divina Pastora', tipo: 'bancario', trasladadoDesde: '2027-01-14' },
+  { fecha: '2027-02-08', motivo: 'Carnaval', tipo: 'nacional' },
+  { fecha: '2027-02-09', motivo: 'Carnaval', tipo: 'nacional' },
+  { fecha: '2027-03-19', motivo: 'Día de San José', tipo: 'bancario' },
+  { fecha: '2027-03-25', motivo: 'Jueves Santo', tipo: 'nacional' },
+  { fecha: '2027-03-26', motivo: 'Viernes Santo', tipo: 'nacional' },
+  { fecha: '2027-04-19', motivo: 'Proclamación de la Independencia', tipo: 'nacional' },
+  { fecha: '2027-05-01', motivo: 'Día del Trabajador', tipo: 'nacional' },
+  { fecha: '2027-05-10', motivo: 'Ascensión del Señor', tipo: 'bancario', trasladadoDesde: '2027-05-06' },
+  { fecha: '2027-05-31', motivo: 'Corpus Christi', tipo: 'bancario', trasladadoDesde: '2027-05-27' },
+  { fecha: '2027-06-24', motivo: 'Batalla de Carabobo', tipo: 'nacional' },
+  { fecha: '2027-06-28', motivo: 'San Pedro y San Pablo', tipo: 'bancario', trasladadoDesde: '2027-06-29' },
+  { fecha: '2027-07-05', motivo: 'Día de la Independencia', tipo: 'nacional' },
+  { fecha: '2027-07-24', motivo: 'Natalicio del Libertador', tipo: 'nacional' },
+  { fecha: '2027-08-16', motivo: 'Asunción de Nuestra Señora', tipo: 'bancario', trasladadoDesde: '2027-08-15' },
+  { fecha: '2027-09-13', motivo: 'Virgen de Coromoto', tipo: 'bancario', trasladadoDesde: '2027-09-11' },
+  { fecha: '2027-10-12', motivo: 'Día de la Resistencia Indígena', tipo: 'nacional' },
+  { fecha: '2027-11-22', motivo: 'Día de la Virgen del Rosario de Chiquinquirá', tipo: 'bancario', trasladadoDesde: '2027-11-18' },
+  { fecha: '2027-12-08', motivo: 'Día de la Inmaculada Concepción', tipo: 'bancario' },
+  { fecha: '2027-12-24', motivo: 'Víspera de Navidad', tipo: 'bancario' },
+  { fecha: '2027-12-25', motivo: 'Navidad', tipo: 'nacional' },
+  { fecha: '2027-12-31', motivo: 'Fin de Año', tipo: 'bancario' },
+]
+
+/** Diccionario de compatibilidad con feriados en formato Record<string, string>. */
+export const FERIADOS_BANCARIOS_VE: Record<string, string> = Object.fromEntries(
+  FERIADOS_SUDEBAN.map((f) => [f.fecha, `${f.motivo} (${f.tipo === 'nacional' ? 'Feriado Nacional' : 'Lunes Bancario'})`])
+)
+
+/** Almacenamiento dinámico en memoria para feriados sincronizados o registrados en caliente. */
+const feriadosDinamicos: Map<string, FeriadoBancario> = new Map()
+
+/** Registra un feriado en caliente. */
+export function registrarFeriadoBancario(fechaISO: string, motivo: string, tipo: 'bancario' | 'nacional' = 'bancario'): void {
+  const f = fechaISO.trim().slice(0, 10)
   if (/^\d{4}-\d{2}-\d{2}$/.test(f)) {
-    feriadosDinamicos.set(f, motivo.trim())
+    feriadosDinamicos.set(f, { fecha: f, motivo: motivo.trim(), tipo })
   }
 }
 
-/** ¿Es un feriado bancario o Lunes Bancario oficial de Venezuela? */
-export function esFeriadoBancario(fechaISO: string): boolean {
-  const f = fechaISO.slice(0, 10)
-  return Boolean(feriadosDinamicos.get(f) || FERIADOS_BANCARIOS_VE[f])
+const MAPA_FERIADOS = new Map<string, FeriadoBancario>(
+  FERIADOS_SUDEBAN.map((f) => [f.fecha, f]),
+)
+
+/** Normaliza una fecha a YYYY-MM-DD en zona horaria America/Caracas. */
+export function ymdCaracas(fecha: string | Date = new Date()): string {
+  if (typeof fecha === 'string') {
+    const s = fecha.trim().slice(0, 10)
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s
+  }
+  const d = fecha instanceof Date ? fecha : new Date(fecha)
+  if (Number.isNaN(d.getTime())) {
+    return new Date().toISOString().slice(0, 10)
+  }
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Caracas' }).format(d)
 }
 
-/** Motivo del feriado bancario, o null si es día bancario normal. */
-export function motivoFeriadoBancario(fechaISO: string): string | null {
-  const f = fechaISO.slice(0, 10)
-  return feriadosDinamicos.get(f) || FERIADOS_BANCARIOS_VE[f] || null
+/** Obtiene el día de la semana (0 = Domingo, 1 = Lunes, ..., 6 = Sábado) en Caracas. */
+export function diaSemanaCaracas(fecha: string | Date): number {
+  const ymd = ymdCaracas(fecha)
+  const [y, m, d] = ymd.split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1, d, 12, 0, 0)).getUTCDay()
 }
 
-/** ¿Cae en fin de semana (sábado o domingo)? */
-export function esFinDeSemana(fechaISO: string): boolean {
-  const parts = fechaISO.slice(0, 10).split('-').map(Number)
-  if (parts.length !== 3 || parts.some(Number.isNaN)) return false
-  const [y, m, d] = parts
-  const dt = new Date(Date.UTC(y, m - 1, d, 12, 0, 0))
-  const day = dt.getUTCDay()
-  return day === 0 || day === 6 // 0 = Domingo, 6 = Sábado
+/** Nombre del día de la semana en español (Lunes, Martes, etc.). */
+export const DIAS_SEMANA_ES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+
+export function nombreDiaSemana(fecha: string | Date): string {
+  return DIAS_SEMANA_ES[diaSemanaCaracas(fecha)] ?? ''
+}
+
+/** Nombre del día de la semana en minúsculas (ej: 'martes'). */
+export function diaSemanaNombre(fecha: string | Date): string {
+  return nombreDiaSemana(fecha).toLowerCase()
+}
+
+/** ¿La fecha cae sábado o domingo? */
+export function esFinDeSemana(fecha: string | Date): boolean {
+  const dia = diaSemanaCaracas(fecha)
+  return dia === 0 || dia === 6
+}
+
+/** ¿Es un feriado bancario o nacional según SUDEBAN? */
+export function esFeriadoBancario(fecha: string | Date): boolean {
+  const ymd = ymdCaracas(fecha)
+  return feriadosDinamicos.has(ymd) || MAPA_FERIADOS.has(ymd)
+}
+
+/** Información del feriado bancario o nacional si aplica. */
+export function infoFeriadoBancario(fecha: string | Date): FeriadoBancario | null {
+  const ymd = ymdCaracas(fecha)
+  return feriadosDinamicos.get(ymd) ?? MAPA_FERIADOS.get(ymd) ?? null
+}
+
+/** Motivo del feriado bancario o null. */
+export function motivoFeriadoBancario(fecha: string | Date): string | null {
+  return infoFeriadoBancario(fecha)?.motivo ?? null
+}
+
+/** ¿Es un día hábil bancario (de lunes a viernes y sin feriado SUDEBAN)? */
+export function esDiaHabilBancario(fecha: string | Date): boolean {
+  if (esFinDeSemana(fecha)) return false
+  return !esFeriadoBancario(fecha)
+}
+
+/** ¿Es un día no hábil para la banca venezolana (fin de semana o feriado bancario)? */
+export function esDiaNoBancario(fecha: string | Date): boolean {
+  return esFinDeSemana(fecha) || esFeriadoBancario(fecha)
+}
+
+/** Suma un día a una fecha YYYY-MM-DD. */
+export function sumarUnDiaYmd(ymd: string): string {
+  const [y, m, d] = ymd.split('-').map(Number)
+  const date = new Date(Date.UTC(y, m - 1, d + 1, 12, 0, 0))
+  const ny = date.getUTCFullYear()
+  const nm = String(date.getUTCMonth() + 1).padStart(2, '0')
+  const nd = String(date.getUTCDate()).padStart(2, '0')
+  return `${ny}-${nm}-${nd}`
 }
 
 /**
- * ¿Es un día no hábil para la banca venezolana (fin de semana o feriado bancario)?
+ * Calcula el siguiente día hábil bancario.
+ * Por ejemplo:
+ * - Si hoy es lunes bancario (2026-11-23), devuelve martes (2026-11-24).
+ * - Si hoy es viernes (2026-11-20) y el lunes es bancario, devuelve martes (2026-11-24).
  */
-export function esDiaNoBancario(fechaISO: string): boolean {
-  return esFinDeSemana(fechaISO) || esFeriadoBancario(fechaISO)
-}
-
-/**
- * Calcula el siguiente día hábil bancario a partir de una fecha YYYY-MM-DD.
- * Si hoy es lunes bancario, avanza hasta el martes (o el siguiente día hábil si hay puente).
- */
-export function proximoDiaHabilBancario(fechaISO: string): string {
-  const parts = fechaISO.slice(0, 10).split('-').map(Number)
-  if (parts.length !== 3 || parts.some(Number.isNaN)) return fechaISO
-  const [y, m, d] = parts
-  const cur = new Date(Date.UTC(y, m - 1, d, 12, 0, 0))
-
-  for (let i = 0; i < 15; i++) {
-    cur.setUTCDate(cur.getUTCDate() + 1)
-    const iso = cur.toISOString().slice(0, 10)
-    if (!esDiaNoBancario(iso)) {
-      return iso
+export function siguienteDiaHabilBancario(fecha: string | Date): string {
+  let curr = ymdCaracas(fecha)
+  for (let i = 0; i < 14; i++) {
+    curr = sumarUnDiaYmd(curr)
+    if (esDiaHabilBancario(curr)) {
+      return curr
     }
   }
-  return fechaISO
+  return curr
 }
+
+/** Alias de compatibilidad para siguienteDiaHabilBancario. */
+export const proximoDiaHabilBancario = siguienteDiaHabilBancario
 
 /**
  * Calcula el día siguiente calendario en horario de Venezuela (AAAA-MM-DD).
  */
 export function diaSiguienteVE(fechaISO?: string): string {
-  const f = fechaISO || new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Caracas' }).format(new Date())
-  const d = new Date(`${f}T12:00:00-04:00`)
-  d.setDate(d.getDate() + 1)
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Caracas' }).format(d)
+  const f = fechaISO ? ymdCaracas(fechaISO) : ymdCaracas(new Date())
+  return sumarUnDiaYmd(f)
+}
+
+export interface InfoDiaValorBcv {
+  fechaHoy: string
+  esBancario: boolean
+  esFinDeSemana: boolean
+  infoFeriado: FeriadoBancario | null
+  /** Fecha valor efectiva para el cálculo de la tasa oficial del BCV. */
+  fechaValor: string
+  /** Nombre del día valor (ej. "Martes"). */
+  diaValorNombre: string
+  /** Texto explicativo para chips, modales y reportes. */
+  etiquetaValor: string
+  textoExplicativo: string
+}
+
+/**
+ * Resuelve la fecha valor del BCV según el calendario bancario SUDEBAN.
+ * En feriados bancarios (ej. hoy lunes 23-11-2026):
+ * - detecta que es feriado bancario,
+ * - toma automáticamente el día siguiente hábil bancario (Martes 24-11-2026),
+ * - cuya tasa fue publicada por el BCV el día hábil anterior (viernes).
+ */
+export function resolverDiaValorBcv(fecha: string | Date = new Date()): InfoDiaValorBcv {
+  const hoy = ymdCaracas(fecha)
+  const finSemana = esFinDeSemana(hoy)
+  const infoFeriado = infoFeriadoBancario(hoy)
+  const bancario = Boolean(infoFeriado) || finSemana
+
+  // Si hoy es feriado bancario o fin de semana, la fecha valor que rige es la del siguiente día hábil (ej. martes)
+  const fechaValor = bancario ? siguienteDiaHabilBancario(hoy) : hoy
+  const diaValorNombre = nombreDiaSemana(fechaValor)
+
+  let textoExplicativo = ''
+  let etiquetaValor = ''
+
+  if (infoFeriado) {
+    etiquetaValor = `Feriado bancario · Tasa ${diaValorNombre}`
+    textoExplicativo = `Hoy es feriado bancario (${infoFeriado.motivo}). Rige la tasa oficial BCV del día ${diaValorNombre} (${fechaValor}), emitida el día hábil anterior.`
+  } else if (finSemana) {
+    etiquetaValor = `Fin de semana · Tasa ${diaValorNombre}`
+    textoExplicativo = `Fin de semana. Rige la tasa oficial BCV valor ${diaValorNombre} (${fechaValor}), emitida el día hábil anterior.`
+  } else {
+    etiquetaValor = `Tasa del día (${diaValorNombre})`
+    textoExplicativo = `Día hábil bancario. Rige la tasa oficial BCV del día (${hoy}).`
+  }
+
+  return {
+    fechaHoy: hoy,
+    esBancario: Boolean(infoFeriado),
+    esFinDeSemana: finSemana,
+    infoFeriado,
+    fechaValor,
+    diaValorNombre,
+    etiquetaValor,
+    textoExplicativo,
+  }
 }
 
 export interface InfoDiaBancario {
@@ -179,26 +288,22 @@ export interface InfoDiaBancario {
   motivo: string | null
   /** El día hábil efectivo a tomar para la tasa del BCV */
   fechaEfectivaBcv: string
+  diaValorNombre?: string
+  fechaValor?: string
 }
 
-/**
- * Determina si la fecha dada es un día bancario y qué fecha de tasa BCV le corresponde.
- */
-export function infoDiaBancario(fechaISO: string): InfoDiaBancario {
-  const f = fechaISO.slice(0, 10)
-  const finSemana = esFinDeSemana(f)
-  const feriado = esFeriadoBancario(f)
-  const esNoBanc = finSemana || feriado
-  const motivo = motivoFeriadoBancario(f) ?? (finSemana ? 'Fin de semana' : null)
-  const fechaEfectiva = esNoBanc ? proximoDiaHabilBancario(f) : f
-
+/** Adaptador compatible para consultas rápidas de estado bancario. */
+export function infoDiaBancario(fecha: string | Date = new Date()): InfoDiaBancario {
+  const res = resolverDiaValorBcv(fecha)
   return {
-    fecha: f,
-    esBancario: esNoBanc,
-    esFinDeSemana: finSemana,
-    esFeriado: feriado,
-    motivo,
-    fechaEfectivaBcv: fechaEfectiva,
+    fecha: res.fechaHoy,
+    esBancario: res.esBancario || res.esFinDeSemana,
+    esFinDeSemana: res.esFinDeSemana,
+    esFeriado: res.esBancario,
+    motivo: res.infoFeriado?.motivo ?? (res.esFinDeSemana ? 'Fin de semana' : null),
+    fechaEfectivaBcv: res.fechaValor,
+    diaValorNombre: res.diaValorNombre,
+    fechaValor: res.fechaValor,
   }
 }
 
@@ -214,16 +319,17 @@ export async function sincronizarCalendarioBancarioApi(year?: number): Promise<v
       signal: AbortSignal.timeout(4000),
     })
     if (!res.ok) return
-    const data = (await res.json()) as Array<{ date?: string; localName?: string; name?: string }>
+    const data = (await res.json()) as Array<{ date?: string; localName?: string; name?: string; types?: string[] }>
     if (Array.isArray(data)) {
       for (const item of data) {
         if (item.date) {
           const motivo = item.localName || item.name || 'Feriado Nacional'
-          registrarFeriadoBancario(item.date, `${motivo} (Feriado Nacional)`)
+          const esBancario = item.types?.includes('Bank') ?? false
+          registrarFeriadoBancario(item.date, motivo, esBancario ? 'bancario' : 'nacional')
         }
       }
     }
   } catch {
-    // Modo offline / sin red: el diccionario FERIADOS_BANCARIOS_VE cubre todo el periodo
+    // Modo offline / sin red: el diccionario FERIADOS_SUDEBAN cubre todo el periodo
   }
 }

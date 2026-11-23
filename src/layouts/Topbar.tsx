@@ -168,6 +168,12 @@ function IndicadorTasa() {
 
   const enCalma = data.vigente && !sinRegistrar
 
+  const etiquetaDia = data.esBancario
+    ? data.diaValorNombre ?? 'Martes'
+    : data.vigente
+      ? 'hoy'
+      : fechaCorta
+
   const contenido = (
     <>
       <span
@@ -175,7 +181,8 @@ function IndicadorTasa() {
       />
       <div className="leading-tight">
         <span className="text-ink/45 text-2xs block">
-          Tasa BCV · {data.esFeriado ? `feriado (${fechaCorta})` : data.vigente ? 'hoy' : fechaCorta}
+          Tasa BCV · {etiquetaDia}
+          {data.esBancario ? ' · Bancario' : ''}
           {sinRegistrar ? ' · sin registrar' : ''}
         </span>
         <span className="text-ink/90 tabular block text-sm font-semibold">
@@ -197,11 +204,13 @@ function IndicadorTasa() {
         onClick={() => setAbierto((v) => !v)}
         aria-expanded={abierto}
         title={
-          sinRegistrar
-            ? 'El BCV ya publicó la tasa de hoy y el sistema todavía valora con otra. Abra para arreglarlo.'
-            : data.vigente
-              ? 'Tasa publicada hoy y registrada en el sistema. Abra para ver las demás monedas y convertir.'
-              : `La última tasa publicada es del ${fechaCorta}. Confirme antes de emitir documentos.`
+          data.esBancario
+            ? `Feriado bancario (${data.motivoBancario ?? 'Bancario'}): Rige la tasa oficial BCV del día ${data.diaValorNombre ?? 'Martes'} (${data.fechaValor}).`
+            : sinRegistrar
+              ? 'El BCV ya publicó la tasa de hoy y el sistema todavía valora con otra. Abra para arreglarlo.'
+              : data.vigente
+                ? 'Tasa publicada hoy y registrada en el sistema. Abra para ver las demás monedas y convertir.'
+                : `La última tasa publicada es del ${fechaCorta}. Confirme antes de emitir documentos.`
         }
         className={cn(clases, 'flex transition-colors', sinRegistrar && 'hover:border-warning/60')}
       >
