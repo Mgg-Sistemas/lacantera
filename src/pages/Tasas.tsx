@@ -97,7 +97,8 @@ export function Tasas() {
   // quedarse esperando en el formulario del dólar.
   useEffect(() => setValor(''), [codigo])
 
-  const yaRegistradaHoy = vigente.data?.fecha === hoy
+  const yaRegistradaHoy =
+    vigente.data?.fecha === hoy || Boolean(vigente.data?.fecha && vigente.data.fecha > hoy)
 
   /*
     Las tres tienen fuente, pero no la misma.
@@ -159,7 +160,14 @@ export function Tasas() {
             <div className="border-success/25 bg-success-soft mt-4 flex items-start gap-2.5 rounded-[6px] border p-3.5">
               <CircleCheck className="text-success mt-px size-[18px] shrink-0" />
               <p className="text-ink/80 text-sm">
-                La tasa de hoy ya está registrada:{' '}
+                {vigente.data?.esFeriadoBancario ? (
+                  <>
+                    Hoy es feriado bancario ({vigente.data.motivoFeriado ?? 'SUDEBAN'}). Tasa activa
+                    (fecha valor {fecha(vigente.data.fecha)}):{' '}
+                  </>
+                ) : (
+                  <>La tasa de hoy ya está registrada: </>
+                )}
                 <span className="tabular font-semibold">Bs {fmtTasa(vigente.data!.tasa)}</span> por{' '}
                 {unidad}. Los documentos que se emitan hoy en {unidad} se valoran con esta.
                 {laTomoElSistema && deHoy.data ? (

@@ -299,7 +299,33 @@ export function ModalPago({ abierto, onCerrar, orden }: Props) {
               <Button size="sm" variant="outline" onClick={() => proponer(ivaPendiente)}>
                 Solo el IVA · {formato(enLaMonedaElegida(ivaPendiente))}
               </Button>
+              {orden.comprobante_tipo === 'FACTURA' && ivaPendiente > 0.01 ? (
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => proponer(basePendiente + ivaPendiente * 0.25)}
+                    title="Paga la base completa más el 25% del IVA (retiene el 75% del IVA)"
+                  >
+                    Base + 25% IVA · {formato(enLaMonedaElegida(basePendiente + ivaPendiente * 0.25))}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => proponer(ivaPendiente * 0.25)}
+                    title="Paga solo el 25% del IVA (retiene el 75% del IVA)"
+                  >
+                    Solo 25% IVA · {formato(enLaMonedaElegida(ivaPendiente * 0.25))}
+                  </Button>
+                </>
+              ) : null}
             </div>
+
+            {orden.comprobante_tipo === 'FACTURA' ? (
+              <p className="text-ink/50 mt-1.5 text-[11px] leading-relaxed">
+                Factura fiscal: si se aplica retención del 75% del IVA, se transfiere al proveedor el 25% restante del impuesto. La retención se respalda emitiendo el comprobante correspondiente. Si se paga el 100%, la retención posterior se gestionará como reintegro diferido.
+              </p>
+            ) : null}
 
             {moneda !== orden.moneda ? (
               <p className="text-ink/45 mt-1.5 text-xs">

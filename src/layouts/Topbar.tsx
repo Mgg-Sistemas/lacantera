@@ -159,9 +159,12 @@ function IndicadorTasa() {
 
   // La publicada de hoy está, pero el sistema todavía valora con una anterior
   // —o con ninguna—. Es el caso que hacía que la barra dijera una cosa y los
-  // documentos otra.
+  // documentos otra. En feriado bancario no se marca como sin registrar si el sistema
+  // ya tomó la tasa vigente/efectiva.
   const sinRegistrar =
-    data.vigente && !registrada.isPending && (!registrada.data || registrada.data.arrastrada)
+    data.vigente &&
+    !registrada.isPending &&
+    (!registrada.data || (registrada.data.arrastrada && !registrada.data.esFeriadoBancario))
 
   const enCalma = data.vigente && !sinRegistrar
 
@@ -172,7 +175,7 @@ function IndicadorTasa() {
       />
       <div className="leading-tight">
         <span className="text-ink/45 text-2xs block">
-          Tasa BCV · {data.vigente ? 'hoy' : fechaCorta}
+          Tasa BCV · {data.esFeriado ? `feriado (${fechaCorta})` : data.vigente ? 'hoy' : fechaCorta}
           {sinRegistrar ? ' · sin registrar' : ''}
         </span>
         <span className="text-ink/90 tabular block text-sm font-semibold">

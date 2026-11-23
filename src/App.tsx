@@ -282,6 +282,9 @@ const NotasDeEntrega = pagina(() =>
 const Facturacion = pagina(() =>
   import('@/pages/facturacion/Facturacion').then((m) => ({ default: m.Facturacion })),
 )
+const Retenciones = pagina(() =>
+  import('@/pages/retenciones/RetencionesPage').then((m) => ({ default: m.RetencionesPage })),
+)
 const PorCobrar = pagina(() =>
   import('@/pages/facturacion/PorCobrar').then((m) => ({ default: m.PorCobrar })),
 )
@@ -446,6 +449,9 @@ const paginas: Record<string, ReactNode> = {
   '/app/facturacion': <Facturacion />,
   '/app/facturacion/notas-credito': <NotasCredito />,
   '/app/facturacion/por-cobrar': <PorCobrar />,
+  '/app/retenciones': <Retenciones />,
+  '/app/compras/retenciones': <Navigate to="/app/retenciones" replace />,
+  '/app/tesoreria/retenciones': <Navigate to="/app/retenciones" replace />,
   '/app/ventas/facturacion': <Navigate to="/app/facturacion" replace />,
   '/app/ventas/notas-credito': <Navigate to="/app/facturacion/notas-credito" replace />,
   // Los enlaces viejos siguen llevando a alguna parte. Al Libro Mayor desde

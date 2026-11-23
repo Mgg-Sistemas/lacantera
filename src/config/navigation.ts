@@ -14,6 +14,7 @@ import {
   PackageMinus,
   Pickaxe,
   Receipt,
+  FileSpreadsheet,
   Settings,
   ShoppingCart,
   Truck,
@@ -174,6 +175,7 @@ const MODULO_POR_PREFIJO: [string, string][] = [
   ['/app/solicitudes-pedido', 'INVENTARIO'],
   ['/app/despachos', 'DESPACHOS'],
   ['/app/compras', 'COMPRAS'],
+  ['/app/retenciones', 'COMPRAS'],
   // Abierta a todos por `RUTAS_PROPIAS`; el módulo decide solo quién la ve
   // dentro del grupo Compras del menú (los demás entran por «Solicitud de
   // pedido», arriba).
@@ -331,6 +333,7 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/compras/directa': 'compra rapida ya hecha factura sin cotizar sin gerente contado',
   '/app/compras/proveedores': 'rif suplidor',
   '/app/compras/recepciones': 'recibir entrada mercancia llegada',
+  '/app/retenciones': 'retenciones retencion comprobante iva islr isae reintegro seniat txt fiscal gaceta 43484',
   '/app/tesoreria/libro-mayor': 'iva impuesto seniat fiscal credito libro mayor compras',
   '/app/facturacion': 'factura fac cobrar cobro emitir fiscal numero de control',
   '/app/facturacion/notas-credito': 'nota de credito ncr devolucion descuento correccion',
@@ -765,6 +768,7 @@ export const navigation: NavSection[] = [
           // factura pertenece a alguien, y es ahí donde se busca. Como entrada
           // suelta invitaba a registrarla sin decir contra qué orden.
           { label: 'Proveedores', to: '/app/compras/proveedores' },
+          { label: 'Retenciones fiscales', to: '/app/retenciones' },
           // «Recepciones» (las órdenes del flujo anterior por recibir) salió del
           // menú en la fase 5b: lo de Pedidos / Compras lo recibe el almacén en
           // Inventario › Solicitudes de pedido › «📥 Recepciones por recibir», y
@@ -939,6 +943,20 @@ export const navigation: NavSection[] = [
         ],
       },
       {
+        /*
+          RETENCIONES FISCALES (G.O. 43.484 / Providencia SNAT/2026/00093).
+          Comprobantes R14 (14 dígitos), Libro fiscal y gestión de reintegros post-pago.
+        */
+        label: 'Retenciones',
+        icon: FileSpreadsheet,
+        children: [
+          { label: 'Facturas por retener', to: '/app/retenciones' },
+          { label: 'Reintegros pendientes', to: '/app/retenciones?tab=reintegros' },
+          { label: 'Libro de retenciones', to: '/app/retenciones?tab=libro' },
+          { label: 'Reportes y SENIAT (TXT)', to: '/app/retenciones?tab=reportes' },
+        ],
+      },
+      {
         label: 'Nómina',
         icon: Users,
         children: [
@@ -1019,6 +1037,7 @@ export const navigation: NavSection[] = [
         children: [
           { label: 'Tablero', to: '/app/tesoreria' },
           { label: 'Bancos y cajas', to: '/app/tesoreria/cuentas' },
+          { label: 'Retenciones fiscales', to: '/app/retenciones' },
           { label: 'Reportes', to: '/app/tesoreria/reportes' },
           /*
             Los dos libros fiscales, juntos y aquí desde el 24/09/2026. Estaban

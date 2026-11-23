@@ -12,6 +12,7 @@ import {
   Check,
   CircleDollarSign,
   Download,
+  FileCheck,
   FileText,
   History,
   PackageCheck,
@@ -72,6 +73,7 @@ import { ModalCambiarMetodo } from './ModalCambiarMetodo'
 import { ModalRecepcion } from './ModalRecepcion'
 import { ModalEditarOrden } from './ModalEditarOrden'
 import { PapelesDeCompra } from './PapelesDeCompra'
+import { RetencionesOrden } from './RetencionesOrden'
 import { usePapelesDeCompra } from '@/lib/api/papelesDeCompra'
 import { useFacturasDeOrden } from '@/lib/api/facturasCompra'
 import { ModalRegistrarPago } from '@/pages/tesoreria/ModalRegistrarPago'
@@ -1803,6 +1805,13 @@ export function DetalleCompra() {
                         Registrar factura
                       </Button>
                     ) : null}
+                    {orden.comprobante_tipo === 'FACTURA' ? (
+                      <Link to={`/app/retenciones?busqueda=${encodeURIComponent(orden.numero)}`}>
+                        <Button size="sm" variant="outline" icon={<FileCheck />}>
+                          Retenciones
+                        </Button>
+                      </Link>
+                    ) : null}
                     <Button
                       size="sm"
                       variant="outline"
@@ -2036,6 +2045,8 @@ export function DetalleCompra() {
               puedeRespaldar={puedeAprobar && !!compra.aprobada_por_autorizacion_de}
             />
           ) : null}
+
+          {orden ? <RetencionesOrden orden={orden} /> : null}
 
           <Card>
             <CardHeader title="Historial" subtitle="Quién movió esta compra y cuándo." />

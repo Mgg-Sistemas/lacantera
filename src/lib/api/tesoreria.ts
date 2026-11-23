@@ -91,6 +91,7 @@ export const TIPOS_TESORERIA: Record<string, string> = {
   TRANSFERENCIA: 'Traslado entre cuentas',
   AJUSTE: 'Ajuste',
   REVERSO: 'Reverso',
+  REINTEGRO_RETENCION: 'Reintegro de retención',
 }
 
 /*

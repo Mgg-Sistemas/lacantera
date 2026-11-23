@@ -1,6 +1,7 @@
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { desenvolver, rpc } from './rpc'
+import { diaSiguienteVE, infoDiaBancario } from '@/lib/calendarioBancario'
 
 export interface TasaRegistrada {
   id: number
@@ -99,6 +100,8 @@ export interface TasaVigente {
   fecha: string
   fuente: string
   arrastrada: boolean
+  esFeriadoBancario?: boolean
+  motivoFeriado?: string | null
 }
 
 /**
@@ -107,19 +110,94 @@ export interface TasaVigente {
  * Se consulta aparte de la del BCV en vivo porque son dos cosas distintas: la
  * de arriba informa, esta compromete. Si no coinciden, alguien tiene que
  * registrar la del día antes de emitir.
+ *
+ * SOPORTE PARA FERIADOS BANCARIOS (SUDEBAN):
+ * En feriados bancarios (lunes bancario, etc.), no hay rueda cambiaria y el BCV
+ * publica con fecha valor del siguiente día hábil. Si esa tasa ya está registrada
+ * o disponible en el sistema (fecha > hoy), se toma automáticamente como vigente.
  */
 export function useTasaVigente(origen = 'USD', fuente = 'BCV') {
   return useQuery({
     queryKey: ['tasa-vigente', origen, fuente],
-    queryFn: async () => {
+    queryFn: async (): Promise<TasaVigente | null> => {
+      const hoy = hoyEnCaracas()
+      const manana = diaSiguienteVE(hoy)
+      const info = infoDiaBancario(hoy)
+
+      // 1. Verificación directa en base de datos para feriados bancarios o tasa siguiente disponible:
+      try {
+        const { data: filas } = await supabase
+          .from('tasas_cambio')
+          .select('tasa, fecha, fuente, automatica')
+          .eq('moneda_origen', origen)
+          .eq('moneda_destino', 'VES')
+          .in('fecha', [hoy, manana, info.fechaEfectivaBcv])
+          .order('fecha', { ascending: false })
+
+        if (filas && filas.length > 0) {
+          // a) Manual siempre manda
+          const manual = filas.find((r) => !r.automatica)
+          if (manual) {
+            return {
+              tasa: String(manual.tasa),
+              fecha: manual.fecha,
+              fuente: manual.fuente,
+              arrastrada: false,
+              esFeriadoBancario: info.esBancario,
+              motivoFeriado: info.motivo,
+            }
+          }
+
+          // b) Tasa del día siguiente / fecha efectiva si hoy es feriado o ya está disponible
+          const siguiente = filas.find((r) => r.fecha > hoy)
+          if (siguiente) {
+            return {
+              tasa: String(siguiente.tasa),
+              fecha: siguiente.fecha,
+              fuente: siguiente.fuente,
+              arrastrada: false,
+              esFeriadoBancario: info.esBancario,
+              motivoFeriado: info.motivo,
+            }
+          }
+
+          // c) Tasa exacta de hoy
+          const hoyFila = filas.find((r) => r.fecha === hoy)
+          if (hoyFila) {
+            return {
+              tasa: String(hoyFila.tasa),
+              fecha: hoyFila.fecha,
+              fuente: hoyFila.fuente,
+              arrastrada: false,
+              esFeriadoBancario: info.esBancario,
+              motivoFeriado: info.motivo,
+            }
+          }
+        }
+      } catch {
+        // En caso de fallo de lectura directa, continúa vía RPC
+      }
+
+      // 2. Consulta estándar por RPC
       const filas = await rpc<TasaVigente[]>('obtener_tasa', {
         p_origen: origen,
         p_destino: 'VES',
-        p_fecha: hoyEnCaracas(),
+        p_fecha: hoy,
         p_fuente: fuente,
       })
 
-      return filas?.[0] ?? null
+      const resultado = filas?.[0] ?? null
+      if (resultado) {
+        return {
+          ...resultado,
+          esFeriadoBancario: info.esBancario,
+          motivoFeriado: info.motivo,
+          // Si hoy es feriado bancario, la tasa arrastrada no es un error de omisión sino la regla oficial
+          arrastrada: info.esBancario ? false : resultado.arrastrada,
+        }
+      }
+
+      return null
     },
     staleTime: 5 * 60_000,
   })
@@ -292,17 +370,23 @@ export function useMonedasUsables() {
 export function useTasaDeHoy(origen: string, fuente = 'BCV') {
   return useQuery({
     queryKey: ['tasa-de-hoy', origen, fuente],
-    queryFn: async () =>
-      desenvolver<TasaRegistrada | null>(
-        await supabase
-          .from('tasas_cambio')
-          .select('*')
-          .eq('moneda_origen', origen)
-          .eq('moneda_destino', 'VES')
-          .eq('fecha', hoyEnCaracas())
-          .eq('fuente', fuente)
-          .maybeSingle(),
-      ),
+    queryFn: async () => {
+      const hoy = hoyEnCaracas()
+      const manana = diaSiguienteVE(hoy)
+      const info = infoDiaBancario(hoy)
+
+      const res = await supabase
+        .from('tasas_cambio')
+        .select('*')
+        .eq('moneda_origen', origen)
+        .eq('moneda_destino', 'VES')
+        .eq('fuente', fuente)
+        .in('fecha', [hoy, manana, info.fechaEfectivaBcv])
+        .order('fecha', { ascending: false })
+
+      const filas = desenvolver<TasaRegistrada[]>(res) ?? []
+      return filas[0] ?? null
+    },
   })
 }
 

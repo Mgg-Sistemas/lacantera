@@ -98,7 +98,10 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
     aunque la reja de la ruta y la base ya la dejaran entrar.
   */
   const { puede: puedeAccion, resuelto: accionesResueltas } = useMisAcciones()
-  const puedeVerModulo = (m: string) => puede(m) || (m === 'ASISTENCIA' && puedeAccion('ASISTENCIA.ESCANEAR'))
+  const puedeVerModulo = (m: string) =>
+    puede(m) ||
+    (m === 'ASISTENCIA' && puedeAccion('ASISTENCIA.ESCANEAR')) ||
+    (m === 'COMPRAS' && (puede('TESORERIA') || tieneRol('ADMIN')))
   const { soloTelefono, resuelto: telefonoResuelto } = useSoloTelefono()
   const secciones =
     telefonoResuelto && soloTelefono

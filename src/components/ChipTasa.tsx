@@ -62,6 +62,25 @@ export function ChipTasa({ className }: { className?: string }) {
     )
   }
 
+  if (data.esFeriadoBancario) {
+    const fechaCorta = new Date(`${data.fecha}T12:00:00`).toLocaleDateString('es-VE', {
+      day: 'numeric',
+      month: 'short',
+    })
+    return (
+      <span
+        title={`Hoy es feriado bancario (${data.motivoFeriado ?? 'SUDEBAN'}). Se toma la tasa valor ${fechaCorta}.`}
+        className={cn(
+          'border-info/40 bg-info-soft text-info text-2xs inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-medium',
+          className,
+        )}
+      >
+        <span>Feriado bancario · Valor {fechaCorta}</span>
+        <span className="tabular font-semibold">Bs {formatearTasa(Number(data.tasa))}</span>
+      </span>
+    )
+  }
+
   /*
     Si la tasa está al día, el chip no se dibuja.
 

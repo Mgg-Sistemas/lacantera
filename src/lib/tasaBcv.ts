@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { Moneda } from '@/lib/api/tasas'
+import { infoDiaBancario } from '@/lib/calendarioBancario'
 
 /**
  * La tasa que publica hoy la fuente de cada moneda.
@@ -44,6 +45,9 @@ export interface TasaEnVivo {
   vigente: boolean
   /** Quién la publica, para poder decirlo en pantalla. */
   fuente: string
+  /** Si hoy es día no bancario / feriado bancario según SUDEBAN */
+  esFeriado?: boolean
+  motivoFeriado?: string | null
 }
 
 /** Compatibilidad con el nombre viejo. */
@@ -74,12 +78,21 @@ async function desdeDolarapi(codigo: string): Promise<TasaEnVivo> {
   }
 
   const fecha = new Date(datos.fechaActualizacion)
+  const hoyStr = fechaEnCaracas(new Date())
+  const fechaStr = fechaEnCaracas(fecha)
+  const info = infoDiaBancario(hoyStr)
+
+  // En feriado bancario o fin de semana, la tasa vigente del BCV es la del siguiente día hábil
+  const vigente =
+    fechaStr === hoyStr || (info.esBancario && (fechaStr >= hoyStr || fechaStr === info.fechaEfectivaBcv))
 
   return {
     valor,
     fecha,
-    vigente: fechaEnCaracas(fecha) === fechaEnCaracas(new Date()),
+    vigente,
     fuente: 'BCV',
+    esFeriado: info.esBancario,
+    motivoFeriado: info.motivo,
   }
 }
 
