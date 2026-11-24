@@ -17,7 +17,7 @@ import { desenvolver } from './rpc'
 export interface LineaLibroVentas {
   clave: string
   id: number
-  documento: 'FACTURA' | 'NOTA_CREDITO'
+  documento: 'FACTURA' | 'NOTA_CREDITO' | 'NOTA_DEBITO'
   fecha: string
   rif_cliente: string
   cliente: string
@@ -44,6 +44,10 @@ export interface LineaLibroVentas {
   debito_fiscal_bs: string
   total_ventas_bs: string
   iva_retenido_bs: string
+  /** Providencia SNAT/2026/00093. Ausentes mientras no se aplique la migración. */
+  numero_sistema?: string
+  control_sistema?: string
+  medio_emision?: 'SISTEMA' | 'PORTAL_SENIAT' | 'CONTINGENCIA'
 }
 
 export function useLibroVentas(desde: string, hasta: string) {

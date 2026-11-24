@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { Moneda } from '@/lib/api/tasas'
-import { infoDiaBancario } from '@/lib/calendarioBancario'
+import { resolverDiaValorBcv } from '@/lib/calendarioBancario'
 
 /**
  * La tasa que publica hoy la fuente de cada moneda.
@@ -45,9 +45,13 @@ export interface TasaEnVivo {
   vigente: boolean
   /** Quién la publica, para poder decirlo en pantalla. */
   fuente: string
-  /** Si hoy es día no bancario / feriado bancario según SUDEBAN */
+  /** Si hoy es feriado bancario o no hábil según SUDEBAN */
   esFeriado?: boolean
   motivoFeriado?: string | null
+  esBancario?: boolean
+  motivoBancario?: string | null
+  diaValorNombre?: string
+  fechaValor?: string
 }
 
 /** Compatibilidad con el nombre viejo. */
@@ -78,13 +82,16 @@ async function desdeDolarapi(codigo: string): Promise<TasaEnVivo> {
   }
 
   const fecha = new Date(datos.fechaActualizacion)
-  const hoyStr = fechaEnCaracas(new Date())
-  const fechaStr = fechaEnCaracas(fecha)
-  const info = infoDiaBancario(hoyStr)
+  const hoyCaracas = fechaEnCaracas(new Date())
+  const fechaCaracas = fechaEnCaracas(fecha)
+  const info = resolverDiaValorBcv(hoyCaracas)
 
-  // En feriado bancario o fin de semana, la tasa vigente del BCV es la del siguiente día hábil
+  // En días bancarios o fin de semana, la tasa publicada por el BCV el día hábil anterior
+  // rige para el próximo día hábil (ej: martes si hoy es lunes bancario) y se considera vigente.
   const vigente =
-    fechaStr === hoyStr || (info.esBancario && (fechaStr >= hoyStr || fechaStr === info.fechaEfectivaBcv))
+    fechaCaracas === hoyCaracas ||
+    (info.esBancario && (fechaCaracas === hoyCaracas || fechaCaracas >= info.fechaHoy || fechaCaracas === info.fechaValor)) ||
+    (info.esFinDeSemana && (fechaCaracas === hoyCaracas || fechaCaracas >= info.fechaHoy || fechaCaracas === info.fechaValor))
 
   return {
     valor,
@@ -92,7 +99,11 @@ async function desdeDolarapi(codigo: string): Promise<TasaEnVivo> {
     vigente,
     fuente: 'BCV',
     esFeriado: info.esBancario,
-    motivoFeriado: info.motivo,
+    motivoFeriado: info.infoFeriado?.motivo ?? null,
+    esBancario: info.esBancario,
+    motivoBancario: info.infoFeriado?.motivo ?? (info.esFinDeSemana ? 'Fin de semana' : null),
+    diaValorNombre: info.diaValorNombre,
+    fechaValor: info.fechaValor,
   }
 }
 

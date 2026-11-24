@@ -177,7 +177,7 @@ export function membrete(
      * ESTO REVOCA UNA DECISIÓN ANTERIOR, Y SE DICE PARA QUE NADIE LA REPROPONGA
      * CREYENDO QUE SIGUE EN PIE.
      *
-     * Angélica, el 18/09/2026, sobre la nota de entrega: «quítame la dirección
+     * Angélica, el 18/09/2026, sobre la nota de despacho: «quítame la dirección
      * del RIF, solo que salga el número de RIF». Se hizo, y durante una semana
      * el domicilio salió solo en la factura, que lo lleva por norma del SENIAT.
      *
@@ -414,7 +414,7 @@ export function tituloDocumento(
     EL COLOR ES OPCIONAL Y CASI NUNCA SE USA.
 
     Todos los papeles lo dejan en el marrón de rótulo de la casa. La excepción es la
-    nota de entrega, que va naranja: es el papel que el chofer lleva en la mano
+    nota de despacho, que va naranja: es el papel que el chofer lleva en la mano
     por el patio, y en un fajo de hojas mezcladas el color es lo que deja
     separarla de una factura sin leer ninguna. Ese naranja estaba antes en una
     banda llena de arriba abajo, y al pasar al membrete de la casa se habría
@@ -910,7 +910,7 @@ export function pieDePagina(doc: Doc, texto: string, bordes: Bordes = BORDES_A4)
 
   Vive aqui, con los papeles internos. `ventaPdf` tiene el suyo igual y se
   queda donde esta a proposito: los papeles que salen a la calle —cotizacion,
-  nota de entrega, factura, orden de compra— son una familia aparte, con su
+  nota de despacho, factura, orden de compra— son una familia aparte, con su
   propia maqueta y sus propias constantes, y no comparten ayudantes con esta.
   Unirlos acoplaria dos cosas que estan separadas por decision.
 */

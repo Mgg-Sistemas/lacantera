@@ -80,7 +80,7 @@ export function textoDespachoPorAprobar(t: TarjetaVenta, empresa: string): strin
 
 export function textoDespachoAprobado(t: TarjetaVenta, empresa: string): string {
   return limpio([
-    `✅ *DESPACHO APROBADO · NOTA DE ENTREGA ${t.cadena.ne ?? t.numero}*`,
+    `✅ *DESPACHO APROBADO · NOTA DE DESPACHO ${t.cadena.ne ?? t.numero}*`,
     cliente(t),
     t.cadena.sd ? `🔖 *Despacho:* ${t.cadena.sd}` : null,
     ...productos(t),
@@ -111,7 +111,7 @@ export function textoFacturada(t: TarjetaVenta, empresa: string): string {
   return limpio([
     `🧾 *FACTURA ${t.numero}${t.numero_control ? ` · Nº DE CONTROL ${t.numero_control}` : ''}*`,
     cliente(t),
-    t.cadena.ne ? `📄 *Nota de entrega:* ${t.cadena.ne}` : null,
+    t.cadena.ne ? `📄 *Nota de despacho:* ${t.cadena.ne}` : null,
     ...productos(t),
     t.iva ? `🧮 *IVA:* ${dinero(t.moneda, Number(t.iva))}` : null,
     t.igtf ? `💱 *IGTF:* ${dinero(t.moneda, Number(t.igtf))}` : null,

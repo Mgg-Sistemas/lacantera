@@ -30,7 +30,7 @@ import { enMayuscula } from '@/lib/texto'
 
   Al mirarlo resultó que casi todas TENÍAN dónde aterrizar y nadie las estaba
   usando: el artículo, el proveedor y la máquina llevan ficha propia desde hace
-  meses, y la nota de entrega ya sabía abrirse sola con `?nota=`. No hubo que
+  meses, y la nota de despacho ya sabía abrirse sola con `?nota=`. No hubo que
   construir destino ninguno; hubo que apuntar a él.
 
   El cliente es el único que no tiene ficha, así que ese sí va a su lista con el
@@ -115,7 +115,7 @@ const FUENTES: Fuente[] = [
     tabla: 'notas_entrega',
     columnas: ['numero'],
     seleccion: 'id, numero, estado',
-    tipo: 'Nota de entrega',
+    tipo: 'Nota de despacho',
     titulo: (f) => texto(f.numero),
     detalle: (f) => texto(f.estado).replaceAll('_', ' '),
     // La pantalla ya sabe abrir una nota por su número, y se quita el

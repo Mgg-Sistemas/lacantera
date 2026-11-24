@@ -1,7 +1,7 @@
 /*
-  CUENTAS POR COBRAR PAGADAS EN NOTAS DE ENTREGA (10/11/2026).
+  CUENTAS POR COBRAR PAGADAS EN NOTAS DE DESPACHO (10/11/2026).
 
-  Lógica pura, sin red ni PDF, para el informe ejecutivo de notas de entrega
+  Lógica pura, sin red ni PDF, para el informe ejecutivo de notas de despacho
   registradas con condición de cobro pendiente cuya cancelación ya fue
   confirmada (`pendiente_por_cobrar = true`, `cobrada_en IS NOT NULL` y
   `estado <> 'ANULADA'`). Se prueba directamente con `node` en

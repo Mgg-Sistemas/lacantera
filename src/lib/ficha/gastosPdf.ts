@@ -20,7 +20,7 @@ import type { DocumentoDelInforme } from '@/lib/api/gastos'
 
   1. Comparativo de gastos y ventas (`armarComparativoGastosVentas`):
      Balance operativo entre los ingresos por ventas de material efectivamente
-     cobradas (notas de entrega despachadas de contado o con crédito pagado) y
+     cobradas (notas de despacho despachadas de contado o con crédito pagado) y
      los egresos registrados en Gastos (más órdenes pagadas de Compras cuando se
      incluyan). Presenta comparación visual intuitiva de absorción vs. margen
      neto, tres tarjetas de indicadores ejecutivos, evolución por período,
@@ -879,7 +879,7 @@ export async function armarComparativoGastosVentas(d: DatosDelComparativo): Prom
       doc.text(
         ajustar(
           doc,
-          `Cuentas por cobrar excluidas del ingreso: ${plural(porCobrar.length, 'nota de entrega despachada pendiente', 'notas de entrega despachadas pendientes')} de cobro`,
+          `Cuentas por cobrar excluidas del ingreso: ${plural(porCobrar.length, 'nota de despacho despachada pendiente', 'notas de despacho despachadas pendientes')} de cobro`,
           ANCHO - 68,
         ),
         IZQ + 4,
@@ -1374,7 +1374,7 @@ export async function armarComparativoGastosVentas(d: DatosDelComparativo): Prom
   // Nota técnica BCV al pie del resumen
   doc.setFont('helvetica', 'italic').setFontSize(6.8).setTextColor(GRIS)
   const notaPie = doc.splitTextToSize(
-    'Montos equivalentes en Bs y $ calculados con la tasa BCV vigente a la fecha de emisión de cada nota de entrega o factura de gasto. Los importes originales en distintas monedas no se suman directamente entre sí.' +
+    'Montos equivalentes en Bs y $ calculados con la tasa BCV vigente a la fecha de emisión de cada nota de despacho o factura de gasto. Los importes originales en distintas monedas no se suman directamente entre sí.' +
       notaDeNomina(gastos),
     ANCHO,
   ) as string[]
@@ -1525,7 +1525,7 @@ function pintarTablaDetalleVentas(
     doc,
     y,
     'Relación detallada de ventas cobradas',
-    'Notas de entrega despachadas con cobro confirmado en el período',
+    'Notas de despacho despachadas con cobro confirmado en el período',
     VERDE,
   )
 

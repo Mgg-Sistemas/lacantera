@@ -73,7 +73,7 @@ export async function leerCotizacionParaDespacho(id: number): Promise<Cotizacion
 
   Una tarjeta por venta en su etapa. No hay una tabla nueva: la base junta los
   documentos que ya existen (`ventas_tablero`) —cotización, solicitud de
-  despacho, nota de entrega, factura, cobros y conciliación— y le pone a cada
+  despacho, nota de despacho, factura, cobros y conciliación— y le pone a cada
   uno la columna donde va. Así lo vendido no se reescribe.
 */
 
@@ -183,7 +183,7 @@ function useInvalidarVentas() {
   }
 }
 
-/** «¿Se despacha?» → Sí. Devuelve el id de la nota de entrega nueva. */
+/** «¿Se despacha?» → Sí. Devuelve el id de la nota de despacho nueva. */
 export function useAprobarDespachoVenta() {
   const invalidar = useInvalidarVentas()
   return useMutation({

@@ -605,7 +605,7 @@ function PapelesDelMovimiento({
                 }
               }}
             />
-            Generar nota de entrega
+            Generar nota de despacho
           </label>
         ) : null
       ) : null}

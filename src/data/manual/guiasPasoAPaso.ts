@@ -163,10 +163,10 @@ export const GUIAS_PASO_A_PASO: GuiaPasoAPaso[] = [
       },
     ],
     resultado:
-      'Se genera la Nota de Entrega asociada a la cotización y se descuentan las existencias del material vendido.',
+      'Se genera la Nota de Despacho asociada a la cotización y se descuentan las existencias del material vendido.',
     revertir:
-      'Si el cliente canceló el pedido antes de cargar, un usuario con permisos de Facturación puede anular el despacho pendiente desde la lista de notas de entrega.',
-    palabrasClave: ['cotizacion', 'despacho', 'completar', 'romana', 'venta', 'nota de entrega'],
+      'Si el cliente canceló el pedido antes de cargar, un usuario con permisos de Facturación puede anular el despacho pendiente desde la lista de notas de despacho.',
+    palabrasClave: ['cotizacion', 'despacho', 'completar', 'romana', 'venta', 'nota de despacho', 'nota de entrega'],
   },
   {
     id: 'guia-formato-salida-autorizada',

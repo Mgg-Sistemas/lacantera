@@ -18,7 +18,7 @@ export interface AreaInfo {
 export const AREAS_OPERATIVAS: AreaInfo[] = [
   { id: 'TODAS', label: 'Todo el sistema', descripcion: 'Todas las áreas' },
   { id: 'COMPRAS_RETENCIONES', label: '🛒 Compras y Retenciones', descripcion: 'Compras, facturas, retenciones y reintegros' },
-  { id: 'FACTURACION_VENTAS', label: '🧾 Facturación y Ventas', descripcion: 'Cotizaciones, notas de entrega y cobros' },
+  { id: 'FACTURACION_VENTAS', label: '🧾 Facturación y Ventas', descripcion: 'Cotizaciones, notas de despacho y cobros' },
   { id: 'ROMANA_DESPACHOS', label: '⚖️ Romana y Despachos', descripcion: 'Pesaje, formatos de salida y viajes' },
   { id: 'INVENTARIO_ALMACEN', label: '📦 Almacén e Inventario', descripcion: 'Recepciones, existencias y traslados' },
   { id: 'EXPLOTACION_MINA', label: '⛏️ Mina y Producción', descripcion: 'Plantas, extracción y producción' },

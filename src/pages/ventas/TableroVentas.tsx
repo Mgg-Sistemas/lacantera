@@ -23,7 +23,7 @@ import { HistoricoVentas } from './HistoricoVentas'
 
 /*
   TABLERO DE VENTAS (la dueña, 10/11/2026: «así como se tiene compras, quiero
-  cambiar el flujo de ventas y facturación, notas de entrega…»; aprobó la
+  cambiar el flujo de ventas y facturación, notas de despacho…»; aprobó la
   maqueta y pidió implementarla fase a fase).
 
   Una tarjeta por venta, en su columna, como el de Compras: cotización →
@@ -102,7 +102,7 @@ export function TableroVentas() {
   const { data: datosEmpresa } = useEmpresa()
   const empresa = empresaDelPapel(datosEmpresa).razonSocial
 
-  /** Aprobado: se busca la nota de entrega que nació para armar su WhatsApp. */
+  /** Aprobado: se busca la nota de despacho que nació para armar su WhatsApp. */
   async function alAprobar(sd: TarjetaVenta) {
     setAprobando(null)
     try {

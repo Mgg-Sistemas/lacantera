@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { desenvolver, rpc } from './rpc'
 
 /**
- * Ventas: clientes, precios, cotizaciones y notas de entrega.
+ * Ventas: clientes, precios, cotizaciones y notas de despacho.
  *
  * Lo fiscal —facturas, notas de crédito, cobros y cuentas por cobrar— vive desde
  * el 15/09/2026 en `facturacion.ts`, que es su propio módulo.
@@ -77,10 +77,10 @@ export function useClientes(soloActivos = false) {
 }
 
 /**
- * Lo que deben los clientes por NOTAS DE ENTREGA (07/11/2026): las marcadas
+ * Lo que deben los clientes por NOTAS DE DESPACHO (07/11/2026): las marcadas
  * pendientes por cobrar, sin cobrar y no anuladas. Aparte de `deuda_usd`, que es
  * de facturas y descuenta del límite de crédito. Solo lectura: se cobra marcando
- * la nota en Notas de entrega.
+ * la nota en Notas de despacho.
  */
 export interface NotaPorCobrarDeCliente {
   cliente_id: number | null
@@ -424,11 +424,11 @@ export interface RenglonGuardado {
   descuento_pct?: string | null
   descuento_unitario?: string | null
   motivo_condicion?: string | null
-  /** Solo notas de entrega y facturas: lo que salió del patio, en su unidad. */
+  /** Solo notas de despacho y facturas: lo que salió del patio, en su unidad. */
   cantidad_inventario?: string | null
   medida?: MedidaRenglon | null
   densidad_usada?: string | null
-  /** Solo notas de entrega: el patio del renglón, si no fue el de la nota. */
+  /** Solo notas de despacho: el patio del renglón, si no fue el de la nota. */
   almacen_id?: number | null
 }
 
@@ -459,7 +459,7 @@ export function useRenglones(tabla: string, columna: string, id: number | null) 
   })
 }
 
-/** Un renglón de nota de entrega, con el nombre de su artículo — para el
+/** Un renglón de nota de despacho, con el nombre de su artículo — para el
  *  desglose por material del reporte, no para editar la nota. */
 export interface RenglonConArticulo {
   nota_id: number
@@ -570,7 +570,7 @@ export function useCerrarCotizacion() {
 }
 
 // ---------------------------------------------------------------------------
-// Notas de entrega
+// Notas de despacho
 // ---------------------------------------------------------------------------
 
 export interface NotaEntrega {
@@ -610,7 +610,7 @@ export interface NotaEntrega {
   despachada_en: string
   motivo_anulacion: string | null
   renglones: number
-  /** El NS del que nació, cuando una nota de salida dejó su nota de entrega. */
+  /** El NS del que nació, cuando una nota de salida dejó su nota de despacho. */
   nota_salida: string | null
   solicitud_salida_id: number | null
   /** Falso: es solo respaldo y no entra nunca a una factura. */
@@ -646,7 +646,7 @@ export interface NotaEntrega {
   articulos_ids: number[]
 }
 
-/** Un camión de una nota de entrega: la foto del momento, no el catálogo. */
+/** Un camión de una nota de despacho: la foto del momento, no el catálogo. */
 export interface CamionDeNota {
   id: number
   orden: number
@@ -669,7 +669,7 @@ export async function leerNotaEntregaPorNumero(numero: string): Promise<NotaEntr
 }
 
 /*
-  CÓMO SE BUSCA UNA NOTA DE ENTREGA
+  CÓMO SE BUSCA UNA NOTA DE DESPACHO
 
   Christopher, 28/09/2026: «poder buscar una nota en específico». La lista
   trae las 200 más recientes, así que filtrar en la pantalla encontraría solo
@@ -746,7 +746,7 @@ export function useNotasEntrega(filtros: string | FiltrosDeNotas = {}) {
 }
 
 /**
- * Todas las notas de entrega vigentes que tuvieron cuenta por cobrar y cuya
+ * Todas las notas de despacho vigentes que tuvieron cuenta por cobrar y cuya
  * cancelación ya fue confirmada (sin el tope de 200 filas de la lista general),
  * para el informe ejecutivo de cuentas por cobrar pagadas.
  */
@@ -813,7 +813,7 @@ export interface Despacho {
   EL DESPACHO SE PIDE Y SE APRUEBA. Angélica, 18/09/2026: «quiero que las notas
   de entrega lleven igual un nivel de autorización», y que salgan siempre con
   chofer, cédula y placa. Pedir no mueve nada; al aprobar corre el despacho de
-  siempre y nace la nota de entrega. Desde el navegador ya no se puede
+  siempre y nace la nota de despacho. Desde el navegador ya no se puede
   despachar sin pasar por aquí: la base lo mudó a un esquema privado.
 */
 export interface PedidoDeDespacho extends Despacho {

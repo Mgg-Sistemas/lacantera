@@ -231,7 +231,7 @@ export function useGuardarObservacionPago() {
   LOS COMPROBANTES DE CADA PAGO (06/11/2026).
 
   Christopher: «adjuntar el capture del pago efectuado y poner el monto de forma
-  manual, para después asociarlo a la nota de entrega». Varios por pago (hasta
+  manual, para después asociarlo a la nota de despacho». Varios por pago (hasta
   seis), fotos o PDF. No van en el reporte PDF.
 
   El archivo va del navegador al depósito privado `comprobantes-pago`, colgado

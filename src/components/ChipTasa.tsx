@@ -62,22 +62,24 @@ export function ChipTasa({ className }: { className?: string }) {
     )
   }
 
-  if (data.esFeriadoBancario) {
+  if (data.esFeriadoBancario || data.esBancario) {
     const fechaCorta = new Date(`${data.fecha}T12:00:00`).toLocaleDateString('es-VE', {
       day: 'numeric',
       month: 'short',
     })
+    const diaNombre = data.diaValorNombre ? ` · ${data.diaValorNombre}` : ''
     return (
-      <span
-        title={`Hoy es feriado bancario (${data.motivoFeriado ?? 'SUDEBAN'}). Se toma la tasa valor ${fechaCorta}.`}
+      <Link
+        to="/app/tasas?tab=calendario"
+        title={`Hoy es feriado bancario (${data.motivoBancario ?? data.motivoFeriado ?? 'SUDEBAN'}). Se toma la tasa oficial del BCV valor ${fechaCorta}. Haga clic para ver el calendario bancario.`}
         className={cn(
-          'border-info/40 bg-info-soft text-info text-2xs inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-medium',
+          'border-amber-500/40 bg-amber-500/15 text-amber-400 hover:border-amber-500 text-2xs inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-medium transition-colors',
           className,
         )}
       >
-        <span>Feriado bancario · Valor {fechaCorta}</span>
+        <span>🏦 Feriado bancario · Valor {fechaCorta}{diaNombre}</span>
         <span className="tabular font-semibold">Bs {formatearTasa(Number(data.tasa))}</span>
-      </span>
+      </Link>
     )
   }
 
@@ -103,14 +105,22 @@ export function ChipTasa({ className }: { className?: string }) {
 
   return (
     <span
-      title={`No hay tasa de hoy registrada. Lo que se emita ahora se valora con la del ${fechaCorta}.`}
+      title={
+        data.esBancario
+          ? `Feriado bancario (${data.motivoBancario ?? 'Bancario'}): Se valora con la tasa del ${data.diaValorNombre ?? fechaCorta}.`
+          : `No hay tasa de hoy registrada. Lo que se emita ahora se valora con la del ${fechaCorta}.`
+      }
       className={cn(
         'border-warning/40 bg-warning-soft text-warning text-2xs inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-medium',
         className,
       )}
     >
       <AlertTriangle className="size-3.5 shrink-0" />
-      <span>Se valora con la tasa del {fechaCorta}</span>
+      <span>
+        {data.esBancario
+          ? `Feriado bancario · Tasa ${data.diaValorNombre ?? fechaCorta}`
+          : `Se valora con la tasa del ${fechaCorta}`}
+      </span>
       <span className="tabular font-semibold">Bs {formatearTasa(Number(data.tasa))}</span>
     </span>
   )

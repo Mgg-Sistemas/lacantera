@@ -5,7 +5,7 @@ import { desenvolver, rpc } from './rpc'
 /*
   EL CATÁLOGO DE QUIEN SE LLEVA EL MATERIAL.
 
-  Angélica, 18/09/2026: la nota de entrega sale obligatoriamente con chofer,
+  Angélica, 18/09/2026: la nota de despacho sale obligatoriamente con chofer,
   cédula y placa, y «esos datos se van a ir convirtiendo en un catálogo en el
   que vas a permitir editar, deshabilitar y agregar datos. Si los datos no
   existen se agregan».

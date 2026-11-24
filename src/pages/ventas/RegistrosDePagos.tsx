@@ -66,7 +66,7 @@ import {
 /*
   REGISTROS DE PAGOS: CADA DEPÓSITO DEL BANCO Y LAS NOTAS QUE PAGA.
 
-  Christopher, 06/11/2026: «que coteje las notas de entrega con los pagos
+  Christopher, 06/11/2026: «que coteje las notas de despacho con los pagos
   registrados del banco… cuando se seleccione uno se desplieguen las notas de
   entrega relacionadas a ese pago… lo más simple posible». Una lista de pagos;
   al tocar uno se abre debajo con sus notas. Un pago puede cubrir varias notas.
@@ -199,7 +199,7 @@ export function RegistrosDePagos() {
     <>
       <PageHeader
         title="Conciliación de Pagos"
-        description="Los pagos que llegaron al banco y las notas de entrega que cubre cada uno. Toque un pago para ver sus notas."
+        description="Los pagos que llegaron al banco y las notas de despacho que cubre cada uno. Toque un pago para ver sus notas."
         actions={
           <>
             <Button
@@ -548,7 +548,7 @@ function ModalReporte({
     vigentesDelPeriodo === 0
       ? modo === 'CIERRE'
         ? conSinPago
-          ? `En ${nombrePeriodo} no hay pagos del banco. El papel llevará solo las notas de entrega sin pago, si las hay.`
+          ? `En ${nombrePeriodo} no hay pagos del banco. El papel llevará solo las notas de despacho sin pago, si las hay.`
           : `En ${nombrePeriodo} no hay pagos del banco: no hay nada que informar.`
         : 'La pantalla no tiene pagos con esos filtros: no hay nada que informar.'
       : !conLista
@@ -570,7 +570,7 @@ function ModalReporte({
       if (modo === 'CIERRE') {
         if (conSinPago) notasSinPago = await leerNotasSinPago(desde, hasta)
         if (vigentesDelPeriodo === 0 && (notasSinPago?.length ?? 0) === 0) {
-          setFalla(`En ${nombrePeriodo} no hay pagos del banco ni notas de entrega sin pago: no hay nada que informar.`)
+          setFalla(`En ${nombrePeriodo} no hay pagos del banco ni notas de despacho sin pago: no hay nada que informar.`)
           return
         }
         // Un cierre no se firma sin decir que hay notas cobradas dos veces en el período.
@@ -712,7 +712,7 @@ function ModalReporte({
               encendido={conSinPago}
               onCambio={setConSinPago}
               etiqueta="Incluir las notas sin pago"
-              detalle="Las notas de entrega del período que no tienen ningún pago asociado."
+              detalle="Las notas de despacho del período que no tienen ningún pago asociado."
             />
             <Interruptor
               encendido={conAnulados}
@@ -796,7 +796,7 @@ function DetalleDelPago({
       {error ? <ErrorDeCarga error={error} /> : null}
 
       {data && data.length === 0 ? (
-        <p className="text-ink/55 mb-3 text-sm">Este pago todavía no tiene notas de entrega asociadas.</p>
+        <p className="text-ink/55 mb-3 text-sm">Este pago todavía no tiene notas de despacho asociadas.</p>
       ) : null}
 
       {data && data.length > 0 ? (
@@ -1161,8 +1161,8 @@ function ModalPago({ pago, onCerrar }: { pago: PagoBancario | null; onCerrar: ()
       titulo={pago ? 'Editar pago' : 'Registrar pago'}
       descripcion={
         pago
-          ? 'Un pago que llegó al banco. Después se le asocian las notas de entrega que cubre.'
-          : 'Adjunte la captura del pago y escriba los datos que se leen en ella. Después se le asocian las notas de entrega que cubre.'
+          ? 'Un pago que llegó al banco. Después se le asocian las notas de despacho que cubre.'
+          : 'Adjunte la captura del pago y escriba los datos que se leen en ella. Después se le asocian las notas de despacho que cubre.'
       }
       acciones={
         aviso ? (

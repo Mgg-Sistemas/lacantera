@@ -142,7 +142,7 @@ function avisosDe(r: ReturnType<typeof useResumenPanel>['data']): Aviso[] {
     avisos.push({
       tono: 'warning',
       titulo: `${r.despachos_por_aprobar} despacho${r.despachos_por_aprobar === 1 ? '' : 's'} pedido${r.despachos_por_aprobar === 1 ? '' : 's'} sin aprobar`,
-      detalle: 'Se aprueban desde la nota de entrega.',
+      detalle: 'Se aprueban desde la nota de despacho.',
       ruta: '/app/facturacion/notas-entrega',
     })
   }
@@ -763,7 +763,7 @@ export function Dashboard() {
         nombreArchivo={informe?.nombre ?? ''}
         titulo={
           informe?.nombre.startsWith('informe-general')
-            ? 'Informe General de Despachos, Traslados y Notas de Entrega'
+            ? 'Informe General de Despachos, Traslados y Notas de Despacho'
             : 'Informe de despachos y ventas'
         }
       />

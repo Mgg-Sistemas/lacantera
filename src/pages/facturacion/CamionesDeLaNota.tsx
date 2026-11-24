@@ -26,7 +26,7 @@ import {
 } from './camiones'
 
 /*
-  LOS CAMIONES DE UNA NOTA DE ENTREGA, LOS QUE HAGAN FALTA.
+  LOS CAMIONES DE UNA NOTA DE DESPACHO, LOS QUE HAGAN FALTA.
 
   Quien despacha, 22/09/2026: la nota que nace de una salida «me genera la nota
   de entrega sin información de los camiones», y «fueron 2 camiones, si se
@@ -38,7 +38,7 @@ import {
 
   EL CHOFER Y EL VEHÍCULO SALEN DEL CATÁLOGO, y si no están se añaden desde
   aquí mismo —nombre y cédula, placa y descripción— sin salir de la ventana.
-  Es el mismo trato que el formulario de la nota de entrega de siempre: los
+  Es el mismo trato que el formulario de la nota de despacho de siempre: los
   datos «se van convirtiendo en un catálogo» (Angélica, 18/09/2026).
 */
 
@@ -281,7 +281,7 @@ export function ModalCamiones({
       ancho="lg"
       onCerrar={onCerrar}
       titulo={`Camiones de ${numero}`}
-      descripcion="Con qué se llevó el material. Salen en el papel de la nota de entrega, uno debajo del otro."
+      descripcion="Con qué se llevó el material. Salen en el papel de la nota de despacho, uno debajo del otro."
       acciones={
         <>
           <Button variant="ghost" onClick={onCerrar}>

@@ -7,7 +7,7 @@ import { desenvolver, rpc } from './rpc'
 
   Christopher, 21/09/2026: «un módulo que reciba información pero no envíe
   nada». Es la planilla de Excel que llevaba a mano. La mitad izquierda —número,
-  fecha, cliente, material, m³— sale sola de las notas de entrega y de las notas
+  fecha, cliente, material, m³— sale sola de las notas de despacho y de las notas
   de salida; la derecha —RIF, precio, status, observaciones y una columna
   libre— se escribe aquí.
 
@@ -44,7 +44,7 @@ export interface FilaDeControl {
   cantidad: number | string | null
   unidad: string | null
   precio: number | string | null
-  /** El precio lo trajo la nota de entrega (estaba en dólares). */
+  /** El precio lo trajo la nota de despacho (estaba en dólares). */
   precio_de_la_nota: boolean
   moneda_doc: string | null
   monto: number | string | null
@@ -136,7 +136,7 @@ export function useGuardarFilaDeControl() {
 /** Una fila de la hoja de Excel, ya interpretada: cómo queda lo que se escribe a mano. */
 export interface FilaParaCargar {
   origen: FilaDeControl['origen']
-  /** El renglón de la nota de entrega o el asiento de la salida, según el origen. */
+  /** El renglón de la nota de despacho o el asiento de la salida, según el origen. */
   id: number
   rif: string | null
   precio: number | null

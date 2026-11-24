@@ -359,6 +359,9 @@ const LibroVentas = pagina(() =>
 const NotasCredito = pagina(() =>
   import('@/pages/facturacion/NotasCredito').then((m) => ({ default: m.NotasCredito })),
 )
+const NotasDebito = pagina(() =>
+  import('@/pages/facturacion/NotasDebito').then((m) => ({ default: m.NotasDebito })),
+)
 /*
   PEDIDOS / COMPRAS COMO EN MGG (fase 1, 07/11/2026). La página principal, la
   revisión del almacén y su vista de teléfono.
@@ -454,6 +457,7 @@ const paginas: Record<string, ReactNode> = {
   */
   '/app/facturacion': <Facturacion />,
   '/app/facturacion/notas-credito': <NotasCredito />,
+  '/app/facturacion/notas-debito': <NotasDebito />,
   '/app/facturacion/por-cobrar': <PorCobrar />,
   '/app/retenciones': <Retenciones />,
   '/app/compras/retenciones': <Navigate to="/app/retenciones" replace />,
@@ -514,7 +518,7 @@ const paginas: Record<string, ReactNode> = {
   '/app/ventas/cotizaciones': <CotizacionesVenta />,
   '/app/ventas/registros-de-pagos': <RegistrosDePagos />,
   /*
-    La nota de entrega vive en Facturación desde el 16/09/2026: gasta
+    La nota de despacho vive en Facturación desde el 16/09/2026: gasta
     numeración y deja a alguien debiendo. La dirección vieja sigue llevando
     allí, que hay quien la tiene en marcadores.
   */

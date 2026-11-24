@@ -758,7 +758,7 @@ export function Movimientos() {
 
                           Y la pata negativa de una corrección de costo tampoco
                           es una salida: no se llevó nadie nada, el material
-                          sigue en el estante. Armarle una nota de entrega sería
+                          sigue en el estante. Armarle una nota de despacho sería
                           fabricar el papel de un despacho que no ocurrió.
 
                           La salida de un traslado saca su nota de traslado, no

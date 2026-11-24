@@ -15,6 +15,7 @@ import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
+import { ComprobantesRetencion } from './ComprobantesRetencion'
 import { dinero, documento, dolares, fecha, fechaHora } from '@/lib/formato'
 import { hoyEnCaracas } from '@/lib/api/tasas'
 import { limiteReferencia } from '@/lib/pagos'
@@ -828,6 +829,8 @@ export function FacturasProveedor() {
                 </div>
               </>
             ) : null}
+
+            <ComprobantesRetencion factura={detalle} />
 
             {detalle.estado === 'REGISTRADA' ? (
               <p className="text-ink/55 border-hairline mt-2 border-t pt-2">

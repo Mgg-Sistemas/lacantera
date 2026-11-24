@@ -6,13 +6,13 @@
   rompe en cuanto dos se abren a la vez y se cierran juntos: un modal abierto
   encima de otro, cerrados de un tirón por el mismo botón —justo lo que hacen
   «Guardar» en Camiones, Editar, Completar, Enlazar y Marcar pendiente de la
-  nota de entrega, que cierran su propia ventana y la de la nota al mismo
+  nota de despacho, que cierran su propia ventana y la de la nota al mismo
   tiempo—.
 
   El de encima se abrió cuando el scroll YA estaba bloqueado por el de abajo,
   así que su «antes» es «bloqueado». Si su cierre corre después del de abajo,
   deja el scroll bloqueado para siempre, hasta recargar la página. Encontrado
-  el 30/10/2026, en Notas de entrega: «se me quita la barra de la derecha para
+  el 30/10/2026, en Notas de despacho: «se me quita la barra de la derecha para
   seguir bajando», y se quedaba así incluso después de cerrar.
 
   Con un contador no importa el orden ni cuántos se cierren juntos: se

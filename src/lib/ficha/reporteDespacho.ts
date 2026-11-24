@@ -6,7 +6,7 @@
   WhatsApp descuadra—, pero de una sola nota, no del día entero.
 
   Christopher, 16/10/2026: «me están pidiendo un reporte individual de cada
-  salida y nota de entrega». A diferencia del reporte diario, este no se pide
+  salida y nota de despacho». A diferencia del reporte diario, este no se pide
   aparte: sale solo, listo para compartir, apenas se aprueba el despacho —y
   se puede volver a sacar después, desde el detalle de la nota, por si hay
   que reenviarlo.

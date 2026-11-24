@@ -41,7 +41,7 @@ export const ICONO_DE_MODULO: Record<Modulo, LucideIcon> = {
   INVENTARIO: Boxes,
   // Las solicitudes de salida avisan desde el 16/09/2026, con el icono de su módulo.
   SALIDAS: PackageMinus,
-  // Notas de entrega pendientes por cobrar avisan desde el 12/10/2026, con el
+  // Notas de despacho pendientes por cobrar avisan desde el 12/10/2026, con el
   // icono de Facturación en el riel (Receipt), no uno nuevo.
   FACTURACION: Receipt,
   SISTEMA: Settings,

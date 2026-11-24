@@ -17,7 +17,7 @@ import type { DetalleDespachos } from '@/lib/api/ventas'
 /*
   EL INFORME DE DESPACHOS Y VENTAS
 
-  Se pidió un informe de despachos, traslados y notas de entrega, visible
+  Se pidió un informe de despachos, traslados y notas de despacho, visible
   desde el Panel, que se mantenga al día solo. Los cinco totales ya salían
   del mismo cálculo que usa el Panel (`v_panel_resumen`); este papel los
   imprime junto con el desglose —por artículo, por destino, por cliente—

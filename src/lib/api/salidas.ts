@@ -109,7 +109,7 @@ export interface SolicitudDeSalida {
     EN QUÉ SE LO LLEVAN Y QUIÉN LO RECIBE.
 
     De la lista cuando el vehículo está cargado —`vehiculo_id`— y escrito a mano
-    cuando no —`vehiculo`—, que es lo que ya hace la nota de entrega. Un almacén
+    cuando no —`vehiculo`—, que es lo que ya hace la nota de despacho. Un almacén
     despacha lo mismo a un volteo de la flota que al carro de quien vino a
     buscarlo, y obligar a dar de alta ese carro para poder sacar dos sacos es
     parar el trabajo por una ficha que nadie va a volver a mirar.
@@ -545,10 +545,10 @@ export function quePuedoHacerConLaSolicitud(
 }
 
 // ---------------------------------------------------------------------------
-// LA NOTA DE ENTREGA QUE DEJA UNA SALIDA
+// LA NOTA DE DESPACHO QUE DEJA UNA SALIDA
 //
 // Christopher, 21/09/2026: al imprimir una nota de salida hacia fuera se puede
-// marcar que deje además su nota de entrega. Al cliente se le entrega solo la de
+// marcar que deje además su nota de despacho. Al cliente se le entrega solo la de
 // salida; la de entrega queda de respaldo y se imprime cuando haga falta.
 //
 // La casilla no la da ningún nivel: se marca en las acciones especiales del rol
@@ -616,7 +616,7 @@ export async function leerAsientosDeLaSalida(numero: string): Promise<AsientoDeL
     }))
 }
 
-/** La nota de entrega viva que dejó esa salida, si dejó alguna. */
+/** La nota de despacho viva que dejó esa salida, si dejó alguna. */
 export async function leerNotaDeEntregaDeLaSalida(numero: string): Promise<NotaEntrega | null> {
   const filas = desenvolver<NotaEntrega[]>(
     await supabase
@@ -690,7 +690,7 @@ export interface CamionParaGuardar {
 }
 
 /**
- * Los camiones de una nota de entrega: se manda la lista entera y queda esa.
+ * Los camiones de una nota de despacho: se manda la lista entera y queda esa.
  *
  * Lo puede hacer quien escribe en Facturación, y también quien generó la nota
  * desde la salida, sobre esa nota. La base copia placa, chofer y cédula como

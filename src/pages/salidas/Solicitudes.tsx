@@ -169,7 +169,7 @@ export function Solicitudes() {
   const { data: empresa } = useEmpresa()
 
   /*
-    EL AVISO DE QUE EL REPORTE YA ESTÁ LISTO, igual que en Notas de entrega:
+    EL AVISO DE QUE EL REPORTE YA ESTÁ LISTO, igual que en Notas de despacho:
     sale solo al entregar, sin forzar una ventana encima de quien entrega
     varias seguidas. El botón de Reporte, en cada tarjeta, lo deja disponible
     después también, por si hay que reenviarlo.
@@ -392,7 +392,7 @@ export function Solicitudes() {
                   }
                 }}
               />
-              Generar nota de entrega
+              Generar nota de despacho
             </label>
           ) : null
         ) : null}
@@ -518,7 +518,7 @@ export function Solicitudes() {
     <>
       <PageHeader
         title="Salidas"
-        description="Solicitudes de salida de material de un almacén. Ninguna salida descuenta existencias hasta que la aprueba el responsable del almacén y el personal de almacén la entrega. Las ventas salen por Facturación › Notas de entrega; las compras se gestionan en Compras."
+        description="Solicitudes de salida de material de un almacén. Ninguna salida descuenta existencias hasta que la aprueba el responsable del almacén y el personal de almacén la entrega. Las ventas salen por Facturación › Notas de despacho; las compras se gestionan en Compras."
         actions={
           <>
             <Link to="/app/inventario/almacen/salida">

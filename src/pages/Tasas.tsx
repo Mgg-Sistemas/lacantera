@@ -8,6 +8,8 @@ import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { cn } from '@/lib/cn'
+import { resolverDiaValorBcv } from '@/lib/calendarioBancario'
+import { CalendarioBancarioView } from '@/components/CalendarioBancarioView'
 import { useTasaEnVivo } from '@/lib/tasaBcv'
 import {
   hoyEnCaracas,
@@ -90,6 +92,14 @@ export function Tasas() {
   const puedeRegistrar = puede('TASAS', 'ESCRITURA')
 
   const hoy = hoyEnCaracas()
+  const infoBancario = resolverDiaValorBcv(hoy)
+  const [tab, setTab] = useState<'tasas' | 'calendario'>(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search)
+      if (p.get('tab') === 'calendario') return 'calendario'
+    }
+    return 'tasas'
+  })
   const [valor, setValor] = useState('')
   const [dia, setDia] = useState(hoy)
 
@@ -98,7 +108,9 @@ export function Tasas() {
   useEffect(() => setValor(''), [codigo])
 
   const yaRegistradaHoy =
-    vigente.data?.fecha === hoy || Boolean(vigente.data?.fecha && vigente.data.fecha > hoy)
+    vigente.data?.fecha === hoy ||
+    (infoBancario.esBancario && vigente.data?.fecha === infoBancario.fechaValor) ||
+    Boolean(vigente.data?.fecha && vigente.data.fecha > hoy)
 
   /*
     Las tres tienen fuente, pero no la misma.
@@ -121,8 +133,43 @@ export function Tasas() {
     <>
       <PageHeader
         title="Tasas de cambio"
-        description="Tasa de cambio aplicada a los documentos. No es la del indicador de la barra superior, que solo informa."
+        description="Tasa de cambio aplicada a los documentos y calendario bancario oficial SUDEBAN."
       />
+
+      {/* Pestañas: Tasas de cambio vs Calendario bancario (SUDEBAN) */}
+      <div className="mb-4 flex flex-wrap items-center gap-1.5 rounded-xl border border-hairline bg-surface p-1 max-w-fit">
+        <button
+          type="button"
+          onClick={() => setTab('tasas')}
+          className={cn(
+            'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs sm:text-sm font-semibold transition-all',
+            tab === 'tasas'
+              ? 'bg-amber-500 text-stone-950 shadow-sm'
+              : 'text-ink/65 hover:text-ink hover:bg-surface-subtle'
+          )}
+        >
+          <span>💵</span>
+          <span>Tasas de cambio</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab('calendario')}
+          className={cn(
+            'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs sm:text-sm font-semibold transition-all',
+            tab === 'calendario'
+              ? 'bg-amber-500 text-stone-950 shadow-sm'
+              : 'text-ink/65 hover:text-ink hover:bg-surface-subtle'
+          )}
+        >
+          <span>📅</span>
+          <span>Calendario bancario (SUDEBAN)</span>
+        </button>
+      </div>
+
+      {tab === 'calendario' ? (
+        <CalendarioBancarioView fechaHoy={hoy} />
+      ) : (
+        <>
 
       {monedas.data && monedas.data.length > 1 ? (
         <div className="mb-4 flex flex-wrap gap-2">
@@ -156,14 +203,38 @@ export function Tasas() {
             }
           />
 
+          {infoBancario.esBancario ? (
+            <div className="border-warning/30 bg-warning-soft mt-4 flex items-start justify-between gap-3 rounded-[6px] border p-3.5">
+              <div className="flex items-start gap-2.5 min-w-0">
+                <Banknote className="text-warning mt-px size-[18px] shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-ink/80 text-sm font-medium">
+                    Hoy es feriado bancario en Venezuela ({infoBancario.infoFeriado?.motivo}).
+                  </p>
+                  <p className="text-ink/65 mt-0.5 text-xs leading-relaxed">
+                    Tomando de referencia la tasa del día siguiente según el calendario SUDEBAN, el sistema
+                    aplica la tasa oficial BCV del día <strong className="font-semibold">{infoBancario.diaValorNombre} ({fecha(infoBancario.fechaValor)})</strong>, emitida el día hábil anterior.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTab('calendario')}
+                className="shrink-0 text-xs font-semibold text-amber-500 hover:underline"
+              >
+                Ver calendario →
+              </button>
+            </div>
+          ) : null}
+
           {yaRegistradaHoy ? (
             <div className="border-success/25 bg-success-soft mt-4 flex items-start gap-2.5 rounded-[6px] border p-3.5">
               <CircleCheck className="text-success mt-px size-[18px] shrink-0" />
               <p className="text-ink/80 text-sm">
-                {vigente.data?.esFeriadoBancario ? (
+                {infoBancario.esBancario || vigente.data?.esFeriadoBancario ? (
                   <>
-                    Hoy es feriado bancario ({vigente.data.motivoFeriado ?? 'SUDEBAN'}). Tasa activa
-                    (fecha valor {fecha(vigente.data.fecha)}):{' '}
+                    Hoy es feriado bancario ({infoBancario.infoFeriado?.motivo ?? vigente.data?.motivoFeriado ?? 'SUDEBAN'}). Tasa activa
+                    (fecha valor {fecha(vigente.data?.fecha ?? infoBancario.fechaValor)} · {infoBancario.diaValorNombre}):{' '}
                   </>
                 ) : (
                   <>La tasa de hoy ya está registrada: </>
@@ -184,7 +255,7 @@ export function Tasas() {
               <TriangleAlert className="text-warning mt-px size-[18px] shrink-0" />
               <div className="min-w-0">
                 <p className="text-ink/80 text-sm">
-                  Todavía no se ha registrado la tasa de hoy en {unidad}.{' '}
+                  Todavía no se ha registrado la tasa {infoBancario.esBancario ? `del día (${infoBancario.diaValorNombre})` : 'de hoy'} en {unidad}.{' '}
                   {vigente.data
                     ? `Los documentos se están valorando con la del ${fecha(vigente.data.fecha)}.`
                     : `Sin ninguna tasa registrada no se puede emitir nada en ${unidad}.`}
@@ -231,7 +302,7 @@ export function Tasas() {
                 <Input
                   label="Fecha"
                   type="date"
-                  max={hoy}
+                  max={infoBancario.esBancario ? infoBancario.fechaValor : hoy}
                   value={dia}
                   onChange={(e) => setDia(e.target.value)}
                 />
@@ -249,7 +320,7 @@ export function Tasas() {
                     !conFuentePublica
                       ? `Se registra como ${elegida?.fuente_tasa ?? 'PARALELO'}: no hay fuente pública que consultar.`
                       : enVivo.data
-                        ? `Según ${quienPublica}: Bs ${fmtTasa(enVivo.data.valor)}${enVivo.data.vigente ? '' : ' (no es de hoy)'}`
+                        ? `Según ${quienPublica}${enVivo.data.esBancario ? ` (tasa del ${enVivo.data.diaValorNombre ?? 'martes'})` : ''}: Bs ${fmtTasa(enVivo.data.valor)}${enVivo.data.vigente ? '' : ' (no es de hoy)'}`
                         : `No se pudo consultar ${quienPublica}; escriba el valor a mano.`
                   }
                 />
@@ -309,12 +380,17 @@ export function Tasas() {
                   {enVivo.data ? fmtTasa(enVivo.data.valor) : '—'}
                 </p>
                 {enVivo.data ? (
-                  <Chip tone={enVivo.data.vigente ? 'success' : 'warning'} className="mt-1.5">
+                  <Chip
+                    tone={enVivo.data.esBancario ? 'royal' : enVivo.data.vigente ? 'success' : 'warning'}
+                    className="mt-1.5"
+                  >
                     {porBinance
                       ? 'De ahora mismo'
-                      : enVivo.data.vigente
-                        ? 'De hoy'
-                        : 'De un día anterior'}
+                      : enVivo.data.esBancario
+                        ? `Rige ${enVivo.data.diaValorNombre ?? 'Martes'}`
+                        : enVivo.data.vigente
+                          ? 'De hoy'
+                          : 'De un día anterior'}
                   </Chip>
                 ) : null}
               </div>
@@ -393,6 +469,8 @@ export function Tasas() {
           </div>
         ) : null}
       </Card>
+        </>
+      )}
     </>
   )
 }

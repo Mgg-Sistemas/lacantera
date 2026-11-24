@@ -16,6 +16,8 @@ import { useMisPermisos } from '@/lib/api/usuarios'
 import { useAlmacenes } from '@/lib/api/inventario'
 import { useArticulos } from '@/lib/api/catalogo'
 import { useRenglones } from '@/lib/api/ventas'
+import { useConfigFiscal, useEmisionesPorDocumento } from '@/lib/api/seniat'
+import { BloqueEmisionSeniat, ModalEmisionSeniat } from './EmisionSeniat'
 import {
   TIPOS_NOTA_CREDITO,
   useAnularNotaCredito,
@@ -78,6 +80,9 @@ export function NotasCredito() {
 
   const [detalle, setDetalle] = useState<NotaCredito | null>(null)
   const [anulando, setAnulando] = useState<NotaCredito | null>(null)
+  const [registrandoSeniat, setRegistrandoSeniat] = useState<NotaCredito | null>(null)
+  const fiscal = useConfigFiscal()
+  const emisionesNc = useEmisionesPorDocumento('NOTA_CREDITO')
   const [motivoAnulacion, setMotivoAnulacion] = useState('')
 
   // Solo se corrige lo que sigue en pie. Una factura anulada no tiene nada que
@@ -529,7 +534,26 @@ export function NotasCredito() {
               Anulada: {detalle.motivo_anulacion}
             </p>
           ) : null}
+
+          {detalle.estado !== 'ANULADA' || emisionesNc.mapa.get(detalle.id) ? (
+            <BloqueEmisionSeniat
+              emision={emisionesNc.mapa.get(detalle.id)}
+              vigente={fiscal.vigente}
+              migracionPendiente={emisionesNc.migracionPendiente}
+              onRegistrar={() => setRegistrandoSeniat(detalle)}
+            />
+          ) : null}
         </Modal>
+      ) : null}
+
+      {registrandoSeniat ? (
+        <ModalEmisionSeniat
+          documento="NOTA_CREDITO"
+          documentoId={registrandoSeniat.id}
+          numeroSistema={registrandoSeniat.numero}
+          existente={emisionesNc.mapa.get(registrandoSeniat.id)}
+          onCerrar={() => setRegistrandoSeniat(null)}
+        />
       ) : null}
 
       {/* --------------------------------------------------------- anular */}

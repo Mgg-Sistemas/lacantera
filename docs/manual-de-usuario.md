@@ -911,6 +911,12 @@ El BCV no publica los fines de semana ni los feriados. Un documento emitido en s
 
 **Cada moneda se arrastra por su cuenta.** Si un día no hay euro registrado, lo que se emita en euros se valora con el último euro que haya.
 
+#### Feriados bancarios (SUDEBAN) y tasa del día siguiente (23/11/2026)
+
+En Venezuela, según el calendario oficial de la **SUDEBAN** (Superintendencia de las Instituciones del Sector Bancario), durante los feriados bancarios (como los **Lunes Bancarios**) las entidades financieras no abren ni se realizan mesas de cambio interbancarias ese día.
+
+Por ello, tomando de referencia la tasa del día siguiente, en los feriados bancarios el sistema aplica y toma automáticamente como referencia oficial la tasa del **siguiente día hábil bancario** (por ejemplo, la del día **martes** cuando el lunes es bancario), emitida por el Banco Central de Venezuela (BCV) con fecha valor de dicho día. En la barra superior y en la pantalla de tasas se indica claramente que rige la tasa efectiva de dicho día con el distintivo **Bancario**.
+
 ### 5.4 Por qué cada documento congela la tasa del día
 
 Cuando se emite una cotización, se aprueba una compra o se registra un pago, el documento **se queda con la tasa que había ese día**. No se recalcula después, aunque la tasa suba mañana.

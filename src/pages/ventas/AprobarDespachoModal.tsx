@@ -19,7 +19,7 @@ import { MOTIVO_NO_DESPACHO } from './ventasTablero'
   ✔ APROBAR DESPACHO CON «¿SE DESPACHA?» (la dueña, 10/11/2026: una sola
   aprobación por venta, al despachar, y con la pregunta de Compras).
 
-    SÍ  → nace la nota de entrega y el material sale del patio.
+    SÍ  → nace la nota de despacho y el material sale del patio.
     NO  → por ahora: queda por aprobar con su motivo a la vista (sin cupo,
           deuda vencida, sin material, otro).
     🚫 No procede → el despacho queda no aprobado, con la justificación.
@@ -54,7 +54,7 @@ export function AprobarDespachoModal({
     try {
       if (si) {
         await aprobar.mutateAsync(t.id)
-        toast(`Despacho ${t.numero} aprobado · nació su nota de entrega`, 'success')
+        toast(`Despacho ${t.numero} aprobado · nació su nota de despacho`, 'success')
         onAprobado()
         return
       }
@@ -119,7 +119,7 @@ export function AprobarDespachoModal({
 
         {si ? (
           <p className="text-success mt-2 text-sm">
-            ✓ Nace la nota de entrega y el material sale de {t.almacen ?? 'su patio'}.
+            ✓ Nace la nota de despacho y el material sale de {t.almacen ?? 'su patio'}.
           </p>
         ) : (
           <div className="border-hairline bg-ink/3 mt-3 rounded-[8px] border p-3">

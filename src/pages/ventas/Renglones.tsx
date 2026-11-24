@@ -64,7 +64,7 @@ interface Props {
    * vendido en toneladas, su cantidad es esta y no se teclea.
    */
   toneladasDeRomana?: number | null
-  /** Una nota de entrega: no pregunta por el IVA, que lo decide la factura. */
+  /** Una nota de despacho: no pregunta por el IVA, que lo decide la factura. */
   sinIva?: boolean
 }
 

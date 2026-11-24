@@ -12,7 +12,7 @@ export type Tono = 'royal' | 'success' | 'warning' | 'danger' | 'info' | 'neutra
 export const COLUMNAS: { etapa: EtapaVenta; titulo: string; ayuda: string; tono: Tono }[] = [
   { etapa: 'cot', titulo: 'Cotizaciones', ayuda: 'Enviadas al cliente', tono: 'info' },
   { etapa: 'aprobar', titulo: 'Despacho por aprobar', ayuda: 'Se pidió despachar', tono: 'warning' },
-  { etapa: 'despachada', titulo: 'Despachada · por cobrar', ayuda: 'Salió con su nota de entrega', tono: 'royal' },
+  { etapa: 'despachada', titulo: 'Despachada · por cobrar', ayuda: 'Salió con su nota de despacho', tono: 'royal' },
   { etapa: 'facturada', titulo: 'Facturada · por cobrar', ayuda: 'Con número de control', tono: 'royal' },
   { etapa: 'cobrada', titulo: 'Cobrada', ayuda: 'Venta finalizada', tono: 'success' },
   { etapa: 'anulada', titulo: 'Anuladas · no aprobadas', ayuda: 'Con su motivo', tono: 'danger' },
@@ -21,7 +21,7 @@ export const COLUMNAS: { etapa: EtapaVenta; titulo: string; ayuda: string; tono:
 export const TIPO_DOC: Record<TarjetaVenta['tipo'], string> = {
   COT: 'Cotización',
   SD: 'Despacho',
-  NE: 'Nota de entrega',
+  NE: 'Nota de despacho',
   FAC: 'Factura',
 }
 
@@ -110,9 +110,9 @@ export function rutaDe(t: TarjetaVenta): { ruta: string; etiqueta: string } {
     case 'COT':
       return { ruta: `/app/ventas/cotizaciones?cotizacion=${encodeURIComponent(t.numero)}`, etiqueta: 'Abrir la cotización' }
     case 'SD':
-      return { ruta: '/app/facturacion/notas-entrega', etiqueta: 'Abrir en Notas de entrega' }
+      return { ruta: '/app/facturacion/notas-entrega', etiqueta: 'Abrir en Notas de despacho' }
     case 'NE':
-      return { ruta: `/app/facturacion/notas-entrega?nota=${encodeURIComponent(t.numero)}`, etiqueta: 'Abrir la nota de entrega' }
+      return { ruta: `/app/facturacion/notas-entrega?nota=${encodeURIComponent(t.numero)}`, etiqueta: 'Abrir la nota de despacho' }
     case 'FAC':
       return { ruta: `/app/facturacion?factura=${encodeURIComponent(t.numero)}`, etiqueta: 'Abrir la factura' }
   }

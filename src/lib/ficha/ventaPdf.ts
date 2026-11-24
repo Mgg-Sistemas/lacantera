@@ -1,7 +1,7 @@
 /**
  * Los papeles con los que la empresa trata con alguien de fuera.
  *
- * Son tres —cotización, nota de entrega y factura— y se arman con el mismo
+ * Son tres —cotización, nota de despacho y factura— y se arman con el mismo
  * modelo Ejecutivo Cantera a propósito: quien recibe una cotización, después
  * una nota y al final una factura reconoce de inmediato la identidad visual de
  * la empresa.
@@ -9,7 +9,7 @@
  * Lo que cambia entre ellos:
  *
  *   - EL RÓTULO Y EL COLOR. La factura va en el rojo ladrillo de la casa
- *     (`MARCA`), la nota de entrega en naranja de seguridad —es un papel de
+ *     (`MARCA`), la nota de despacho en naranja de seguridad —es un papel de
  *     patio, se distingue de lejos en un fajo— y la cotización en marrón
  *     rótulo (`ROTULO`).
  *
@@ -31,6 +31,7 @@ import { logoComoImagen } from './logo'
 import { dinero, esCedula } from '@/lib/formato'
 import { ajustar } from './hoja'
 import { EMPRESA } from '@/lib/empresa'
+import { conMarcaExento, horaFiscal } from '@/lib/fiscal/providencia'
 import {
   type EmpresaPapel,
   FILA_ALTERNA,
@@ -56,7 +57,7 @@ const PIE = 281
 
 type Doc = import('jspdf').jsPDF
 
-export type TipoDocumento = 'COTIZACION' | 'NOTA' | 'FACTURA'
+export type TipoDocumento = 'COTIZACION' | 'NOTA' | 'FACTURA' | 'NOTA_DEBITO'
 
 export interface RenglonImpreso {
   descripcion: string
@@ -96,7 +97,7 @@ export interface DatosDocumento {
     telefono?: string | null
   }
 
-  /** Solo la nota de entrega. */
+  /** Solo la nota de despacho. */
   despacho?: {
     vehiculo?: string | null
     chofer?: string | null
@@ -113,13 +114,13 @@ export interface DatosDocumento {
   } | null
 
   /**
-   * Solo la nota de entrega. Lo que se esperaba cobrar en cada moneda, cuando
+   * Solo la nota de despacho. Lo que se esperaba cobrar en cada moneda, cuando
    * el cliente paga una parte en dólares y otra en bolívares.
    */
   pagoCombinado?: { usd: string | number; bs: string | number } | null
 
   /**
-   * Solo la nota de entrega. Estado de cuenta por cobrar cuando la nota fue
+   * Solo la nota de despacho. Estado de cuenta por cobrar cuando la nota fue
    * marcada con ese compromiso de pago.
    */
   cuentaPorCobrar?: {
@@ -160,6 +161,26 @@ export interface DatosDocumento {
   empresa: EmpresaPapel
 
   emitidoPor: string
+
+  /*
+    PROVIDENCIA SNAT/2026/00093 (23/11/2026). Todo opcional: un papel que no lo
+    pase sale exactamente igual que antes.
+  */
+  /** Momento real de emisión (ISO). Imprime la hora `HH.MM.SS a.m./p.m.` (Art. 8.5). */
+  emitidoEn?: string | null
+  /** Número y control que asignó el Portal SENIAT (o el talonario de contingencia). */
+  seniat?: {
+    numero: string
+    control: string
+    emitidaEn?: string | null
+    medio?: 'PORTAL_SENIAT' | 'CONTINGENCIA'
+  } | null
+  /** Rótulo «PRE-FACTURA»: el documento válido es el que emite el SENIAT. */
+  prefactura?: boolean
+  /** Documentos de referencia: notas de despacho que ampara, factura que ajusta… */
+  referencias?: { rotulo: string; valor: string }[]
+  /** Leyenda fiscal al pie (Art. 19). */
+  leyendaFiscal?: string | null
 }
 
 /**
@@ -242,11 +263,11 @@ const ROTULOS: Record<
     numero: 'N° COTIZACIÓN',
   },
   NOTA: {
-    titulo: 'NOTA DE ENTREGA',
+    titulo: 'NOTA DE DESPACHO',
     color: NARANJA,
     acento: NARANJA,
     divisorCabecera: '#d97736',
-    archivo: 'nota-entrega',
+    archivo: 'nota-despacho',
     numero: 'N° NOTA',
   },
   FACTURA: {
@@ -257,6 +278,14 @@ const ROTULOS: Record<
     archivo: 'factura',
     numero: 'N° FACTURA',
   },
+  NOTA_DEBITO: {
+    titulo: 'NOTA DE DÉBITO',
+    color: MARCA,
+    acento: ROTULO,
+    divisorCabecera: '#b05646',
+    archivo: 'nota-debito',
+    numero: 'N° NOTA DÉBITO',
+  },
 }
 
 const PIES: Record<TipoDocumento, string> = {
@@ -265,6 +294,8 @@ const PIES: Record<TipoDocumento, string> = {
   NOTA: '',
   FACTURA:
     'La retención del IVA, cuando aplica, la declara y entera el comprador. Original: cliente. Copia: archivo.',
+  NOTA_DEBITO:
+    'Ajuste en más sobre la factura indicada en las referencias. Original: cliente. Copia: archivo.',
 }
 
 const decimal2 = new Intl.NumberFormat('es-VE', {
@@ -336,6 +367,10 @@ function lineasDeDescripcion(doc: Doc, texto: string, ancho: number, talla: numb
   if (partes.length <= 2) return partes
   return [partes[0], ajustar(doc, partes.slice(1).join(' '), ancho)]
 }
+
+/** El título del documento; la factura sin emitir en el SENIAT es pre-factura. */
+const tituloDe = (d: DatosDocumento) =>
+  d.prefactura && d.tipo === 'FACTURA' ? 'PRE-FACTURA' : ROTULOS[d.tipo].titulo
 
 /**
  * Membrete izquierdo con logo prominente + Tarjeta Fiscal derecha del Modelo Ejecutivo.
@@ -424,6 +459,22 @@ function cabeceraEjecutiva(
     separador: 'solid',
   })
 
+  // Art. 8.5: la hora de emisión, HH.MM.SS a.m./p.m.
+  if (d.emitidoEn) {
+    filasCaja.push({ etiqueta: 'HORA', valor: horaFiscal(d.emitidoEn) })
+  }
+
+  // La emisión en el Portal SENIAT: es el número que vale ante el fisco.
+  if (d.seniat) {
+    const contingencia = d.seniat.medio === 'CONTINGENCIA'
+    filasCaja.push({
+      etiqueta: contingencia ? 'N° TALONARIO' : 'N° SENIAT',
+      valor: d.seniat.numero,
+      separador: 'dashed',
+    })
+    filasCaja.push({ etiqueta: contingencia ? 'CONTROL PREIMP.' : 'CONTROL SENIAT', valor: d.seniat.control })
+  }
+
   if (d.vigencia) {
     filasCaja.push({
       etiqueta: d.vigencia.rotulo.toUpperCase(),
@@ -446,7 +497,7 @@ function cabeceraEjecutiva(
   doc.setFillColor(rotulo.color)
   doc.rect(xCaja, yCaja, ANCHO_CAJA, ALTO_CABECERA_CAJA, 'F')
   doc.setFont('helvetica', 'bold').setFontSize(9).setTextColor('#FFFFFF')
-  doc.text(rotulo.titulo, xCaja + ANCHO_CAJA / 2, yCaja + 4.9, { align: 'center' })
+  doc.text(tituloDe(d), xCaja + ANCHO_CAJA / 2, yCaja + 4.9, { align: 'center' })
 
   let yFila = yCaja + ALTO_CABECERA_CAJA + 4.6
   filasCaja.forEach((f) => {
@@ -579,7 +630,7 @@ function encabezadoCliente(
     doc.text(ajustar(doc, valorCondicion, ANCHO_2), x2, yDir + 9.6)
   }
 
-  // Fila 3 (solo Nota de Entrega): Vehículo, Chofer, Cédula, Ticket/Peso
+  // Fila 3 (solo Nota de Despacho): Vehículo, Chofer, Cédula, Ticket/Peso
   if (d.despacho) {
     const yDesp = y + m.altoDatos
     doc.setDrawColor('#d6d3d1').setLineWidth(0.35)
@@ -657,7 +708,7 @@ function pie(doc: Doc, d: DatosDocumento, pagina: number, de: number) {
   doc.line(IZQ, PIE - 9, DER, PIE - 9)
 
   const legal =
-    d.tipo === 'FACTURA' && d.empresa.imprenta
+    (d.tipo === 'FACTURA' || d.tipo === 'NOTA_DEBITO') && d.empresa.imprenta
       ? `${PIES[d.tipo]} Imprenta: ${d.empresa.imprenta}.`
       : PIES[d.tipo]
 
@@ -675,6 +726,12 @@ function pie(doc: Doc, d: DatosDocumento, pagina: number, de: number) {
     doc.setTextColor(GRIS_SUAVE)
     doc.text(`Tasa del día: ${numero(d.tasaUsd || d.tasa)} Bs/$`, DER, PIE, { align: 'right' })
   }
+
+  // Art. 19: la leyenda de la Providencia, centrada bajo el pie.
+  if (d.leyendaFiscal) {
+    doc.setFont('helvetica', 'italic').setFontSize(6.6).setTextColor(GRIS)
+    doc.text(ajustar(doc, d.leyendaFiscal, ANCHO_UTIL), CENTRO, PIE + 4.6, { align: 'center' })
+  }
 }
 
 function sello(doc: Doc, texto: string) {
@@ -689,9 +746,30 @@ function sello(doc: Doc, texto: string) {
 const mencionaImpuestos = (d: DatosDocumento) => d.tipo !== 'NOTA'
 
 const lineaDeIva = (d: DatosDocumento) =>
-  d.tipo === 'FACTURA' || (d.tipo === 'COTIZACION' && Number(d.alicuotaIva) > 0)
+  d.tipo === 'FACTURA' ||
+  d.tipo === 'NOTA_DEBITO' ||
+  (d.tipo === 'COTIZACION' && Number(d.alicuotaIva) > 0)
 
 const lineaDeIgtf = (d: DatosDocumento) => mencionaImpuestos(d) && Number(d.igtf ?? 0) > 0
+
+/**
+ * Art. 8.9 de la Providencia SNAT/2026/00093: la base imponible discriminada
+ * por alícuota y el total exento. Solo cuando hay renglones exentos en un
+ * documento fiscal; si todo es gravado, el subtotal ya es la base.
+ */
+function desgloseFiscal(d: DatosDocumento): Array<[string, string]> {
+  if (d.tipo !== 'FACTURA' && d.tipo !== 'NOTA_DEBITO') return []
+  const exento = d.renglones
+    .filter((r) => r.exento_iva)
+    .reduce((s, r) => s + Number(r.subtotal || 0), 0)
+  if (exento <= 0) return []
+  const alicuota = Number(d.alicuotaIva)
+  const base = Number(d.baseImponible ?? Number(d.subtotal) - exento)
+  return [
+    [`Base imponible (${Number.isInteger(alicuota) ? alicuota : numero(alicuota)}%)`, conSimbolo(d.moneda, base)],
+    ['Exento (E)', conSimbolo(d.moneda, exento)],
+  ]
+}
 
 function altoTotales(d: DatosDocumento): number {
   if (!mencionaImpuestos(d)) {
@@ -699,7 +777,7 @@ function altoTotales(d: DatosDocumento): number {
   }
   const filas =
     1 + // subtotal
-    (lineaDeIva(d) ? 1 : 0) +
+    desgloseFiscal(d).length +    (lineaDeIva(d) ? 1 : 0) +
     (lineaDeIgtf(d) ? 1 : 0) +
     (Number(d.descuento) > 0 ? 1 : 0) +
     (Number(d.flete) > 0 ? 1 : 0) +
@@ -784,6 +862,7 @@ function totales(doc: Doc, d: DatosDocumento, y: number): number {
   if (Number(d.flete) > 0) {
     filasSuperiores.push(['Flete', conSimbolo(d.moneda, d.flete)])
   }
+  filasSuperiores.push(...desgloseFiscal(d))
   if (lineaDeIva(d)) {
     const alicuota = Number(d.alicuotaIva)
     const etqIva = `IVA (${Number.isInteger(alicuota) ? alicuota : numero(alicuota)}%)`
@@ -974,11 +1053,17 @@ function dibujarDocumento(doc: Doc, logo: string, d: DatosDocumento): void {
 
   doc.setFont('helvetica', 'normal').setFontSize(7.6)
   let lineasObservacion: string[] = []
-  if (d.observacion) {
-    lineasObservacion = doc.splitTextToSize(
-      `Observación: ${d.observacion}`,
-      ANCHO_NOTAS - 7,
-    ) as string[]
+  const textoReferencias = (d.referencias ?? [])
+    .filter((r) => r.valor)
+    .map((r) => `${r.rotulo}: ${r.valor}`)
+    .join(' · ')
+  const observacion = [textoReferencias, d.observacion ? `Observación: ${d.observacion}` : '']
+    .filter(Boolean)
+    .join('\n')
+  if (observacion) {
+    lineasObservacion = observacion
+      .split('\n')
+      .flatMap((p) => doc.splitTextToSize(p, ANCHO_NOTAS - 7) as string[])
     if (lineasObservacion.length > 5) {
       lineasObservacion = [
         ...lineasObservacion.slice(0, 4),
@@ -995,8 +1080,14 @@ function dibujarDocumento(doc: Doc, logo: string, d: DatosDocumento): void {
   const cierre = altoBloqueInferior + esc.altoCajaFirmas + 14
   const topeTabla = ABAJO - 14
 
+  // Art. 8.7: lo exento lleva « (E)» junto a la descripción, en los papeles con impuestos.
   const lineas = d.renglones.map((r) =>
-    lineasDeDescripcion(doc, r.descripcion, col.descripcion, esc.tallaFila),
+    lineasDeDescripcion(
+      doc,
+      mencionaImpuestos(d) ? conMarcaExento(r.descripcion, r.exento_iva) : r.descripcion,
+      col.descripcion,
+      esc.tallaFila,
+    ),
   )
   const altoDe = (i: number) => altoRenglon(lineas[i].length, d.renglones[i], esc)
   const sumaRenglones = d.renglones.reduce((acc, _, i) => acc + altoDe(i), 0)
@@ -1073,7 +1164,7 @@ function dibujarDocumento(doc: Doc, logo: string, d: DatosDocumento): void {
       doc.rect(IZQ, ARRIBA, ANCHO_UTIL, 10.5, 'F')
       if (logo) doc.addImage(logo, 'PNG', IZQ + 3, ARRIBA + 1.2, 8, 8)
       doc.setTextColor('#FFFFFF').setFont('helvetica', 'bold').setFontSize(9)
-      doc.text(`${rotulo.titulo} ${d.numero}`, IZQ + 14, ARRIBA + 6.8)
+      doc.text(`${tituloDe(d)} ${d.numero}`, IZQ + 14, ARRIBA + 6.8)
       doc.setFont('helvetica', 'normal').setFontSize(8)
       doc.text(ajustar(doc, d.contraparte.nombre, 75), DER - 3.5, ARRIBA + 6.8, { align: 'right' })
       y = ARRIBA + 14
@@ -1207,6 +1298,7 @@ function dibujarDocumento(doc: Doc, logo: string, d: DatosDocumento): void {
     }
 
     if (d.sello) sello(doc, d.sello)
+    else if (d.prefactura && d.tipo === 'FACTURA') sello(doc, 'PRE-FACTURA')
 
     pie(doc, d, indice + 1, hojas.length)
   }

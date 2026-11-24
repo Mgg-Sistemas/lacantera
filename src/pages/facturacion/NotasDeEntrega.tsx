@@ -15,6 +15,7 @@ import {
   useVehiculosDeDespacho,
 } from '@/lib/api/transporte'
 import { PageHeader } from '@/components/PageHeader'
+import { AvisoPeriodoNotas } from './AvisoPeriodoNotas'
 import { RangoDeFechas } from '@/components/RangoDeFechas'
 import { SIN_RANGO } from '@/components/rango'
 import type { Rango } from '@/components/rango'
@@ -81,7 +82,7 @@ import { textoDelReporteVentasWhatsapp } from '@/lib/ficha/reporteVentasWhatsapp
 /*
   Los renglones, el IVA y sus totales se quedaron en Ventas: son los mismos que
   arma una cotización, y partirlos en dos copias sería tener dos formas de sumar
-  la misma factura. La nota de entrega se mudó a Facturación —«la nota de
+  la misma factura. La nota de despacho se mudó a Facturación —«la nota de
   entrega debe moverse a Facturación», Christopher, 16/09/2026— porque gasta
   numeración y deja a alguien debiendo, no porque su formulario sea otro.
 */
@@ -131,7 +132,7 @@ const ETIQUETA: Record<string, string> = {
   La tarjeta de aprobación enseñaba cantidades y descripciones, y ni un monto.
   Los responsables lo dijeron con sus palabras: «estamos aprobando casi a
   ciegas». Y es literal — aprobar un despacho saca material del patio y crea una
-  nota de entrega al cliente, así que es la última puerta antes de que la
+  nota de despacho al cliente, así que es la última puerta antes de que la
   mercancía se vaya y haya que cobrarla.
 
   El precio unitario solo llega a quien tiene permiso de ver montos: la vista lo
@@ -210,7 +211,7 @@ export function NotasDeEntrega() {
     EL AVISO DE QUE EL REPORTE YA ESTÁ LISTO.
 
     Christopher, 16/10/2026: «me están pidiendo un reporte individual de cada
-    salida y nota de entrega», generado justo al aprobar. No se abre solo
+    salida y nota de despacho», generado justo al aprobar. No se abre solo
     —interrumpiría a quien aprueba varios despachos seguidos—: sale un aviso
     chico con un botón, y se queda ahí hasta que se cierra o se pide otro.
   */
@@ -521,9 +522,9 @@ export function NotasDeEntrega() {
     id ? ((almacenes ?? []).find((a) => a.id === id)?.nombre ?? null) : null
 
   /*
-    LA NOTA DE ENTREGA NO LLEVA IVA. Christopher, 17/09/2026: «solo la factura
-    tendrá mención de IVA o IGTF; las notas de entrega deben decir NOTA DE
-    ENTREGA», y «nota de entrega es una cosa y factura otra posterior». La
+    LA NOTA DE DESPACHO NO LLEVA IVA. Christopher, 17/09/2026: «solo la factura
+    tendrá mención de IVA o IGTF; las notas de despacho deben decir NOTA DE
+    ENTREGA», y «nota de despacho es una cosa y factura otra posterior». La
     casilla del IVA que había aquí pasó a «Emitir factura», y la base guarda la
     nota al 0 % aunque le llegue otra cosa.
   */
@@ -589,7 +590,7 @@ export function NotasDeEntrega() {
   }
 
   // El papel se arma en un solo sitio: también lo imprime Salidas, cuando una
-  // nota de salida dejó su nota de entrega de respaldo.
+  // nota de salida dejó su nota de despacho de respaldo.
   const imprimir = async (n: NotaEntrega) => {
     setPdf(
       await armarNotaDeEntrega({
@@ -762,8 +763,8 @@ export function NotasDeEntrega() {
   return (
     <>
       <PageHeader
-        title="Notas de entrega"
-        description="Notas de entrega: el documento con el que sale el camión. El despacho se solicita con chofer, cédula y placa; al aprobarse se emite la nota y el material se descuenta del patio."
+        title="Notas de despacho"
+        description="Notas de despacho (orden de entrega / guía de despacho): el documento con el que sale el camión. El despacho se solicita con chofer, cédula y placa; al aprobarse se emite la nota y el material se descuenta del patio."
         actions={
           <>
             <Button variant="outline" icon={<Truck />} onClick={() => setCatalogo(true)}>
@@ -811,6 +812,8 @@ export function NotasDeEntrega() {
           </>
         }
       />
+
+      <AvisoPeriodoNotas />
 
       {avisoDespacho ? (
         <div className="border-success/30 bg-success-soft mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[6px] border p-3.5">
@@ -1182,7 +1185,7 @@ export function NotasDeEntrega() {
         )
       })()}
 
-      <h2 className="text-ink/85 font-titular mb-2 text-lg">Notas de entrega</h2>
+      <h2 className="text-ink/85 font-titular mb-2 text-lg">Notas de despacho</h2>
 
       {/*
         BUSCAR UNA NOTA, Y NO SÓLO RECORRER LA LISTA.
@@ -1229,7 +1232,7 @@ export function NotasDeEntrega() {
           />
           {/*
             PENDIENTE POR COBRAR, LA CATEGORÍA APARTE DE FACTURACIÓN.
-            Christopher, 12/10/2026: buscar por esto en Notas de entrega.
+            Christopher, 12/10/2026: buscar por esto en Notas de despacho.
           */}
           <Select
             label="Cobro"
@@ -1275,7 +1278,7 @@ export function NotasDeEntrega() {
         <Card>
           <Vacio
             icono={<Truck />}
-            titulo={hayFiltros ? 'Sin resultados' : 'Sin notas de entrega'}
+            titulo={hayFiltros ? 'Sin resultados' : 'Sin notas de despacho'}
             descripcion={
               hayFiltros
                 ? 'La búsqueda abarca todas las notas. Verifique el número completo —formato NE-2026-0042, con año y cuatro dígitos— o quite el estado y las fechas.'
@@ -1388,8 +1391,8 @@ export function NotasDeEntrega() {
             desdeCotizacion
               ? `Ya trae el cliente, los renglones y los precios de la cotización. Ponga el patio, el vehículo y el chofer.${
                   desdeCotizacion.vencida ? ' OJO: la cotización ya venció; revise que los precios sigan vigentes.' : ''
-                } Al aprobarlo nace la nota de entrega.`
-              : 'No rebaja nada todavía. Al aprobarlo quien tiene el permiso, nace la nota de entrega y el material sale del patio.'
+                } Al aprobarlo nace la nota de despacho.`
+              : 'No rebaja nada todavía. Al aprobarlo quien tiene el permiso, nace la nota de despacho y el material sale del patio.'
           }
           acciones={
             <>
@@ -2424,7 +2427,7 @@ export function NotasDeEntrega() {
         onCerrar={() => setPdf(null)}
         blob={pdf?.blob ?? null}
         nombreArchivo={pdf?.nombre ?? ""}
-        titulo="Nota de entrega"
+        titulo="Nota de despacho"
       />
 
       {pidiendoReporte ? (
@@ -2480,7 +2483,7 @@ export function NotasDeEntrega() {
         onCerrar={() => setReporte(null)}
         blob={reporte?.blob ?? null}
         nombreArchivo={reporte?.nombre ?? ""}
-        titulo="Reporte de notas de entrega"
+        titulo="Reporte de notas de despacho"
       />
 
       {pidiendoCuentasPagadas ? (
@@ -2618,7 +2621,7 @@ function ModalReporteCuentasPagadas({
       abierto
       onCerrar={onCerrar}
       titulo="Reporte de cuentas por cobrar pagadas"
-      descripcion="Relación administrativa de notas de entrega registradas con condición de cobro pendiente cuya cancelación ya fue confirmada."
+      descripcion="Relación administrativa de notas de despacho registradas con condición de cobro pendiente cuya cancelación ya fue confirmada."
       acciones={
         <>
           <Button variant="ghost" onClick={onCerrar}>
@@ -2642,7 +2645,7 @@ function ModalReporteCuentasPagadas({
           <p className={`text-sm ${notasElegidas.length === 0 ? 'text-warning font-medium' : 'text-ink/65'}`}>
             {notasElegidas.length === 0
               ? (cobradas?.length ?? 0) === 0
-                ? 'No existen notas de entrega con cuenta por cobrar pagada registradas en el sistema.'
+                ? 'No existen notas de despacho con cuenta por cobrar pagada registradas en el sistema.'
                 : 'No existen notas pagadas que coincidan con el período o cliente seleccionado.'
               : `Se incluirán ${gruposElegidos.length} cliente${gruposElegidos.length === 1 ? '' : 's'} con ${notasElegidas.length} nota${notasElegidas.length === 1 ? '' : 's'} pagada${notasElegidas.length === 1 ? '' : 's'}.`}
           </p>

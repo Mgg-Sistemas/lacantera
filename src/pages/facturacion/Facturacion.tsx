@@ -48,6 +48,10 @@ import { useMetodosPago, nombreDe } from '@/lib/api/metodosPago'
 import type { TarjetaVenta } from '@/lib/api/ventasTablero'
 import { textoCobro, textoFacturada } from '@/lib/ficha/ventasWhatsapp'
 import { ModalWhatsappCompra } from '@/pages/compras/ModalWhatsappCompra'
+import { supabase } from '@/lib/supabase'
+import { useConfigFiscal, useEmisionesPorDocumento } from '@/lib/api/seniat'
+import { LEYENDA_PROVIDENCIA, notasPorFacturarEnPeriodo } from '@/lib/fiscal/providencia'
+import { BloqueEmisionSeniat, ModalEmisionSeniat } from './EmisionSeniat'
 
 const TONO: Record<string, 'royal' | 'success' | 'neutral'> = {
   EMITIDA: 'royal',
@@ -96,7 +100,7 @@ export function Facturacion() {
   const { resuelto: accionesListas } = useMisAcciones()
   /*
     TODA FACTURA SE AUTORIZA. Angélica, 18/09/2026: «las ventas, las facturas,
-    las notas de entrega y las notas de salida llevan autorización: los usuarios
+    las notas de despacho y las notas de salida llevan autorización: los usuarios
     hacen su solicitud y luego otro usuario con permisos aprueba». Ya no hay
     emisión directa, tampoco para quien tiene la casilla: la emite otro.
   */
@@ -126,6 +130,9 @@ export function Facturacion() {
   const [ws, setWs] = useState<{ titulo: string; texto: string } | null>(null)
   const [avisarCobro, setAvisarCobro] = useState(false)
   const [avisarFactura, setAvisarFactura] = useState<number | null>(null)
+  const [registrandoSeniat, setRegistrandoSeniat] = useState<FacturaVenta | null>(null)
+  const fiscal = useConfigFiscal()
+  const emisiones = useEmisionesPorDocumento('FACTURA')
 
   const [elegidas, setElegidas] = useState<number[]>([])
   const [condicion, setCondicion] = useState('')
@@ -233,6 +240,7 @@ export function Facturacion() {
 
   // La que se dejó como solo respaldo de una nota de salida no se cobra: no se ofrece.
   const notas = (porFacturar.data ?? []).filter((n) => n.facturable !== false)
+  const periodo = notasPorFacturarEnPeriodo(notas)
 
   // Cerrar el checklist lo deja vacío, sin importar por cuál de los dos botones
   // se abrió. Limpiar solo en el que abre deja la selección puesta cuando se
@@ -259,7 +267,7 @@ export function Facturacion() {
 
   /*
     EL IVA LO DECIDE LA FACTURA. Christopher, 17/09/2026: «solo la factura
-    tendrá mención de IVA o IGTF». Las notas de entrega ya no lo llevan, así que
+    tendrá mención de IVA o IGTF». Las notas de despacho ya no lo llevan, así que
     se elige aquí, con la alícuota de la empresa por delante y editable. La
     cifra exacta la calcula la base al emitir; esto es para ver antes cuánto va.
   */
@@ -288,12 +296,37 @@ export function Facturacion() {
     const densidades = await densidadesDeArticulos({ ids: renglones.map((r) => r.articulo_id) })
     const densidadDe = (r: RenglonGuardado) =>
       densidades.find((a) => a.id === r.articulo_id)?.densidad_ton_m3
+    // Art. 14: la factura hace referencia a las notas de despacho que ampara.
+    const { data: notasDeLaFactura } = await supabase
+      .from('v_notas_entrega')
+      .select('numero')
+      .eq('factura_id', f.id)
+    const emision = emisiones.mapa.get(f.id) ?? null
     setPdf(
       await armarDocumento({
         tipo: 'FACTURA',
         numero: f.numero,
         fecha: f.fecha,
         numeroControl: f.numero_control,
+        emitidoEn: emision?.emitida_en ?? f.emitida_en,
+        seniat: emision
+          ? {
+              numero: emision.numero,
+              control: emision.numero_control,
+              emitidaEn: emision.emitida_en,
+              medio: emision.medio,
+            }
+          : null,
+        prefactura: fiscal.vigente && !emision,
+        referencias: (notasDeLaFactura ?? []).length
+          ? [
+              {
+                rotulo: 'Notas de despacho',
+                valor: (notasDeLaFactura ?? []).map((n: { numero: string }) => n.numero).join(', '),
+              },
+            ]
+          : [],
+        leyendaFiscal: LEYENDA_PROVIDENCIA,
         // Sin «Vence el» desde el 11/11/2026: la condición (p. ej. crédito a 15 días) sí sale.
         vigencia: null,
         condicionPago: CONDICIONES_PAGO.find((c) => c.valor === f.condicion_pago)?.etiqueta ?? null,
@@ -342,7 +375,7 @@ export function Facturacion() {
     <>
       <PageHeader
         title="Facturación"
-        description="Facturas contra notas de entrega —una, o todas las de la semana de un cliente— o sin nota, con renglones propios."
+        description="Facturas contra notas de despacho —una, o todas las de la semana de un cliente— o sin nota, con renglones propios."
         actions={
           <>
             <Button variant="outline" icon={<Receipt />} onClick={() => setDirecta(true)}>
@@ -359,6 +392,23 @@ export function Facturacion() {
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}
 
+      {periodo.vencidas.length > 0 || (periodo.cierreCerca && periodo.delMes.length > 0) ? (
+        <div className="border-warning/40 bg-warning/8 rounded-card mb-4 border px-4 py-3 text-sm">
+          <p className="text-warning font-medium">
+            Notas de despacho por facturar en el período (Art. 14, Providencia SNAT/2026/00093)
+          </p>
+          <p className="text-ink/70 mt-0.5 text-xs leading-relaxed">
+            {periodo.vencidas.length > 0
+              ? `${periodo.vencidas.length} nota(s) de meses anteriores siguen sin factura. `
+              : ''}
+            {periodo.cierreCerca && periodo.delMes.length > 0
+              ? `${periodo.delMes.length} nota(s) de este mes deben facturarse antes del cierre (quedan ${periodo.diasParaCierre} día(s)).`
+              : ''}{' '}
+            La venta amparada por una nota de despacho se factura dentro del mismo período de imposición.
+          </p>
+        </div>
+      ) : null}
+
       {data && data.length === 0 ? (
         <Card>
           <Vacio
@@ -366,8 +416,8 @@ export function Facturacion() {
             titulo="Sin facturas emitidas"
             descripcion={
               notas.length > 0
-                ? `Hay ${notas.length} nota(s) de entrega esperando factura.`
-                : 'Se factura a partir de notas de entrega, o sin nota con sus propios renglones.'
+                ? `Hay ${notas.length} nota(s) de despacho esperando factura.`
+                : 'Se factura a partir de notas de despacho, o sin nota con sus propios renglones.'
             }
             accion={
               notas.length > 0 ? (
@@ -408,6 +458,13 @@ export function Facturacion() {
                     <td className="tabular px-5 py-3">
                       <span className="text-ink/85 font-medium">{f.numero}</span>
                       <span className="text-ink/45 block text-xs">{f.numero_control}</span>
+                      {emisiones.mapa.get(f.id) ? (
+                        <span className="text-success block text-xs">
+                          SENIAT {emisiones.mapa.get(f.id)!.numero}
+                        </span>
+                      ) : fiscal.vigente ? (
+                        <span className="text-warning block text-xs">Pre-factura · falta SENIAT</span>
+                      ) : null}
                     </td>
                     <td className="text-ink/70 px-3 py-3">{f.cliente}</td>
                     <td className="text-ink/60 px-3 py-3 text-xs">
@@ -441,7 +498,7 @@ export function Facturacion() {
           ancho="lg"
           onCerrar={cerrarEmision}
           titulo={emite ? 'Emitir factura' : 'Preparar factura'}
-          descripcion="Marque las notas de entrega que van en esta factura. Tienen que ser del mismo cliente y la misma moneda."
+          descripcion="Marque las notas de despacho que van en esta factura. Tienen que ser del mismo cliente y la misma moneda."
           acciones={
             <>
               <Button variant="ghost" onClick={cerrarEmision}>
@@ -715,6 +772,15 @@ export function Facturacion() {
             <p className="text-danger mt-3 text-sm">Anulada: {detalle.motivo_anulacion}</p>
           ) : null}
 
+          {detalle.estado !== 'ANULADA' || emisiones.mapa.get(detalle.id) ? (
+            <BloqueEmisionSeniat
+              emision={emisiones.mapa.get(detalle.id)}
+              vigente={fiscal.vigente}
+              migracionPendiente={emisiones.migracionPendiente}
+              onRegistrar={() => setRegistrandoSeniat(detalle)}
+            />
+          ) : null}
+
           <TablaRenglones
             moneda={detalle.moneda}
             renglones={renglonesDetalle.data ?? []}
@@ -822,7 +888,7 @@ export function Facturacion() {
           abierto
           onCerrar={() => setAnulando(null)}
           titulo={`Anular la factura ${anulando.numero}`}
-          descripcion="La factura no se borra: se queda con su número, marcada como anulada. Sus notas de entrega vuelven a quedar despachadas, sin factura."
+          descripcion="La factura no se borra: se queda con su número, marcada como anulada. Sus notas de despacho vuelven a quedar despachadas, sin factura."
           acciones={
             <>
               <Button variant="ghost" onClick={() => setAnulando(null)}>
@@ -866,6 +932,15 @@ export function Facturacion() {
         titulo="Factura"
       />
       {ws ? <ModalWhatsappCompra titulo={ws.titulo} texto={ws.texto} onCerrar={() => setWs(null)} /> : null}
+      {registrandoSeniat ? (
+        <ModalEmisionSeniat
+          documento="FACTURA"
+          documentoId={registrandoSeniat.id}
+          numeroSistema={registrandoSeniat.numero}
+          existente={emisiones.mapa.get(registrandoSeniat.id)}
+          onCerrar={() => setRegistrandoSeniat(null)}
+        />
+      ) : null}
     </>
   )
 }

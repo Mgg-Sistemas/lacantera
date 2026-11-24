@@ -79,7 +79,7 @@ export function Cotizaciones() {
   const navegar = useNavigate()
   /*
     «DESPACHAR» YA NO PIDE PLACA NI CHOFER (12/11/2026). Deja el despacho
-    pedido al instante y Facturación lo completa (Notas de entrega › Por
+    pedido al instante y Facturación lo completa (Notas de despacho › Por
     completar). Lo toca quien puede pedir despachos: Facturación en escritura,
     lo mismo que exige la base.
   */
@@ -584,7 +584,7 @@ export function Cotizaciones() {
             <p className="text-ink/60 mt-2 text-sm">
               Pidió el despacho {detalle.despacho_pedido_por_nombre ?? '—'}
               {detalle.despacho_pedido_en ? ` el ${fecha(detalle.despacho_pedido_en)}` : ''}. Falta que Facturación
-              ponga patio, vehículo y chofer en Notas de entrega › Por completar.
+              ponga patio, vehículo y chofer en Notas de despacho › Por completar.
             </p>
           ) : null}
           {detalle.estado === 'ENVIADA' && detalle.vencida && !detalle.despacho_por_completar ? (
@@ -661,7 +661,7 @@ export function Totales({
   iva: number
   total: number
   retencion?: number
-  /** Una nota de entrega: no menciona el IVA, que es cosa de la factura. */
+  /** Una nota de despacho: no menciona el IVA, que es cosa de la factura. */
   sinIva?: boolean
   /** El IGTF, si lo lleva. Sin él no hay línea. */
   alicuotaIgtf?: number
@@ -710,9 +710,9 @@ export function TablaRenglones({
   moneda: string
   renglones: RenglonGuardado[]
   cargando: boolean
-  /** Una nota de entrega: sin marcas de exento, que son cosa de la factura. */
+  /** Una nota de despacho: sin marcas de exento, que son cosa de la factura. */
   sinIva?: boolean
-  /** En una nota de entrega: el patio del renglón, si no salió del de la nota. */
+  /** En una nota de despacho: el patio del renglón, si no salió del de la nota. */
   patioDe?: (r: RenglonGuardado) => string | null
 }) {
   if (cargando) return <Cargando texto="Trayendo los renglones…" />

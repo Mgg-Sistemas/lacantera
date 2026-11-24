@@ -298,7 +298,7 @@ export function ControlDespacho() {
       ) : planilla.error ? (
         <ErrorDeCarga error={planilla.error} />
       ) : filas.length === 0 ? (
-        <Vacio titulo="Sin resultados en el período" descripcion="No hay notas de entrega ni de salida con esas fechas y esos filtros." />
+        <Vacio titulo="Sin resultados en el período" descripcion="No hay notas de despacho ni de salida con esas fechas y esos filtros." />
       ) : (
         <>
           <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
@@ -410,7 +410,7 @@ export function ControlDespacho() {
                             <Link
                               to={ruta}
                               onClick={(e) => e.stopPropagation()}
-                              title={f.origen === 'NOTA_ENTREGA' ? 'Ir a la nota de entrega' : 'Ir a la nota de salida'}
+                              title={f.origen === 'NOTA_ENTREGA' ? 'Ir a la nota de despacho' : 'Ir a la nota de salida'}
                               className="text-royal-700 underline decoration-dotted underline-offset-2 hover:decoration-solid"
                             >
                               {f.documento}
@@ -604,7 +604,7 @@ function EditarFila({
             error={precioMalo ? 'No es un precio válido.' : undefined}
             hint={
               fila.precio_de_la_nota
-                ? 'Viene de la nota de entrega. Escriba aquí solo para cambiarlo.'
+                ? 'Viene de la nota de despacho. Escriba aquí solo para cambiarlo.'
                 : fila.moneda_doc && fila.moneda_doc !== 'USD'
                   ? `La nota está en ${fila.moneda_doc}: su precio no se trae a una columna en dólares.`
                   : undefined

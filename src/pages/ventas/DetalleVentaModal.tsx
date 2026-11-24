@@ -23,7 +23,7 @@ import { COLUMNAS, TIPO_DOC, chipsDe, condicionTxt, rutaDe, textoNoDespacho } fr
 /*
   EL DETALLE DE UNA VENTA EN EL TABLERO.
 
-  Arriba, sus papeles encadenados (cotización → despacho → nota de entrega →
+  Arriba, sus papeles encadenados (cotización → despacho → nota de despacho →
   factura), con el de la etapa resaltado. Debajo, lo que hay que saber para
   decidir y, al pie, los botones de SU etapa. Lo que ya tiene su pantalla
   (camiones, anular, reportes, cobros) se abre ahí mismo con el documento puesto.
@@ -140,7 +140,7 @@ export function DetalleVentaModal({
     { tipo: 'Cotización', numero: t.cadena.cot },
     { tipo: 'Despacho', numero: t.cadena.sd },
     ...(t.cadena.ns ? [{ tipo: 'Nota de salida', numero: t.cadena.ns }] : []),
-    { tipo: 'Nota de entrega', numero: t.cadena.ne },
+    { tipo: 'Nota de despacho', numero: t.cadena.ne },
     { tipo: 'Factura', numero: t.cadena.fac },
   ]
 
@@ -208,7 +208,7 @@ export function DetalleVentaModal({
         {t.etapa === 'anulada' && t.motivo ? <Aviso tono="danger" titulo="Motivo">{t.motivo}</Aviso> : null}
         {pedido ? (
           <Aviso tono="warning" titulo="Despacho pedido">
-            Facturación lo completa con el patio, el vehículo y el chofer, en Notas de entrega › Por completar. Después
+            Facturación lo completa con el patio, el vehículo y el chofer, en Notas de despacho › Por completar. Después
             pasa a aprobación.
           </Aviso>
         ) : null}
@@ -218,7 +218,7 @@ export function DetalleVentaModal({
             {[!t.cliente ? 'el cliente' : null, (t.precios_pendientes ?? 0) > 0 ? `el precio de ${t.precios_pendientes} renglón(es)` : null]
               .filter(Boolean)
               .join(' y ')}
-            . Se completa en la nota de entrega.
+            . Se completa en la nota de despacho.
           </Aviso>
         ) : null}
 

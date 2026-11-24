@@ -339,9 +339,10 @@ export const CLAVES_DE_BUSQUEDA: Record<string, string> = {
   '/app/tesoreria/libro-mayor': 'iva impuesto seniat fiscal credito libro mayor compras',
   '/app/facturacion': 'factura fac cobrar cobro emitir fiscal numero de control',
   '/app/facturacion/notas-credito': 'nota de credito ncr devolucion descuento correccion',
+  '/app/facturacion/notas-debito': 'nota de debito ndb recargo diferencia de precio cambio ajuste seniat providencia',
   '/app/facturacion/por-cobrar': 'deuda deben clientes cartera vencida saldo cobranza',
   '/app/tesoreria/libro-mayor/ventas': 'iva impuesto seniat fiscal debito libro mayor ventas',
-  '/app/facturacion/notas-entrega': 'nota de entrega ne remision despachar material',
+  '/app/facturacion/notas-entrega': 'nota de despacho guia de despacho orden de entrega nota de entrega ne remision despachar material',
   '/app/ventas/clientes': 'rif comprador',
   '/app/ventas/precios': 'tarifa lista precio',
   '/app/ventas/registros-de-pagos': 'banco deposito transferencia referencia cotejo conciliar pago caja',
@@ -721,7 +722,7 @@ export const navigation: NavSection[] = [
           { label: 'Tickets de romana', to: '/app/despachos/tickets', fueraDelMvp: true },
           // "De movilización" y no "de despacho": es el permiso del ministerio
           // para que el camión circule con el mineral, no el papel que se le
-          // entrega al cliente. Ese es la nota de entrega y vive en Ventas.
+          // entrega al cliente. Ese es la nota de despacho y vive en Ventas.
           { label: 'Guías de movilización', to: '/app/despachos/guias', fueraDelMvp: true },
           // Los vehículos vivían aquí. Desde el 16/09/2026 los camiones están
           // en Maquinaria › Equipos, con las máquinas: Christopher los lleva en
@@ -887,7 +888,7 @@ export const navigation: NavSection[] = [
         { label: 'Control de despacho', icon: ClipboardList, to: '/app/control-despacho' },
 
         CONTROL DE DESPACHO, 21/09/2026. La planilla de Excel de Christopher
-        con la mitad izquierda llenándose sola: lee las notas de entrega y las
+        con la mitad izquierda llenándose sola: lee las notas de despacho y las
         de salida, y no escribe en ningún otro módulo.
       */
       {
@@ -932,7 +933,7 @@ export const navigation: NavSection[] = [
           tiene por qué poder cotizar ni despachar, ni al revés.
 
           Ventas se queda con el camino del material: cliente, precio, cotización
-          y nota de entrega. La factura se hace aquí, sobre esas notas.
+          y nota de despacho. La factura se hace aquí, sobre esas notas.
 
           El orden es el del trabajo: se factura, se corrige lo facturado, se
           cobra lo que se debe y al cierre del mes se saca el libro.
@@ -941,13 +942,15 @@ export const navigation: NavSection[] = [
         icon: Receipt,
         children: [
           /*
-            La nota de entrega abre el ciclo que cierran las facturas: se
+            La nota de despacho abre el ciclo que cierran las facturas: se
             despacha, se factura lo despachado y se cobra. Estaba en Ventas, que
             es donde se cotiza; Christopher la mudó aquí el 16/09/2026.
           */
-          { label: 'Notas de entrega', to: '/app/facturacion/notas-entrega' },
+          { label: 'Notas de despacho', to: '/app/facturacion/notas-entrega' },
           { label: 'Facturas', to: '/app/facturacion' },
           { label: 'Notas de crédito', to: '/app/facturacion/notas-credito' },
+          // Providencia SNAT/2026/00093 (23/11/2026): ajustes en más sobre una factura.
+          { label: 'Notas de débito', to: '/app/facturacion/notas-debito' },
           { label: 'Cuentas por cobrar', to: '/app/facturacion/por-cobrar' },
         ],
       },

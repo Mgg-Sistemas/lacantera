@@ -1447,7 +1447,7 @@ export async function leerTrasladoPorId(id: number): Promise<TrasladoParaNota> {
   que se pierde se anota como consumo, la merma da cero para siempre.
 
   EL DESPACHO NO SE OFRECE, y eso no cambia. Lo escribe una venta cuando sale el
-  camión, con su nota de entrega detrás. A mano permitiría restar material «por
+  camión, con su nota de despacho detrás. A mano permitiría restar material «por
   despacho» sin documento, y al facturar la venta el patio quedaría descontado
   dos veces.
 */

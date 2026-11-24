@@ -22,9 +22,9 @@ import {
 } from '@/lib/cuentasPagadasDeNotas'
 
 /*
-  REPORTE EJECUTIVO DE CUENTAS POR COBRAR PAGADAS EN NOTAS DE ENTREGA (10/11/2026).
+  REPORTE EJECUTIVO DE CUENTAS POR COBRAR PAGADAS EN NOTAS DE DESPACHO (10/11/2026).
 
-  Relación ejecutiva de las notas de entrega que fueron emitidas con condición
+  Relación ejecutiva de las notas de despacho que fueron emitidas con condición
   de cobro pendiente y cuya cancelación ya fue confirmada (manualmente o por
   conciliación bancaria). Mantiene la identidad visual corporativa en formato
   A4 sin franja de «Alcance», y ofrece dos modalidades elegibles al generar el
@@ -289,7 +289,7 @@ export async function armarReporteCuentasPagadas(d: DatosReporteCuentasPagadas):
     doc.setDrawColor('#d6d3d1').setLineWidth(0.3).line(xSep, y + 3, xSep, y + ALTO - 3)
 
     doc.setFont('helvetica', 'bold').setFontSize(7.6).setTextColor(ROTULO)
-    doc.text('TOTAL RECAUDADO EN NOTAS DE ENTREGA', IZQ + 4, y + 5.5)
+    doc.text('TOTAL RECAUDADO EN NOTAS DE DESPACHO', IZQ + 4, y + 5.5)
     doc.setTextColor('#111111')
     enUnaLinea(doc, dinero('USD', r.usd), IZQ + 4, y + 13.5, xSep - IZQ - 8, 18, 'bold')
     doc.setFont('helvetica', 'normal').setFontSize(7.6).setTextColor(GRIS)
@@ -326,7 +326,7 @@ export async function armarReporteCuentasPagadas(d: DatosReporteCuentasPagadas):
     doc.setTextColor('#1c1917')
     enUnaLinea(doc, plural(grupos.length, 'cliente', 'clientes'), x, y + 11.5, w - 7, 11, 'bold', 'left', 8)
     doc.setFont('helvetica', 'bold').setFontSize(6.9).setTextColor(TINTA)
-    doc.text(ajustar(doc, plural(d.notas.length, 'nota de entrega pagada', 'notas de entrega pagadas'), w - 7), x, y + 16.5)
+    doc.text(ajustar(doc, plural(d.notas.length, 'nota de despacho pagada', 'notas de despacho pagadas'), w - 7), x, y + 16.5)
     if (mayor) {
       doc.setFont('helvetica', 'normal').setFontSize(6.6).setTextColor(GRIS)
       doc.text(
@@ -445,7 +445,7 @@ export async function armarReporteCuentasPagadas(d: DatosReporteCuentasPagadas):
 
     doc.setFont('helvetica', 'italic').setFontSize(6.8).setTextColor(GRIS)
     const notaPie = doc.splitTextToSize(
-      'Montos en Bs y $ calculados con la tasa BCV vigente a la fecha de emisión de cada nota. Incluye las notas de entrega registradas con condición de cobro pendiente cuya cancelación fue confirmada.',
+      'Montos en Bs y $ calculados con la tasa BCV vigente a la fecha de emisión de cada nota. Incluye las notas de despacho registradas con condición de cobro pendiente cuya cancelación fue confirmada.',
       ANCHO,
     ) as string[]
     doc.text(notaPie, IZQ, y + 1, { lineHeightFactor: 1.3 })

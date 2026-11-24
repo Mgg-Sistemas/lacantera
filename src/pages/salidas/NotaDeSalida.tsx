@@ -110,16 +110,16 @@ export function useNotaDeSalida(): {
    * solo si es de antes de que las notas se numeraran.
    */
   abrirMovimiento: (m: Movimiento) => Promise<void>
-  /** Abre directamente el cuadro para generar la nota de entrega de una salida hacia fuera. */
+  /** Abre directamente el cuadro para generar la nota de despacho de una salida hacia fuera. */
   pedirNotaDeEntrega: (numero: string, destino: string) => Promise<void>
-  /** Abre el PDF de una nota de entrega ya emitida desde una salida. */
+  /** Abre el PDF de una nota de despacho ya emitida desde una salida. */
   verNotaDeEntrega: (n: NotaEntrega) => Promise<void>
-  /** Abre el cuadro de camiones de una nota de entrega emitida desde una salida. */
+  /** Abre el cuadro de camiones de una nota de despacho emitida desde una salida. */
   editarCamionesNotaDeEntrega: (n: NotaEntrega) => void
   puedoGenerarNotaEntrega: boolean
-  /** Número de nota de salida cuyo cuadro de nota de entrega está abierto ahora. */
+  /** Número de nota de salida cuyo cuadro de nota de despacho está abierto ahora. */
   notaEnCurso: string | null
-  /** ID de la nota de entrega cuyo PDF se está armando. */
+  /** ID de la nota de despacho cuyo PDF se está armando. */
   armandoEntregaId: number | null
   /** El asiento cuyo papel se está armando, para decir «Armando…» en su fila. */
   armando: number | null
@@ -156,11 +156,11 @@ export function useNotaDeSalida(): {
   const [armando, setArmando] = useState<number | null>(null)
 
   /*
-    LA NOTA DE ENTREGA QUE PUEDE DEJAR ESTA SALIDA.
+    LA NOTA DE DESPACHO QUE PUEDE DEJAR ESTA SALIDA.
 
     Christopher, 21/09/2026: «esto debe aparecer al momento de imprimir la nota
     de salida, debe colocarse en negrita. Esto es porque no todas las notas de
-    salida generarán una nota de entrega». Por eso vive aquí, en el visor, y no
+    salida generarán una nota de despacho». Por eso vive aquí, en el visor, y no
     en el formulario de la salida: se decide con el papel delante.
 
     Solo para lo que salió hacia FUERA —a un área de la empresa no hay a quién
@@ -207,7 +207,7 @@ export function useNotaDeSalida(): {
       )
     } catch (e) {
       setFallo(
-        `La nota ${n.numero} existe, pero no se pudo armar su papel. Búsquela en Facturación › Notas de entrega.`,
+        `La nota ${n.numero} existe, pero no se pudo armar su papel. Búsquela en Facturación › Notas de despacho.`,
       )
       console.error(e)
     } finally {
@@ -246,7 +246,7 @@ export function useNotaDeSalida(): {
       ])
       if (lineas.length === 0) return
 
-      // Si salió hacia fuera, se mira si ya dejó su nota de entrega. Que esto
+      // Si salió hacia fuera, se mira si ya dejó su nota de despacho. Que esto
       // falle no debe impedir imprimir la de salida.
       const destino = cabecera.para.destino_externo
       setHaciaFuera(destino ? { numero, destino } : null)
@@ -407,7 +407,7 @@ export function useNotaDeSalida(): {
         onCerrar={() => {
           /*
             Escape lo oyen todas las ventanas abiertas a la vez. Con el cuadro de
-            la nota de entrega —o su papel— encima, esa tecla es para lo de
+            la nota de despacho —o su papel— encima, esa tecla es para lo de
             encima: esta se queda como estaba.
           */
           if (asientos !== null || papelDeEntrega !== null) return
@@ -454,7 +454,7 @@ export function useNotaDeSalida(): {
             deEntrega ? (
               <span className="flex flex-wrap items-center gap-2 text-sm">
                 <span className="text-ink/85 font-bold">
-                  Dejó la nota de entrega {deEntrega.numero}
+                  Dejó la nota de despacho {deEntrega.numero}
                 </span>
                 {deEntrega.estado === 'PENDIENTE' ? <Chip tone="warning">Pendiente</Chip> : null}
                 <Button
@@ -491,7 +491,7 @@ export function useNotaDeSalida(): {
                       })
                   }}
                 />
-                Generar nota de entrega
+                Generar nota de despacho
               </label>
             ) : null
           ) : null
@@ -501,7 +501,7 @@ export function useNotaDeSalida(): {
       {asientos !== null && haciaFuera ? (
         <ModalNotaDeEntrega
           modo="generar"
-          titulo={`Nota de entrega de ${haciaFuera.numero}`}
+          titulo={`Nota de despacho de ${haciaFuera.numero}`}
           destino={haciaFuera.destino}
           lineas={asientos}
           guardando={generar.isPending || guardarCamiones.isPending}
@@ -560,7 +560,7 @@ export function useNotaDeSalida(): {
         onCerrar={() => setPapelDeEntrega(null)}
         blob={papelDeEntrega?.blob ?? null}
         nombreArchivo={papelDeEntrega?.nombre ?? 'nota-entrega.pdf'}
-        titulo="Nota de entrega"
+        titulo="Nota de despacho"
         descripcion="Es el respaldo para el archivo. Al cliente se le entrega la nota de salida."
       />
 
