@@ -12,22 +12,29 @@ import {
   useRetenciones,
 } from '@/lib/api/retenciones'
 import { useEmpresa } from '@/lib/api/empresa'
+import { EMPRESA } from '@/lib/empresa'
 import { ModalRegistrarRetencion } from './ModalRegistrarRetencion'
 import { ModalRegistrarReintegro } from './ModalRegistrarReintegro'
 import { ModalAnularRetencion } from './ModalAnularRetencion'
 import { generarComprobanteRetencionPdf } from './comprobantePdf'
 import { armarTxtIva } from './txtSeniatIva'
+import { armarXmlIslr, bytesIso88591 } from './xmlSeniatIslr'
+import { exportarRetencionesExcel } from './exportarRetencionesExcel'
+import { abrirWhatsAppRetencion } from './mensajeRetencion'
 import {
   AlertCircle,
   ArrowDownLeft,
   CheckCircle2,
   Clock,
   Download,
+  FileCode,
   FileSpreadsheet,
   FileText,
+  MessageSquare,
   Plus,
   Receipt,
   Search,
+  ShieldCheck,
   Trash2,
 } from 'lucide-react'
 
@@ -73,17 +80,20 @@ export function RetencionesPage() {
   const [modalAnular, setModalAnular] = useState(false)
   const [retencionAnular, setRetencionAnular] = useState<RetencionItem | null>(null)
 
-  // Estado para exportación TXT
+  // Estado para exportación y reportes fiscales
   const [periodoTxt, setPeriodoTxt] = useState(new Date().toISOString().slice(0, 7).replace('-', ''))
+  const [quincenaTxt, setQuincenaTxt] = useState<'TODAS' | 'Q1' | 'Q2'>('TODAS')
   const [generandoPdf, setGenerandoPdf] = useState(false)
+  const [generandoXml, setGenerandoXml] = useState(false)
+  const [generandoExcel, setGenerandoExcel] = useState(false)
 
   // Descarga del PDF oficial
   const descargarPdf = async (item: RetencionItem) => {
     try {
       setGenerandoPdf(true)
       await generarComprobanteRetencionPdf(item, {
-        razonSocial: empresa?.razon_social || 'MINERÍA INTERNACIONAL TS, C.A.',
-        rif: empresa?.rif || 'J-50155054-0',
+        razonSocial: empresa?.razon_social || EMPRESA.razonSocial,
+        rif: empresa?.rif || EMPRESA.rif,
         domicilio: empresa?.domicilio_fiscal,
         telefono: empresa?.telefono,
         correo: empresa?.correo,
@@ -93,18 +103,19 @@ export function RetencionesPage() {
     }
   }
 
-  // Descarga del TXT SENIAT
+  // Descarga del TXT SENIAT IVA (16 columnas)
   const descargarTxtSeniat = () => {
     const res = armarTxtIva({
-      rifAgente: empresa?.rif || 'J501550540',
-      razonSocial: empresa?.razon_social || 'MINERIA INTERNACIONAL TS CA',
+      rifAgente: empresa?.rif || EMPRESA.rif,
+      razonSocial: empresa?.razon_social || EMPRESA.razonSocial,
       periodo: periodoTxt,
       campo2: 'operaciones',
+      quincena: quincenaTxt,
       filas: retenciones,
     })
 
     if (res.faltan.length > 0) {
-      alert(`No se puede generar el TXT por las siguientes validaciones:\n\n- ${res.faltan.join('\n- ')}`)
+      alert(`No se puede generar el TXT por las siguientes validaciones del SENIAT:\n\n- ${res.faltan.join('\n- ')}`)
       return
     }
 
@@ -115,6 +126,71 @@ export function RetencionesPage() {
     a.download = res.nombre
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  // Descarga del XML SENIAT ISLR (Decreto 1.808)
+  const descargarXmlSeniat = () => {
+    try {
+      setGenerandoXml(true)
+      const res = armarXmlIslr({
+        rifAgente: empresa?.rif || EMPRESA.rif,
+        razonSocial: empresa?.razon_social || EMPRESA.razonSocial,
+        periodo: periodoTxt,
+        filas: retenciones,
+      })
+
+      if (res.faltan.length > 0) {
+        alert(`No se puede generar el XML de ISLR por las siguientes validaciones del SENIAT:\n\n- ${res.faltan.join('\n- ')}`)
+        return
+      }
+
+      const bytes = bytesIso88591(res.contenido)
+      const blob = new Blob([bytes as any], { type: 'application/xml;charset=iso-8859-1' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = res.nombre
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setGenerandoXml(false)
+    }
+  }
+
+  // Exportar Libro Fiscal a Excel con formato institucional
+  const descargarExcel = async () => {
+    try {
+      setGenerandoExcel(true)
+      // Filtrar filas aplicables al período y quincena seleccionados
+      const filasReporte = retenciones.filter((r) => {
+        if (r.estado === 'ANULADA') return false
+        if ((r.periodo ?? '').replace(/\D/g, '').slice(0, 6) !== periodoTxt) return false
+        if (quincenaTxt === 'Q1' || quincenaTxt === 'Q2') {
+          const dia = Number((r.factura_fecha || '').slice(8, 10))
+          if (isNaN(dia)) return true
+          if (quincenaTxt === 'Q1' && dia > 15) return false
+          if (quincenaTxt === 'Q2' && dia <= 15) return false
+        }
+        return true
+      })
+
+      if (!filasReporte.length) {
+        alert(`No hay retenciones registradas en el período ${periodoTxt} para exportar a Excel.`)
+        return
+      }
+
+      await exportarRetencionesExcel({
+        filas: filasReporte,
+        periodo: periodoTxt,
+        quincena: quincenaTxt,
+        empresa: {
+          razonSocial: empresa?.razon_social || EMPRESA.razonSocial,
+          rif: empresa?.rif || EMPRESA.rif,
+        },
+      })
+    } finally {
+      setGenerandoExcel(false)
+    }
   }
 
   return (
@@ -464,9 +540,19 @@ export function RetencionesPage() {
                     >
                       <td className="p-3 font-mono font-semibold text-ink/90">{item.numero_comprobante}</td>
                       <td className="p-3">
-                        <span className="px-2 py-0.5 rounded-[4px] text-[11px] font-bold bg-ink/6 text-ink/80">
-                          {item.tipo_impuesto}
-                        </span>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="px-2 py-0.5 rounded-[4px] text-[11px] font-bold bg-ink/6 text-ink/80 w-fit">
+                            {item.tipo_impuesto}
+                          </span>
+                          {item.tipo_impuesto === 'ISLR' && item.concepto_islr_codigo ? (
+                            <span
+                              className="text-[10px] text-ink/50 font-mono font-semibold truncate max-w-[120px]"
+                              title={item.concepto_islr_nombre || `Código ${item.concepto_islr_codigo}`}
+                            >
+                              Cod. {item.concepto_islr_codigo}
+                            </span>
+                          ) : null}
+                        </div>
                       </td>
                       <td className="p-3">
                         <div className="font-medium text-ink/90">{item.proveedor_nombre}</div>
@@ -510,6 +596,19 @@ export function RetencionesPage() {
                           <Button
                             size="sm"
                             variant="outline"
+                            onClick={() =>
+                              abrirWhatsAppRetencion(item, {
+                                razonSocial: empresa?.razon_social || EMPRESA.razonSocial,
+                                rif: empresa?.rif || EMPRESA.rif,
+                              })
+                            }
+                            title="Compartir comprobante por WhatsApp al proveedor"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5 text-success" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
                             onClick={() => descargarPdf(item)}
                             disabled={generandoPdf}
                             title="Descargar Comprobante PDF oficial"
@@ -540,76 +639,168 @@ export function RetencionesPage() {
         </div>
       )}
 
-      {/* CONTENIDO 4: REPORTES Y TXT SENIAT */}
-      {tab === 'reportes' && (
-        <div className="space-y-6">
-          <Card className="p-5 border-hairline">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <h3 className="text-base font-bold text-ink/90 flex items-center gap-2">
-                  <Download className="w-5 h-5 text-tierra-600 dark:text-tierra-300" />
-                  Exportación de Retenciones de IVA (TXT para el SENIAT)
-                </h3>
-                <p className="text-xs text-ink/60 mt-1 max-w-2xl leading-relaxed">
-                  Genera el archivo plano estructurado de 16 columnas reglamentarias exigido por el portal fiscal del
-                  SENIAT para la declaración quincenal de retenciones practicadas de IVA.
-                </p>
+      {/* CONTENIDO 4: REPORTES Y DECLARACIONES FISCALES (SENIAT) */}
+      {tab === 'reportes' && (() => {
+        // Retenciones no anuladas del período
+        const retencionesPeriodo = retenciones.filter(
+          (r) => r.estado !== 'ANULADA' && (r.periodo ?? '').replace(/\D/g, '').slice(0, 6) === periodoTxt,
+        )
+
+        // Filtradas por la quincena elegida
+        const retencionesQuincena = retencionesPeriodo.filter((r) => {
+          if (quincenaTxt === 'TODAS') return true
+          const dia = Number((r.factura_fecha || '').slice(8, 10))
+          if (isNaN(dia)) return true
+          return quincenaTxt === 'Q1' ? dia <= 15 : dia > 15
+        })
+
+        const retIva = retencionesQuincena.filter((r) => r.tipo_impuesto === 'IVA')
+        const retIslr = retencionesPeriodo.filter((r) => r.tipo_impuesto === 'ISLR')
+        const totalBs = retencionesQuincena.reduce((s, r) => s + (r.monto_retenido_bs || 0), 0)
+        const totalUsd = retencionesQuincena.reduce((s, r) => s + (r.monto_retenido_usd || 0), 0)
+
+        return (
+          <div className="space-y-6">
+            {/* Panel de Control Fiscal */}
+            <Card className="p-5 border-hairline bg-surface">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-bold text-ink/90 flex items-center gap-2">
+                      <Download className="w-5 h-5 text-tierra-600 dark:text-tierra-300" />
+                      Declaraciones SENIAT y Libro Fiscal
+                    </h3>
+                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-tierra-500/10 text-tierra-600 dark:text-tierra-300">
+                      SPE · {empresa?.rif || EMPRESA.rif}
+                    </span>
+                  </div>
+                  <p className="text-xs text-ink/65 mt-1 max-w-2xl leading-relaxed">
+                    Exportación oficial para Sujetos Pasivos Especiales: archivo TXT para retenciones de IVA (quincenal),
+                    archivo XML normalizado ISO-8859-1 para retenciones de ISLR (Decreto 1.808) y Libro Fiscal consolidado en Excel.
+                  </p>
+                </div>
+
+                {/* Filtros de Período y Quincena */}
+                <div className="flex flex-wrap items-end gap-3 bg-canvas/60 p-3 rounded-card border border-hairline">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-ink/70 mb-1">Período (AAAAMM)</label>
+                    <input
+                      type="text"
+                      value={periodoTxt}
+                      onChange={(e) => setPeriodoTxt(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      placeholder="202611"
+                      maxLength={6}
+                      className="w-24 px-2.5 py-1.5 text-xs font-mono font-bold border border-hairline bg-surface text-ink/90 rounded-[6px] focus:outline-none focus:ring-1 focus:ring-tierra-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-ink/70 mb-1">Quincena (IVA)</label>
+                    <select
+                      value={quincenaTxt}
+                      onChange={(e) => setQuincenaTxt(e.target.value as any)}
+                      className="px-2.5 py-1.5 text-xs border border-hairline bg-surface text-ink/90 rounded-[6px] focus:outline-none focus:ring-1 focus:ring-tierra-600"
+                    >
+                      <option value="TODAS">Mes Completo</option>
+                      <option value="Q1">1ra Quincena (01-15)</option>
+                      <option value="Q2">2da Quincena (16-fin)</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              {/* Botones de Exportación Oficial */}
+              <div className="mt-5 pt-4 border-t border-hairline flex flex-wrap items-center gap-3">
+                <Button
+                  onClick={descargarTxtSeniat}
+                  icon={<FileSpreadsheet className="w-4 h-4 text-emerald-600" />}
+                  variant="outline"
+                  className="text-xs"
+                >
+                  Descargar TXT SENIAT IVA
+                </Button>
+
+                <Button
+                  onClick={descargarXmlSeniat}
+                  disabled={generandoXml}
+                  icon={<FileCode className="w-4 h-4 text-amber-600" />}
+                  variant="outline"
+                  className="text-xs"
+                >
+                  Descargar XML SENIAT ISLR
+                </Button>
+
+                <Button
+                  onClick={descargarExcel}
+                  disabled={generandoExcel}
+                  icon={<Download className="w-4 h-4 text-tierra-600 dark:text-tierra-300" />}
+                  className="text-xs ml-auto"
+                >
+                  Exportar Libro a Excel
+                </Button>
+              </div>
+            </Card>
+
+            {/* Resumen Cuantitativo del Período / Quincena */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card className="p-4 border-hairline bg-surface">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-ink/55 font-medium">Retenciones IVA</p>
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-ink/6 text-ink/60">
+                    {quincenaTxt === 'Q1' ? '1ra Quincena' : quincenaTxt === 'Q2' ? '2da Quincena' : 'Mes Completo'}
+                  </span>
+                </div>
+                <p className="text-2xl font-bold text-ink/90 mt-1.5">{retIva.length}</p>
+                <p className="text-[11px] text-ink/45 mt-1">Comprobantes listos para TXT</p>
+              </Card>
+
+              <Card className="p-4 border-hairline bg-surface">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-ink/55 font-medium">Retenciones ISLR</p>
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-ink/6 text-ink/60">
+                    Mensual
+                  </span>
+                </div>
+                <p className="text-2xl font-bold text-ink/90 mt-1.5">{retIslr.length}</p>
+                <p className="text-[11px] text-ink/45 mt-1">Registros para XML Decreto 1.808</p>
+              </Card>
+
+              <Card className="p-4 border-hairline bg-surface">
+                <p className="text-xs text-ink/55 font-medium">Total Retenido (Bs)</p>
+                <p className="text-2xl font-bold text-tierra-600 dark:text-tierra-300 mt-1.5 tabular">
+                  Bs. {totalBs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
+                </p>
+                <p className="text-[11px] text-ink/45 mt-1">Monto a enterar al SENIAT</p>
+              </Card>
+
+              <Card className="p-4 border-hairline bg-surface">
+                <p className="text-xs text-ink/55 font-medium">Equivalente Divisa</p>
+                <p className="text-2xl font-bold text-ink/80 mt-1.5 tabular">
+                  $ {totalUsd.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
+                </p>
+                <p className="text-[11px] text-ink/45 mt-1">Valor referencial en dólares</p>
+              </Card>
+            </div>
+
+            {/* Aviso Fiscal y Normativa */}
+            <div className="rounded-card border border-hairline bg-canvas/60 p-4 text-xs text-ink/75 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <ShieldCheck className="w-5 h-5 text-tierra-600 dark:text-tierra-300 shrink-0 mt-0.5" />
                 <div>
-                  <label className="block text-[11px] font-semibold text-ink/60 mb-1">Período (AAAAMM)</label>
-                  <input
-                    type="text"
-                    value={periodoTxt}
-                    onChange={(e) => setPeriodoTxt(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    placeholder="202611"
-                    maxLength={6}
-                    className="w-28 px-3 py-1.5 text-sm font-mono border border-hairline bg-surface text-ink/90 rounded-[6px] focus:outline-none focus:ring-1 focus:ring-royal-600"
-                  />
+                  <p className="font-semibold text-ink/90">Obligación Tributaria Sujetos Pasivos Especiales</p>
+                  <p className="text-ink/60 mt-0.5 leading-relaxed">
+                    Las retenciones de IVA deben enterarse quincenalmente según el último dígito del RIF. Las retenciones de ISLR se informan
+                    mensualmente mediante archivo XML con codificación ISO-8859-1 antes del día 10 del mes siguiente.
+                  </p>
                 </div>
-                <div className="pt-4">
-                  <Button onClick={descargarTxtSeniat} icon={<FileSpreadsheet className="w-4 h-4" />}>
-                    Descargar TXT SENIAT
-                  </Button>
-                </div>
+              </div>
+              <div className="shrink-0 text-[11px] font-mono text-ink/60">
+                Agente: <strong className="text-ink/90">{EMPRESA.rif}</strong>
               </div>
             </div>
-          </Card>
-
-          {/* Resumen del Período */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="p-4 border-hairline bg-surface">
-              <p className="text-xs text-ink/50 font-medium">Total Retenciones de IVA (Período {periodoTxt})</p>
-              <p className="text-2xl font-bold text-ink/90 mt-1">
-                {retenciones.filter((r) => r.tipo_impuesto === 'IVA' && r.periodo === periodoTxt && r.estado !== 'ANULADA').length}
-              </p>
-            </Card>
-
-            <Card className="p-4 border-hairline bg-surface">
-              <p className="text-xs text-ink/50 font-medium">Monto Total Retenido (Bs)</p>
-              <p className="text-2xl font-bold text-tierra-600 dark:text-tierra-300 mt-1">
-                Bs.{' '}
-                {retenciones
-                  .filter((r) => r.tipo_impuesto === 'IVA' && r.periodo === periodoTxt && r.estado !== 'ANULADA')
-                  .reduce((s, r) => s + r.monto_retenido_bs, 0)
-                  .toLocaleString('es-VE', { minimumFractionDigits: 2 })}
-              </p>
-            </Card>
-
-            <Card className="p-4 border-hairline bg-surface">
-              <p className="text-xs text-ink/50 font-medium">Equivalente Divisa (USD)</p>
-              <p className="text-2xl font-bold text-ink/80 mt-1">
-                ${' '}
-                {retenciones
-                  .filter((r) => r.tipo_impuesto === 'IVA' && r.periodo === periodoTxt && r.estado !== 'ANULADA')
-                  .reduce((s, r) => s + r.monto_retenido_usd, 0)
-                  .toLocaleString('es-VE', { minimumFractionDigits: 2 })}
-              </p>
-            </Card>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* Modales */}
       <ModalRegistrarRetencion

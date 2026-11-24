@@ -7,6 +7,7 @@ export interface EntradaTxtIva {
   razonSocial: string
   periodo: string // AAAAMM
   campo2: PeriodoCampo2
+  quincena?: 'TODAS' | 'Q1' | 'Q2'
   filas: RetencionItem[]
 }
 
@@ -49,15 +50,24 @@ export function armarTxtIva(e: EntradaTxtIva): ResultadoTxtIva {
   }
 
   const campo2 = e.campo2 === 'siguiente' ? mesSiguiente(e.periodo) : e.periodo
-  const nombre = `${ascii(e.razonSocial).toUpperCase().replace(/[^A-Z0-9]/g, '') || 'LACANTERA'}DECLARACIONINFORMATIVACOMPRAS${e.periodo}.TXT`
+  const sufijoQ = e.quincena === 'Q1' ? '_1Q' : e.quincena === 'Q2' ? '_2Q' : ''
+  const nombre = `${ascii(e.razonSocial).toUpperCase().replace(/[^A-Z0-9]/g, '') || 'LACANTERA'}DECLARACIONINFORMATIVACOMPRAS${e.periodo}${sufijoQ}.TXT`
 
-  const validas = e.filas.filter(
-    (r) =>
-      r.tipo_impuesto === 'IVA' &&
-      r.estado !== 'ANULADA' &&
-      r.monto_retenido > 0 &&
-      (r.periodo ?? '').replace(/\D/g, '').slice(0, 6) === e.periodo,
-  )
+  const validas = e.filas.filter((r) => {
+    if (r.tipo_impuesto !== 'IVA') return false
+    if (r.estado === 'ANULADA') return false
+    if (r.monto_retenido <= 0) return false
+    if ((r.periodo ?? '').replace(/\D/g, '').slice(0, 6) !== e.periodo) return false
+
+    if (e.quincena === 'Q1' || e.quincena === 'Q2') {
+      const dia = Number((r.factura_fecha || '').slice(8, 10))
+      if (isNaN(dia)) return true
+      if (e.quincena === 'Q1' && dia > 15) return false
+      if (e.quincena === 'Q2' && dia <= 15) return false
+    }
+
+    return true
+  })
 
   if (!validas.length) {
     const sola = [rifAg, campo2, ...Array<string>(14).fill('0')].join('\t')

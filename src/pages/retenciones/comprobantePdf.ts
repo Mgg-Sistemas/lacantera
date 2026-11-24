@@ -1,4 +1,5 @@
 import type { RetencionItem } from '@/lib/api/retenciones'
+import { EMPRESA } from '@/lib/empresa'
 
 export interface EmpresaPdf {
   razonSocial: string
@@ -33,13 +34,13 @@ export async function generarComprobanteRetencionPdf(
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(13)
   doc.setTextColor(...colorPrimario)
-  doc.text(empresa.razonSocial || 'MINERÍA INTERNACIONAL TS, C.A.', margin, y)
+  doc.text(empresa.razonSocial || EMPRESA.razonSocial, margin, y)
 
   doc.setFontSize(9)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(...colorGrisOscuro)
   y += 5
-  doc.text(`RIF: ${empresa.rif || 'J-50155054-0'}`, margin, y)
+  doc.text(`RIF: ${empresa.rif || EMPRESA.rif}`, margin, y)
   y += 4
   const dom = empresa.domicilio || 'Carretera Nacional Upata - San Félix, Sector El Tapón'
   doc.text(`Domicilio fiscal: ${dom}`, margin, y)
@@ -207,15 +208,25 @@ export async function generarComprobanteRetencionPdf(
     y += 5
   }
 
-  // Fundamento Legal (Providencia Administrativa SNAT/2026/00093, Gaceta Oficial 43.484)
+  // Concepto oficial de ISLR si aplica
+  if (retencion.tipo_impuesto === 'ISLR' && retencion.concepto_islr_codigo) {
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8)
+    doc.setTextColor(...colorGrisOscuro)
+    const conceptoTxt = `Concepto SENIAT: Código ${retencion.concepto_islr_codigo} ${retencion.concepto_islr_nombre ? `· ${retencion.concepto_islr_nombre}` : ''}`
+    doc.text(conceptoTxt, margin, y)
+    y += 4.5
+  }
+
+  // Fundamento Legal (Providencia Administrativa SNAT/2026/00093 o Decreto 1.808)
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(7)
   doc.setTextColor(...colorGrisClaro)
-  doc.text(
-    'Comprobante emitido de conformidad con la Providencia Administrativa SNAT/2026/00093, publicada en Gaceta Oficial Extraordinaria N° 43.484 del 21/10/2026.',
-    margin,
-    y,
-  )
+  const baseLegal =
+    retencion.tipo_impuesto === 'IVA'
+      ? 'Comprobante emitido de conformidad con la Providencia Administrativa SNAT/2026/00093, publicada en Gaceta Oficial N° 43.484 del 21/10/2026.'
+      : 'Comprobante emitido de conformidad con el Decreto Presidencial N° 1.808 (Reglamento de Retenciones de ISLR) y normativas del SENIAT.'
+  doc.text(baseLegal, margin, y)
 
   // Cuadros de Firma y Sello
   y = pageHeight - margin - 25

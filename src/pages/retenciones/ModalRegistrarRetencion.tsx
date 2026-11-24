@@ -8,6 +8,7 @@ import {
   type FacturaPendienteRetencion,
   type TipoImpuestoRetencion,
   IMPUESTOS_DISPONIBLES,
+  CONCEPTOS_ISLR_SENIAT,
   useRegistrarRetencion,
 } from '@/lib/api/retenciones'
 import { AlertCircle, FileCheck } from 'lucide-react'
@@ -23,6 +24,8 @@ export function ModalRegistrarRetencion({ abierta, onCerrar, facturaPrevia }: Pr
   const registrar = useRegistrarRetencion()
 
   const [tipoImpuesto, setTipoImpuesto] = useState<TipoImpuestoRetencion>('IVA')
+  const [conceptoIslrCodigo, setConceptoIslrCodigo] = useState('002')
+  const [conceptoIslrNombre, setConceptoIslrNombre] = useState('Servicios Generales y Contratistas')
   const [ordenNumero, setOrdenNumero] = useState('')
   const [proveedorNombre, setProveedorNombre] = useState('')
   const [proveedorRif, setProveedorRif] = useState('')
@@ -113,6 +116,8 @@ export function ModalRegistrarRetencion({ abierta, onCerrar, facturaPrevia }: Pr
       fecha_emision: fechaEmision,
       fecha_entrega: fechaEntrega || null,
       tipo_impuesto: tipoImpuesto,
+      concepto_islr_codigo: tipoImpuesto === 'ISLR' ? conceptoIslrCodigo : null,
+      concepto_islr_nombre: tipoImpuesto === 'ISLR' ? conceptoIslrNombre : null,
       moneda,
       tasa,
       total_factura: Number(totalFactura) || 0,
@@ -169,6 +174,43 @@ export function ModalRegistrarRetencion({ abierta, onCerrar, facturaPrevia }: Pr
             </button>
           ))}
         </div>
+
+        {/* Concepto Oficial SENIAT si es ISLR */}
+        {tipoImpuesto === 'ISLR' && (
+          <div className="rounded-card border border-hairline bg-surface p-3.5 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-ink/80 flex items-center gap-1.5">
+                <FileCheck className="w-3.5 h-3.5 text-tierra-600 dark:text-tierra-300" />
+                Concepto Oficial de ISLR (SENIAT · Decreto 1.808)
+              </span>
+              <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-ink/6 text-ink/75">
+                Código: {conceptoIslrCodigo}
+              </span>
+            </div>
+            <select
+              value={conceptoIslrCodigo}
+              onChange={(e) => {
+                const cod = e.target.value
+                const c = CONCEPTOS_ISLR_SENIAT.find((x) => x.codigo === cod)
+                if (c) {
+                  setConceptoIslrCodigo(c.codigo)
+                  setConceptoIslrNombre(c.nombre)
+                  recalcular('ISLR', c.alicuotaDefecto, baseImponible, impuestoCausado)
+                }
+              }}
+              className="w-full text-xs p-2.5 rounded-[6px] border border-hairline bg-canvas/60 text-ink/90 focus:outline-none focus:ring-1 focus:ring-tierra-600"
+            >
+              {CONCEPTOS_ISLR_SENIAT.map((c) => (
+                <option key={c.codigo} value={c.codigo}>
+                  {c.codigo} · {c.nombre} ({c.alicuotaDefecto}%)
+                </option>
+              ))}
+            </select>
+            <p className="text-[11px] text-ink/60 leading-relaxed">
+              {CONCEPTOS_ISLR_SENIAT.find((x) => x.codigo === conceptoIslrCodigo)?.descripcion}
+            </p>
+          </div>
+        )}
 
         {/* Datos del Documento */}
         <div className="rounded-card border border-hairline bg-canvas/40 p-4 space-y-3.5">

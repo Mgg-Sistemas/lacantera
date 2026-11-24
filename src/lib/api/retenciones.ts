@@ -44,6 +44,10 @@ export interface RetencionItem {
   monto_retenido_bs: number
   monto_retenido_usd: number
 
+  // Concepto oficial ISLR (Decreto 1.808 SENIAT)
+  concepto_islr_codigo?: string | null
+  concepto_islr_nombre?: string | null
+
   // Gestión de Reintegros (para retenciones post-pago)
   origen_retencion: OrigenRetencion
   estado_reintegro: EstadoReintegro
@@ -101,7 +105,7 @@ export const IMPUESTOS_DISPONIBLES: ImpuestoParametro[] = [
   {
     tipo: 'ISLR',
     nombre: 'Retención de ISLR',
-    descripcion: 'Impuesto sobre la renta por concepto (servicios 2%, fletes 3%, etc.).',
+    descripcion: 'Impuesto sobre la renta por concepto oficial (servicios 2%, fletes 3%, etc.).',
     alicuota_defecto: 2,
     activo: true,
   },
@@ -111,6 +115,82 @@ export const IMPUESTOS_DISPONIBLES: ImpuestoParametro[] = [
     descripcion: 'Impuesto municipal sobre actividades económicas según ordenanza.',
     alicuota_defecto: 1,
     activo: true,
+  },
+]
+
+export interface ConceptoIslrSeniat {
+  codigo: string
+  nombre: string
+  alicuotaDefecto: number
+  sustraendo: boolean
+  aplicaA: 'PJ' | 'PN' | 'AMBOS'
+  descripcion: string
+}
+
+export const CONCEPTOS_ISLR_SENIAT: ConceptoIslrSeniat[] = [
+  {
+    codigo: '001',
+    nombre: 'Fletes y Transporte',
+    alicuotaDefecto: 3,
+    sustraendo: false,
+    aplicaA: 'AMBOS',
+    descripcion: 'Transporte de carga, minerales, insumos y fletes terrestres (3% PJ domiciliada, 1% PN residente).',
+  },
+  {
+    codigo: '002',
+    nombre: 'Servicios Generales y Contratistas',
+    alicuotaDefecto: 2,
+    sustraendo: false,
+    aplicaA: 'PJ',
+    descripcion: 'Servicios de mantenimiento, obras civiles y contratistas en general (2% PJ domiciliada).',
+  },
+  {
+    codigo: '003',
+    nombre: 'Honorarios Profesionales',
+    alicuotaDefecto: 5,
+    sustraendo: false,
+    aplicaA: 'AMBOS',
+    descripcion: 'Servicios técnicos, jurídicos, contables o de ingeniería (5% PJ, 3% PN con sustraendo).',
+  },
+  {
+    codigo: '004',
+    nombre: 'Arrendamiento de Maquinaria y Equipos',
+    alicuotaDefecto: 5,
+    sustraendo: false,
+    aplicaA: 'PJ',
+    descripcion: 'Alquiler de camiones, maquinaria pesada y equipos industriales (5% PJ).',
+  },
+  {
+    codigo: '005',
+    nombre: 'Comisiones Mercantiles',
+    alicuotaDefecto: 5,
+    sustraendo: false,
+    aplicaA: 'PJ',
+    descripcion: 'Comisiones por intermediación comercial y corretajes mercantiles (5% PJ).',
+  },
+  {
+    codigo: '006',
+    nombre: 'Publicidad y Propaganda',
+    alicuotaDefecto: 5,
+    sustraendo: false,
+    aplicaA: 'PJ',
+    descripcion: 'Servicios publicitarios y artes gráficas (5% PJ).',
+  },
+  {
+    codigo: '007',
+    nombre: 'Primas de Seguros',
+    alicuotaDefecto: 3,
+    sustraendo: false,
+    aplicaA: 'PJ',
+    descripcion: 'Pólizas de seguro y primas empresariales (3% PJ).',
+  },
+  {
+    codigo: '008',
+    nombre: 'Arrendamiento de Inmuebles',
+    alicuotaDefecto: 5,
+    sustraendo: false,
+    aplicaA: 'PJ',
+    descripcion: 'Alquiler de galpones, oficinas o terrenos (5% PJ).',
   },
 ]
 
@@ -300,6 +380,8 @@ export interface RegistrarRetencionInput {
   fecha_entrega?: string | null // G.O. 43.484 Art. 18.3
 
   tipo_impuesto: TipoImpuestoRetencion
+  concepto_islr_codigo?: string | null
+  concepto_islr_nombre?: string | null
   moneda: string
   tasa: number
   total_factura: number
@@ -340,6 +422,8 @@ export function useRegistrarRetencion() {
         fecha_emision: input.fecha_emision,
         fecha_entrega: input.fecha_entrega || null,
         tipo_impuesto: input.tipo_impuesto,
+        concepto_islr_codigo: input.concepto_islr_codigo || null,
+        concepto_islr_nombre: input.concepto_islr_nombre || null,
         estado: 'REGISTRADA',
         proveedor_id: input.proveedor_id,
         proveedor_nombre: input.proveedor_nombre,
