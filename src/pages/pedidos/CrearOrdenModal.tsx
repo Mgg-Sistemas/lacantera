@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
@@ -23,6 +23,15 @@ import {
 import { fmtCant } from '@/lib/pedidos'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
 import { enMayuscula } from '@/lib/texto'
+import {
+  type CompraFija,
+  renglonesDePlantilla,
+  cantidadesPrevias,
+} from '@/modules/pedidos/comprasFijas'
+import {
+  ultimosItemsDe,
+  marcarCompraFijaGenerada,
+} from '@/modules/pedidos/comprasFijas.repository'
 
 /*
   «NUEVA ORDEN DE PEDIDO» / «EDITAR ORDEN DE PEDIDO {código}» (MGG `CrearOrdenModal`)
@@ -75,14 +84,16 @@ const numero = (s: string) => Number(String(s).replace(',', '.'))
 
 export function CrearOrdenModal({
   orden,
+  compraFija,
   permisos,
   onClose,
   onCreated,
 }: {
   orden: Orden | null
+  compraFija?: CompraFija | null
   permisos: PermisosPedidos
   onClose: () => void
-  onCreated: () => void
+  onCreated: (ordenId?: number) => void
 }) {
   const esEdicion = !!orden
   const crear = useCrearSolicitud()
@@ -97,7 +108,7 @@ export function CrearOrdenModal({
 
   // 30-10-2026 en MGG: la SP va con nombres generales salvo que la haga un
   // analista de Compras (o un administrador).
-  const soloNombreGeneral = !permisos.gestiona
+  const soloNombreGeneral = !permisos.gestiona && !compraFija
 
   const [filas, setFilas] = useState<Fila[]>(() =>
     (orden?.items ?? []).map((it) => ({
@@ -114,14 +125,49 @@ export function CrearOrdenModal({
       fichaPropia: null,
     })),
   )
-  const [unidad, setUnidad] = useState(orden?.unidad_solicitante ?? '')
+  const [unidad, setUnidad] = useState(orden?.unidad_solicitante ?? (compraFija?.unidad_solicitante || ''))
   const [nuevaUnidad, setNuevaUnidad] = useState('')
   const [persona, setPersona] = useState(
-    orden?.solicitante_nombre ?? permisos.mi_nombre ?? '',
+    orden?.solicitante_nombre ?? (compraFija?.solicitante || permisos.mi_nombre || ''),
   )
-  const [urgente, setUrgente] = useState(orden?.urgente ?? false)
-  const [nota, setNota] = useState(orden?.notas ?? '')
+  const [urgente, setUrgente] = useState(orden?.urgente ?? (compraFija?.urgente || false))
+  const [nota, setNota] = useState(
+    orden?.notas ?? (compraFija ? (compraFija.nota || `Compra fija: ${compraFija.nombre}`) : ''),
+  )
   const [prodSelect, setProdSelect] = useState('')
+
+  // Precarga automática si proviene de una Compra Fija
+  const fijaCargada = useRef(false)
+  useEffect(() => {
+    if (!compraFija || fijaCargada.current || !articulos?.length) return
+    fijaCargada.current = true
+    let vivo = true
+    void (async () => {
+      const previo = await ultimosItemsDe(compraFija).catch(() => ({ items: [], codigo: null, fecha: null }))
+      if (!vivo) return
+      const renglones = renglonesDePlantilla(compraFija, articulos, cantidadesPrevias(previo.items))
+      if (renglones.length) {
+        setFilas(
+          renglones.map((r) => ({
+            clave: clave(),
+            sku: r.sku,
+            nombre: r.nombre,
+            cantidad: String(r.cantidad || 1),
+            unidad: r.unidad || 'UND',
+            comprar: true,
+            finalidad: r.finalidad ?? compraFija.finalidad ?? '',
+            general: !r.productoId || String(r.productoId).startsWith('fija-'),
+            articulo_id: typeof r.productoId === 'number' ? r.productoId : null,
+            entregado: false,
+            fichaPropia: null,
+          })),
+        )
+      }
+    })()
+    return () => {
+      vivo = false
+    }
+  }, [compraFija, articulos])
 
   const [nuevoOpen, setNuevoOpen] = useState(false)
   const [nuevoNombre, setNuevoNombre] = useState('')
@@ -364,7 +410,7 @@ export function CrearOrdenModal({
           }
         }
         toast(`Orden ${saved.codigo} editada${urgente ? ' · URGENTE' : ''}`, 'success')
-        onCreated()
+        onCreated(saved.id)
         return
       }
       const saved = await crear.mutateAsync(datos)
@@ -375,13 +421,20 @@ export function CrearOrdenModal({
           toast(`Orden creada, pero no se pudieron subir las imágenes: ${mensajeDe(e, '')}`, 'warning')
         }
       }
+      if (compraFija) {
+        void marcarCompraFijaGenerada(compraFija, {
+          tipo: 'orden',
+          id: String(saved.id),
+          codigo: saved.codigo,
+        }).catch(() => {})
+      }
       toast(
         saved.estado === 'revision_almacen'
           ? `${saved.codigo}${urgente ? ' · URGENTE' : ''} enviada a Almacén para revisión`
           : `Nueva orden de pedido ${saved.codigo}${urgente ? ' · URGENTE' : ''} enviada para aprobación`,
         'success',
       )
-      onCreated()
+      onCreated(saved.id)
     } catch (e) {
       toast(mensajeDe(e, 'Error al crear'), 'error')
     } finally {
@@ -396,7 +449,13 @@ export function CrearOrdenModal({
     <Modal
       abierto
       onCerrar={onClose}
-      titulo={esEdicion ? `Editar orden de pedido ${orden.codigo}` : 'Nueva orden de pedido'}
+      titulo={
+        esEdicion
+          ? `Editar orden de pedido ${orden.codigo}`
+          : compraFija
+            ? `Compra fija · ${compraFija.icono} ${compraFija.nombre}`
+            : 'Nueva orden de pedido'
+      }
       ancho="lg"
       acciones={
         <>
@@ -410,6 +469,22 @@ export function CrearOrdenModal({
       }
     >
       <div className="space-y-5">
+        {compraFija && (
+          <div className="flex items-center justify-between rounded-card border border-tierra-500/25 bg-tierra-500/10 px-3.5 py-2.5 text-xs text-ink dark:bg-tierra-500/15">
+            <div className="flex items-center gap-2">
+              <span className="text-base">{compraFija.icono}</span>
+              <div>
+                <p className="font-semibold text-ink">Plantilla de compra periódica ({compraFija.frecuencia})</p>
+                <p className="text-[11px] text-ink/75">
+                  Los renglones se precargaron automáticamente con las cantidades y especificaciones de la plantilla.
+                </p>
+              </div>
+            </div>
+            <span className="rounded bg-tierra-500/20 px-2 py-0.5 font-mono text-[10px] font-bold text-tierra-800 dark:text-tierra-200">
+              RECURRENTE
+            </span>
+          </div>
+        )}
         {/* 1 · Unidad solicitante */}
         <div>
           <SelectBuscable

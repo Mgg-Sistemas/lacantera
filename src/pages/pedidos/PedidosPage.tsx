@@ -51,6 +51,14 @@ import { SolicitudMercadoModal } from './SolicitudMercadoModal'
 import { CategoriasModal } from './CategoriasModal'
 import { ReporteComprasModal } from './ReporteComprasModal'
 import { CierreDiarioModal } from './CierreDiarioModal'
+import { ComprasFijasModal } from '@/modules/pedidos/ComprasFijasModal'
+import {
+  type CompraFija,
+  estadoFija,
+  textoEstadoFija,
+} from '@/modules/pedidos/comprasFijas'
+import { listComprasFijas } from '@/modules/pedidos/comprasFijas.repository'
+import { hoyVenezuela } from '@/shared/lib/rangosFecha'
 
 /*
   PEDIDOS / COMPRAS (MGG `PedidosPage`) · FASES 1, 2 Y 3
@@ -132,7 +140,7 @@ const PESTANAS: { scope: Scope; label: string; title: string }[] = [
 type ModalKind =
   | { kind: 'none' }
   | { kind: 'detail'; ordenId: number; alAbrir?: 'pdf' | 'whatsapp' }
-  | { kind: 'create' }
+  | { kind: 'create'; compraFija?: CompraFija | null }
   | { kind: 'create-servicio' }
   | { kind: 'mercado' }
   | { kind: 'categorias' }
@@ -189,6 +197,30 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
   const [filterEstado, setFilterEstado] = useState<EstadoOrden | ''>('')
   const [filterCreador, setFilterCreador] = useState('')
   const [modal, setModal] = useState<ModalKind>({ kind: 'none' })
+  const [comprasFijas, setComprasFijas] = useState<CompraFija[]>([])
+  const [comprasFijasOpen, setComprasFijasOpen] = useState(false)
+
+  const loadComprasFijas = useCallback(async () => {
+    try {
+      const res = await listComprasFijas()
+      setComprasFijas(res.lista)
+    } catch {
+      /* noop */
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadComprasFijas()
+  }, [loadComprasFijas])
+
+  const fijasQueTocan = useMemo(() => {
+    const hoy = hoyVenezuela()
+    return comprasFijas.filter((c) => {
+      if (c.sugerida || c.activa === false) return false
+      const est = estadoFija(c, hoy)
+      return est === 'hoy' || est === 'vencida'
+    })
+  }, [comprasFijas])
 
   const aprobar = useAprobarOrden()
   const cancelar = useCancelarOrden()
@@ -289,6 +321,16 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
     else setModal({ kind: 'detail', ordenId: o.id, alAbrir })
   }, [searchParams, setSearchParams, pedidos.isSuccess, ordenes, soloSolicitud])
 
+  useEffect(() => {
+    const cf = searchParams.get('comprasFijas')
+    if (cf === '1') {
+      setComprasFijasOpen(true)
+      const next = new URLSearchParams(searchParams)
+      next.delete('comprasFijas')
+      setSearchParams(next, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
+
   function switchScope(next: Scope) {
     setScope(next)
     guardar(SCOPE_KEY, next)
@@ -340,12 +382,57 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
                 📆 Cierre diario
               </Button>
               {scope !== 'compra_directa' ? (
-                <AccionesDePestana scope={scope} gestiona={permisos.gestiona} onModal={setModal} />
+                <AccionesDePestana
+                  scope={scope}
+                  gestiona={permisos.gestiona}
+                  fijasQueTocanCount={fijasQueTocan.length}
+                  onComprasFijas={() => setComprasFijasOpen(true)}
+                  onModal={setModal}
+                />
               ) : null}
             </div>
           )
         }
       />
+
+      {/* Aviso de Compras Fijas que tocan hoy o están vencidas */}
+      {permisos.gestiona && fijasQueTocan.length > 0 ? (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-card border border-amber-500/30 bg-amber-500/10 p-3.5 text-sm text-ink dark:border-amber-400/20 dark:bg-amber-400/10">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-lg">
+              🔁
+            </span>
+            <div>
+              <p className="font-semibold text-ink">
+                Hay {fijasQueTocan.length} compra{fijasQueTocan.length === 1 ? '' : 's'} fija{fijasQueTocan.length === 1 ? '' : 's'} programada{fijasQueTocan.length === 1 ? '' : 's'} para hoy o vencida{fijasQueTocan.length === 1 ? '' : 's'}
+              </p>
+              <p className="text-xs text-ink/75">
+                {fijasQueTocan.map((f) => `${f.icono} ${f.nombre} (${textoEstadoFija(f, hoyVenezuela())})`).join(' · ')}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={() => setComprasFijasOpen(true)}>
+              Revisar compras fijas
+            </Button>
+            {fijasQueTocan[0] && (
+              <Button
+                size="sm"
+                onClick={() => {
+                  const primera = fijasQueTocan[0]
+                  if (primera.modo === 'compra_directa') {
+                    void navigate('/app/compras/directa')
+                  } else {
+                    setModal({ kind: 'create', compraFija: primera })
+                  }
+                }}
+              >
+                Generar {fijasQueTocan[0].nombre}
+              </Button>
+            )}
+          </div>
+        </div>
+      ) : null}
 
       {/* Quien solo hace solicitudes no ve las otras pestañas. */}
       {!soloSolicitud ? (
@@ -525,9 +612,30 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
       {modal.kind === 'create' || (modal.kind === 'edit' && modal.orden.clase !== 'servicio') ? (
         <CrearOrdenModal
           orden={modal.kind === 'edit' ? modal.orden : null}
+          compraFija={modal.kind === 'create' ? modal.compraFija : null}
           permisos={permisos}
           onClose={() => setModal(modal.kind === 'edit' ? { kind: 'detail', ordenId: modal.orden.id } : { kind: 'none' })}
-          onCreated={() => setModal(modal.kind === 'edit' ? { kind: 'detail', ordenId: modal.orden.id } : { kind: 'none' })}
+          onCreated={(ordenId) => {
+            void loadComprasFijas()
+            setModal(ordenId ? { kind: 'detail', ordenId } : { kind: 'none' })
+          }}
+        />
+      ) : null}
+
+      {comprasFijasOpen ? (
+        <ComprasFijasModal
+          onClose={() => {
+            setComprasFijasOpen(false)
+            void loadComprasFijas()
+          }}
+          onGenerarSolicitud={(c) => {
+            setComprasFijasOpen(false)
+            setModal({ kind: 'create', compraFija: c })
+          }}
+          onGenerarDirecta={() => {
+            setComprasFijasOpen(false)
+            void navigate('/app/compras/directa')
+          }}
         />
       ) : null}
 
@@ -581,18 +689,37 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
 function AccionesDePestana({
   scope,
   gestiona,
+  fijasQueTocanCount,
+  onComprasFijas,
   onModal,
 }: {
   scope: Scope
   gestiona: boolean
+  fijasQueTocanCount: number
+  onComprasFijas: () => void
   onModal: (m: ModalKind) => void
 }) {
   return (
     <>
       {gestiona ? (
-        <Button variant="ghost" title="Gestionar las unidades solicitantes" onClick={() => onModal({ kind: 'categorias' })}>
-          📒 Categorías
-        </Button>
+        <>
+          <Button
+            variant="outline"
+            className="relative gap-1.5"
+            title="Compras fijas y periódicas con plantilla recurrente"
+            onClick={onComprasFijas}
+          >
+            <span>🔁 Compras fijas</span>
+            {fijasQueTocanCount > 0 ? (
+              <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-500 px-1 text-[11px] font-bold text-white shadow-sm">
+                {fijasQueTocanCount}
+              </span>
+            ) : null}
+          </Button>
+          <Button variant="ghost" title="Gestionar las unidades solicitantes" onClick={() => onModal({ kind: 'categorias' })}>
+            📒 Categorías
+          </Button>
+        </>
       ) : null}
       {scope === 'servicio' ? (
         <Button onClick={() => onModal({ kind: 'create-servicio' })}>+ Nuevo servicio</Button>
