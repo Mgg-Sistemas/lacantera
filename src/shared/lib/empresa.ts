@@ -9,16 +9,16 @@
    ============================================================ */
 
 /** Razón social tal como va en los documentos formales. */
-export const EMPRESA_NOMBRE = 'GOLDEN TOUCH 1127, C.A.';
+export const EMPRESA_NOMBRE = 'MINERIA INTERNACIONAL TS, C.A.';
 
 /** Domicilio fiscal (membrete de la nota de envío y documentos formales). */
-export const EMPRESA_DOMICILIO = 'Calle Manzana 19 Casa Parcela N° 11 Urb. Villa Granada UD 208, Puerto Ordaz, Ciudad Guayana, Bolívar, Zona Postal 8050';
+export const EMPRESA_DOMICILIO = 'Sector La Cantera, Estado Bolívar, Venezuela';
 
 /** RIF fiscal, para el membrete de los documentos formales. */
-export const EMPRESA_RIF = 'J-50129993-5';
+export const EMPRESA_RIF = 'J-50209170-0';
 
 /** Correo de contacto que va impreso en los documentos. */
-export const EMPRESA_EMAIL = 'info@goldentouch1127.com';
+export const EMPRESA_EMAIL = 'contacto@mineriainternacionalts.com';
 
 /** WhatsApp de contacto que va impreso en los documentos. */
 export const EMPRESA_WHATSAPP = '+58 424-9349731';
@@ -26,14 +26,10 @@ export const EMPRESA_WHATSAPP = '+58 424-9349731';
 /** La línea de contacto tal como aparece en el membrete. */
 export const EMPRESA_CONTACTO = `${EMPRESA_EMAIL}  ·  WhatsApp ${EMPRESA_WHATSAPP}`;
 
-/* ───────── Las dos empresas del grupo (06/10/2026) ─────────
-   RRHH lleva dos nóminas: GT (Golden Touch) y MTO, que es OTRA empresa:
-   Minería Tin Oxide, C.A. Todo papel de una persona de la nómina MTO
-   (carnet, ficha, constancia, hoja de ingreso, recibo, préstamos…) sale
-   con el nombre, el RIF, el domicilio y el logo de MTO, no los de GT. */
+/* ───────── Empresa principal y filiales ───────── */
 
 export interface IdentidadEmpresa {
-  /** GT, MTO o la clave de una empresa creada en RRHH (2 a 8 letras/números). */
+  /** Clave de empresa (MITS, CANTERA, MTO, etc.). */
   clave: string;
   /** Razón social, como va en el membrete y en el texto de los documentos. */
   nombre: string;
@@ -52,7 +48,7 @@ export interface IdentidadEmpresa {
   icono: string;
   activa: boolean;
   orden: number;
-  /** ¿Tiene logo propio? (las empresas nuevas sin logo usan el de Golden Touch). */
+  /** ¿Tiene logo propio? */
   logoPropio: boolean;
   /** Moneda de los recibos de pago: 'USD' (recibos como siempre) o 'BRL' (en $ y en Real brasileño, con la tasa). */
   monedaPago: MonedaPagoEmpresa;
@@ -64,23 +60,25 @@ export type MonedaPagoEmpresa = 'USD' | 'BRL';
 /** Lo que viene de la base → una moneda válida (cualquier otra cosa es dólares). */
 export const monedaPagoValida = (v: unknown): MonedaPagoEmpresa => (v === 'BRL' ? 'BRL' : 'USD');
 
-export const IDENTIDAD_GT: IdentidadEmpresa = {
-  clave: 'GT',
-  nombre: 'GOLDEN TOUCH 1127 C.A.',
+export const IDENTIDAD_CANTERA: IdentidadEmpresa = {
+  clave: 'MITS',
+  nombre: 'MINERIA INTERNACIONAL TS, C.A.',
   rif: EMPRESA_RIF,
   domicilio: EMPRESA_DOMICILIO,
   ciudad: 'Puerto Ordaz, Estado Bolívar',
   email: EMPRESA_EMAIL,
   whatsapp: EMPRESA_WHATSAPP,
   contacto: EMPRESA_CONTACTO,
-  logoPdf: 'Logo Golden Touch.jpg',
+  logoPdf: 'LOGO.jpg',
   logoPantalla: 'LOGO.jpg',
-  icono: '🏢',
+  icono: '⛏️',
   activa: true,
   orden: 1,
   logoPropio: true,
   monedaPago: 'USD',
 };
+
+export const IDENTIDAD_GT: IdentidadEmpresa = IDENTIDAD_CANTERA;
 
 /** Datos del RIF de MTO (SENIAT, actualizado el 20/08/2026). El contacto es el del grupo. */
 export const IDENTIDAD_MTO: IdentidadEmpresa = {
@@ -125,7 +123,12 @@ export interface FilaEmpresaRrhh {
   moneda_pago?: string | null;
 }
 
-const BASE: Record<string, IdentidadEmpresa> = { GT: IDENTIDAD_GT, MTO: IDENTIDAD_MTO };
+const BASE: Record<string, IdentidadEmpresa> = {
+  MITS: IDENTIDAD_CANTERA,
+  CANTERA: IDENTIDAD_CANTERA,
+  GT: IDENTIDAD_CANTERA,
+  MTO: IDENTIDAD_MTO,
+};
 let registro = new Map<string, IdentidadEmpresa>();
 let version = 0;
 const oyentes = new Set<() => void>();
@@ -145,9 +148,9 @@ export function identidadDeFila(f: FilaEmpresaRrhh): IdentidadEmpresa {
     email,
     whatsapp,
     contacto: `${email}  ·  WhatsApp ${whatsapp}`,
-    logoPdf: logo ?? base?.logoPdf ?? IDENTIDAD_GT.logoPdf,
-    logoPantalla: logo ?? base?.logoPantalla ?? IDENTIDAD_GT.logoPantalla,
-    icono: f.icono || base?.icono || '🏢',
+    logoPdf: logo ?? base?.logoPdf ?? IDENTIDAD_CANTERA.logoPdf,
+    logoPantalla: logo ?? base?.logoPantalla ?? IDENTIDAD_CANTERA.logoPantalla,
+    icono: f.icono || base?.icono || '⛏️',
     activa: f.activa,
     orden: f.orden,
     logoPropio: !!logo || !!base,
@@ -168,22 +171,22 @@ export function suscribirEmpresas(cb: () => void): () => void {
 }
 export const versionEmpresas = () => version;
 
-/** Todas las empresas (activas e inactivas), por orden. Sin cargar todavía: GT y MTO. */
+/** Todas las empresas (activas e inactivas), por orden. */
 export function empresasRrhh(): IdentidadEmpresa[] {
-  const lista = registro.size ? [...registro.values()] : [IDENTIDAD_GT, IDENTIDAD_MTO];
+  const lista = registro.size ? [...registro.values()] : [IDENTIDAD_CANTERA, IDENTIDAD_MTO];
   return lista.sort((a, b) => a.orden - b.orden || a.clave.localeCompare(b.clave));
 }
 
-/** Identidad de la empresa de una nómina. Sin dato o desconocida → GT. */
+/** Identidad de la empresa de una nómina. Sin dato o desconocida → MITS (Minería Internacional TS). */
 export function identidadEmpresa(empresa?: string | null): IdentidadEmpresa {
   if (empresa && registro.has(empresa)) return registro.get(empresa)!;
-  return (empresa && BASE[empresa]) || IDENTIDAD_GT;
+  return (empresa && BASE[empresa]) || IDENTIDAD_CANTERA;
 }
 
-/** Razón social para el texto corrido de cartas y carnets («Golden Touch 1127 C.A.»). */
+/** Razón social para el texto corrido de cartas y carnets («Minería Internacional TS, C.A.»). */
 export function razonSocialTexto(emp: Pick<IdentidadEmpresa, 'clave' | 'nombre'>): string {
   if (emp.clave === 'MTO') return 'Minería Tin Oxide, C.A.';
-  if (emp.clave === 'GT') return 'Golden Touch 1127 C.A.';
+  if (emp.clave === 'GT' || emp.clave === 'MITS' || emp.clave === 'CANTERA') return 'Minería Internacional TS, C.A.';
   return emp.nombre;
 }
 
@@ -194,8 +197,8 @@ export const ciudadCorta = (emp: Pick<IdentidadEmpresa, 'ciudad'>) => emp.ciudad
 export const urlArchivoPublico = (archivo: string) =>
   (/^https?:\/\//.test(archivo) ? archivo : `${import.meta.env.BASE_URL}${encodeURIComponent(archivo)}`);
 
-/** «Nómina GT», «Nómina MTO», «Nómina XYZ». */
-export const etiquetaNomina = (empresa?: string | null) => `Nómina ${empresa || 'GT'}`;
+/** «Nómina MITS», «Nómina MTO», «Nómina XYZ». */
+export const etiquetaNomina = (empresa?: string | null) => `Nómina ${empresa || 'MITS'}`;
 
 /** ¿El texto es una clave de empresa válida? (2 a 8 letras mayúsculas o números) */
 export const claveEmpresaValida = (c: string) => /^[A-Z0-9]{2,8}$/.test(c);
