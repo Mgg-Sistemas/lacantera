@@ -303,18 +303,18 @@ export function Manual() {
           ) : null}
         </div>
 
-        {/* Botones de filtro por Área Temática */}
+        {/* Botones de filtro por Área Temática (Estilo Materio) */}
         {vista !== 'libro_completo' ? (
-          <div className="flex flex-wrap items-center gap-2 pt-1">
+          <div className="flex flex-wrap items-center gap-1.5 pt-1">
             {AREAS_OPERATIVAS.map((a) => (
               <button
                 key={a.id}
                 type="button"
                 onClick={() => setAreaFiltro(a.id)}
-                className={`px-3 py-1.5 text-xs rounded-full border transition-all ${
+                className={`px-3 py-1.5 text-xs rounded-control border transition-all font-medium ${
                   areaFiltro === a.id
-                    ? 'border-tierra-600 bg-tierra-600/10 text-tierra-700 dark:text-tierra-300 font-bold shadow-sm'
-                    : 'border-hairline bg-surface/60 text-ink/70 hover:border-ink/35 hover:text-ink'
+                    ? 'border-tierra-600 bg-tierra-600 text-white font-semibold shadow-xs'
+                    : 'border-hairline bg-surface text-ink/75 hover:border-ink/30 hover:text-ink'
                 }`}
                 title={a.descripcion}
               >
@@ -329,9 +329,9 @@ export function Manual() {
       {/* PILAR 1: PREGUNTAS FRECUENTES (Q&A OPERATIVO - DIGERIBLE Y ACCIONABLE) */}
       {/* ========================================================================= */}
       {vista === 'preguntas_respuestas' && (
-        <div className="space-y-4 max-w-4xl">
+        <div className="space-y-3.5 max-w-4xl">
           {qaFiltradas.length === 0 ? (
-            <div className="rounded-[10px] border border-dashed border-hairline p-12 text-center bg-surface">
+            <div className="rounded-card border border-dashed border-hairline p-12 text-center bg-surface">
               <HelpCircle className="size-10 text-ink/40 mx-auto mb-3" />
               <p className="text-base font-semibold text-ink/90">No encontramos respuestas para esa búsqueda</p>
               <p className="text-sm text-ink/60 mt-1">
@@ -344,10 +344,10 @@ export function Manual() {
               return (
                 <div
                   key={qa.id}
-                  className={`rounded-[10px] border transition-all overflow-hidden bg-surface ${
+                  className={`rounded-card border transition-all overflow-hidden bg-surface shadow-card ${
                     estaAbierta
-                      ? 'border-tierra-600/50 shadow-md ring-1 ring-tierra-600/15'
-                      : 'border-hairline hover:border-ink/30 hover:shadow-sm'
+                      ? 'border-tierra-600/60 ring-1 ring-tierra-600/20'
+                      : 'border-hairline hover:border-ink/30 hover:shadow-card-hover'
                   }`}
                 >
                   <button
@@ -357,32 +357,34 @@ export function Manual() {
                   >
                     <div className="space-y-2.5 flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-tierra-600/10 text-tierra-700 dark:text-tierra-300">
+                        <span className="text-2xs font-bold px-2 py-0.5 rounded-[4px] uppercase tracking-wider bg-tierra-600/10 text-tierra-700 dark:text-tierra-300">
                           {AREAS_OPERATIVAS.find((a) => a.id === qa.area)?.label}
                         </span>
                       </div>
-                      <h3 className="text-base sm:text-lg font-bold text-ink leading-snug">
+                      <h3 className="font-titular text-base sm:text-lg font-bold text-ink leading-snug">
                         {qa.pregunta}
                       </h3>
-                      {/* Píldora de respuesta directa siempre legible y clara */}
-                      <div className="p-3.5 rounded-[8px] bg-canvas/90 border border-hairline flex items-start gap-3 text-sm text-ink leading-relaxed shadow-sm">
-                        <Lightbulb className="size-5 text-warning shrink-0 mt-0.5" />
+                      {/* Píldora de respuesta directa con acento visual lateral */}
+                      <div className="p-3.5 rounded-control bg-canvas/70 border border-hairline border-l-4 border-l-tierra-600 flex items-start gap-3 text-sm text-ink leading-relaxed">
+                        <Lightbulb className="size-4.5 text-warning shrink-0 mt-0.5" />
                         <div>
                           <strong className="text-tierra-600 dark:text-tierra-400 font-bold block sm:inline sm:mr-1.5">
                             Respuesta rápida:
                           </strong>
-                          <span className="text-ink font-normal">{qa.respuestaCorta}</span>
+                          <span className="text-ink/90 font-normal">{qa.respuestaCorta}</span>
                         </div>
                       </div>
                     </div>
                     <div className="shrink-0 pt-1">
                       <div
-                        className={`size-8 rounded-full flex items-center justify-center transition-all ${
-                          estaAbierta ? 'bg-tierra-600 text-white' : 'bg-ink/5 text-ink/70 hover:bg-ink/10'
+                        className={`size-8 rounded-control flex items-center justify-center transition-all border ${
+                          estaAbierta
+                            ? 'bg-tierra-600 border-tierra-600 text-white'
+                            : 'border-hairline bg-surface text-ink/60 hover:text-ink hover:border-ink/30'
                         }`}
                       >
                         <ChevronDown
-                          className={`size-4.5 transition-transform duration-200 ${
+                          className={`size-4 transition-transform duration-200 ${
                             estaAbierta ? 'rotate-180' : ''
                           }`}
                         />
@@ -391,23 +393,23 @@ export function Manual() {
                   </button>
 
                   {estaAbierta && (
-                    <div className="p-4 sm:p-5 pt-0 border-t border-hairline space-y-4 bg-canvas/20">
-                      {/* Causa del sistema (Explicación breve) */}
-                      <div className="rounded-[8px] border border-hairline bg-surface p-4 space-y-2 shadow-sm">
-                        <div className="flex items-center gap-2 text-xs font-bold text-ink uppercase tracking-wider">
+                    <div className="p-4 sm:p-5 pt-0 border-t border-hairline space-y-4 bg-canvas/25">
+                      {/* Causa del sistema (Explicación clara y serena) */}
+                      <div className="rounded-card border border-hairline bg-surface p-4 space-y-1.5 shadow-xs">
+                        <div className="flex items-center gap-2 text-xs font-bold text-ink/75 uppercase tracking-wider">
                           <Info className="size-4 text-tierra-600 dark:text-tierra-400" />
-                          <span>¿Por qué sucede esto en el sistema?</span>
+                          <span>Causa del sistema</span>
                         </div>
-                        <p className="text-sm text-ink leading-relaxed pl-6 font-normal">
+                        <p className="text-sm text-ink/90 leading-relaxed pl-6 font-normal">
                           {qa.causaRaiz}
                         </p>
                       </div>
 
                       {/* Pasos de solución estructurados y visuales */}
-                      <div className="rounded-[8px] border border-tierra-600/30 bg-surface p-4 sm:p-5 space-y-3.5 shadow-sm">
+                      <div className="rounded-card border border-tierra-600/30 bg-surface p-4 sm:p-5 space-y-3 shadow-xs">
                         <div className="flex items-center gap-2 text-xs font-bold text-tierra-600 dark:text-tierra-400 uppercase tracking-wider">
                           <CheckCircle2 className="size-4.5 text-success" />
-                          <span>Pasos exactos para resolverlo:</span>
+                          <span>Pasos exactos para resolverlo</span>
                         </div>
 
                         <div className="space-y-3 pl-1 sm:pl-2">
@@ -416,7 +418,7 @@ export function Manual() {
                             if (match) {
                               return (
                                 <div key={idx} className="flex items-start gap-3 text-sm text-ink leading-relaxed">
-                                  <span className="size-6 rounded-full bg-tierra-600 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                                  <span className="size-5.5 rounded-full bg-tierra-600 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
                                     {match[1]}
                                   </span>
                                   <span className="flex-1 font-medium text-ink pt-0.5">{match[2]}</span>
@@ -424,7 +426,7 @@ export function Manual() {
                               )
                             }
                             return line.trim() ? (
-                              <p key={idx} className="text-sm text-ink leading-relaxed pl-9">
+                              <p key={idx} className="text-sm text-ink/90 leading-relaxed pl-8">
                                 {line}
                               </p>
                             ) : null
@@ -436,7 +438,7 @@ export function Manual() {
                       {qa.rutaRecomendada ? (
                         <div className="flex justify-end pt-1">
                           <Link to={qa.rutaRecomendada}>
-                            <Button size="sm" icon={<ExternalLink className="size-4" />}>
+                            <Button size="sm" icon={<ExternalLink className="size-3.5" />}>
                               {qa.textoRuta || 'Ir a la pantalla correspondiente'}
                             </Button>
                           </Link>
@@ -455,9 +457,9 @@ export function Manual() {
       {/* PILAR 2: GUÍAS PASO A PASO (STEP-BY-STEP) */}
       {/* ========================================================================= */}
       {vista === 'paso_a_paso' && (
-        <div className="space-y-4 max-w-4xl">
+        <div className="space-y-3.5 max-w-4xl">
           {guiasFiltradas.length === 0 ? (
-            <div className="rounded-[10px] border border-dashed border-hairline p-12 text-center bg-surface">
+            <div className="rounded-card border border-dashed border-hairline p-12 text-center bg-surface">
               <ListOrdered className="size-10 text-ink/40 mx-auto mb-3" />
               <p className="text-base font-semibold text-ink/90">No se encontraron guías para la búsqueda</p>
               <p className="text-sm text-ink/60 mt-1">
@@ -470,10 +472,10 @@ export function Manual() {
               return (
                 <div
                   key={guia.id}
-                  className={`rounded-[10px] border transition-all overflow-hidden bg-surface ${
+                  className={`rounded-card border transition-all overflow-hidden bg-surface shadow-card ${
                     estaAbierta
-                      ? 'border-tierra-600/50 shadow-md ring-1 ring-tierra-600/15'
-                      : 'border-hairline hover:border-ink/30 hover:shadow-sm'
+                      ? 'border-tierra-600/60 ring-1 ring-tierra-600/20'
+                      : 'border-hairline hover:border-ink/30 hover:shadow-card-hover'
                   }`}
                 >
                   <button
@@ -483,23 +485,25 @@ export function Manual() {
                   >
                     <div className="space-y-2 flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-tierra-600/10 text-tierra-700 dark:text-tierra-300">
+                        <span className="text-2xs font-bold px-2 py-0.5 rounded-[4px] uppercase tracking-wider bg-tierra-600/10 text-tierra-700 dark:text-tierra-300">
                           {AREAS_OPERATIVAS.find((a) => a.id === guia.area)?.label}
                         </span>
                       </div>
-                      <h3 className="text-base sm:text-lg font-bold text-ink leading-snug">
+                      <h3 className="font-titular text-base sm:text-lg font-bold text-ink leading-snug">
                         {guia.titulo}
                       </h3>
                       <p className="text-sm text-ink/75 leading-relaxed max-w-3xl">{guia.resumen}</p>
                     </div>
                     <div className="shrink-0 pt-1">
                       <div
-                        className={`size-8 rounded-full flex items-center justify-center transition-all ${
-                          estaAbierta ? 'bg-tierra-600 text-white' : 'bg-ink/5 text-ink/60 hover:bg-ink/10'
+                        className={`size-8 rounded-control flex items-center justify-center transition-all border ${
+                          estaAbierta
+                            ? 'bg-tierra-600 border-tierra-600 text-white'
+                            : 'border-hairline bg-surface text-ink/60 hover:text-ink hover:border-ink/30'
                         }`}
                       >
                         <ChevronDown
-                          className={`size-4.5 transition-transform duration-200 ${
+                          className={`size-4 transition-transform duration-200 ${
                             estaAbierta ? 'rotate-180' : ''
                           }`}
                         />
@@ -508,43 +512,43 @@ export function Manual() {
                   </button>
 
                   {estaAbierta && (
-                    <div className="p-4 sm:p-5 pt-0 border-t border-hairline space-y-4 bg-canvas/20">
+                    <div className="p-4 sm:p-5 pt-0 border-t border-hairline space-y-4 bg-canvas/25">
                       {/* Metadatos: Rol y Ruta */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs sm:text-sm">
-                        <div className="p-3 rounded-[6px] border border-hairline bg-surface flex items-center justify-between">
-                          <span className="text-ink/80 font-medium">¿Quién puede hacerlo?:</span>
+                        <div className="p-3 rounded-control border border-hairline bg-surface flex items-center justify-between">
+                          <span className="text-ink/75 font-medium">¿Quién puede hacerlo?:</span>
                           <strong className="text-ink font-bold">{guia.rolRequerido}</strong>
                         </div>
-                        <div className="p-3 rounded-[6px] border border-hairline bg-surface flex items-center justify-between">
-                          <span className="text-ink/80 font-medium">¿Dónde se encuentra?:</span>
+                        <div className="p-3 rounded-control border border-hairline bg-surface flex items-center justify-between">
+                          <span className="text-ink/75 font-medium">¿Dónde se encuentra?:</span>
                           <span className="text-ink font-mono text-xs font-bold">{guia.rutaMenu}</span>
                         </div>
                       </div>
 
                       {/* Lista numerada de pasos */}
                       <div className="space-y-3">
-                        <p className="text-xs font-bold text-ink uppercase tracking-wider">
+                        <p className="text-xs font-bold text-ink/75 uppercase tracking-wider">
                           Pasos a seguir:
                         </p>
-                        <div className="space-y-3">
+                        <div className="space-y-2.5">
                           {guia.pasos.map((paso) => (
                             <div
                               key={paso.numero}
-                              className="rounded-[8px] border border-hairline bg-surface p-4 flex items-start gap-3.5 shadow-sm"
+                              className="rounded-card border border-hairline bg-surface p-4 flex items-start gap-3.5 shadow-xs"
                             >
-                              <span className="size-7 rounded-full bg-tierra-600 text-white font-bold text-sm flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                              <span className="size-6 rounded-full bg-tierra-600 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
                                 {paso.numero}
                               </span>
                               <div className="min-w-0 flex-1 space-y-1">
                                 <div className="flex flex-wrap items-center justify-between gap-2">
                                   <p className="text-sm font-bold text-ink">{paso.titulo}</p>
                                   {paso.boton ? (
-                                    <span className="px-2.5 py-0.5 rounded-[4px] border border-tierra-600/30 bg-tierra-600/10 text-xs font-mono text-tierra-700 dark:text-tierra-300 font-bold">
+                                    <span className="px-2 py-0.5 rounded-[4px] border border-tierra-600/30 bg-tierra-600/10 text-xs font-mono text-tierra-700 dark:text-tierra-300 font-bold">
                                       Tocar: «{paso.boton}»
                                     </span>
                                   ) : null}
                                 </div>
-                                <p className="text-sm text-ink leading-relaxed font-normal">{paso.detalle}</p>
+                                <p className="text-sm text-ink/85 leading-relaxed font-normal">{paso.detalle}</p>
                               </div>
                             </div>
                           ))}
@@ -552,20 +556,20 @@ export function Manual() {
                       </div>
 
                       {/* Resultado esperado */}
-                      <div className="rounded-[8px] border border-success/40 bg-surface p-4 text-sm text-ink flex items-start gap-3 shadow-sm">
-                        <CheckCircle2 className="size-5 text-success shrink-0 mt-0.5" />
+                      <div className="rounded-card border border-success/30 bg-surface p-4 text-sm text-ink flex items-start gap-3 shadow-xs">
+                        <CheckCircle2 className="size-4.5 text-success shrink-0 mt-0.5" />
                         <div className="space-y-0.5">
                           <strong className="text-ink font-bold block">Resultado al finalizar:</strong>
-                          <span className="text-ink leading-relaxed">{guia.resultado}</span>
+                          <span className="text-ink/85 leading-relaxed">{guia.resultado}</span>
                         </div>
                       </div>
 
                       {/* Cómo revertir o corregir */}
-                      <div className="rounded-[8px] border border-warning/40 bg-surface p-4 text-sm text-ink flex items-start gap-3 shadow-sm">
-                        <RotateCcw className="size-5 text-warning shrink-0 mt-0.5" />
+                      <div className="rounded-card border border-warning/30 bg-surface p-4 text-sm text-ink flex items-start gap-3 shadow-xs">
+                        <RotateCcw className="size-4.5 text-warning shrink-0 mt-0.5" />
                         <div className="space-y-0.5">
                           <strong className="text-ink font-bold block">↺ Si te equivocaste o necesitas corregir:</strong>
-                          <span className="text-ink leading-relaxed">{guia.revertir}</span>
+                          <span className="text-ink/85 leading-relaxed">{guia.revertir}</span>
                         </div>
                       </div>
 
@@ -573,7 +577,7 @@ export function Manual() {
                       {guia.rutaDirecta ? (
                         <div className="pt-1 flex justify-end">
                           <Link to={guia.rutaDirecta}>
-                            <Button size="sm" icon={<ExternalLink className="size-4" />}>
+                            <Button size="sm" icon={<ExternalLink className="size-3.5" />}>
                               Abrir pantalla de la guía
                             </Button>
                           </Link>

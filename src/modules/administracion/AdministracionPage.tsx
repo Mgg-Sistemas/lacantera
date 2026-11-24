@@ -8,6 +8,26 @@
    un repo inyectado: Supabase en la app; en memoria en la demo (DEV).
    ============================================================ */
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  LayoutDashboard,
+  Receipt,
+  History,
+  Briefcase,
+  FolderArchive,
+  Calendar,
+  Users,
+  BarChart3,
+  ScrollText,
+  Settings,
+  Bell,
+  BellOff,
+  Smartphone,
+  Building2,
+  type LucideIcon,
+} from 'lucide-react';
+import { PageHeader } from '@/components/PageHeader';
+import { Button } from '@/components/ui/Button';
+import { cn } from '@/lib/cn';
 import { usePermissions } from '@/modules/auth/PermissionsContext';
 import { usePwaInstall } from '@/shared/hooks/usePwaInstall';
 import { esErrorTablaAusente, extraerMensajeError } from './adminErrores';
@@ -32,17 +52,23 @@ import {
 } from './notificacionesAdministracion';
 import './administracion.css';
 
-const PESTANAS: { id: TabAdmin; label: string }[] = [
-  { id: 'tablero', label: '📊 Tablero' },
-  { id: 'gastos', label: '📌 Gastos fijos' },
-  { id: 'movimientos', label: '📒 Movimientos / Histórico' },
-  { id: 'honorarios', label: '💼 Honorarios' },
-  { id: 'documentos', label: '📁 Documentos y Permisos' },
-  { id: 'agenda', label: '🗓 Agenda' },
-  { id: 'responsabilidad', label: '👥 Responsabilidad' },
-  { id: 'reporte', label: '📊 Reporte' },
-  { id: 'auditoria', label: '📜 Auditoría' },
-  { id: 'config', label: '⚙ Configuración' },
+interface PestanaConfig {
+  id: TabAdmin;
+  label: string;
+  icon: LucideIcon;
+}
+
+const PESTANAS: PestanaConfig[] = [
+  { id: 'tablero', label: 'Tablero', icon: LayoutDashboard },
+  { id: 'gastos', label: 'Gastos fijos', icon: Receipt },
+  { id: 'movimientos', label: 'Movimientos', icon: History },
+  { id: 'honorarios', label: 'Honorarios', icon: Briefcase },
+  { id: 'documentos', label: 'Documentos', icon: FolderArchive },
+  { id: 'agenda', label: 'Agenda', icon: Calendar },
+  { id: 'responsabilidad', label: 'Responsabilidad', icon: Users },
+  { id: 'reporte', label: 'Reporte', icon: BarChart3 },
+  { id: 'auditoria', label: 'Auditoría', icon: ScrollText },
+  { id: 'config', label: 'Configuración', icon: Settings },
 ];
 
 export function AdministracionPage({ repo: repoDado, prefs: prefsDadas, aviso, puedeEscribir = true, puedeFull = true }: {
@@ -137,73 +163,107 @@ export function AdministracionPage({ repo: repoDado, prefs: prefsDadas, aviso, p
   }, [nuevasParaSonar]);
 
   return (
-    <div>
+    <div className="space-y-4">
       {aviso}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-        <div>
-          <h1 style={{ margin: 0 }}>💼 Administración</h1>
-          <p className="muted hint" style={{ margin: '.25rem 0 0' }}>Gastos fijos por servicio: plantillas, histórico y reporte.</p>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '.65rem', flexWrap: 'wrap' }}>
-          <label style={{ display: 'inline-flex', alignItems: 'center', gap: '.4rem' }}>
-            <span className="muted hint">Empresa</span>
-            <select className="input" value={empresaSel} onChange={(e) => elegirEmpresa(e.target.value)} aria-label="Empresa" style={{ minWidth: 190 }}>
-              <option value={TODAS}>Todas las empresas</option>
-              {activas.map((e) => <option key={e.id} value={e.clave}>{e.nombre}</option>)}
-            </select>
-          </label>
-          {puedeFull && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setGestionar(true)}>⚙ Gestionar empresas</button>}
 
-          {/* Botón PWA: Instalable en teléfono o escritorio si el navegador lo soporta */}
-          {isInstallable && (
+      <PageHeader
+        eyebrow="ADMINISTRACIÓN CORPORATIVA"
+        title="Administración"
+        description="Gastos fijos por servicio, honorarios, documentos legales, agenda de trámites y reporte ejecutivo."
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Selector de empresa elegante */}
+            <div className="flex items-center gap-2 rounded-control border border-hairline bg-surface px-3 py-1.5 shadow-xs">
+              <Building2 className="size-4 text-ink/40" />
+              <span className="text-xs font-medium text-ink/50">Empresa:</span>
+              <select
+                value={empresaSel}
+                onChange={(e) => elegirEmpresa(e.target.value)}
+                aria-label="Filtrar por empresa"
+                className="bg-transparent text-sm font-semibold text-ink focus:outline-none cursor-pointer pr-1"
+              >
+                <option value={TODAS}>Todas las empresas</option>
+                {activas.map((e) => (
+                  <option key={e.id} value={e.clave}>
+                    {e.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {puedeFull && (
+              <Button
+                variant="outline"
+                size="sm"
+                icon={<Settings className="size-3.5" />}
+                onClick={() => setGestionar(true)}
+              >
+                Gestionar empresas
+              </Button>
+            )}
+
+            {isInstallable && (
+              <Button
+                variant="outline"
+                size="sm"
+                icon={<Smartphone className="size-3.5" />}
+                onClick={() => void promptInstall()}
+                title="Instalar en la pantalla de inicio o escritorio"
+              >
+                Instalar App
+              </Button>
+            )}
+
+            {/* Campana de notificaciones con badge */}
             <button
               type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={() => void promptInstall()}
-              title="Instalar Golden Touch en la pantalla de inicio o escritorio"
+              onClick={() => setVerNotificaciones(true)}
+              className="relative inline-flex items-center justify-center size-9 rounded-control border border-hairline bg-surface text-ink/75 hover:text-ink hover:border-ink/30 transition-colors shadow-xs"
+              title={
+                nuevasParaSonar.length > 0
+                  ? `${nuevasParaSonar.length} alertas activas de vencimiento`
+                  : totalSilenciadas > 0
+                  ? `${totalSilenciadas} alertas silenciadas temporalmente`
+                  : 'Centro de Alertas y Notificaciones'
+              }
             >
-              📲 Instalar App
+              {nuevasParaSonar.length > 0 ? (
+                <Bell className="size-4.5 text-warning" />
+              ) : (
+                <BellOff className="size-4.5 text-ink/40" />
+              )}
+              {nuevasParaSonar.length > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white shadow-xs">
+                  {nuevasParaSonar.length}
+                </span>
+              )}
             </button>
-          )}
-
-          {/* Campana de Alertas y Notificaciones Push descartables */}
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm"
-            style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '.3rem' }}
-            onClick={() => setVerNotificaciones(true)}
-            title={
-              nuevasParaSonar.length > 0
-                ? `${nuevasParaSonar.length} alertas activas de vencimiento`
-                : totalSilenciadas > 0
-                ? `${totalSilenciadas} alertas silenciadas temporalmente`
-                : 'Centro de Alertas y Notificaciones'
-            }
-          >
-            <span style={{ fontSize: '1rem' }}>{nuevasParaSonar.length > 0 ? '🔔' : '🔕'}</span>
-            {nuevasParaSonar.length > 0 && (
-              <span
-                style={{
-                  background: '#ef4444',
-                  color: '#fff',
-                  borderRadius: '10px',
-                  fontSize: '.66rem',
-                  padding: '1px 6px',
-                  fontWeight: 700,
-                  lineHeight: '1.2',
-                }}
-              >
-                {nuevasParaSonar.length}
-              </span>
-            )}
-          </button>
-
-          <div className="view-toggle" role="tablist" aria-label="Vista de administración">
-            {PESTANAS.map((p) => (
-              <button key={p.id} className={tab === p.id ? 'active' : ''} onClick={() => elegirTab(p.id)}>{p.label}</button>
-            ))}
           </div>
-        </div>
+        }
+      />
+
+      {/* Riel horizontal de navegación de pestañas (Estilo Materio / La Cantera) */}
+      <div className="flex border-b border-hairline gap-1 overflow-x-auto scrollbar-none pb-px mb-4">
+        {PESTANAS.map((p) => {
+          const Icon = p.icon;
+          const esActiva = tab === p.id;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => elegirTab(p.id)}
+              className={cn(
+                'flex items-center gap-2 px-3.5 py-2.5 text-sm font-semibold whitespace-nowrap transition-all border-b-2 -mb-px rounded-t-[4px]',
+                esActiva
+                  ? 'border-tierra-600 text-tierra-600 dark:text-tierra-300 bg-tierra-600/5'
+                  : 'border-transparent text-ink/60 hover:text-ink hover:border-hairline hover:bg-ink/5',
+              )}
+            >
+              <Icon className={cn('size-4', esActiva ? 'text-tierra-600 dark:text-tierra-400' : 'text-ink/40')} />
+              <span>{p.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {error && (
@@ -214,16 +274,18 @@ export function AdministracionPage({ repo: repoDado, prefs: prefsDadas, aviso, p
         </div>
       )}
 
-      {tab === 'tablero' && <TableroModuloTab repo={repo} empresaClave={empresaClave} empresas={empresas} puedeEscribir={puedeEscribir} />}
-      {tab === 'gastos' && <GastosFijosTab repo={repo} empresaClave={empresaClave} empresas={empresas} puedeEscribir={puedeEscribir} />}
-      {tab === 'movimientos' && <MovimientosTab repo={repo} empresaClave={empresaClave} empresas={empresas} puedeEscribir={puedeEscribir} />}
-      {tab === 'honorarios' && <HonorariosTab repo={repo} empresaClave={empresaClave} empresas={empresas} puedeEscribir={puedeEscribir} />}
-      {tab === 'documentos' && <DocumentosTab repo={repo} empresaClave={empresaClave} empresas={empresas} puedeEscribir={puedeEscribir} />}
-      {tab === 'agenda' && <AgendaTab repo={repo} empresaClave={empresaClave} empresas={empresas} />}
-      {tab === 'responsabilidad' && <ResponsabilidadTab repo={repo} empresaClave={empresaClave} empresas={empresas} puedeEscribir={puedeEscribir} />}
-      {tab === 'reporte' && <ReporteTab repo={repo} empresaClave={empresaClave} empresas={empresas} />}
-      {tab === 'auditoria' && <AuditoriaTab documentos={todosLosDocs} empresas={empresas} empresaClave={empresaClave} />}
-      {tab === 'config' && <ConfiguracionTab repo={repo} empresas={empresas} puedeFull={puedeFull} puedeEscribir={puedeEscribir} onGestionarEmpresas={() => setGestionar(true)} />}
+      <div className="min-w-0">
+        {tab === 'tablero' && <TableroModuloTab repo={repo} empresaClave={empresaClave} empresas={empresas} puedeEscribir={puedeEscribir} />}
+        {tab === 'gastos' && <GastosFijosTab repo={repo} empresaClave={empresaClave} empresas={empresas} puedeEscribir={puedeEscribir} />}
+        {tab === 'movimientos' && <MovimientosTab repo={repo} empresaClave={empresaClave} empresas={empresas} puedeEscribir={puedeEscribir} />}
+        {tab === 'honorarios' && <HonorariosTab repo={repo} empresaClave={empresaClave} empresas={empresas} puedeEscribir={puedeEscribir} />}
+        {tab === 'documentos' && <DocumentosTab repo={repo} empresaClave={empresaClave} empresas={empresas} puedeEscribir={puedeEscribir} />}
+        {tab === 'agenda' && <AgendaTab repo={repo} empresaClave={empresaClave} empresas={empresas} />}
+        {tab === 'responsabilidad' && <ResponsabilidadTab repo={repo} empresaClave={empresaClave} empresas={empresas} puedeEscribir={puedeEscribir} />}
+        {tab === 'reporte' && <ReporteTab repo={repo} empresaClave={empresaClave} empresas={empresas} />}
+        {tab === 'auditoria' && <AuditoriaTab documentos={todosLosDocs} empresas={empresas} empresaClave={empresaClave} />}
+        {tab === 'config' && <ConfiguracionTab repo={repo} empresas={empresas} puedeFull={puedeFull} puedeEscribir={puedeEscribir} onGestionarEmpresas={() => setGestionar(true)} />}
+      </div>
 
       {gestionar && puedeFull && <EmpresasModal repo={repo} onClose={() => setGestionar(false)} onChanged={() => void cargarEmpresas()} />}
 

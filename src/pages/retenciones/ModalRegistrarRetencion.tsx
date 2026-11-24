@@ -130,11 +130,11 @@ export function ModalRegistrarRetencion({ abierta, onCerrar, facturaPrevia }: Pr
   }
 
   return (
-    <Modal abierto={abierta} onCerrar={onCerrar} titulo="Emitir Comprobante de Retención (G.O. 43.484)">
+    <Modal abierto={abierta} onCerrar={onCerrar} titulo="Emitir Comprobante de Retención (G.O. 43.484)" ancho="lg">
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Banner Informativo si es Post-Pago */}
         {yaPagada ? (
-          <div className="rounded-[6px] border border-warning/30 bg-warning-soft p-3 text-warning text-xs flex gap-2.5 items-start">
+          <div className="rounded-control border border-warning/30 bg-warning-soft p-3.5 text-warning text-xs flex gap-2.5 items-start">
             <AlertCircle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
             <div>
               <p className="font-semibold text-ink/90">Orden de compra ya pagada al 100%</p>
@@ -148,7 +148,7 @@ export function ModalRegistrarRetencion({ abierta, onCerrar, facturaPrevia }: Pr
         ) : null}
 
         {/* Tipo de Impuesto */}
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-2.5">
           {IMPUESTOS_DISPONIBLES.map((t) => (
             <button
               key={t.tipo}
@@ -158,22 +158,22 @@ export function ModalRegistrarRetencion({ abierta, onCerrar, facturaPrevia }: Pr
                 recalcular(t.tipo, aliDef, baseImponible, impuestoCausado)
               }}
               className={cn(
-                'p-2.5 rounded-[6px] border text-left transition-all',
+                'p-3 rounded-control border text-left transition-all',
                 tipoImpuesto === t.tipo
-                  ? 'border-tierra-600 bg-tierra-600/10 text-tierra-600 dark:text-tierra-300 font-semibold'
-                  : 'border-hairline hover:border-ink/30 text-ink/70 hover:text-ink/90',
+                  ? 'border-tierra-600 bg-tierra-600/10 text-tierra-600 dark:text-tierra-300 font-bold shadow-xs'
+                  : 'border-hairline bg-surface hover:border-ink/30 text-ink/70 hover:text-ink',
               )}
             >
               <div className="text-xs font-bold">{t.tipo}</div>
-              <div className="text-[11px] text-ink/50 truncate">{t.nombre}</div>
+              <div className="text-[11px] text-ink/50 truncate mt-0.5">{t.nombre}</div>
             </button>
           ))}
         </div>
 
         {/* Datos del Documento */}
-        <div className="rounded-[6px] border border-hairline bg-surface/50 p-3.5 space-y-3">
-          <p className="text-xs font-semibold text-ink/80 uppercase tracking-wider">Factura del Proveedor</p>
-          <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-card border border-hairline bg-canvas/40 p-4 space-y-3.5">
+          <p className="text-xs font-bold text-ink/75 uppercase tracking-wider">Factura del Proveedor</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="Proveedor"
               value={proveedorNombre}
@@ -188,7 +188,7 @@ export function ModalRegistrarRetencion({ abierta, onCerrar, facturaPrevia }: Pr
               required
             />
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Input
               label="N° Factura"
               value={facturaNumero}
@@ -210,7 +210,7 @@ export function ModalRegistrarRetencion({ abierta, onCerrar, facturaPrevia }: Pr
               required
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="Correo Fiscal Proveedor (Art. 18.4)"
               type="email"
@@ -234,15 +234,15 @@ export function ModalRegistrarRetencion({ abierta, onCerrar, facturaPrevia }: Pr
         </div>
 
         {/* Montos y Cálculos de Retención */}
-        <div className="rounded-[6px] border border-hairline bg-surface/50 p-3.5 space-y-3">
+        <div className="rounded-card border border-hairline bg-canvas/40 p-4 space-y-3.5">
           <div className="flex justify-between items-center">
-            <p className="text-xs font-semibold text-ink/80 uppercase tracking-wider">Cálculo de la Retención</p>
-            <div className="text-xs text-ink/50">
-              Moneda: <strong className="text-ink/80">{moneda}</strong> | Tasa: <span className="tabular">Bs. {tasa.toFixed(2)}</span>
+            <p className="text-xs font-bold text-ink/75 uppercase tracking-wider">Cálculo de la Retención</p>
+            <div className="text-xs text-ink/60">
+              Moneda: <strong className="text-ink">{moneda}</strong> | Tasa: <span className="tabular font-semibold">Bs. {tasa.toFixed(2)}</span>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="Monto Exento / Exonerado"
               type="number"
@@ -259,7 +259,7 @@ export function ModalRegistrarRetencion({ abierta, onCerrar, facturaPrevia }: Pr
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Input
               label="Base Imponible"
               type="number"
@@ -299,10 +299,10 @@ export function ModalRegistrarRetencion({ abierta, onCerrar, facturaPrevia }: Pr
           </div>
 
           {/* Resultado del Monto Retenido */}
-          <div className="p-3 bg-ink/5 border border-hairline rounded-[6px] flex justify-between items-center">
+          <div className="p-3.5 bg-surface border border-hairline rounded-control flex justify-between items-center shadow-xs">
             <div>
               <p className="text-xs text-ink/60 font-medium">Monto del Impuesto Retenido:</p>
-              <p className="text-lg font-bold text-tierra-600 dark:text-tierra-300">
+              <p className="text-lg font-bold text-tierra-600 dark:text-tierra-300 tabular">
                 {montoRetenido.toLocaleString('es-VE', { minimumFractionDigits: 2 })} {moneda}
               </p>
             </div>
@@ -318,7 +318,7 @@ export function ModalRegistrarRetencion({ abierta, onCerrar, facturaPrevia }: Pr
         </div>
 
         {/* Fechas de Emisión y Entrega (Art. 18.3) */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input
             label="Fecha Emisión Comprobante"
             type="date"
@@ -345,7 +345,7 @@ export function ModalRegistrarRetencion({ abierta, onCerrar, facturaPrevia }: Pr
 
         {registrar.error ? <ErrorDeCarga error={registrar.error} /> : null}
 
-        <div className="flex justify-end gap-2 pt-2 border-t border-hairline">
+        <div className="flex justify-end gap-2 pt-3 border-t border-hairline">
           <Button variant="outline" type="button" onClick={onCerrar} disabled={registrar.isPending}>
             Cancelar
           </Button>

@@ -1,99 +1,644 @@
 /* ============================================================
-   Golden Touch / La Cantera · Administración · estilos del módulo
+   La Cantera · Módulo de Administración · Estilos e Integración Materio
    ============================================================ */
 
 :root {
-  --border: var(--color-hairline, #dedede);
-  --text: var(--color-ink, #351e0e);
-  --text-muted: var(--color-muted, #6d6d6d);
-  --surface: var(--color-surface, #ffffff);
-  --bg-0: var(--color-canvas, #f5f2ef);
-  --gold: var(--color-tierra-500, #ff4f00);
-  --primary: var(--color-tierra-600, #cc3f00);
+  --adm-border: var(--color-hairline, #dedede);
+  --adm-text: var(--color-ink, #351e0e);
+  --adm-text-muted: color-mix(in oklab, var(--color-ink, #351e0e) 60%, transparent);
+  --adm-surface: var(--color-surface, #ffffff);
+  --adm-bg: var(--color-canvas, #f5f2ef);
+  --adm-primary: var(--color-tierra-600, #cc3f00);
+  --adm-primary-hover: var(--color-tierra-700, #9e4c01);
+  --adm-warning: var(--color-warning, #8c6d00);
+  --adm-danger: var(--color-danger, #b3261e);
+  --adm-success: var(--color-success, #2e7d4f);
 }
 
 .dark {
-  --border: var(--color-hairline, #3a2e26);
-  --text: var(--color-ink, #f0e8e2);
-  --text-muted: var(--color-muted, #9a9a9a);
-  --surface: var(--color-surface, #221a15);
-  --bg-0: var(--color-canvas, #17110d);
-  --gold: var(--color-tierra-400, #de7331);
-  --primary: var(--color-tierra-600, #cc3f00);
+  --adm-border: var(--color-hairline, #3a2e26);
+  --adm-text: var(--color-ink, #f0e8e2);
+  --adm-text-muted: color-mix(in oklab, var(--color-ink, #f0e8e2) 60%, transparent);
+  --adm-surface: var(--color-surface, #221a15);
+  --adm-bg: var(--color-canvas, #17110d);
+  --adm-primary: var(--color-tierra-600, #cc3f00);
+  --adm-primary-hover: var(--color-tierra-700, #9e4c01);
+  --adm-warning: #ffc700;
+  --adm-danger: #ef4444;
+  --adm-success: #22c55e;
 }
 
-/* Formularios a dos columnas (una en móvil). */
-.form-grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem 1rem; }
-@media (max-width: 640px) { .form-grid-2 { grid-template-columns: 1fr; } }
+/* ============================================================
+   Contenedores base y tarjetas (Materio 6px radius)
+   ============================================================ */
+.card {
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--radius-card, 6px);
+  padding: 1.25rem 1.5rem;
+  box-shadow: var(--shadow-card, 0 1px 3px rgba(0,0,0,0.06));
+  color: var(--adm-text);
+  margin-bottom: 1.25rem;
+  transition: border-color 0.15s ease;
+}
 
-/* Tablas del módulo: no desbordan el viewport (scroll propio en móvil). */
-.adm-tabla { overflow-x: auto; }
-.adm-tabla table { width: 100%; border-collapse: collapse; font-size: .9rem; font-variant-numeric: tabular-nums; }
-.adm-tabla th, .adm-tabla td { padding: .45rem .6rem; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
-.adm-tabla th { font-size: .72rem; text-transform: uppercase; letter-spacing: .03em; color: var(--text-muted); white-space: nowrap; }
+.card-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--adm-text);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
 
-/* Aviso (error / demo). */
-.adm-aviso { padding: .55rem .85rem; border-radius: 8px; font-size: .88rem; background: rgba(239, 79, 94, .12); color: var(--danger); font-weight: 600; margin-bottom: .75rem; }
-.adm-aviso.demo { background: rgba(255, 213, 74, .1); color: var(--gold); border: 1px dashed rgba(255, 213, 74, .4); }
+/* ============================================================
+   Botones estándar del módulo
+   ============================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-control, 6px);
+  border: 1px solid var(--adm-border);
+  background: var(--adm-surface);
+  color: var(--adm-text);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  line-height: 1.25rem;
+}
 
-/* Envoltura de la página de prueba (DEV). */
-.adm-demo { padding: 1rem 1.25rem; min-height: 100vh; background: var(--bg-0); }
+.btn:hover {
+  border-color: var(--adm-primary);
+  color: var(--adm-primary);
+  background: color-mix(in oklab, var(--adm-primary) 8%, var(--adm-surface));
+}
 
-/* ───────── El Tablero (overview): KPIs + gráficos ───────── */
-.adm-tablero { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1rem; }
+.btn:active {
+  transform: translateY(1px);
+}
 
-.adm-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+.btn:disabled, .btn[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  filter: grayscale(0.5);
+}
+
+.btn-primary {
+  background: var(--adm-primary) !important;
+  border-color: var(--adm-primary) !important;
+  color: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(204, 63, 0, 0.25);
+}
+
+.btn-primary:hover {
+  background: var(--adm-primary-hover) !important;
+  border-color: var(--adm-primary-hover) !important;
+  color: #ffffff !important;
+}
+
+.btn-secondary {
+  background: var(--adm-surface);
+  border-color: var(--adm-border);
+  color: var(--adm-text);
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: var(--adm-border);
+  color: var(--adm-text);
+}
+
+.btn-ghost:hover {
+  background: color-mix(in oklab, var(--adm-text) 6%, transparent);
+  border-color: color-mix(in oklab, var(--adm-text) 30%, transparent);
+}
+
+.btn-danger {
+  background: rgba(179, 38, 30, 0.12);
+  border-color: rgba(179, 38, 30, 0.4);
+  color: var(--adm-danger);
+}
+
+.btn-danger:hover {
+  background: rgba(179, 38, 30, 0.22);
+  color: #ffffff;
+}
+
+.btn-success {
+  background: rgba(46, 125, 79, 0.12);
+  border-color: rgba(46, 125, 79, 0.4);
+  color: var(--adm-success);
+}
+
+.btn-sm {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+  height: 32px;
+}
+
+.btn-icon {
+  padding: 0.4rem;
+  width: 32px;
+  height: 32px;
+}
+
+/* ============================================================
+   Controles de formulario (inputs, selects, textareas)
+   ============================================================ */
+.input, .select, textarea.input {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0.45rem 0.75rem;
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--radius-control, 6px);
+  color: var(--adm-text);
+  font-family: inherit;
+  font-size: 0.875rem;
+  height: 36px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+textarea.input {
+  height: auto;
+  min-height: 80px;
+}
+
+.input:focus, .select:focus, textarea.input:focus {
+  outline: none;
+  border-color: var(--adm-primary);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--adm-primary) 20%, transparent);
+}
+
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
+}
+@media (max-width: 640px) {
+  .form-grid-2 { grid-template-columns: 1fr; }
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+}
+.form-row label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--adm-text-muted);
+}
+
+/* ============================================================
+   Tablas administrativas densas y legibles
+   ============================================================ */
+.adm-tabla {
+  overflow-x: auto;
+  border: 1px solid var(--adm-border);
+  border-radius: var(--radius-card, 6px);
+  background: var(--adm-surface);
+  margin-top: 0.75rem;
+}
+
+.adm-tabla table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.adm-tabla th, .adm-tabla td {
+  padding: 0.65rem 0.85rem;
+  text-align: left;
+  border-bottom: 1px solid var(--adm-border);
+  vertical-align: middle;
+}
+
+.adm-tabla th {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--adm-text-muted);
+  background: color-mix(in oklab, var(--adm-bg) 65%, var(--adm-surface));
+  white-space: nowrap;
+}
+
+.adm-tabla tr:last-child td {
+  border-bottom: none;
+}
+
+.adm-tabla tr:hover td {
+  background: color-mix(in oklab, var(--adm-text) 3%, transparent);
+}
+
+.adm-fila-off {
+  opacity: 0.55;
+}
+
+/* ============================================================
+   Badges, Chips y Estados
+   ============================================================ */
+.adm-chip {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: color-mix(in oklab, var(--adm-text) 6%, transparent);
+  border: 1px solid var(--adm-border);
+  color: var(--adm-text);
+}
+
+.adm-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.adm-badge.activo, .adm-badge.pago-pagado {
+  color: var(--adm-success);
+  background: rgba(46, 125, 79, 0.14);
+}
+
+.adm-badge.suspendido, .adm-badge.pago-anulado {
+  color: var(--adm-text-muted);
+  background: color-mix(in oklab, var(--adm-text) 6%, transparent);
+}
+.adm-badge.pago-anulado {
+  text-decoration: line-through;
+}
+
+.adm-badge.pago-pendiente {
+  color: var(--adm-warning);
+  background: rgba(140, 109, 0, 0.14);
+}
+.dark .adm-badge.pago-pendiente {
+  color: #ffc700;
+  background: rgba(255, 199, 0, 0.14);
+}
+
+.adm-venc.pronto {
+  color: var(--adm-warning);
+  font-weight: 700;
+}
+.adm-venc.vencido {
+  color: var(--adm-danger);
+  font-weight: 700;
+}
+
+/* ============================================================
+   Tablero: KPIs y Gráficos
+   ============================================================ */
+.adm-tablero {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.adm-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
 .adm-kpi {
-  position: relative; display: flex; flex-direction: column; gap: .3rem; overflow: hidden;
-  padding: 1rem 1.1rem; border-radius: 14px; border: 1px solid var(--border);
-  background: linear-gradient(160deg, var(--surface, #23272e), #15181d);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  overflow: hidden;
+  padding: 1.15rem 1.25rem;
+  border-radius: var(--radius-card, 6px);
+  border: 1px solid var(--adm-border);
+  background: var(--adm-surface);
+  box-shadow: var(--shadow-card, 0 1px 3px rgba(0,0,0,0.06));
 }
-.adm-kpi::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--orb-acero-bajo, #3a424d); }
-.adm-kpi-lbl { font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); }
-.adm-kpi-num { font-size: 1.7rem; font-weight: 800; line-height: 1.05; font-variant-numeric: tabular-nums; color: var(--text); }
-.adm-kpi-de { font-size: 1rem; font-weight: 600; color: var(--text-muted); }
-.adm-kpi-sub { font-size: .8rem; color: var(--text-muted); }
-.adm-kpi.oro { background: linear-gradient(160deg, rgba(255, 213, 74, .14), #15181d 70%); box-shadow: 0 0 0 1px rgba(255, 213, 74, .25), 0 10px 30px rgba(255, 170, 0, .08); }
-.adm-kpi.oro::before { background: var(--gold, #ffd54a); }
-.adm-kpi.oro .adm-kpi-num { color: var(--gold, #ffd54a); }
-.adm-kpi.alerta::before { background: var(--warning, #f5b133); }
-.adm-kpi.alerta .adm-kpi-num { color: var(--warning, #f5b133); }
 
-.adm-graficos { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-.adm-grafico { padding: 1rem 1.1rem; }
-.adm-grafico-tit { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); margin-bottom: .6rem; }
-.adm-donut { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; }
-.adm-donut svg { width: 140px; height: 140px; flex: 0 0 auto; }
-.adm-donut-tot { fill: var(--text); font-size: 26px; font-weight: 800; }
-.adm-donut-lbl { fill: var(--text-muted); font-size: 10px; }
-.adm-leyenda { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .35rem; flex: 1 1 140px; min-width: 0; }
-.adm-leyenda li { display: flex; align-items: center; gap: .5rem; font-size: .85rem; }
-.adm-punto { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
-.adm-leyenda-nom { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
-.adm-leyenda-val { color: var(--text-muted); font-variant-numeric: tabular-nums; }
-.adm-barras { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .55rem; }
-.adm-barras li { display: grid; grid-template-columns: minmax(70px, 28%) 1fr auto; align-items: center; gap: .6rem; font-size: .85rem; }
-.adm-barra-nom { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
-.adm-barra-pista { height: 10px; border-radius: 999px; background: rgba(255, 255, 255, .06); overflow: hidden; }
-.adm-barra-fill { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--primary, #ff8a00), var(--gold, #ffd54a)); }
-.adm-barra-val { color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.adm-kpi::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--adm-primary);
+  border-radius: 6px 0 0 6px;
+}
 
-/* Tabla pulida: chips de categoría, badges de estado, urgencia del vencimiento. */
-.adm-chip { display: inline-block; padding: .12rem .5rem; border-radius: 999px; font-size: .78rem; background: rgba(255, 255, 255, .06); border: 1px solid var(--border); color: var(--text); }
-.adm-badge { display: inline-block; padding: .12rem .5rem; border-radius: 999px; font-size: .74rem; font-weight: 700; }
-.adm-badge.activo { color: var(--success, #29c081); background: rgba(41, 192, 129, .14); }
-.adm-badge.suspendido { color: var(--text-muted); background: rgba(255, 255, 255, .06); }
-.adm-badge.pago-pagado { color: var(--success, #29c081); background: rgba(41, 192, 129, .14); }
-.adm-badge.pago-pendiente { color: var(--warning, #f5b133); background: rgba(245, 177, 51, .14); }
-.adm-badge.pago-anulado { color: var(--text-muted); background: rgba(255, 255, 255, .06); text-decoration: line-through; }
-.adm-venc.pronto { color: var(--warning, #f5b133); font-weight: 700; }
-.adm-venc.vencido { color: var(--danger, #ef4f5e); font-weight: 700; }
-.adm-fila-off { opacity: .55; }
-/* Error de validación bajo un campo del formulario. */
-.adm-err { display: block; margin-top: .2rem; color: var(--danger, #ef4f5e); font-size: .76rem; font-weight: 600; }
-/* Acción tipo enlace (p. ej. «usar la tasa BCV de hoy»). */
-.btn-linkish { align-self: flex-start; margin-top: .2rem; padding: 0; border: 0; background: none; color: var(--gold, #ffd54a); font-size: .76rem; font-weight: 600; cursor: pointer; text-align: left; }
-.btn-linkish:hover { text-decoration: underline; }
+.adm-kpi-lbl {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--adm-text-muted);
+  font-weight: 600;
+}
 
-@media (max-width: 860px) { .adm-kpis { grid-template-columns: repeat(2, 1fr); } .adm-graficos { grid-template-columns: 1fr; } }
-@media (max-width: 460px) { .adm-kpis { grid-template-columns: 1fr; } }
+.adm-kpi-num {
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: var(--adm-text);
+}
+
+.adm-kpi-de {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--adm-text-muted);
+}
+
+.adm-kpi-sub {
+  font-size: 0.8125rem;
+  color: var(--adm-text-muted);
+}
+
+.adm-kpi.oro::before { background: var(--adm-warning); }
+.adm-kpi.oro .adm-kpi-num { color: var(--adm-warning); }
+
+.adm-kpi.alerta::before { background: var(--adm-danger); }
+.adm-kpi.alerta .adm-kpi-num { color: var(--adm-danger); }
+
+.adm-graficos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.adm-grafico {
+  padding: 1.25rem;
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--radius-card, 6px);
+  box-shadow: var(--shadow-card, 0 1px 3px rgba(0,0,0,0.06));
+}
+
+.adm-grafico-tit {
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: var(--adm-text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.adm-donut {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.adm-donut svg {
+  width: 130px;
+  height: 130px;
+  flex: 0 0 auto;
+}
+
+.adm-donut-tot {
+  fill: var(--adm-text);
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.adm-donut-lbl {
+  fill: var(--adm-text-muted);
+  font-size: 10px;
+}
+
+.adm-leyenda {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+.adm-leyenda li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.adm-punto {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: 0 0 auto;
+}
+
+.adm-leyenda-nom {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--adm-text);
+}
+
+.adm-leyenda-val {
+  color: var(--adm-text-muted);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.adm-barras {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.adm-barras li {
+  display: grid;
+  grid-template-columns: minmax(80px, 30%) 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.adm-barra-nom {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--adm-text);
+  font-weight: 500;
+}
+
+.adm-barra-pista {
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--adm-text) 8%, transparent);
+  overflow: hidden;
+}
+
+.adm-barra-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--adm-primary), color-mix(in oklab, var(--adm-primary) 70%, #ffc700));
+}
+
+.adm-barra-val {
+  color: var(--adm-text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+/* ============================================================
+   Avisos, Mensajes Vacíos y Modales de GT
+   ============================================================ */
+.adm-aviso {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-card, 6px);
+  font-size: 0.875rem;
+  background: rgba(179, 38, 30, 0.1);
+  color: var(--adm-danger);
+  border: 1px solid rgba(179, 38, 30, 0.3);
+  font-weight: 500;
+  margin-bottom: 1rem;
+}
+
+.adm-err {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--adm-danger);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.btn-linkish {
+  align-self: flex-start;
+  margin-top: 0.25rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--adm-primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+.btn-linkish:hover {
+  text-decoration: underline;
+}
+
+/* Empty State */
+.empty {
+  padding: 3rem 1.5rem;
+  text-align: center;
+  border: 1px dashed var(--adm-border);
+  border-radius: var(--radius-card, 6px);
+  background: color-mix(in oklab, var(--adm-bg) 60%, var(--adm-surface));
+  color: var(--adm-text-muted);
+  font-size: 0.875rem;
+  margin-top: 0.75rem;
+}
+.empty-icon {
+  font-size: 2.25rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.85;
+}
+
+/* Modales de GT (Modal.tsx de shared/ui) */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: admFadeIn 0.15s ease;
+}
+
+@keyframes admFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal {
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--radius-card, 6px);
+  box-shadow: var(--shadow-popover, 0 10px 25px rgba(0,0,0,0.3));
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--adm-text);
+}
+
+.modal-lg { max-width: 880px; }
+.modal-xl { max-width: 1100px; }
+.modal-compact { max-width: 460px; }
+
+.modal-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--adm-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+}
+
+.modal-body {
+  padding: 1.25rem;
+  overflow-y: auto;
+  flex: 1 1 auto;
+}
+
+.modal-footer {
+  padding: 0.85rem 1.25rem;
+  border-top: 1px solid var(--adm-border);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  background: color-mix(in oklab, var(--adm-bg) 40%, var(--adm-surface));
+}
+
+/* Clases auxiliares */
+.muted { color: var(--adm-text-muted); }
+.hint { font-size: 0.8125rem; }
+.mono { font-family: var(--font-mono, monospace); }
+
+@media (max-width: 860px) {
+  .adm-kpis { grid-template-columns: repeat(2, 1fr); }
+  .adm-graficos { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  .adm-kpis { grid-template-columns: 1fr; }
+}
