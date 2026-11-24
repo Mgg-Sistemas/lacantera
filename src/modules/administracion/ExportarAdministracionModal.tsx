@@ -1054,7 +1054,7 @@ export function ExportarAdministracionModal({
           {/* Cabecera del Documento (Impresión y Vista) */}
           <div style={{ textAlign: 'center', margin: '.2rem 0 .4rem' }}>
             <div style={{ fontSize: '.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: '#ff8a00' }}>
-              GOLDEN TOUCH 1127 C.A. · CONTROL ADMINISTRATIVO
+              MINERIA INTERNACIONAL TS, C.A. · CONTROL ADMINISTRATIVO
             </div>
             <h2 style={{ margin: '.25rem 0 .2rem', fontSize: '1.45rem', fontWeight: 800 }}>
               {tituloRangoGrande}
@@ -1305,7 +1305,7 @@ export function ExportarAdministracionModal({
 
           {/* Pie de página institucional */}
           <div style={{ marginTop: '.5rem', borderTop: '1px solid var(--border)', paddingTop: '.4rem', textAlign: 'center', fontSize: '.72rem' }} className="muted">
-            <div>Golden Touch 1127 C.A. · Sistema de Gestión Administrativa</div>
+            <div>La Cantera · Minería Internacional TS, C.A. · Sistema de Gestión Administrativa</div>
             <div style={{ marginTop: '.15rem' }}>
               Reporte dinámico consolidado al {periodoLabel} con tasa ponderada promedio correspondiente.
             </div>

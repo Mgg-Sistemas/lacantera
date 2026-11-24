@@ -141,4 +141,116 @@ export const PREGUNTAS_FRECUENTES: PreguntaFrecuente[] = [
     textoRuta: 'Fichas de Personal',
     palabrasClave: ['banco del tesoro', '0163', 'cuenta', 'nomina', 'rechazo', 'error'],
   },
+  {
+    id: 'qa-diferencial-cambiario-debito',
+    pregunta: '¿Cómo registro la diferencia si el cliente cotizó a una tasa y pagó días después a otra tasa BCV superior?',
+    area: 'FACTURACION_VENTAS',
+    respuestaCorta:
+      'Emita una Nota de Débito fiscal por diferencial cambiario. La Providencia SNAT/2026/00093 establece que toda variación cambiaria entre la emisión y el cobro efectivo debe asentarse mediante Nota de Débito.',
+    causaRaiz:
+      'Las cotizaciones y notas de entrega se fijan en divisas pero su equivalente en bolívares fluctúa según la tasa oficial del BCV. Cuando el cliente cancela en bolívares a una tasa mayor, se genera una base gravable adicional de IVA que debe declararse ante el SENIAT.',
+    accionSolucion:
+      '1. Ingrese a Facturación › Notas de Débito.\n2. Seleccione la venta o factura original del cliente.\n3. El sistema calcula de inmediato el diferencial cambiario exacto (Tasa de cobro vs Tasa de origen).\n4. Pulse «Emitir Nota de Débito» para generar el documento fiscal y asentar el cobro definitivo.',
+    rutaRecomendada: '/app/facturacion/notas-debito',
+    textoRuta: 'Ir a Notas de Débito',
+    palabrasClave: ['diferencial cambiario', 'nota de debito', 'tasa bcv', 'cambio', 'facturacion', 'ajuste'],
+  },
+  {
+    id: 'qa-romana-tara-descuadre',
+    pregunta: '¿Qué hacer si un camión llega a la báscula de romana con una tara muy diferente a la de su registro histórico?',
+    area: 'ROMANA_DESPACHOS',
+    respuestaCorta:
+      'Pese siempre la tara real del camión al vacío antes de autorizar la carga. La tara del registro es solo referencial; la tara del ticket debe ser la pesada física del día.',
+    causaRaiz:
+      'El peso al vacío de una gandola o volqueta cambia constantemente según la cantidad de diésel en su tanque (hasta 400 kg de variación), si lleva caucho de repuesto, herramientas en la caja, barro acumulado en el chasis o si cambió de batea.',
+    accionSolucion:
+      '1. En Romana › Nueva Pesada, coloque el camión vacío en la plataforma de la báscula.\n2. Capture el peso estable como «Peso Tara».\n3. Autorice el pase al patio de carga de áridos (arena, grava o piedra).\n4. Al regresar cargado, capture el «Peso Bruto».\n5. El sistema restará: Bruto − Tara = Peso Neto real exacto a facturar.',
+    rutaRecomendada: '/app/control-despacho',
+    textoRuta: 'Ir a Romana y Pesaje',
+    palabrasClave: ['tara', 'peso vacio', 'romana', 'bascula', 'camion', 'descuadre', 'bruto', 'neto'],
+  },
+  {
+    id: 'qa-combustible-horometro-menor',
+    pregunta: '¿Por qué el sistema no me deja registrar un horómetro menor al anterior en el surtidor?',
+    area: 'COMBUSTIBLE_MAQUINAS',
+    respuestaCorta:
+      'El horómetro de una máquina es un contador progresivo unidireccional. Si marca menos que el último registro, se considera un error tipográfico o una inconsistencia mecánica.',
+    causaRaiz:
+      'Un equipo pesado no puede retroceder sus horas de trabajo. Permitir valores menores rompería el cálculo de rendimiento de combustible (litros consumidos por hora operada) y la planificación de mantenimiento de filtros y aceite.',
+    accionSolucion:
+      '1. Revise físicamente el reloj horómetro en la cabina de la máquina y confirme el número.\n2. Si el operador anterior anotó mal una cifra (ej. escribió 5200 en lugar de 5020), solicite al Administrador la corrección del registro previo con motivo justificado.\n3. Si el reloj horómetro fue reemplazado por daño, regístrelo en Maquinaria › «Sustitución de Horómetro» para iniciar nuevo ciclo.',
+    rutaRecomendada: '/app/combustible',
+    textoRuta: 'Ir a Surtidor de Combustible',
+    palabrasClave: ['horometro', 'surtidor', 'diesel', 'contador', 'maquina', 'bloqueo'],
+  },
+  {
+    id: 'qa-facturacion-consolidar-notas',
+    pregunta: '¿Puedo emitir una sola Factura fiscal que agrupe varias Notas de Entrega de un cliente?',
+    area: 'FACTURACION_VENTAS',
+    respuestaCorta:
+      'Sí. La normativa tributaria y el sistema permiten la consolidación periódica (semanal o quincenal) de notas de entrega en una factura resumen fiscal única.',
+    causaRaiz:
+      'Clientes de construcción o contratistas despachan decenas de viajes de agregados al día. Emitir una factura por cada camión colapsaría los talonarios fiscales autorizados.',
+    accionSolucion:
+      '1. Vaya a Facturación › Notas de Entrega.\n2. Filtre por el cliente deseado y seleccione las notas que se van a consolidar.\n3. Pulse «Facturar seleccionadas».\n4. El sistema generará una sola factura fiscal con el total consolidado y listará en el cuerpo o anexo los números de notas de entrega amparadas.',
+    rutaRecomendada: '/app/facturacion',
+    textoRuta: 'Ir a Facturación',
+    palabrasClave: ['consolidar', 'agrupar', 'notas de entrega', 'factura', 'viajes', 'seniat'],
+  },
+  {
+    id: 'qa-alimentacion-doble-comida',
+    pregunta: '¿Por qué el sistema bloquea registrar dos veces a un trabajador en el mismo turno de comida?',
+    area: 'NOMINA_PERSONAL',
+    respuestaCorta:
+      'Por control de raciones y auditoría del comedor. Cada trabajador tiene derecho a una sola comida por turno (desayuno, almuerzo o cena).',
+    causaRaiz:
+      'Evitar cobros dobles por parte del concesionario de cocina y asegurar que las porciones alcancen para todos los frentes de trabajo de la mina.',
+    accionSolucion:
+      '1. Si el trabajador necesita retirar comida para un compañero en tajo lejano, debe seleccionarse el trabajador destinatario real mediante su cédula o código QR del carnet.\n2. Si hubo un error de selección en el escáner, el encargado del comedor puede anular la marcación errónea en los primeros 10 minutos desde el menú «Registros del Turno».',
+    rutaRecomendada: '/app/alimentacion',
+    textoRuta: 'Ir a Comedor y Alimentación',
+    palabrasClave: ['comedor', 'comida', 'racion', 'doble plato', 'almuerzo', 'asistencia'],
+  },
+  {
+    id: 'qa-alertas-vencimiento-administracion',
+    pregunta: '¿Con cuántos días de anticipación avisa el sistema sobre vencimientos de documentos legales y pólizas?',
+    area: 'COMPRAS_RETENCIONES',
+    respuestaCorta:
+      'El sistema emite alertas automáticas y notificaciones sonoras a los 60 días, 30 días, 15 días y al momento de vencerse el documento o permiso.',
+    causaRaiz:
+      'En minería, renovar el RIF, las pólizas de responsabilidad civil, permisos de servidumbre o solvencias parafiscales (FAOV/INCES) toma semanas ante las instituciones públicas.',
+    accionSolucion:
+      '1. En el módulo de Administración › Documentos y Permisos, verá la columna «Semáforo de Vigencia».\n2. Verde: Vigente (>60 días).\n3. Amarillo: Próximo a vencer (<30 días).\n4. Rojo: Crítico o Vencido.\n5. Al renovar el documento, pulse «Renovar», cargue el nuevo PDF y fije la nueva fecha de vigencia.',
+    rutaRecomendada: '/app/administracion',
+    textoRuta: 'Ir a Documentos y Permisos',
+    palabrasClave: ['vencimiento', 'permisos', 'rif', 'polizas', 'alertas', 'administracion'],
+  },
+  {
+    id: 'qa-almacen-finiquito-herramientas',
+    pregunta: '¿Cómo registrar la devolución de herramientas y equipos asignados a un trabajador que se retira?',
+    area: 'INVENTARIO_ALMACEN',
+    respuestaCorta:
+      'Desde Asignaciones › Ficha de Trabajador, seleccione los equipos activos y pulse «Procesar devolución». Los ítems reingresan de inmediato al stock del almacén.',
+    causaRaiz:
+      'Antes de liquidar prestaciones en Nómina, Almacén debe certificar el finiquito de herramientas (radios, cascos, botas, llaves de impacto, arneses) para evitar pérdidas patrimoniales.',
+    accionSolucion:
+      '1. Vaya a Asignaciones e ingrese la cédula del trabajador.\n2. Revise la lista de activos en custodia.\n3. Verifique el estado físico y pulse «Devolver al Almacén» indicando si está operativo o para desincorporación.\n4. El sistema emite el comprobante de Solvencia de Materiales para el expediente de Recursos Humanos.',
+    rutaRecomendada: '/app/asignaciones',
+    textoRuta: 'Ver Asignaciones de Personal',
+    palabrasClave: ['herramientas', 'devolucion', 'finiquito', 'equipos', 'almacen', 'solvencia'],
+  },
+  {
+    id: 'qa-cubicacion-bancos-tajo',
+    pregunta: '¿Cómo se cruzan los metros cúbicos cubicados en el tajo con las toneladas pesadas en romana?',
+    area: 'EXPLOTACION_MINA',
+    respuestaCorta:
+      'Se multiplican los metros cúbicos (m³) por la densidad específica del material (ej. 1.6 tn/m³ para arena lavada, 1.8 tn/m³ para piedra picada) y se ajusta con el factor de esponjamiento.',
+    causaRaiz:
+      'En banco la roca está compacta (volumen en banco); al volarla y triturarla, el volumen aumenta por los huecos de aire (volumen suelto). Sin este cálculo, la producción teórica de mina nunca cuadra con los tickets de báscula.',
+    accionSolucion:
+      '1. En Mina › Producción, ingrese la cota inicial y final del banco extraído.\n2. Seleccione el tipo de material para cargar su densidad estándar de laboratorio.\n3. El sistema proyectará las toneladas métricas esperadas y las comparará contra el total de toneladas efectivamente pesadas en los tickets de romana del período.',
+    rutaRecomendada: '/app/explotacion',
+    textoRuta: 'Ir a Mina y Producción',
+    palabrasClave: ['cubicacion', 'toneladas', 'metros cubicos', 'densidad', 'tajo', 'esponjamiento', 'romana'],
+  },
 ]

@@ -95,7 +95,7 @@ export function NotificacionesAdminModal({
 
   const handleProbarAlertaAdmin = async () => {
     dispararSonidoAlertaAdmin();
-    const docEjemplo = alertas[0]?.nombre || 'RIF ACTUALIZADO GOLDEN TOUCH';
+    const docEjemplo = alertas[0]?.nombre || 'RIF ACTUALIZADO MINERIA INTERNACIONAL';
     const empresaEjemplo = alertas[0]?.empresaClave || empresaClave || 'GT';
     const diasEjemplo = alertas[0]?.diasRestantes ?? 3;
     const enviado = await emitirNotificacionPushNativa(

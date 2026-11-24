@@ -37,10 +37,10 @@ export interface Empresa {
 export type EmpresaInput = Omit<Empresa, 'id'>;
 
 export const EMPRESA_ADMIN_DEFECTO: Empresa = {
-  id: 'gt-default',
-  clave: 'GT',
-  nombre: 'Golden Touch 1127, C.A.',
-  rif: 'J-50129993-5',
+  id: 'mits-default',
+  clave: 'MITS',
+  nombre: 'Minería Internacional TS, C.A.',
+  rif: 'J-50209170-0',
   moneda: 'USD',
   logoPath: null,
   activa: true,

@@ -11,6 +11,12 @@ import {
   CheckCircle2,
   Lightbulb,
   Info,
+  Workflow,
+  Scale,
+  Truck,
+  Fuel,
+  Receipt,
+  ArrowRight,
 } from 'lucide-react'
 import { Link } from 'react-router'
 import { PageHeader } from '@/components/PageHeader'
@@ -29,7 +35,7 @@ import './manual.css'
 */
 import manualHtml from './manual.generado.html?raw'
 
-type VistaManual = 'preguntas_respuestas' | 'paso_a_paso' | 'libro_completo'
+type VistaManual = 'preguntas_respuestas' | 'paso_a_paso' | 'diagramas_flujos' | 'libro_completo'
 
 interface Capitulo {
   id: string
@@ -249,6 +255,22 @@ export function Manual() {
           <span>Guías Paso a Paso</span>
           <span className="rounded-full bg-ink/6 px-2 py-0.5 text-xs text-ink/75 font-semibold">
             {GUIAS_PASO_A_PASO.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setVista('diagramas_flujos')}
+          className={`pb-3 text-sm font-semibold transition-all relative flex items-center gap-2 ${
+            vista === 'diagramas_flujos'
+              ? 'text-tierra-600 dark:text-tierra-300 border-b-2 border-tierra-600 dark:border-tierra-400'
+              : 'text-ink/50 hover:text-ink/80'
+          }`}
+        >
+          <Workflow className="size-4.5" />
+          <span>Diagramas y Flujos</span>
+          <span className="rounded-full bg-tierra-600/10 text-tierra-700 dark:text-tierra-300 px-2 py-0.5 text-xs font-bold">
+            Visual
           </span>
         </button>
 
@@ -593,7 +615,226 @@ export function Manual() {
       )}
 
       {/* ========================================================================= */}
-      {/* PILAR 3: MANUAL COMPLETO (LIBRO OFICIAL EXTENDIDO) */}
+      {/* PILAR 3: DIAGRAMAS Y FLUJOS OPERATIVOS (VISUALES E INTERACTIVOS) */}
+      {/* ========================================================================= */}
+      {vista === 'diagramas_flujos' && (
+        <div className="space-y-6 max-w-4xl">
+          {/* Diagrama 1: Báscula de Romana y Despachos */}
+          <div className="rounded-card border border-hairline bg-surface p-5 sm:p-6 shadow-card space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="size-10 rounded-control bg-tierra-600/10 text-tierra-600 flex items-center justify-center shrink-0">
+                  <Scale className="size-5" />
+                </div>
+                <div>
+                  <h3 className="font-titular text-base sm:text-lg font-bold text-ink">
+                    1. Ciclo Operativo de Pesaje y Despacho en Romana
+                  </h3>
+                  <p className="text-xs text-ink/65">
+                    Proceso de entrada, carga y cálculo automático de toneladas netas a cobrar.
+                  </p>
+                </div>
+              </div>
+              <Link to="/app/control-despacho">
+                <Button size="sm" variant="outline" icon={<ExternalLink className="size-3.5" />}>
+                  Abrir Romana
+                </Button>
+              </Link>
+            </div>
+
+            {/* Flujo visual con nodos y flechas */}
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-2.5 pt-2">
+              <div className="p-3.5 rounded-control border border-hairline bg-canvas/40 space-y-1">
+                <span className="text-2xs font-bold text-tierra-600 uppercase tracking-wider block">Paso 1</span>
+                <p className="text-xs font-bold text-ink">Entrada Vacío</p>
+                <p className="text-2xs text-ink/70 leading-relaxed">
+                  Camión sobre báscula. Se captura la <strong>Tara real (kg)</strong>.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-control border border-hairline bg-canvas/40 space-y-1">
+                <span className="text-2xs font-bold text-tierra-600 uppercase tracking-wider block">Paso 2</span>
+                <p className="text-xs font-bold text-ink">Carga en Cantera</p>
+                <p className="text-2xs text-ink/70 leading-relaxed">
+                  Pasa a tolva o tajo. Cargador llena arena, grava o ripio.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-control border border-hairline bg-canvas/40 space-y-1">
+                <span className="text-2xs font-bold text-tierra-600 uppercase tracking-wider block">Paso 3</span>
+                <p className="text-xs font-bold text-ink">Pesaje Bruto</p>
+                <p className="text-2xs text-ink/70 leading-relaxed">
+                  Camión cargado en báscula. Se captura el <strong>Peso Bruto (kg)</strong>.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-control border border-tierra-600/30 bg-tierra-600/5 space-y-1">
+                <span className="text-2xs font-bold text-tierra-600 uppercase tracking-wider block">Paso 4</span>
+                <p className="text-xs font-bold text-tierra-700 dark:text-tierra-300">Cálculo Neto</p>
+                <p className="text-2xs text-ink/80 leading-relaxed font-semibold">
+                  Bruto − Tara = <strong>Peso Neto (tn)</strong>
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-control border border-success/30 bg-success/5 space-y-1">
+                <span className="text-2xs font-bold text-success uppercase tracking-wider block">Paso 5</span>
+                <p className="text-xs font-bold text-success">Ticket y Salida</p>
+                <p className="text-2xs text-ink/70 leading-relaxed">
+                  Se imprime Ticket oficial y se asienta Nota de Entrega.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-control bg-canvas/70 border border-hairline text-xs text-ink/80 flex items-center justify-between gap-3">
+              <span>💡 <strong>Regla operativa:</strong> La tara nunca debe fijarse por memoria; el combustible en el tanque altera hasta 400 kg por viaje.</span>
+              <span className="text-2xs font-mono font-bold text-tierra-600 shrink-0">BÁSCULA CERTIFICADA</span>
+            </div>
+          </div>
+
+          {/* Diagrama 2: Ciclo de Retenciones y Reintegros */}
+          <div className="rounded-card border border-hairline bg-surface p-5 sm:p-6 shadow-card space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="size-10 rounded-control bg-tierra-600/10 text-tierra-600 flex items-center justify-center shrink-0">
+                  <Receipt className="size-5" />
+                </div>
+                <div>
+                  <h3 className="font-titular text-base sm:text-lg font-bold text-ink">
+                    2. Ciclo Legal de Retenciones de IVA/ISLR y Reintegros (G.O. 43.484)
+                  </h3>
+                  <p className="text-xs text-ink/65">
+                    Tratamiento fiscal según la condición de pago de la compra y enteramiento al SENIAT.
+                  </p>
+                </div>
+              </div>
+              <Link to="/app/retenciones">
+                <Button size="sm" variant="outline" icon={<ExternalLink className="size-3.5" />}>
+                  Ver Retenciones
+                </Button>
+              </Link>
+            </div>
+
+            {/* Dos ramas: Pago Previo vs Post-Pago */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              <div className="p-4 rounded-control border border-hairline bg-canvas/40 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="size-2 rounded-full bg-success" />
+                  <p className="text-xs font-bold text-ink uppercase tracking-wide">Flujo A: Compra Pendiente por Pagar</p>
+                </div>
+                <div className="space-y-1.5 text-xs text-ink/80 pl-4 border-l-2 border-hairline">
+                  <p>1. Se registra Factura con RIF y N° Control.</p>
+                  <p>2. Se emite Comprobante R14 deduciendo 75% o 100% del IVA.</p>
+                  <p>3. Tesorería paga al proveedor solo el monto neto.</p>
+                  <p>4. El impuesto retenido se exporta en TXT y se entera al SENIAT.</p>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-control border border-warning/40 bg-warning-soft/30 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="size-2 rounded-full bg-warning" />
+                  <p className="text-xs font-bold text-ink uppercase tracking-wide">Flujo B: Compra Ya Pagada al 100% (Reintegro)</p>
+                </div>
+                <div className="space-y-1.5 text-xs text-ink/80 pl-4 border-l-2 border-warning/50">
+                  <p>1. Se emite el Comprobante R14 obligatorio.</p>
+                  <p>2. El sistema lo encola en <strong>«Reintegros Pendientes»</strong>.</p>
+                  <p>3. Proveedor transfiere la devolución a cuenta bancaria.</p>
+                  <p>4. Se pulsa «Registrar reintegro» y cuadra Tesorería.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Diagrama 3: Combustible y Rendimiento de Maquinaria */}
+          <div className="rounded-card border border-hairline bg-surface p-5 sm:p-6 shadow-card space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="size-10 rounded-control bg-tierra-600/10 text-tierra-600 flex items-center justify-center shrink-0">
+                  <Fuel className="size-5" />
+                </div>
+                <div>
+                  <h3 className="font-titular text-base sm:text-lg font-bold text-ink">
+                    3. Flujo Cerrado de Diésel y Rendimiento por Horómetro
+                  </h3>
+                  <p className="text-xs text-ink/65">
+                    Control de combustible desde la cisterna hasta el motor de la retroexcavadora o volqueta.
+                  </p>
+                </div>
+              </div>
+              <Link to="/app/combustible">
+                <Button size="sm" variant="outline" icon={<ExternalLink className="size-3.5" />}>
+                  Ver Surtidor
+                </Button>
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2">
+              <div className="p-3.5 rounded-control border border-hairline bg-canvas/40 space-y-1">
+                <span className="text-2xs font-bold text-tierra-600 uppercase tracking-wider block">1. Tanque Principal</span>
+                <p className="text-xs font-bold text-ink">Cubicación Varilla</p>
+                <p className="text-2xs text-ink/70">Medición milimétrica en centímetros traducida a litros según tabla de aforo.</p>
+              </div>
+
+              <div className="p-3.5 rounded-control border border-hairline bg-canvas/40 space-y-1">
+                <span className="text-2xs font-bold text-tierra-600 uppercase tracking-wider block">2. Surtidor Digital</span>
+                <p className="text-xs font-bold text-ink">Contador / Vale</p>
+                <p className="text-2xs text-ink/70">Lectura progresiva del contador antes y después de suministrar la manguera.</p>
+              </div>
+
+              <div className="p-3.5 rounded-control border border-hairline bg-canvas/40 space-y-1">
+                <span className="text-2xs font-bold text-tierra-600 uppercase tracking-wider block">3. En Máquina</span>
+                <p className="text-xs font-bold text-ink">Horómetro Cabina</p>
+                <p className="text-2xs text-ink/70">Se registra el horómetro actual de trabajo (siempre igual o mayor al anterior).</p>
+              </div>
+
+              <div className="p-3.5 rounded-control border border-tierra-600/30 bg-tierra-600/5 space-y-1">
+                <span className="text-2xs font-bold text-tierra-600 uppercase tracking-wider block">4. Auditoría</span>
+                <p className="text-xs font-bold text-tierra-700 dark:text-tierra-300">Rendimiento L/h</p>
+                <p className="text-2xs text-ink/80 font-semibold">Litros surtidos ÷ Horas trabajadas. Alerta si hay sobreconsumo.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Diagrama 4: Facturación Fiscal y Diferencial Cambiario */}
+          <div className="rounded-card border border-hairline bg-surface p-5 sm:p-6 shadow-card space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="size-10 rounded-control bg-tierra-600/10 text-tierra-600 flex items-center justify-center shrink-0">
+                  <Truck className="size-5" />
+                </div>
+                <div>
+                  <h3 className="font-titular text-base sm:text-lg font-bold text-ink">
+                    4. Ciclo Comercial y Diferencial Cambiario (SNAT/2026/00093)
+                  </h3>
+                  <p className="text-xs text-ink/65">
+                    Emisión de Notas de Débito fiscales cuando el cliente liquida a tasa BCV superior a la cotización.
+                  </p>
+                </div>
+              </div>
+              <Link to="/app/facturacion/notas-debito">
+                <Button size="sm" variant="outline" icon={<ExternalLink className="size-3.5" />}>
+                  Notas de Débito
+                </Button>
+              </Link>
+            </div>
+
+            <div className="p-4 rounded-control border border-hairline bg-canvas/40 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-ink">
+                <span>Cotización / Despacho (Tasa T1)</span>
+                <ArrowRight className="size-4 text-tierra-600" />
+                <span>Pago del Cliente (Tasa T2 &gt; T1)</span>
+                <ArrowRight className="size-4 text-tierra-600" />
+                <span className="text-tierra-600">Nota de Débito por Diferencia</span>
+              </div>
+              <p className="text-xs text-ink/75 leading-relaxed">
+                El sistema detecta automáticamente la fluctuación del dólar oficial entre la fecha del despacho y el comprobante de pago bancario, generando la Nota de Débito fiscal con el cálculo exacto de IVA sobre el incremento en bolívares.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* PILAR 4: MANUAL COMPLETO (LIBRO OFICIAL EXTENDIDO) */}
       {/* ========================================================================= */}
       {vista === 'libro_completo' && (
         <div className="flex flex-col gap-8 pb-16 xl:flex-row xl:items-start">

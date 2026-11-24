@@ -1053,7 +1053,7 @@ export function ExportarDocumentosModal({
 
           {/* Pie del reporte en impresión */}
           <div style={{ textAlign: 'center', marginTop: '.5rem', fontSize: '.72rem', color: 'var(--text-muted)' }}>
-            Golden Touch 1127 C.A. · Sistema de Gestión y Control Administrativo · Generado el {new Intl.DateTimeFormat('es-VE', { dateStyle: 'full', timeStyle: 'short' }).format(new Date())}
+            La Cantera · Minería Internacional TS, C.A. · Control Administrativo · Generado el {new Intl.DateTimeFormat('es-VE', { dateStyle: 'full', timeStyle: 'short' }).format(new Date())}
           </div>
         </div>
       </div>

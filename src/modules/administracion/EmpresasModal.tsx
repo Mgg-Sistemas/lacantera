@@ -95,12 +95,12 @@ export function EmpresasModal({ repo, onClose, onChanged }: {
         <div className="card-title" style={{ marginBottom: '.5rem' }}>{d.id ? 'Editar empresa' : 'Nueva empresa'}</div>
         <div className="form-grid-2">
           <div className="form-row">
-            <label htmlFor="emp-clave">Clave <span className="muted">(corta y única, p. ej. GT)</span></label>
-            <input id="emp-clave" className="input" value={d.clave} maxLength={8} onChange={(e) => set('clave', e.target.value.toUpperCase())} placeholder="GT" disabled={!!d.id} />
+            <label htmlFor="emp-clave">Clave <span className="muted">(corta y única, p. ej. MITS o LC)</span></label>
+            <input id="emp-clave" className="input" value={d.clave} maxLength={8} onChange={(e) => set('clave', e.target.value.toUpperCase())} placeholder="MITS" disabled={!!d.id} />
           </div>
           <div className="form-row">
             <label htmlFor="emp-nombre">Nombre / razón social</label>
-            <input id="emp-nombre" className="input" value={d.nombre} onChange={(e) => set('nombre', e.target.value)} placeholder="Golden Touch 1127, C.A." />
+            <input id="emp-nombre" className="input" value={d.nombre} onChange={(e) => set('nombre', e.target.value)} placeholder="Minería Internacional TS, C.A." />
           </div>
           <div className="form-row">
             <label htmlFor="emp-rif">RIF <span className="muted">(opcional)</span></label>

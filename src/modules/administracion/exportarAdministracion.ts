@@ -123,7 +123,7 @@ export async function descargarAdministracionPdf(opts: OpcionesExportarAdminPdf)
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
   doc.setTextColor(255, 138, 0);
-  doc.text('GOLDEN TOUCH 1127 C.A. · ADMINISTRACIÓN Y GASTOS FIJOS', PAGE_W / 2, y, { align: 'center' });
+  doc.text('MINERIA INTERNACIONAL TS, C.A. · ADMINISTRACIÓN Y GASTOS FIJOS', PAGE_W / 2, y, { align: 'center' });
 
   y += 16;
   doc.setFontSize(15);
@@ -519,7 +519,7 @@ export async function descargarAdministracionPdf(opts: OpcionesExportarAdminPdf)
     doc.line(MARGIN, PAGE_H - MARGIN + 6, PAGE_W - MARGIN, PAGE_H - MARGIN + 6);
 
     doc.text(
-      'Golden Touch 1127 C.A. · Sistema de Gestión Administrativa',
+      'Minería Internacional TS, C.A. · Sistema de Gestión La Cantera',
       MARGIN,
       PAGE_H - MARGIN + 16,
     );
@@ -565,7 +565,7 @@ export async function descargarAdministracionExcel(opts: {
 
   // ── HOJA 1: RESUMEN EJECUTIVO ──
   const resumenRows: Celda[][] = [
-    ['GOLDEN TOUCH 1127 C.A. · REPORTE ADMINISTRATIVO'],
+    ['MINERIA INTERNACIONAL TS, C.A. · REPORTE ADMINISTRATIVO'],
     [tituloRango],
     [`Alcance: ${periodoLabel}${empresaNombre ? ` · ${empresaNombre}` : ''}`],
     [`Generado: ${new Date().toLocaleString('es-VE')}`],
@@ -805,7 +805,7 @@ export function generarTextoWhatsappAdmin(opts: {
   } = opts;
 
   const lines: string[] = [
-    `🏢 *GOLDEN TOUCH 1127 C.A.*`,
+    `🏢 *MINERIA INTERNACIONAL TS, C.A.*`,
     `📋 *${tituloRango}*`,
     `📅 Alcance: ${periodoLabel}${empresaNombre ? ` · ${empresaNombre}` : ''}`,
     `📊 Agrupado por: ${ETIQUETA_MODO_ADMIN[modoAgrupacion]}`,
@@ -872,7 +872,7 @@ export function generarTextoWhatsappAdmin(opts: {
   }
 
   lines.push('');
-  lines.push(`_Generado automáticamente desde Sistema Golden Touch 1127 C.A._`);
+  lines.push(`_Generado automáticamente desde Sistema La Cantera · Minería Internacional TS, C.A._`);
 
   return lines.join('\n');
 }

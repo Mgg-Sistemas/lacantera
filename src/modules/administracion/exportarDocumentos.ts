@@ -93,7 +93,7 @@ export async function descargarDocumentosPdf(opts: OpcionesExportarDocsPdf): Pro
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(esLandscape ? 13 : 12);
   doc.setTextColor(...TINTA);
-  const nombreCia = (empresaNombre || 'GOLDEN TOUCH 1127 C.A.').toUpperCase();
+  const nombreCia = (empresaNombre || 'MINERIA INTERNACIONAL TS, C.A.').toUpperCase();
   const encabezadoCia = `${nombreCia} · CONTROL DE DOCUMENTOS Y PERMISOS`;
   doc.text(encabezadoCia, logo ? MARGIN + 105 : MARGIN, y + 14);
 
@@ -380,7 +380,7 @@ export async function descargarDocumentosPdf(opts: OpcionesExportarDocsPdf): Pro
     doc.setFontSize(7);
     doc.setTextColor(148, 163, 184);
 
-    const txtPie = `Golden Touch 1127 C.A. · Sistema de Gestión y Control Administrativo · Página ${p} de ${totalPaginas}`;
+    const txtPie = `Minería Internacional TS, C.A. · Sistema de Gestión La Cantera · Página ${p} de ${totalPaginas}`;
     doc.text(txtPie, PAGE_W / 2, PAGE_H - 14, { align: 'center' });
   }
 
@@ -419,7 +419,7 @@ export async function descargarDocumentosExcel(opts: {
 
   // Hoja 1: Resumen de Carpetas y KPIs
   const ws1Data: unknown[][] = [
-    [`GOLDEN TOUCH 1127 C.A. - CONTROL DE DOCUMENTOS Y PERMISOS`],
+    [`MINERIA INTERNACIONAL TS, C.A. - CONTROL DE DOCUMENTOS Y PERMISOS`],
     [`Empresa: ${empresaNombre || 'Todas las empresas'} | Período: ${periodoLabel}`],
     [],
     ['KPIs DE CUMPLIMIENTO LEGAL'],
@@ -622,7 +622,7 @@ export function generarTextoWhatsappDocs(opts: {
   }).format(new Date());
 
   const lineas: string[] = [
-    `📋 *GOLDEN TOUCH 1127 C.A. · CONTROL DE DOCUMENTOS Y PERMISOLOGÍA*`,
+    `📋 *MINERIA INTERNACIONAL TS, C.A. · CONTROL DE DOCUMENTOS Y PERMISOLOGÍA*`,
     `🏢 *Empresa:* ${empresaNombre || 'Todas las empresas'}`,
     `📅 *Fecha de Corte:* ${fechaHoy}`,
     `🎯 *Alcance:* ${periodoLabel}`,
@@ -680,7 +680,7 @@ export function generarTextoWhatsappDocs(opts: {
 
   lineas.push(
     ``,
-    `_Generado automáticamente desde Golden Touch 1127 C.A. - Sistema Integral de Gestión Minera y Administrativa._`,
+    `_Generado automáticamente desde La Cantera · Minería Internacional TS, C.A. - Sistema Integral de Gestión Minera y Administrativa._`,
   );
 
   return lineas.join('\n');

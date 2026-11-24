@@ -34,7 +34,7 @@ export async function descargarReporteAdminPdf(data: ReporteAdminData): Promise<
   doc.setTextColor(255, 138, 0); doc.setFont('helvetica', 'bold'); doc.setFontSize(14);
   doc.text('REPORTE DE GASTOS FIJOS', W / 2 + 24, y + 18, { align: 'center' });
   doc.setTextColor(120, 120, 120); doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
-  doc.text(pdfSafe(`GOLDEN TOUCH 1127 C.A. · ${meta.empresaNombre || 'Todas las empresas'} · ${meta.alcanceLabel}`), W / 2 + 24, y + 33, { align: 'center' });
+  doc.text(pdfSafe(`MINERIA INTERNACIONAL TS, C.A. · ${meta.empresaNombre || 'Todas las empresas'} · ${meta.alcanceLabel}`), W / 2 + 24, y + 33, { align: 'center' });
   doc.text(`Generado ${fmt.dateTime(meta.generadoEn)}${tasa > 0 ? ` · Tasa BCV: Bs ${bsNum(tasa)} / $` : ''}`, W / 2 + 24, y + 46, { align: 'center' });
   doc.setTextColor(0, 0, 0);
   y += 66;

@@ -24,7 +24,7 @@ const uid = (): string => {
 };
 
 const EMPRESAS_DEMO: Empresa[] = [
-  { id: uid(), clave: 'GT', nombre: 'Golden Touch 1127, C.A.', rif: 'J-00000000-0', moneda: 'USD', logoPath: null, activa: true, orden: 1 },
+  { id: uid(), clave: 'MITS', nombre: 'Minería Internacional TS, C.A.', rif: 'J-50209170-0', moneda: 'USD', logoPath: null, activa: true, orden: 1 },
   { id: uid(), clave: 'DEMO1', nombre: 'Minera Demo Norte, C.A.', rif: 'J-11111111-1', moneda: 'Bs', logoPath: null, activa: true, orden: 2 },
   { id: uid(), clave: 'DEMO2', nombre: 'Servicios Demo del Sur, C.A.', rif: 'J-22222222-2', moneda: 'USD', logoPath: null, activa: true, orden: 3 },
 ];

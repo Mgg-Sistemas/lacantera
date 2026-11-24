@@ -270,7 +270,7 @@ export function ReporteTab({ repo, empresaClave, empresas }: {
   // Generador de WhatsApp específico para Centros y Fases
   function abrirCentrosWhatsApp() {
     const lineas = [
-      `🏛️ *GOLDEN TOUCH 1127 C.A. · ESTADO DE CENTROS DE ACOPIO, FASES Y RESPONSABLES*`,
+      `🏛️ *MINERIA INTERNACIONAL TS, C.A. · ESTADO DE CENTROS DE ACOPIO, FASES Y RESPONSABLES*`,
       `🏢 Empresa: *${empresaNombre || 'Consolidado General'}*`,
       `📅 Fecha de corte: *${fFechaHora.format(new Date())}*`,
       '',
@@ -295,7 +295,7 @@ export function ReporteTab({ repo, empresaClave, empresas }: {
       lineas.push('');
     });
 
-    lineas.push(`_Generado automáticamente desde Sistema Golden Touch 1127 C.A._`);
+    lineas.push(`_Generado automáticamente desde Sistema La Cantera · Minería Internacional TS, C.A._`);
     setWsp(lineas.join('\n'));
   }
 

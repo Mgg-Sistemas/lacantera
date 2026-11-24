@@ -515,7 +515,7 @@ export function DocumentosTab({
   const textoAlertaWsp = useMemo(() => {
     const nombreEmp = empresaClave ? (nombreEmpMap.get(empresaClave) || empresaClave) : 'Todas las empresas';
     const lines = [
-      `🏛️ *GOLDEN TOUCH 1127 C.A. · CONTROL DE VENCIMIENTOS*`,
+      `🏛️ *MINERIA INTERNACIONAL TS, C.A. · CONTROL DE VENCIMIENTOS*`,
       `💼 Empresa: *${nombreEmp}*`,
       `📅 Fecha de corte: *${fFecha.format(new Date())}*`,
       '',
@@ -546,7 +546,7 @@ export function DocumentosTab({
     }
 
     lines.push('');
-    lines.push(`_Generado automáticamente desde Sistema Golden Touch 1127 C.A._`);
+    lines.push(`_Generado automáticamente desde Sistema La Cantera · Minería Internacional TS, C.A._`);
     return lines.join('\n');
   }, [docs, resumenStatus, empresaClave, nombreEmpMap]);
 
