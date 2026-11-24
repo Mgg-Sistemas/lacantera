@@ -102,8 +102,6 @@ export function MovimientoModal({
   const [fecha, setFecha] = useState(hoyIsoVE())
   const [hora, setHora] = useState(horaAhoraVE())
   const [litros, setLitros] = useState('')
-  const [costo, setCosto] = useState('')
-  const [referencia, setReferencia] = useState('')
   const [destinoId, setDestinoId] = useState('')
   const [equipo, setEquipo] = useState('')
   const [acarreo, setAcarreo] = useState(false)
@@ -124,7 +122,6 @@ export function MovimientoModal({
   const [vale, setVale] = useState<EstadoVale>(VALE_VACIO)
   const [pctImplicita, setPctImplicita] = useState('')
   const [verRespaldo, setVerRespaldo] = useState(false)
-  const [costoRaro, setCostoRaro] = useState<string | null>(null)
 
   const usar = useRegistrarUso()
   const entrar = useRegistrarEntradaCombustible()
@@ -135,6 +132,7 @@ export function MovimientoModal({
   const error = usar.error ?? entrar.error ?? trasladar.error ?? retornar.error ?? mermar.error
 
   const tanque = tanques.find((t) => String(t.almacen_id) === tanqueId)
+  const esEntrada = tipo === 'entrada'
   /*
     ACARREO INTERNO (13/11/2026). Pedido: «una opción que se llame acarreo
     interno con un check; cuando se marque deje de pedir equipo y destino, solo
@@ -200,8 +198,8 @@ export function MovimientoModal({
   const litrosContador = ci !== '' && cf !== '' ? (leerNumero(cf) ?? 0) - (leerNumero(ci) ?? 0) : null
   const cfPropuesto = llevaContador ? contadorFinalPropuesto(leerNumero(ci), litrosNum) : null
 
-  // Merma de recepción: en una entrada mide el tanque elegido; en un traslado, el que recibe (un bidón no).
-  const tanqueRecibe = tipo === 'entrada' ? tanque : tipo === 'traslado' && destino && !destinoEsBidon ? destino : undefined
+  // Merma de recepción: solo en un traslado al tanque que recibe (un bidón no; la entrada directa solo pide litros).
+  const tanqueRecibe = tipo === 'traslado' && destino && !destinoEsBidon ? destino : undefined
   const margen = tanqueRecibe ? n(tanqueRecibe.margen_merma_pct) || MARGEN_MERMA_DEFECTO : MARGEN_MERMA_DEFECTO
   const recepcion = tanqueRecibe ? mermaDeRecepcion(litrosNum, leerNumero(recibidos), margen) : { ok: null, error: null }
 
@@ -279,10 +277,6 @@ export function MovimientoModal({
     if (errHor) falta.push('un horómetro que no retroceda')
     if (topeAlcanzado) falta.push('un surtido libre del día')
   }
-  if (tipo === 'entrada') {
-    if (observacion.trim().length < 3) falta.push('de dónde vino')
-    if (!tanque?.sin_costo && !(n(leerNumero(costo)) > 0)) falta.push('el costo por litro')
-  }
   if (tipo === 'retorno' && observacion.trim().length < 3) falta.push('de dónde vuelve')
   if (tipo === 'merma' && observacion.trim().length < 3) falta.push('por qué se perdió')
   if (recepcion.error) falta.push('lo recibido bien medido')
@@ -304,23 +298,28 @@ export function MovimientoModal({
     cuaderno_litros: cuaderno ? (leerNumero(cuadernoLitros) ?? litrosNum) : null,
   }
 
-  const enviar = async (confirmado = false) => {
+  const enviar = async () => {
     if (!tanque || !valido) return
-    setCostoRaro(null)
     try {
-      if (tipo === 'entrada') {
+      if (esEntrada) {
+        const costoActual = n(tanque.tasa_usd_litro)
         await entrar.mutateAsync({
-          ...comunes,
-          ...cuadernoDatos,
           almacen_id: tanque.almacen_id,
+          articulo_id: tanque.articulo_id ?? null,
+          fecha: hoyIsoVE(),
+          hora: horaAhoraVE() || null,
           litros: litrosNum,
-          costo_litro: tanque.sin_costo ? 0 : leerNumero(costo),
+          costo_litro: tanque.sin_costo ? 0 : costoActual > 0 ? costoActual : 0,
           sin_costo: tanque.sin_costo,
-          motivo: observacion.trim(),
-          referencia: referencia.trim() || null,
-          recibidos: leerNumero(recibidos),
-          merma_motivo: motivoMerma.trim() || null,
-          confirmado,
+          motivo: 'ENTRADA DE COMBUSTIBLE AL TANQUE',
+          referencia: null,
+          recibidos: null,
+          merma_motivo: null,
+          autorizado: null,
+          ubicacion: null,
+          cuaderno: false,
+          cuaderno_litros: null,
+          confirmado: true,
         })
       } else if (esAcarreo) {
         // Sin equipo, sin destino y sin vale que llenar: solo quien autoriza,
@@ -391,23 +390,17 @@ export function MovimientoModal({
         await mermar.mutateAsync({ ...comunes, almacen_id: tanque.almacen_id, litros: litrosNum, motivo: observacion.trim() })
       }
       onCerrar()
-    } catch (e) {
-      // Un costo que se sale mucho de lo que viene costando: se acepta a propósito.
-      if (tipo === 'entrada' && e instanceof Error && /aceptalo/i.test(e.message)) {
-        entrar.reset()
-        setCostoRaro(e.message)
-      }
+    } catch {
+      // El error queda en la mutación y se pinta abajo.
     }
   }
 
   const etiquetaObservacion =
-    tipo === 'entrada'
-      ? 'De dónde vino'
-      : tipo === 'retorno'
-        ? 'De dónde vuelve'
-        : tipo === 'merma'
-          ? 'Por qué se perdió'
-          : 'Observación'
+    tipo === 'retorno'
+      ? 'De dónde vuelve'
+      : tipo === 'merma'
+        ? 'Por qué se perdió'
+        : 'Observación'
 
   return (
     <Modal
@@ -453,38 +446,29 @@ export function MovimientoModal({
           onChange={(e) => setTipo(e.target.value as TipoMovTanque)}
           opciones={tiposPermitidos.map((t) => ({ valor: t, etiqueta: TIPO_MOV_LABEL[t] }))}
         />
-        <Input label="Fecha" type="date" value={fecha} max={hoyIsoVE()} onChange={(e) => setFecha(e.target.value)} />
+        {esEntrada ? null : (
+          <>
+            <Input label="Fecha" type="date" value={fecha} max={hoyIsoVE()} onChange={(e) => setFecha(e.target.value)} />
+            <Input
+              label="Hora"
+              type="time"
+              step={1}
+              value={hora}
+              onChange={(e) => setHora(e.target.value)}
+              hint={hora ? undefined : 'Sin hora, el movimiento va primero en el día.'}
+            />
+          </>
+        )}
         <Input
-          label="Hora"
-          type="time"
-          step={1}
-          value={hora}
-          onChange={(e) => setHora(e.target.value)}
-          hint={hora ? undefined : 'Sin hora, el movimiento va primero en el día.'}
-        />
-        <Input
-          label="Litros"
+          label={esEntrada ? 'Litros que ingresaron' : 'Litros'}
           type="number"
           inputMode="decimal"
           value={litros}
           onChange={(e) => setLitros(e.target.value)}
           error={errSaldo ?? undefined}
           hint={tanque && sale ? `Disponible en ${tanque.nombre}: ${lt(Math.max(0, n(tanque.saldo_litros)))} L.` : undefined}
+          className={esEntrada ? 'sm:col-span-2' : undefined}
         />
-        {tipo === 'entrada' ? (
-          tanque?.sin_costo ? (
-            <Input label="Costo por litro (USD)" value="sin costo" disabled hint="Este tanque es del combustible que no costó nada." />
-          ) : (
-            <Input
-              label="Costo por litro (USD)"
-              type="number"
-              inputMode="decimal"
-              value={costo}
-              onChange={(e) => setCosto(e.target.value)}
-              hint="Recalcula la tasa promedio del tanque."
-            />
-          )
-        ) : null}
         {tipo === 'traslado' ? (
           <div>
             <Select
@@ -503,9 +487,6 @@ export function MovimientoModal({
                 : 'Se acredita en el destino al costo del origen.'}
             </p>
           </div>
-        ) : null}
-        {tipo === 'entrada' ? (
-          <Input label="Referencia (factura o guía)" value={referencia} onChange={(e) => setReferencia(e.target.value)} />
         ) : null}
       </div>
 
@@ -575,51 +556,53 @@ export function MovimientoModal({
         </label>
       ) : null}
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        {(tipo === 'uso' && !esAcarreo) || tipo === 'retorno' ? (
+      {esEntrada ? null : (
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          {(tipo === 'uso' && !esAcarreo) || tipo === 'retorno' ? (
+            <SelectBuscable
+              label="Equipo"
+              vacio="Elegí el equipo"
+              valor={equipo}
+              onCambio={(v) => {
+                setEquipo(v)
+                setHi('')
+                setHf('')
+                setKm('')
+                setHiAuto(false)
+              }}
+              opciones={opcionesEquipo}
+              hint={
+                tipo === 'uso' && opcionesEquipo.length === 0
+                  ? 'Ningún equipo puede surtir de este tanque. Revisalo en 🗂 Catálogos.'
+                  : undefined
+              }
+            />
+          ) : null}
           <SelectBuscable
-            label="Equipo"
-            vacio="Elegí el equipo"
-            valor={equipo}
-            onCambio={(v) => {
-              setEquipo(v)
-              setHi('')
-              setHf('')
-              setKm('')
-              setHiAuto(false)
-            }}
-            opciones={opcionesEquipo}
-            hint={
-              tipo === 'uso' && opcionesEquipo.length === 0
-                ? 'Ningún equipo puede surtir de este tanque. Revisalo en 🗂 Catálogos.'
-                : undefined
-            }
+            label={esAcarreo ? 'Autorizado por (obligatorio)' : 'Autorizado por'}
+            vacio="Elegí quién autorizó"
+            valor={autorizado}
+            onCambio={setAutorizado}
+            opciones={opcionesAutorizado}
           />
-        ) : null}
-        <SelectBuscable
-          label={esAcarreo ? 'Autorizado por (obligatorio)' : 'Autorizado por'}
-          vacio="Elegí quién autorizó"
-          valor={autorizado}
-          onCambio={setAutorizado}
-          opciones={opcionesAutorizado}
-        />
-        {esAcarreo ? null : (
-          <SelectBuscable
-            label="Destino"
-            vacio="Elegí el destino"
-            valor={ubicacion}
-            onCambio={setUbicacion}
-            opciones={cat('ubicacion').map((c) => ({ valor: c.valor, etiqueta: c.valor }))}
-            hint="¿Falta un destino? Agregalo en 🗂 Catálogos → Ubicaciones."
+          {esAcarreo ? null : (
+            <SelectBuscable
+              label="Destino"
+              vacio="Elegí el destino"
+              valor={ubicacion}
+              onCambio={setUbicacion}
+              opciones={cat('ubicacion').map((c) => ({ valor: c.valor, etiqueta: c.valor }))}
+              hint="¿Falta un destino? Agregalo en 🗂 Catálogos → Ubicaciones."
+            />
+          )}
+          <Input
+            label={etiquetaObservacion}
+            value={observacion}
+            onChange={(e) => setObservacion(e.target.value)}
+            placeholder={tipo === 'merma' ? 'EVAPORACIÓN, FUGA, DESCUADRE…' : 'SUMINISTRO COMBUSTIBLE…'}
           />
-        )}
-        <Input
-          label={etiquetaObservacion}
-          value={observacion}
-          onChange={(e) => setObservacion(e.target.value)}
-          placeholder={tipo === 'entrada' ? 'COMPRA A PROVEEDOR…' : tipo === 'merma' ? 'EVAPORACIÓN, FUGA, DESCUADRE…' : 'SUMINISTRO COMBUSTIBLE…'}
-        />
-      </div>
+        </div>
+      )}
 
       {tipo === 'uso' && maquinaId != null && yaSurtidoHoy > 0 ? (
         <p className={cn('mt-3 text-sm', topeAlcanzado ? 'text-danger font-medium' : 'text-warning')}>
@@ -797,7 +780,7 @@ export function MovimientoModal({
         </div>
       ) : null}
 
-      {tipo === 'uso' || tipo === 'traslado' || tipo === 'entrada' ? (
+      {tipo === 'uso' || tipo === 'traslado' ? (
         <div className="mt-4">
           <Interruptor
             encendido={cuaderno}
@@ -820,15 +803,6 @@ export function MovimientoModal({
               />
             </div>
           ) : null}
-        </div>
-      ) : null}
-
-      {costoRaro ? (
-        <div className="border-warning/40 bg-warning-soft mt-4 rounded-lg border p-3">
-          <p className="text-ink/85 text-sm">{costoRaro}</p>
-          <Button className="mt-2" size="sm" variant="outline" onClick={() => void enviar(true)} disabled={guardando}>
-            Es correcto: aceptar el costo
-          </Button>
         </div>
       ) : null}
 

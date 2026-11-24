@@ -143,9 +143,6 @@ export function FormularioSurtido({
   const subirFotos = useSubirFotosDeCarga()
 
   const [litros, setLitros] = useState('')
-  const [costo, setCosto] = useState(tanque.tasa_usd_litro != null && !tanque.sin_costo ? String(n(tanque.tasa_usd_litro)) : '')
-  const [deDonde, setDeDonde] = useState('')
-  const [referencia, setReferencia] = useState('')
   const [destinoId, setDestinoId] = useState('')
   const [equipo, setEquipo] = useState('')
   const [equipoTexto, setEquipoTexto] = useState('')
@@ -170,8 +167,6 @@ export function FormularioSurtido({
   const [guardando, setGuardando] = useState(false)
   const [etapa, setEtapa] = useState<'movimiento' | 'fotos'>('movimiento')
   const [error, setError] = useState<string | null>(null)
-  /** La base dijo que el costo se sale mucho de lo normal: se pide que lo acepte. */
-  const [pedirConfirmar, setPedirConfirmar] = useState(false)
   const tarda = useTardaPorLaSeñal(guardando)
   const cajaError = useRef<HTMLDivElement>(null)
 
@@ -234,7 +229,6 @@ export function FormularioSurtido({
 
   // ─── Lo que se calcula mientras se escribe ──────────────────────────────
   const litrosNum = leerNumero(litros) ?? 0
-  const costoNum = leerNumero(costo)
   const hfNum = leerNumero(hf)
   const kmNum = leerNumero(km)
   const ciAuto = ultimoContador.data ?? null
@@ -281,19 +275,10 @@ export function FormularioSurtido({
       if (elMotivo?.exige_detalle && detalle.trim().length < 3) return `Contá en pocas palabras el «${elMotivo.nombre}».`
       if (recibioId === '' && recibioNombre.trim().length < 3) return 'Indicá quién recibió el combustible.'
     }
-    if (tipo === 'entrada') {
-      const minimo = tanque.sin_costo ? 15 : 4
-      if (deDonde.trim().length < minimo) {
-        return tanque.sin_costo
-          ? 'Una entrada sin costo hay que explicarla entera: de dónde vino y quién asumió el gasto.'
-          : 'Escribí de dónde vino el combustible (compra, guía, proveedor).'
-      }
-      if (!tanque.sin_costo && !(costoNum != null && costoNum > 0)) return 'Indicá el costo por litro.'
-    }
     return null
   }
 
-  async function guardar(e?: FormEvent, confirmado = false) {
+  async function guardar(e?: FormEvent) {
     e?.preventDefault()
     setError(null)
     const falta = faltaAlgo()
@@ -352,15 +337,21 @@ export function FormularioSurtido({
         movimientoId = r.salida_id
         ref = r.numero ?? (await referenciaDelMovimiento(r.salida_id).catch(() => null))
       } else {
+        const costoActual = n(tanque.tasa_usd_litro)
         const r = await registrarEntrada.mutateAsync({
-          ...comunes,
           almacen_id: tanque.almacen_id,
           litros: litrosNum,
-          costo_litro: tanque.sin_costo ? 0 : costoNum,
+          costo_litro: tanque.sin_costo ? 0 : costoActual > 0 ? costoActual : 0,
           sin_costo: tanque.sin_costo,
-          motivo: deDonde.trim(),
-          referencia: referencia.trim() || null,
-          confirmado,
+          motivo: 'ENTRADA DE COMBUSTIBLE AL TANQUE',
+          referencia: null,
+          fecha: hoy(),
+          hora: horaEnCaracas() || null,
+          autorizado: null,
+          ubicacion: null,
+          cuaderno: false,
+          cuaderno_litros: null,
+          confirmado: true,
         })
         movimientoId = r.movimiento_id
         ref = await referenciaDelMovimiento(r.movimiento_id).catch(() => null)
@@ -388,9 +379,7 @@ export function FormularioSurtido({
       toast(aBidon ? 'Salida directa a bidón: registrada' : `${TITULO[tipo]}: registrado`, 'success')
       onGuardado(movimientoId, avisoFotos)
     } catch (err) {
-      const msg = mensajeDe(err, 'No se pudo registrar.')
-      setPedirConfirmar(tipo === 'entrada' && /aceptalo/i.test(msg))
-      setError(msg)
+      setError(mensajeDe(err, 'No se pudo registrar.'))
     } finally {
       setGuardando(false)
     }
@@ -399,9 +388,7 @@ export function FormularioSurtido({
   const textoMasDatos =
     tipo === 'uso'
       ? `▸ Más datos (${esVehiculo ? '' : 'kilometraje, '}contador inicial, destino, hora, observación)`
-      : tipo === 'traslado'
-        ? '▸ Más datos (contador inicial, destino, hora, observación)'
-        : '▸ Más datos (guía o factura, destino, hora)'
+      : '▸ Más datos (contador inicial, destino, hora, observación)'
 
   return (
     <form
@@ -431,18 +418,8 @@ export function FormularioSurtido({
 
       {error ? (
         <div ref={cajaError}>
-          <Aviso tono={pedirConfirmar ? 'alerta' : 'peligro'} icono={pedirConfirmar ? '⚠' : '⛔'}>
+          <Aviso tono="peligro" icono="⛔">
             {error}
-            {pedirConfirmar ? (
-              <Button
-                className="mt-2 h-14 w-full text-base"
-                variant="outline"
-                disabled={guardando}
-                onClick={() => void guardar(undefined, true)}
-              >
-                ✔ El costo es correcto: registrar
-              </Button>
-            ) : null}
           </Aviso>
         </div>
       ) : null}
@@ -451,7 +428,7 @@ export function FormularioSurtido({
       <div>
         <div className="relative [&_input]:text-royal-700 dark:[&_input]:text-royal-300 [&_input]:h-[62px] [&_input]:pr-16 [&_input]:text-center [&_input]:font-mono [&_input]:text-[1.9rem] [&_input]:font-extrabold [&_input]:border-royal-600/45 [&_input]:border-2 [&_label]:text-ink/60 [&_label]:text-xs [&_label]:font-bold [&_label]:tracking-[0.05em] [&_label]:uppercase">
           <Input
-            label={`⛽ Litros ${tipo === 'entrada' ? 'que entraron' : 'a despachar'}`}
+            label={`⛽ Litros ${tipo === 'entrada' ? 'que ingresaron' : 'a despachar'}`}
             type="number"
             inputMode="decimal"
             limite={{ maxDecimales: 2, sinNegativos: true }}
@@ -469,42 +446,6 @@ export function FormularioSurtido({
         </div>
         {errSaldo ? <p className="text-danger mt-1.5 text-sm font-bold">{errSaldo}</p> : null}
       </div>
-
-      {tipo === 'entrada' ? (
-        tanque.sin_costo ? (
-          <Aviso tono="info" icono="🎁">
-            <strong>{tanque.nombre}</strong> guarda el combustible <strong>sin costo</strong>: la entrada va a $0 y
-            hay que contar de dónde vino y quién asumió el gasto.
-          </Aviso>
-        ) : (
-          <CampoGrande>
-            <Input
-              label="Costo por litro (USD)"
-              type="number"
-              inputMode="decimal"
-              limite={{ maxDecimales: 4, sinNegativos: true }}
-              value={costo}
-              onChange={(e) => {
-                setCosto(e.target.value)
-                setPedirConfirmar(false)
-              }}
-              placeholder="0,00"
-              hint="Recalcula la tasa promedio del tanque. Viene precargado con la tasa de hoy."
-            />
-          </CampoGrande>
-        )
-      ) : null}
-
-      {tipo === 'entrada' ? (
-        <CampoGrande>
-          <Input
-            label="¿De dónde vino?"
-            value={deDonde}
-            onChange={(e) => setDeDonde(e.target.value)}
-            placeholder={tanque.sin_costo ? 'Lo trajo… y el gasto lo asumió…' : 'Compra PDVSA, proveedor…'}
-          />
-        </CampoGrande>
-      ) : null}
 
       {tipo === 'traslado' ? (
         <div>
@@ -682,161 +623,147 @@ export function FormularioSurtido({
         </>
       ) : null}
 
-      <CatalogoOTexto
-        label="👤 Autorizado por"
-        tipo="autorizado"
-        valor={autorizado}
-        onCambio={setAutorizado}
-        placeholder="Quién autorizó"
-      />
-
       {sale ? (
-        <div>
-          <CampoGrande>
-            <Input
-              label="🔢 Contador del surtidor al terminar"
-              type="number"
-              inputMode="decimal"
-              value={cf}
-              onChange={(e) => setCf(e.target.value)}
-              placeholder={
-                cfPropuesto != null
-                  ? `${fmt(cfPropuesto)} (se pone solo)`
-                  : ci != null
-                    ? `arrancó en ${fmt(ci)}`
-                    : 'lectura final del contador'
-              }
-            />
-          </CampoGrande>
-          {cf === '' && ci != null ? (
-            <p className="text-ink/50 mt-1.5 text-sm leading-snug">
-              Arrancó en {fmt(ci)}.{' '}
-              {cfPropuesto != null ? (
-                <>
-                  Si lo dejás vacío se guarda <strong>{fmt(cfPropuesto)}</strong> (el arranque más los {fmt(litrosNum)}{' '}
-                  L). Si el contador marca otra cosa, escribilo.
-                </>
-              ) : (
-                'Lo que marque al terminar es donde arranca el próximo surtido.'
-              )}
-            </p>
-          ) : null}
-          {litrosContador != null ? (
-            <p
-              className={cn(
-                'mt-1.5 text-sm',
-                Math.abs(litrosContador - litrosNum) > 1 ? 'text-warning font-semibold' : 'text-ink/50',
-              )}
-            >
-              Según el contador salieron {fmt(litrosContador)} L
-              {Math.abs(litrosContador - litrosNum) > 1 && litrosNum > 0 ? ' · no coincide con los litros' : ''}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
-
-      <TarjetaCuaderno
-        encendido={cuaderno}
-        onCambio={(v) => {
-          setCuaderno(v)
-          if (v && cuadernoLitros === '') setCuadernoLitros(litros)
-        }}
-      >
-        <CampoGrande className="[&_label]:text-success">
-          <Input
-            label="¿Cuánto está registrado en cuaderno? (Ltrs)"
-            type="number"
-            inputMode="decimal"
-            value={cuadernoLitros}
-            onChange={(e) => setCuadernoLitros(e.target.value)}
-            placeholder={litros || '0'}
-          />
-        </CampoGrande>
-      </TarjetaCuaderno>
-
-      <div className="[&_button.h-8]:h-14 [&_button.h-8]:px-4 [&_button.h-8]:text-base">
-        <Rotulo className="mt-0">
-          {tipo === 'entrada' ? '📷 Fotos (guía, cisterna, medida)' : '📷 Fotos (contador, equipo, vale)'}
-        </Rotulo>
-        <ElegirArchivosDeCarga
-          archivos={archivos}
-          onCambiar={setArchivos}
-          descripcion="se suben apenas quede guardado."
-        />
-      </div>
-
-      <button
-        type="button"
-        className="text-royal-700 dark:text-royal-300 min-h-12 self-start py-1.5 text-left font-semibold"
-        onClick={() => setMasDatos((v) => !v)}
-      >
-        {masDatos ? '▾ Menos datos' : textoMasDatos}
-      </button>
-      {masDatos ? (
         <>
-          {tipo === 'entrada' ? (
+          <CatalogoOTexto
+            label="👤 Autorizado por"
+            tipo="autorizado"
+            valor={autorizado}
+            onCambio={setAutorizado}
+            placeholder="Quién autorizó"
+          />
+
+          <div>
             <CampoGrande>
               <Input
-                label="Guía o factura"
-                value={referencia}
-                onChange={(e) => setReferencia(e.target.value)}
-                placeholder="Guía N°…"
+                label="🔢 Contador del surtidor al terminar"
+                type="number"
+                inputMode="decimal"
+                value={cf}
+                onChange={(e) => setCf(e.target.value)}
+                placeholder={
+                  cfPropuesto != null
+                    ? `${fmt(cfPropuesto)} (se pone solo)`
+                    : ci != null
+                      ? `arrancó en ${fmt(ci)}`
+                      : 'lectura final del contador'
+                }
               />
             </CampoGrande>
-          ) : null}
-          {sale ? (
-            <div className="grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-2">
-              {tipo === 'uso' && !esVehiculo ? (
+            {cf === '' && ci != null ? (
+              <p className="text-ink/50 mt-1.5 text-sm leading-snug">
+                Arrancó en {fmt(ci)}.{' '}
+                {cfPropuesto != null ? (
+                  <>
+                    Si lo dejás vacío se guarda <strong>{fmt(cfPropuesto)}</strong> (el arranque más los {fmt(litrosNum)}{' '}
+                    L). Si el contador marca otra cosa, escribilo.
+                  </>
+                ) : (
+                  'Lo que marque al terminar es donde arranca el próximo surtido.'
+                )}
+              </p>
+            ) : null}
+            {litrosContador != null ? (
+              <p
+                className={cn(
+                  'mt-1.5 text-sm',
+                  Math.abs(litrosContador - litrosNum) > 1 ? 'text-warning font-semibold' : 'text-ink/50',
+                )}
+              >
+                Según el contador salieron {fmt(litrosContador)} L
+                {Math.abs(litrosContador - litrosNum) > 1 && litrosNum > 0 ? ' · no coincide con los litros' : ''}
+              </p>
+            ) : null}
+          </div>
+
+          <TarjetaCuaderno
+            encendido={cuaderno}
+            onCambio={(v) => {
+              setCuaderno(v)
+              if (v && cuadernoLitros === '') setCuadernoLitros(litros)
+            }}
+          >
+            <CampoGrande className="[&_label]:text-success">
+              <Input
+                label="¿Cuánto está registrado en cuaderno? (Ltrs)"
+                type="number"
+                inputMode="decimal"
+                value={cuadernoLitros}
+                onChange={(e) => setCuadernoLitros(e.target.value)}
+                placeholder={litros || '0'}
+              />
+            </CampoGrande>
+          </TarjetaCuaderno>
+
+          <div className="[&_button.h-8]:h-14 [&_button.h-8]:px-4 [&_button.h-8]:text-base">
+            <Rotulo className="mt-0">📷 Fotos (contador, equipo, vale)</Rotulo>
+            <ElegirArchivosDeCarga
+              archivos={archivos}
+              onCambiar={setArchivos}
+              descripcion="se suben apenas quede guardado."
+            />
+          </div>
+
+          <button
+            type="button"
+            className="text-royal-700 dark:text-royal-300 min-h-12 self-start py-1.5 text-left font-semibold"
+            onClick={() => setMasDatos((v) => !v)}
+          >
+            {masDatos ? '▾ Menos datos' : textoMasDatos}
+          </button>
+          {masDatos ? (
+            <>
+              <div className="grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-2">
+                {tipo === 'uso' && !esVehiculo ? (
+                  <CampoGrande>
+                    <Input
+                      label="Kilometraje"
+                      type="number"
+                      inputMode="decimal"
+                      value={km}
+                      onChange={(e) => setKm(e.target.value)}
+                      placeholder={kmVigente != null ? `último: ${fmt(kmVigente)}` : 'odómetro'}
+                      error={kmRetrocede ? `No retrocede: lo último marcaba ${fmt(kmVigente)}.` : undefined}
+                    />
+                  </CampoGrande>
+                ) : null}
                 <CampoGrande>
                   <Input
-                    label="Kilometraje"
+                    label="Contador inicial"
                     type="number"
                     inputMode="decimal"
-                    value={km}
-                    onChange={(e) => setKm(e.target.value)}
-                    placeholder={kmVigente != null ? `último: ${fmt(kmVigente)}` : 'odómetro'}
-                    error={kmRetrocede ? `No retrocede: lo último marcaba ${fmt(kmVigente)}.` : undefined}
+                    readOnly={ciAuto != null}
+                    value={ciAuto != null ? String(ciAuto) : ciManual}
+                    onChange={(e) => setCiManual(e.target.value)}
+                    hint={ciAuto != null ? '🔒 Donde terminó el último' : undefined}
                   />
                 </CampoGrande>
-              ) : null}
+              </div>
+              <CatalogoOTexto
+                label="Destino / mina"
+                tipo="ubicacion"
+                valor={ubicacion}
+                onCambio={setUbicacion}
+                placeholder="A qué frente o mina"
+              />
+              <div className="grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-2">
+                <CampoGrande>
+                  <Input label="Fecha" type="date" max={hoy()} value={fecha} onChange={(e) => setFecha(e.target.value)} />
+                </CampoGrande>
+                <CampoGrande>
+                  {/* El reloj del sistema: escrita a mano entraban horas sin AM/PM que desordenaban el libro. */}
+                  <Input label="Hora" type="time" step={1} value={hora} onChange={(e) => setHora(e.target.value)} />
+                </CampoGrande>
+              </div>
               <CampoGrande>
                 <Input
-                  label="Contador inicial"
-                  type="number"
-                  inputMode="decimal"
-                  readOnly={ciAuto != null}
-                  value={ciAuto != null ? String(ciAuto) : ciManual}
-                  onChange={(e) => setCiManual(e.target.value)}
-                  hint={ciAuto != null ? '🔒 Donde terminó el último' : undefined}
+                  label="Observación"
+                  value={observacion}
+                  onChange={(e) => setObservacion(e.target.value)}
+                  placeholder="SUMINISTRO COMBUSTIBLE…"
                 />
               </CampoGrande>
-            </div>
-          ) : null}
-          <CatalogoOTexto
-            label="Destino / mina"
-            tipo="ubicacion"
-            valor={ubicacion}
-            onCambio={setUbicacion}
-            placeholder="A qué frente o mina"
-          />
-          <div className="grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-2">
-            <CampoGrande>
-              <Input label="Fecha" type="date" max={hoy()} value={fecha} onChange={(e) => setFecha(e.target.value)} />
-            </CampoGrande>
-            <CampoGrande>
-              {/* El reloj del sistema: escrita a mano entraban horas sin AM/PM que desordenaban el libro. */}
-              <Input label="Hora" type="time" step={1} value={hora} onChange={(e) => setHora(e.target.value)} />
-            </CampoGrande>
-          </div>
-          {sale ? (
-            <CampoGrande>
-              <Input
-                label="Observación"
-                value={observacion}
-                onChange={(e) => setObservacion(e.target.value)}
-                placeholder="SUMINISTRO COMBUSTIBLE…"
-              />
-            </CampoGrande>
+            </>
           ) : null}
         </>
       ) : null}

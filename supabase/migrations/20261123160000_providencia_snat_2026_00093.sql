@@ -525,9 +525,7 @@ select
 from public.facturas_venta f
 join public.clientes cl on cl.id = f.cliente_id
 left join public.emisiones_seniat es on es.documento = 'FACTURA' and es.documento_id = f.id
-
 union all
-
 select
   'NOTA-' || nc.id::text       as clave,
   nc.id,
@@ -562,10 +560,7 @@ join public.clientes cl on cl.id = nc.cliente_id
 join public.facturas_venta f on f.id = nc.factura_id
 left join public.emisiones_seniat es  on es.documento = 'NOTA_CREDITO' and es.documento_id = nc.id
 left join public.emisiones_seniat esf on esf.documento = 'FACTURA' and esf.documento_id = f.id
-
 union all
-
--- Las notas de débito suman: son un cargo adicional sobre la factura.
 select
   'NDEB-' || nd.id::text       as clave,
   nd.id,
