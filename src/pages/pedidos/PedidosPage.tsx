@@ -397,21 +397,21 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
 
       {/* Aviso de Compras Fijas que tocan hoy o están vencidas */}
       {permisos.gestiona && fijasQueTocan.length > 0 ? (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-card border border-amber-500/30 bg-amber-500/10 p-3.5 text-sm text-ink dark:border-amber-400/20 dark:bg-amber-400/10">
-          <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-lg">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-card border border-warning/30 bg-warning-soft p-3.5 text-sm text-ink">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-card bg-surface border border-hairline text-lg">
               🔁
             </span>
-            <div>
+            <div className="min-w-0">
               <p className="font-semibold text-ink">
                 Hay {fijasQueTocan.length} compra{fijasQueTocan.length === 1 ? '' : 's'} fija{fijasQueTocan.length === 1 ? '' : 's'} programada{fijasQueTocan.length === 1 ? '' : 's'} para hoy o vencida{fijasQueTocan.length === 1 ? '' : 's'}
               </p>
-              <p className="text-xs text-ink/75">
+              <p className="text-xs text-ink/75 truncate">
                 {fijasQueTocan.map((f) => `${f.icono} ${f.nombre} (${textoEstadoFija(f, hoyVenezuela())})`).join(' · ')}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <Button size="sm" variant="outline" onClick={() => setComprasFijasOpen(true)}>
               Revisar compras fijas
             </Button>
@@ -711,7 +711,7 @@ function AccionesDePestana({
           >
             <span>🔁 Compras fijas</span>
             {fijasQueTocanCount > 0 ? (
-              <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-500 px-1 text-[11px] font-bold text-white shadow-sm">
+              <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-tierra-600 px-1 text-[11px] font-bold text-white shadow-sm">
                 {fijasQueTocanCount}
               </span>
             ) : null}

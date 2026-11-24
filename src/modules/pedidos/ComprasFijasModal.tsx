@@ -45,12 +45,12 @@ import {
 } from './comprasFijas.repository'
 
 const COLOR_BADGE: Record<EstadoFija, { bg: string; text: string; border: string }> = {
-  vencida: { bg: 'bg-danger/10', text: 'text-danger font-bold', border: 'border-danger/30' },
-  hoy: { bg: 'bg-warning/15', text: 'text-warning font-bold', border: 'border-warning/40' },
-  pronto: { bg: 'bg-amber-500/10', text: 'text-amber-600 font-semibold', border: 'border-amber-500/30' },
-  al_dia: { bg: 'bg-emerald-500/10', text: 'text-emerald-600 font-semibold', border: 'border-emerald-500/30' },
-  pausada: { bg: 'bg-ink/5', text: 'text-ink/50', border: 'border-hairline' },
-  sugerida: { bg: 'bg-sky-500/10', text: 'text-sky-600 font-bold', border: 'border-sky-500/30' },
+  vencida: { bg: 'bg-danger/10', text: 'text-danger font-semibold', border: 'border-danger/30' },
+  hoy: { bg: 'bg-warning-soft', text: 'text-warning font-semibold', border: 'border-warning/30' },
+  pronto: { bg: 'bg-tierra-500/10', text: 'text-tierra-600 font-semibold', border: 'border-tierra-500/30' },
+  al_dia: { bg: 'bg-success/10', text: 'text-success font-semibold', border: 'border-success/30' },
+  pausada: { bg: 'bg-canvas', text: 'text-ink/50', border: 'border-hairline' },
+  sugerida: { bg: 'bg-canvas', text: 'text-ink/65', border: 'border-hairline' },
 }
 
 const fecha = (iso: string | null) =>
@@ -172,21 +172,24 @@ export function ComprasFijasModal({
       <Modal
         abierto
         titulo={`Historial · ${historial.c.icono} ${historial.c.nombre}`}
+        descripcion="Registro de todas las solicitudes y compras generadas a partir de esta plantilla."
         onCerrar={() => setHistorial(null)}
         ancho="lg"
+        acciones={
+          <Button variant="outline" onClick={() => setHistorial(null)} icon={<ArrowLeft className="size-4" />}>
+            Volver al tablero
+          </Button>
+        }
       >
         <div className="space-y-4 max-w-2xl">
-          <p className="text-xs text-ink/70">
-            Registro de todas las solicitudes y compras generadas automáticamente a partir de esta plantilla.
-          </p>
           {filas === null ? (
             <div className="py-8 text-center text-xs text-ink/50">Cargando historial...</div>
           ) : !filas.length ? (
-            <div className="p-6 text-center text-xs text-ink/55 bg-canvas/60 rounded-control border border-hairline">
+            <div className="p-6 text-center text-xs text-ink/55 bg-canvas/60 rounded-card border border-hairline">
               Esta plantilla todavía no ha generado compras en el sistema.
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-control border border-hairline">
+            <div className="overflow-x-auto rounded-card border border-hairline">
               <table className="w-full text-xs text-left">
                 <thead className="bg-canvas border-b border-hairline text-ink/65 font-bold uppercase text-2xs">
                   <tr>
@@ -200,10 +203,10 @@ export function ComprasFijasModal({
                 <tbody className="divide-y divide-hairline">
                   {filas.map((f, i) => (
                     <tr key={`${f.tipo}-${f.id}-${i}`} className="hover:bg-canvas/40">
-                      <td className="px-3 py-2 text-ink/80">{fecha(f.fecha)}</td>
-                      <td className="px-3 py-2 font-mono font-bold text-ink">{f.codigo ?? '—'}</td>
+                      <td className="px-3 py-2 text-ink/80 font-mono text-2xs">{fecha(f.fecha)}</td>
+                      <td className="px-3 py-2 font-mono font-bold text-tierra-600">{f.codigo ?? '—'}</td>
                       <td className="px-3 py-2 text-ink/75">
-                        {f.tipo === 'orden' ? 'Solicitud / OC' : 'Compra Directa'}
+                        {f.tipo === 'orden' ? 'Solicitud (OP)' : 'Compra Directa'}
                       </td>
                       <td className="px-3 py-2">
                         <span className="px-2 py-0.5 rounded bg-canvas border border-hairline text-2xs font-medium">
@@ -229,12 +232,6 @@ export function ComprasFijasModal({
               </table>
             </div>
           )}
-
-          <div className="flex justify-end pt-2">
-            <Button variant="outline" onClick={() => setHistorial(null)} icon={<ArrowLeft className="size-4" />}>
-              Volver al tablero
-            </Button>
-          </div>
         </div>
       </Modal>
     )
@@ -245,24 +242,30 @@ export function ComprasFijasModal({
   return (
     <Modal
       abierto
-      titulo="🔁 Compras Fijas (Plantillas Recurrentes)"
+      titulo="Compras fijas y periódicas"
+      descripcion="Plantillas de compras programadas para campamento, romana, taller y mina. Al pulsar «Generar solicitud» se arma la orden con los materiales y cantidades del ciclo previo."
       onCerrar={onClose}
       ancho="xl"
+      acciones={
+        <Button variant="outline" onClick={onClose}>
+          Cerrar
+        </Button>
+      }
     >
-      <div className="space-y-5 max-w-4xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-hairline">
-          <div>
-            <h3 className="text-base font-bold text-ink flex items-center gap-2">
-              <span>🔁</span> Circuito de Compras Programadas de Cantera
-            </h3>
-            <p className="text-xs text-ink/65 leading-relaxed">
-              Plantillas de compras recurrentes (Mercado de campamento, carnes, papelería de romana, filtros y lubricantes, EPP).
-              Al pulsar <strong>«Generar»</strong> se arma la solicitud con los materiales y cantidades de la última vez.
-            </p>
+      <div className="space-y-4 max-w-4xl">
+        <div className="flex items-center justify-between gap-3 pb-3 border-b border-hairline">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-ink/60">
+              Plantillas de compras recurrentes
+            </span>
+            <span className="rounded-full bg-canvas px-2 py-0.5 text-2xs font-mono font-bold text-ink/70 border border-hairline">
+              {lista?.length ?? 0}
+            </span>
           </div>
           {puedeEditar && (
             <Button
               size="sm"
+              className="shrink-0 whitespace-nowrap"
               onClick={() => setEditando({ id: null, datos: { ...NUEVA_PLANTILLA, proxima_fecha: hoy } })}
               icon={<Plus className="size-3.5" />}
             >
@@ -272,12 +275,12 @@ export function ComprasFijasModal({
         </div>
 
         {tieneSugerencias && (
-          <div className="p-3.5 rounded-control border border-sky-500/30 bg-sky-500/5 text-xs text-ink/80 flex items-start gap-2.5">
-            <Info className="size-4 text-sky-600 shrink-0 mt-0.5" />
-            <div>
-              <strong className="text-sky-700 dark:text-sky-300 block mb-0.5">Plantillas de Sugerencia:</strong>
-              Las marcadas como <em>«Sugerencia»</em> son modelos listos para activar. No emiten avisos ni se generan
-              hasta que Compras pulse <strong>«⚙ Configurar»</strong>, revise los materiales o categorías y guarde la plantilla.
+          <div className="p-3 rounded-card border border-hairline bg-canvas/60 text-xs text-ink/75 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <Info className="size-4 text-tierra-600 shrink-0" />
+              <p className="text-2xs sm:text-xs">
+                Las plantillas marcadas como <strong className="text-ink">«Sugerencia»</strong> son modelos base. Compras debe pulsar <strong>«Configurar»</strong> para revisarlas y activarlas.
+              </p>
             </div>
           </div>
         )}
@@ -285,7 +288,7 @@ export function ComprasFijasModal({
         {lista === null ? (
           <div className="py-12 text-center text-xs text-ink/50">Cargando plantillas de compra fija...</div>
         ) : !lista.length ? (
-          <div className="p-8 text-center bg-canvas/50 rounded-control border border-hairline space-y-2">
+          <div className="p-8 text-center bg-canvas/50 rounded-card border border-hairline space-y-2">
             <p className="text-sm font-bold text-ink">No hay compras fijas configuradas</p>
             <p className="text-xs text-ink/60">Crea la primera plantilla fija para programar compras automáticas.</p>
           </div>
@@ -301,33 +304,36 @@ export function ComprasFijasModal({
                 return (
                   <div
                     key={c.id}
-                    className="p-4 rounded-control border border-dashed border-sky-500/40 bg-surface/70 space-y-3 shadow-xs hover:border-sky-500 transition-colors"
+                    className="p-3.5 rounded-card border border-dashed border-hairline hover:border-tierra-600/40 bg-surface/50 space-y-2.5 transition-colors flex flex-col justify-between"
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl">{c.icono}</span>
-                        <div>
-                          <strong className="text-sm font-bold text-ink block">{c.nombre}</strong>
-                          <span className="text-2xs text-ink/60">{textoFrecuencia(c)}</span>
+                    <div>
+                      <div className="flex items-start justify-between gap-2 mb-1.5">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-xl shrink-0">{c.icono}</span>
+                          <div className="min-w-0">
+                            <strong className="text-sm font-bold text-ink block truncate">{c.nombre}</strong>
+                            <span className="text-2xs text-ink/60">{textoFrecuencia(c)}</span>
+                          </div>
                         </div>
+                        <span className="text-2xs px-2 py-0.5 rounded-full border border-hairline bg-canvas/80 text-ink/60 font-medium shrink-0">
+                          Sugerencia
+                        </span>
                       </div>
-                      <span className={`text-2xs px-2 py-0.5 rounded-full border ${badge.bg} ${badge.text} ${badge.border}`}>
-                        💡 Sugerencia
-                      </span>
+
+                      <p className="text-2xs text-ink/65 leading-relaxed">
+                        Plantilla sugerida para La Cantera. Configure los materiales o categorías y defina la próxima fecha para activarla.
+                      </p>
                     </div>
 
-                    <p className="text-2xs text-ink/65 leading-relaxed">
-                      Plantilla sugerida para La Cantera. Requiere que Compras revise las categorías o materiales fijos y defina la primera fecha de compra.
-                    </p>
-
-                    <div className="pt-2 border-t border-hairline flex items-center justify-between">
-                      <span className="text-2xs text-ink/50">
+                    <div className="pt-2 border-t border-hairline flex items-center justify-between gap-2">
+                      <span className="text-2xs text-ink/50 font-mono">
                         {c.categorias.length ? `${c.categorias.length} categoría(s)` : `${c.productos.length} material(es)`}
                       </span>
                       {puedeEditar && (
                         <Button
                           size="sm"
                           variant="outline"
+                          className="shrink-0 whitespace-nowrap"
                           onClick={() => {
                             const {
                               id,
@@ -350,7 +356,7 @@ export function ComprasFijasModal({
                               },
                             })
                           }}
-                          icon={<Settings className="size-3.5 text-sky-600" />}
+                          icon={<Settings className="size-3.5 text-ink/70" />}
                         >
                           Configurar
                         </Button>
@@ -364,52 +370,55 @@ export function ComprasFijasModal({
               return (
                 <div
                   key={c.id}
-                  className={`p-4 rounded-control border bg-surface space-y-3 shadow-xs transition-all ${
+                  className={`p-3.5 rounded-card border bg-surface space-y-2.5 shadow-card transition-all flex flex-col justify-between ${
                     c.activa ? 'border-hairline hover:border-tierra-600/40' : 'border-hairline/60 opacity-70'
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl">{c.icono}</span>
-                      <div>
-                        <strong className="text-sm font-bold text-ink block">{c.nombre}</strong>
-                        <span className="text-2xs text-ink/60">
-                          {textoFrecuencia(c)} · {c.modo === 'compra_directa' ? 'Compra Directa' : 'Solicitud → OC'}
-                        </span>
+                  <div>
+                    <div className="flex items-start justify-between gap-2 mb-1.5">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-xl shrink-0">{c.icono}</span>
+                        <div className="min-w-0">
+                          <strong className="text-sm font-bold text-ink block truncate">{c.nombre}</strong>
+                          <span className="text-2xs text-ink/60">
+                            {textoFrecuencia(c)} · {c.modo === 'compra_directa' ? 'Compra Directa' : 'Solicitud → OC'}
+                          </span>
+                        </div>
                       </div>
+                      <span className={`text-2xs px-2 py-0.5 rounded-full border shrink-0 ${badge.bg} ${badge.text} ${badge.border}`}>
+                        {textoEstadoFija(c, hoy)}
+                      </span>
                     </div>
-                    <span className={`text-2xs px-2 py-0.5 rounded-full border ${badge.bg} ${badge.text} ${badge.border}`}>
-                      {textoEstadoFija(c, hoy)}
-                    </span>
-                  </div>
 
-                  <div className="text-2xs text-ink/75 space-y-0.5 bg-canvas/40 p-2.5 rounded border border-hairline">
-                    <div className="flex justify-between">
-                      <span className="text-ink/60">Próxima fecha:</span>
-                      <strong className="font-mono text-ink">{fecha(c.proxima_fecha)}</strong>
+                    <div className="text-2xs text-ink/75 space-y-1 bg-canvas/50 p-2.5 rounded-card border border-hairline">
+                      <div className="flex justify-between items-center">
+                        <span className="text-ink/60 text-2xs">Próxima fecha:</span>
+                        <strong className="font-mono text-ink text-xs">{fecha(c.proxima_fecha)}</strong>
+                      </div>
+                      {c.ultima_codigo && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-ink/60 text-2xs">Última generada:</span>
+                          <span className="font-mono text-tierra-600 font-medium text-2xs">
+                            {c.ultima_codigo} ({fecha(c.ultima_generada_en)})
+                          </span>
+                        </div>
+                      )}
+                      {c.proveedor_nombre && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-ink/60 text-2xs">Proveedor habitual:</span>
+                          <span className="truncate max-w-[160px] text-ink text-2xs">{c.proveedor_nombre}</span>
+                        </div>
+                      )}
                     </div>
-                    {c.ultima_codigo && (
-                      <div className="flex justify-between">
-                        <span className="text-ink/60">Última generada:</span>
-                        <span className="font-mono text-tierra-600 font-bold">
-                          {c.ultima_codigo} ({fecha(c.ultima_generada_en)})
-                        </span>
-                      </div>
-                    )}
-                    {c.proveedor_nombre && (
-                      <div className="flex justify-between">
-                        <span className="text-ink/60">Proveedor habitual:</span>
-                        <span className="truncate max-w-[160px] text-ink">{c.proveedor_nombre}</span>
-                      </div>
-                    )}
                   </div>
 
                   {/* Acciones de la tarjeta */}
-                  <div className="flex flex-wrap items-center justify-between gap-1.5 pt-1">
+                  <div className="flex flex-wrap items-center justify-between gap-1.5 pt-2 border-t border-hairline">
                     <div className="flex items-center gap-1.5">
                       {puedeEditar && c.activa && aCotizar && (
                         <Button
                           size="sm"
+                          className="shrink-0 whitespace-nowrap"
                           onClick={() => handleGenerarSolicitud(c)}
                           icon={<FileText className="size-3.5" />}
                         >
@@ -420,6 +429,7 @@ export function ComprasFijasModal({
                         <Button
                           size="sm"
                           variant="outline"
+                          className="shrink-0 whitespace-nowrap"
                           disabled={generando === c.id}
                           onClick={() => handleGenerarDirecta(c)}
                           icon={<ShoppingCart className="size-3.5" />}
@@ -433,6 +443,7 @@ export function ComprasFijasModal({
                       <Button
                         size="sm"
                         variant="ghost"
+                        className="shrink-0 whitespace-nowrap"
                         onClick={() => void verHistorial(c)}
                         title="Ver compras generadas anteriormente"
                         icon={<History className="size-3.5" />}
@@ -443,6 +454,7 @@ export function ComprasFijasModal({
                         <Button
                           size="sm"
                           variant="ghost"
+                          className="shrink-0 whitespace-nowrap"
                           onClick={() => {
                             const {
                               id,
@@ -471,12 +483,6 @@ export function ComprasFijasModal({
             })}
           </div>
         )}
-
-        <div className="flex justify-end pt-3 border-t border-hairline">
-          <Button variant="outline" onClick={onClose}>
-            Cerrar
-          </Button>
-        </div>
       </div>
     </Modal>
   )
@@ -616,9 +622,36 @@ function EditorCompraFija({
   return (
     <Modal
       abierto
-      titulo={id ? `Editar · ${d.icono} ${d.nombre}` : '＋ Nueva Compra Fija'}
+      titulo={id ? `Editar plantilla · ${d.icono} ${d.nombre}` : 'Nueva compra fija'}
+      descripcion="Define los parámetros de repetición, categorías y materiales de la compra periódica."
       onCerrar={onClose}
-      ancho="xl"
+      ancho="lg"
+      acciones={
+        <div className="flex w-full items-center justify-between">
+          {id ? (
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => void eliminar()}
+              disabled={guardando}
+              icon={<Trash2 className="size-3.5" />}
+            >
+              Eliminar plantilla
+            </Button>
+          ) : (
+            <div />
+          )}
+
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={onClose} disabled={guardando}>
+              Cancelar
+            </Button>
+            <Button size="sm" onClick={() => void guardar()} disabled={guardando}>
+              {guardando ? 'Guardando…' : 'Guardar plantilla'}
+            </Button>
+          </div>
+        </div>
+      }
     >
       <div className="space-y-4 max-w-2xl text-xs">
         {/* Fila 1: Nombre, Ícono y Frecuencia */}
@@ -933,32 +966,6 @@ function EditorCompraFija({
             onChange={(e) => set('nota', e.target.value)}
             placeholder="Ej: Insumos quincenales para mantenimiento preventivo del frente de mina"
           />
-        </div>
-
-        {/* Botones del footer del editor */}
-        <div className="flex items-center justify-between pt-3 border-t border-hairline">
-          {id ? (
-            <Button
-              variant="danger"
-              size="sm"
-              onClick={() => void eliminar()}
-              disabled={guardando}
-              icon={<Trash2 className="size-3.5" />}
-            >
-              Eliminar plantilla
-            </Button>
-          ) : (
-            <div />
-          )}
-
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={onClose} disabled={guardando}>
-              Cancelar
-            </Button>
-            <Button size="sm" onClick={() => void guardar()} disabled={guardando}>
-              {guardando ? 'Guardando…' : 'Guardar compra fija'}
-            </Button>
-          </div>
         </div>
       </div>
     </Modal>
