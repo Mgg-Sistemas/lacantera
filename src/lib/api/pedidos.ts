@@ -241,7 +241,9 @@ export interface Orden {
   finalizada_en: string | null
 }
 
-/** Datos técnicos y logística de la oferta elegida (MGG `oferta_detalle`). */
+export type TipoTasaCotizacion = 'USD_BCV' | 'EUR_BCV' | 'USDT' | 'MANUAL'
+
+/** Datos técnicos, logística y tasa de cambio de la oferta elegida (MGG `oferta_detalle`). */
 export interface DetalleOferta {
   marca?: string | null
   modelo?: string | null
@@ -251,6 +253,11 @@ export interface DetalleOferta {
   peso?: string | null
   calidad?: string | null
   logistica?: Partial<Record<'flete' | 'transporte' | 'embalaje' | 'seguros', 'incluido' | 'comprador'>> | null
+  tasa_tipo?: TipoTasaCotizacion | null
+  tasa_moneda?: string | null
+  tasa_bs?: number | null
+  tasa_fija?: boolean | null
+  tasa_etiqueta?: string | null
 }
 
 /** Una fila de la cotización. Varias con el mismo sku son variantes de marca. */

@@ -9,13 +9,17 @@ import type { Proveedor } from '@/lib/api/catalogo'
 import { useAsignarProveedores, type EstadisticaProveedor, type Oferta, type Orden } from '@/lib/api/pedidos'
 import { fmtCant, money } from '@/lib/pedidos'
 import {
+  moneyBs,
   precioRenglon,
+  r2,
   recortarOferta,
   representanteGrupo,
+  resolverTasaOferta,
   scoreOfertas,
   skusTomados,
   type Modalidad,
 } from '@/lib/ofertas'
+import { useTasasCotizacion } from '@/lib/tasasCotizacion'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
 
 /*
@@ -69,10 +73,12 @@ export function AsignarProveedoresModal({
   const opItems = madre.items.filter((i) => i.comprar !== false)
   const ofertaSel = ofertas.find((o) => o.id === sel) ?? null
   const nombre = (o: Oferta | null | undefined) => (o ? (proveedorDe(o.proveedor_id)?.nombre ?? `Proveedor ${o.proveedor_id}`) : '—')
+  const { tasas } = useTasasCotizacion(ofertas.some((o) => o.detalle?.tasa_tipo === 'USDT'))
+  const tasaSel = useMemo(() => resolverTasaOferta(ofertaSel, tasas), [ofertaSel, tasas])
 
   const scored = useMemo(
-    () => scoreOfertas(ofertas, new Map(stats.map((s) => [s.proveedor_id, s]))),
-    [ofertas, stats],
+    () => scoreOfertas(ofertas, new Map(stats.map((s) => [s.proveedor_id, s])), tasas),
+    [ofertas, stats, tasas],
   )
   const mejorPrecio = scored.find((s) => s.mejorPrecio)
   const mejorCalidad = scored.find((s) => s.mejorCalidad)
@@ -208,14 +214,32 @@ export function AsignarProveedoresModal({
             <div className="flex flex-wrap gap-1.5">
               {ofertas.map((o) => {
                 const r = resumen.find((x) => x.o.id === o.id)
+                const tr = resolverTasaOferta(o, tasas)
                 return (
                   <Button key={o.id} size="sm" variant={sel === o.id ? 'primary' : 'ghost'} onClick={() => setSel(o.id)}>
-                    {nombre(o)}
-                    {r ? ` · ${r.skus.length} ítem(s) · ${money(r.total)}` : ''}
+                    {nombre(o)} · {tr.info.icono} {tr.info.corta}
+                    {r ? ` · ${r.skus.length} ítem(s) · ${r.mod === 'usd' ? money(r.total) : tr.enDivisa(r.total)} (${tr.enBs(r.total)})` : ''}
                   </Button>
                 )
               })}
             </div>
+
+            {ofertaSel ? (
+              <div className="border-hairline bg-canvas flex flex-wrap items-center justify-between gap-2 rounded-[8px] border px-3 py-2 text-xs">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-ink/70">
+                    💱 Tasa de la cotización de <strong>{nombre(ofertaSel)}</strong>:
+                  </span>
+                  <Chip tone={tasaSel.tipo === 'EUR_BCV' ? 'warning' : 'royal'}>
+                    {tasaSel.info.icono} {tasaSel.info.larga}
+                    {tasaSel.tasaBs > 0 ? ` · ${moneyBs(tasaSel.tasaBs)}` : ''}
+                  </Chip>
+                </div>
+                <span className="text-ink/55">
+                  Conversión en Bs calculada con {tasaSel.info.corta}
+                </span>
+              </div>
+            ) : null}
 
             {ofertaSel && cotizoUsd(ofertaSel) ? (
               <div className="flex flex-wrap items-center gap-2">
@@ -232,12 +256,12 @@ export function AsignarProveedoresModal({
                     setModalidades((m) => new Map(m).set(ofertaSel.id, v as Modalidad))
                   }}
                   opciones={[
-                    { valor: 'bs', etiqueta: '💵 Bs al cambio (BCV)', pista: cotizoBs(ofertaSel) ? undefined : 'Este proveedor no cotizó en Bs' },
+                    { valor: 'bs', etiqueta: `💵 Bs al cambio (${tasaSel.info.corta})`, pista: cotizoBs(ofertaSel) ? undefined : 'Este proveedor no cotizó en Bs' },
                     { valor: 'usd', etiqueta: '💲 Directo en divisa ($)' },
                   ]}
                 />
                 {mod === 'usd' ? (
-                  <span className="text-ink/55 text-xs">Se usa el precio USD de cada producto; los impuestos de la oferta se prorratean.</span>
+                  <span className="text-ink/55 text-xs">Se usa el precio USD de cada producto; igual se muestra el equivalente en Bs ({tasaSel.info.corta}).</span>
                 ) : null}
               </div>
             ) : null}
@@ -260,9 +284,9 @@ export function AsignarProveedoresModal({
                     <th className="px-2 py-2">Producto</th>
                     <th className="px-2 py-2 text-right">Cant.</th>
                     <th className="px-2 py-2 text-right">
-                      Precio {nombre(ofertaSel)} · {mod === 'usd' ? 'Divisa $' : 'Bs (BCV)'}
+                      Precio {nombre(ofertaSel)} · {mod === 'usd' ? 'Divisa $' : tasaSel.info.corta}
                     </th>
-                    <th className="px-2 py-2 text-right">Subtotal</th>
+                    <th className="px-2 py-2 text-right">Subtotal ({tasaSel.info.simbolo} · Bs)</th>
                     <th className="px-2 py-2">Asignación</th>
                   </tr>
                 </thead>
@@ -304,14 +328,38 @@ export function AsignarProveedoresModal({
                           {fmtCant(cant)} {it.unidad ?? ''}
                         </td>
                         <td className="px-2 py-1.5 text-right font-mono">
-                          {precio > 0 ? money(precio) : <span className="text-ink/45 font-sans">no cotizó</span>}
-                          {otra > 0 ? (
+                          {precio > 0 ? (
+                            <>
+                              <div>{mod === 'usd' ? money(precio) : tasaSel.enDivisa(precio)}</div>
+                              {tasaSel.tasaBs > 0 ? (
+                                <div className="text-royal-700 dark:text-royal-300 text-[0.74rem] font-semibold">
+                                  {tasaSel.enBs(precio)}
+                                </div>
+                              ) : null}
+                            </>
+                          ) : (
+                            <span className="text-ink/45 font-sans">no cotizó</span>
+                          )}
+                          {otra > 0 && Math.abs(otra - precio) > 0.001 ? (
                             <div className="text-ink/45 text-[0.7rem]">
-                              {money(otra)} · {mod === 'usd' ? 'BCV' : 'divisa'}
+                              {mod === 'usd' ? `${tasaSel.enDivisa(otra)} · ${tasaSel.info.corta}` : `${money(otra)} · divisa`}
                             </div>
                           ) : null}
                         </td>
-                        <td className="px-2 py-1.5 text-right font-mono">{precio > 0 ? money(cant * precio) : '—'}</td>
+                        <td className="px-2 py-1.5 text-right font-mono">
+                          {precio > 0 ? (
+                            <>
+                              <div>{mod === 'usd' ? money(cant * precio) : tasaSel.enDivisa(cant * precio)}</div>
+                              {tasaSel.tasaBs > 0 ? (
+                                <div className="text-royal-700 dark:text-royal-300 text-[0.74rem] font-semibold">
+                                  {tasaSel.enBs(r2(cant * precio))}
+                                </div>
+                              ) : null}
+                            </>
+                          ) : (
+                            '—'
+                          )}
+                        </td>
                         <td className="px-2 py-1.5">
                           {bloqueado ? (
                             <Chip tone="success">
@@ -336,19 +384,27 @@ export function AsignarProveedoresModal({
               {!resumen.length ? (
                 <p className="text-ink/55">Todavía no asignaste productos en esta sesión.</p>
               ) : (
-                <ul className="space-y-0.5">
-                  {resumen.map((r) => (
-                    <li key={r.o.id}>
-                      <strong>{nombre(r.o)}</strong>: {r.skus.length} producto(s) · {money(r.total)}
-                      {r.rec.iva || r.rec.igtf || r.rec.ajuste ? (
-                        <span className="text-ink/55">
-                          {' '}
-                          (base {money(r.mod === 'usd' ? r.rec.subtotalUsd : r.rec.subtotalBcv || r.rec.subtotalUsd)} · IVA{' '}
-                          {money(r.rec.iva)} · IGTF {money(r.rec.igtf)} · ajuste {money(r.rec.ajuste)})
-                        </span>
-                      ) : null}
-                    </li>
-                  ))}
+                <ul className="space-y-1">
+                  {resumen.map((r) => {
+                    const tr = resolverTasaOferta(r.o, tasas)
+                    return (
+                      <li key={r.o.id}>
+                        <strong>{nombre(r.o)}</strong>{' '}
+                        <span className="text-ink/55 text-xs">({tr.info.icono} {tr.info.corta})</span>: {r.skus.length} producto(s) ·{' '}
+                        <strong className="font-mono">{r.mod === 'usd' ? money(r.total) : tr.enDivisa(r.total)}</strong>
+                        {tr.tasaBs > 0 ? (
+                          <strong className="text-royal-700 dark:text-royal-300 ml-1.5 font-mono">· {tr.enBs(r.total)}</strong>
+                        ) : null}
+                        {r.rec.iva || r.rec.igtf || r.rec.ajuste ? (
+                          <span className="text-ink/55">
+                            {' '}
+                            (base {r.mod === 'usd' ? money(r.rec.subtotalUsd) : tr.enDivisa(r.rec.subtotalBcv || r.rec.subtotalUsd)} · IVA{' '}
+                            {tr.enDivisa(r.rec.iva)} · IGTF {tr.enDivisa(r.rec.igtf)} · ajuste {tr.enDivisa(r.rec.ajuste)})
+                          </span>
+                        ) : null}
+                      </li>
+                    )
+                  })}
                 </ul>
               )}
               {sinAsignar.length ? (

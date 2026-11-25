@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
 import { cn } from '@/lib/cn'
 import { useArticulos, useProveedores } from '@/lib/api/catalogo'
-import { useTasaVigente } from '@/lib/api/tasas'
+import { useTasasCotizacion } from '@/lib/tasasCotizacion'
 import {
   subirAdjuntosOferta,
   useEstadisticasProveedores,
@@ -16,16 +16,23 @@ import {
   type Imagen,
   type Oferta,
   type Orden,
+  type TipoTasaCotizacion,
 } from '@/lib/api/pedidos'
 import { fmtCant, money } from '@/lib/pedidos'
 import {
   CONDICIONES_PAGO,
   DATOS_TECNICOS,
   LOGISTICA,
+  OPCIONES_TASA_COTIZACION,
   UNIDADES_COMPRA,
   cifra2,
+  empacarNotaTasa,
+  extraerMetaTasaOferta,
+  infoTasaCotizacion,
   ivaDesdePorcentaje,
   moneyBs,
+  moneyCotizacion,
+  notasSinMarcaTasa,
   parseMontoEs,
   r2,
   r4,
@@ -121,7 +128,13 @@ export function AgregarOfertaModal({
   const { data: proveedores } = useProveedores(false)
   const { data: articulos } = useArticulos()
   const { data: stats } = useEstadisticasProveedores()
-  const { data: tasaVigente } = useTasaVigente()
+  const metaInicial = useMemo(() => extraerMetaTasaOferta(oferta), [oferta])
+  const [tipoTasa, setTipoTasa] = useState<TipoTasaCotizacion>(metaInicial.tipo)
+  const [tasaManualStr, setTasaManualStr] = useState(() =>
+    metaInicial.fija && metaInicial.tasaBs ? String(metaInicial.tasaBs) : '',
+  )
+  const [tasaEtiqueta, setTasaEtiqueta] = useState(metaInicial.etiqueta ?? '')
+  const { tasas: tasasHoy } = useTasasCotizacion(tipoTasa === 'USDT')
 
   // A. Proveedor.
   const [provId, setProvId] = useState(oferta ? String(oferta.proveedor_id) : '')
@@ -198,18 +211,41 @@ export function AgregarOfertaModal({
   // G-J.
   const [fecha, setFecha] = useState(oferta?.fecha_entrega_prometida ?? '')
   const [condicion, setCondicion] = useState(oferta?.condiciones_pago ?? '')
-  const [notas, setNotas] = useState(oferta?.notas ?? '')
+  const [notas, setNotas] = useState(() => notasSinMarcaTasa(oferta?.notas))
   const [detalle, setDetalle] = useState<DetalleOferta>(() => ({ ...(oferta?.detalle ?? {}) }))
 
   // K. Adjuntos.
   const [archivos, setArchivos] = useState<File[]>([])
   const [actuales, setActuales] = useState<Imagen[]>(oferta?.adjuntos ?? [])
 
-  // C. Conversor.
+  // B-C. Tasa elegida de la cotización y Conversor.
+  const infoTasa = infoTasaCotizacion(tipoTasa, tasaEtiqueta)
+  const tasaSugerida =
+    tipoTasa === 'EUR_BCV'
+      ? tasasHoy.EUR_BCV
+      : tipoTasa === 'USDT'
+        ? tasasHoy.USDT
+        : tipoTasa === 'USD_BCV'
+          ? tasasHoy.USD_BCV
+          : metaInicial.tasaBs ?? 0
+  const tasaManualNum = parseMontoEs(tasaManualStr)
+  const tasaActiva = tasaManualNum > 0 ? tasaManualNum : tasaSugerida || metaInicial.tasaBs || 0
+  const tasaUsdHoy = tasasHoy.USD_BCV || tasaActiva
+  const fmtCot = (n: number | string | null | undefined) => moneyCotizacion(n, tipoTasa)
+  const enBsCot = (n: number) => (tasaActiva > 0 ? moneyBs(r2(n * tasaActiva)) : null)
+
   const [convMonto, setConvMonto] = useState('')
   const [convDir, setConvDir] = useState<'bs_usd' | 'usd_bs'>('bs_usd')
   const [convTasa, setConvTasa] = useState('')
-  const tasaConv = parseMontoEs(convTasa) || Number(tasaVigente?.tasa) || 0
+  const tasaConv = parseMontoEs(convTasa) || tasaActiva || 0
+
+  function elegirTipoTasa(nuevoTipo: TipoTasaCotizacion) {
+    setTipoTasa(nuevoTipo)
+    if (nuevoTipo !== 'MANUAL') {
+      setTasaManualStr('')
+    }
+    setConvTasa('')
+  }
 
   // ── Proveedores ────────────────────────────────────────────────────────────
   const ofertados = useMemo(() => new Set(ofertas.map((o) => o.proveedor_id)), [ofertas])
@@ -350,7 +386,11 @@ export function AgregarOfertaModal({
   // ── Guardar (validaciones de MGG, en su orden) ────────────────────────────
   async function onSubmit() {
     if (bcvSubtotal <= 0 && usdTotal <= 0) {
-      toast('Ingresá el precio en Bs (BCV) y/o en USD efectivo: al menos uno.', 'error')
+      toast('Ingresá el precio en Bs (a la tasa elegida) y/o en USD efectivo: al menos uno.', 'error')
+      return
+    }
+    if (tipoTasa === 'MANUAL' && !(tasaActiva > 0)) {
+      toast('Indicá el valor en Bs de la tasa acordada / manual.', 'error')
       return
     }
     if (!condicion) {
@@ -436,8 +476,20 @@ export function AgregarOfertaModal({
           ajuste_motivo: ajusteMonto ? ajusteMotivo.trim() || null : null,
           fecha_entrega_prometida: fecha || null,
           condiciones_pago: condicion,
-          notas: notas.trim() || null,
-          detalle,
+          notas: empacarNotaTasa(notas, {
+            tipo: tipoTasa,
+            tasaBs: tasaActiva > 0 ? tasaActiva : null,
+            fija: tipoTasa === 'MANUAL' || tasaManualNum > 0,
+            etiqueta: tipoTasa === 'MANUAL' ? tasaEtiqueta.trim() || null : null,
+          }),
+          detalle: {
+            ...detalle,
+            tasa_tipo: tipoTasa,
+            tasa_moneda: infoTasa.moneda,
+            tasa_bs: tasaActiva > 0 ? tasaActiva : null,
+            tasa_fija: tipoTasa === 'MANUAL' || tasaManualNum > 0,
+            tasa_etiqueta: tipoTasa === 'MANUAL' ? tasaEtiqueta.trim() || null : null,
+          },
           adjuntos: [...actuales, ...subidos],
         },
       })
@@ -613,10 +665,128 @@ export function AgregarOfertaModal({
           </div>
         )}
 
-        {/* C. Conversor Bs ⇄ $ */}
+        {/* B. Tasa de la cotización (Checks + Desglose) */}
+        <div className="border-hairline bg-canvas/60 rounded-[8px] border p-3">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <div className="text-ink/85 text-sm font-semibold">💱 Tasa a la que se trabaja esta cotización</div>
+              <p className="text-ink/55 text-xs">
+                Marcá a qué tasa cotizó el proveedor. Toda la cotización mostrará siempre su conversión en <strong>Bolívares (Bs)</strong> según la tasa elegida.
+              </p>
+            </div>
+            {tasaActiva > 0 ? (
+              <Chip tone={tipoTasa === 'EUR_BCV' ? 'warning' : 'royal'}>
+                {infoTasa.icono} {infoTasa.corta}: {moneyBs(tasaActiva)}
+              </Chip>
+            ) : null}
+          </div>
+
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {OPCIONES_TASA_COTIZACION.map((op) => {
+              const activo = tipoTasa === op.tipo
+              const valorRef =
+                op.tipo === 'USD_BCV'
+                  ? tasasHoy.USD_BCV
+                  : op.tipo === 'EUR_BCV'
+                    ? tasasHoy.EUR_BCV
+                    : op.tipo === 'USDT'
+                      ? tasasHoy.USDT
+                      : tasaManualNum
+              return (
+                <label
+                  key={op.tipo}
+                  className={cn(
+                    'flex cursor-pointer items-start gap-2.5 rounded-[8px] border p-2.5 text-left transition-colors',
+                    activo
+                      ? 'border-royal-600 bg-royal-600/10 ring-royal-600/30 ring-1'
+                      : 'border-hairline bg-surface hover:border-ink/30',
+                  )}
+                >
+                  <input
+                    type="checkbox"
+                    checked={activo}
+                    onChange={() => elegirTipoTasa(op.tipo)}
+                    className="accent-royal-600 mt-0.5 size-4 shrink-0"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-ink/90 text-xs font-semibold">
+                        {op.icono} {op.titulo}
+                      </span>
+                      <span className="text-ink/50 font-mono text-[10px] font-semibold">{op.moneda}</span>
+                    </div>
+                    <div className="text-royal-700 dark:text-royal-300 mt-0.5 font-mono text-xs font-bold">
+                      {valorRef > 0 ? moneyBs(valorRef) : op.tipo === 'MANUAL' ? 'Definir abajo' : 'Escribir tasa'}
+                    </div>
+                    <div className="text-ink/50 mt-0.5 text-[11px] leading-tight">{op.descripcion}</div>
+                  </div>
+                </label>
+              )
+            })}
+          </div>
+
+          <div className="border-hairline mt-2.5 grid gap-2 border-t pt-2.5 sm:grid-cols-3">
+            <label className="text-ink/65 text-[11px] font-semibold uppercase">
+              Valor de tasa aplicada ({infoTasa.par}) {tipoTasa === 'MANUAL' ? '*' : '(ajustable)'}
+              <input
+                className={cn(CAMPO, 'mt-1 font-mono')}
+                inputMode="decimal"
+                placeholder={tasaSugerida > 0 ? cifra2(tasaSugerida) : 'Ej.: 1.015,30'}
+                value={tasaManualStr}
+                onChange={(e) => setTasaManualStr(comoNumero(e.target.value, { maxDecimales: 8, sinNegativos: true }))}
+              />
+            </label>
+            {tipoTasa === 'MANUAL' ? (
+              <label className="text-ink/65 text-[11px] font-semibold uppercase">
+                Nombre de la tasa (opcional)
+                <input
+                  className={cn(CAMPO, 'mt-1')}
+                  maxLength={60}
+                  placeholder="Ej.: Promedio, Acordada, Paralelo…"
+                  value={tasaEtiqueta}
+                  onChange={(e) => setTasaEtiqueta(e.target.value)}
+                />
+              </label>
+            ) : (
+              <div className="text-ink/60 self-end pb-1 text-xs sm:col-span-2">
+                {tasaActiva > 0 ? (
+                  <>
+                    Conversión activa: <strong>1 {infoTasa.simbolo} = {moneyBs(tasaActiva)}</strong>
+                    {tasaManualNum > 0 ? (
+                      <button
+                        type="button"
+                        className="text-royal-700 dark:text-royal-300 ml-2 underline"
+                        onClick={() => setTasaManualStr('')}
+                      >
+                        Usar tasa del día ({tasaSugerida > 0 ? moneyBs(tasaSugerida) : 'auto'})
+                      </button>
+                    ) : (
+                      <span className="text-ink/45"> · tomada automáticamente de {infoTasa.corta}</span>
+                    )}
+                  </>
+                ) : (
+                  <span className="text-warning">Indicá la tasa en Bs arriba para ver todas las conversiones en Bolívares.</span>
+                )}
+              </div>
+            )}
+            {tipoTasa === 'MANUAL' ? (
+              <div className="text-ink/60 self-end pb-1 text-xs">
+                {tasaActiva > 0 ? (
+                  <>
+                    1 unidad = <strong>{moneyBs(tasaActiva)}</strong>
+                  </>
+                ) : (
+                  <span className="text-warning">Escribí la tasa en Bs acordada con el proveedor.</span>
+                )}
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        {/* C. Conversor Bs ⇄ Divisa */}
         <div>
           <div className="text-ink/75 mb-1.5 text-sm font-medium">
-            Conversor Bs ⇄ $ (ayuda: pasá un precio de la cotización de bolívares a dólares o al revés)
+            Conversor Bs ⇄ {infoTasa.simbolo} (ayuda: pasá un precio de bolívares a {infoTasa.corta} o al revés)
           </div>
           <div className="border-royal-600/40 grid gap-2 rounded-[8px] border p-3 sm:grid-cols-4">
             <label className="text-ink/55 text-[11px] font-semibold uppercase">
@@ -631,16 +801,16 @@ export function AgregarOfertaModal({
             <label className="text-ink/55 text-[11px] font-semibold uppercase">
               Dirección
               <select className={CAMPO} value={convDir} onChange={(e) => setConvDir(e.target.value as 'bs_usd' | 'usd_bs')}>
-                <option value="bs_usd">Bs → $</option>
-                <option value="usd_bs">$ → Bs</option>
+                <option value="bs_usd">Bs → {infoTasa.simbolo}</option>
+                <option value="usd_bs">{infoTasa.simbolo} → Bs</option>
               </select>
             </label>
             <label className="text-ink/55 text-[11px] font-semibold uppercase">
-              Tasa BCV (Bs/$)
+              {infoTasa.larga} ({infoTasa.par})
               <input
                 className={CAMPO}
                 inputMode="decimal"
-                placeholder={tasaVigente ? cifra2(tasaVigente.tasa) : ''}
+                placeholder={tasaActiva > 0 ? cifra2(tasaActiva) : ''}
                 value={convTasa}
                 onChange={(e) => setConvTasa(comoNumero(e.target.value, { maxDecimales: 8, sinNegativos: true }))}
               />
@@ -651,7 +821,7 @@ export function AgregarOfertaModal({
                   Equivale a{' '}
                   <strong>
                     {convDir === 'bs_usd'
-                      ? money(parseMontoEs(convMonto) / tasaConv)
+                      ? fmtCot(parseMontoEs(convMonto) / tasaConv)
                       : moneyBs(parseMontoEs(convMonto) * tasaConv)}
                   </strong>
                 </>
@@ -665,7 +835,7 @@ export function AgregarOfertaModal({
         {/* D. Cotización por ítem */}
         <div>
           <div className="text-ink/75 mb-1 text-sm font-medium">
-            Cotización por ítem (precio en Bs a BCV y/o en USD efectivo — completá al menos una columna)
+            Cotización por ítem (precio a <strong>{infoTasa.larga}</strong> y/o en USD efectivo — siempre con su equivalente en Bs)
           </div>
           <p className="text-ink/55 mb-2 text-xs">
             💡 Si el proveedor ofrece el mismo producto en <strong>varias marcas/modelos</strong>, usá <strong>＋ marca</strong>{' '}
@@ -703,10 +873,18 @@ export function AgregarOfertaModal({
                     Cant.
                   </th>
                   <th className="bg-[rgba(80,140,255,.10)] px-2 py-1.5 text-center" colSpan={2}>
-                    Pago en Bs a BCV
+                    <div>Pago en Bs · {infoTasa.corta}</div>
+                    {tasaActiva > 0 ? (
+                      <div className="text-ink/50 font-mono text-[10px] font-normal">
+                        1 {infoTasa.simbolo} = {moneyBs(tasaActiva)}
+                      </div>
+                    ) : null}
                   </th>
                   <th className="bg-[rgba(255,120,120,.10)] px-2 py-1.5 text-center" colSpan={2}>
-                    Pago en USD
+                    <div>Pago en USD efectivo</div>
+                    {tasaUsdHoy > 0 ? (
+                      <div className="text-ink/50 font-mono text-[10px] font-normal">ref. {moneyBs(tasaUsdHoy)}/$</div>
+                    ) : null}
                   </th>
                   <th className="px-2 py-1.5 text-right" rowSpan={2}>
                     Diferencia
@@ -837,7 +1015,7 @@ export function AgregarOfertaModal({
                         ) : null}
                         <div className="text-ink/50 mt-0.5">
                           {conUC && factor > 0
-                            ? `= ${fmtCant(cant * factor)} ${f.unidad} · ${money(p / factor)}/${f.unidad}`
+                            ? `= ${fmtCant(cant * factor)} ${f.unidad} · ${fmtCot(p / factor)}/${f.unidad}`
                             : `en ${f.unidad || 'unidad de uso'}`}
                         </div>
                       </td>
@@ -849,7 +1027,7 @@ export function AgregarOfertaModal({
                           onChange={(e) => setFila(f.key, { cantidad: comoNumero(e.target.value, { maxDecimales: 4, sinNegativos: true }) })}
                         />
                       </td>
-                      <td className="w-24 bg-[rgba(80,140,255,.05)] px-2 py-1.5">
+                      <td className="w-28 bg-[rgba(80,140,255,.05)] px-2 py-1.5">
                         <input
                           className={cn(CAMPO, 'text-right')}
                           inputMode="decimal"
@@ -857,9 +1035,25 @@ export function AgregarOfertaModal({
                           value={f.precio}
                           onChange={(e) => setFila(f.key, { precio: comoNumero(e.target.value, { maxDecimales: 4, sinNegativos: true }) })}
                         />
+                        {p > 0 && enBsCot(p) ? (
+                          <div className="text-royal-700 dark:text-royal-300 mt-0.5 text-right font-mono text-[10px] font-medium">
+                            {enBsCot(p)}
+                          </div>
+                        ) : null}
                       </td>
-                      <td className="bg-[rgba(80,140,255,.05)] px-2 py-1.5 text-right font-mono">{tb ? money(tb) : '—'}</td>
-                      <td className="w-24 bg-[rgba(255,120,120,.05)] px-2 py-1.5">
+                      <td className="bg-[rgba(80,140,255,.05)] px-2 py-1.5 text-right font-mono">
+                        {tb ? (
+                          <>
+                            <div>{fmtCot(tb)}</div>
+                            {enBsCot(tb) ? (
+                              <div className="text-royal-700 dark:text-royal-300 text-[10.5px] font-semibold">{enBsCot(tb)}</div>
+                            ) : null}
+                          </>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                      <td className="w-28 bg-[rgba(255,120,120,.05)] px-2 py-1.5">
                         <input
                           className={cn(CAMPO, 'text-right')}
                           inputMode="decimal"
@@ -867,10 +1061,29 @@ export function AgregarOfertaModal({
                           value={f.precio_usd}
                           onChange={(e) => setFila(f.key, { precio_usd: comoNumero(e.target.value, { maxDecimales: 4, sinNegativos: true }) })}
                         />
+                        {pu > 0 && enBsCot(pu) ? (
+                          <div className="text-ink/55 mt-0.5 text-right font-mono text-[10px]">{enBsCot(pu)}</div>
+                        ) : null}
                       </td>
-                      <td className="bg-[rgba(255,120,120,.05)] px-2 py-1.5 text-right font-mono">{tu ? money(tu) : '—'}</td>
+                      <td className="bg-[rgba(255,120,120,.05)] px-2 py-1.5 text-right font-mono">
+                        {tu ? (
+                          <>
+                            <div>{money(tu)}</div>
+                            {enBsCot(tu) ? <div className="text-ink/60 text-[10.5px]">{enBsCot(tu)}</div> : null}
+                          </>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
                       <td className={cn('px-2 py-1.5 text-right font-mono', dif > 0 && 'text-success')}>
-                        {dif ? money(dif) : '—'}
+                        {dif ? (
+                          <>
+                            <div>{fmtCot(dif)}</div>
+                            {enBsCot(dif) ? <div className="text-[10px] opacity-80">{enBsCot(dif)}</div> : null}
+                          </>
+                        ) : (
+                          '—'
+                        )}
                       </td>
                       <td className="px-2 py-1.5 text-right font-mono">{varPct != null ? `${varPct.toFixed(1)}%` : '—'}</td>
                       <td className="px-2 py-1.5 whitespace-nowrap">
@@ -900,11 +1113,31 @@ export function AgregarOfertaModal({
                   <td colSpan={hayGenerales ? 7 : 6} className="px-2 py-1.5 text-right">
                     SUBTOTAL
                   </td>
-                  <td className="px-2 py-1.5 text-right font-mono">{bcvSubtotal ? money(bcvSubtotal) : '—'}</td>
+                  <td className="px-2 py-1.5 text-right font-mono">
+                    {bcvSubtotal ? (
+                      <>
+                        <div>{fmtCot(bcvSubtotal)}</div>
+                        {enBsCot(bcvSubtotal) ? (
+                          <div className="text-royal-700 dark:text-royal-300 text-[11px]">{enBsCot(bcvSubtotal)}</div>
+                        ) : null}
+                      </>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
                   <td />
-                  <td className="px-2 py-1.5 text-right font-mono">{usdTotal ? money(usdTotal) : '—'}</td>
+                  <td className="px-2 py-1.5 text-right font-mono">
+                    {usdTotal ? (
+                      <>
+                        <div>{money(usdTotal)}</div>
+                        {enBsCot(usdTotal) ? <div className="text-ink/65 text-[11px]">{enBsCot(usdTotal)}</div> : null}
+                      </>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
                   <td className={cn('px-2 py-1.5 text-right font-mono', ahorro > 0 && 'text-success')}>
-                    {ahorro ? money(ahorro) : '—'}
+                    {ahorro ? fmtCot(ahorro) : '—'}
                   </td>
                   <td colSpan={2} />
                 </tr>
@@ -947,17 +1180,27 @@ export function AgregarOfertaModal({
 
         {/* E. Totales */}
         <div className="border-hairline rounded-[8px] border p-3">
-          <div className="text-ink/85 mb-1 font-semibold">💵 Totales</div>
+          <div className="text-ink/85 mb-1 font-semibold">
+            💵 Totales · <span className="text-royal-700 dark:text-royal-300">{infoTasa.icono} {infoTasa.larga}</span>
+          </div>
           <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
             <span>
-              Total BCV: <strong>{bcvSubtotal ? money(bcvSubtotal) : '—'}</strong>
+              Total ({infoTasa.corta}):{' '}
+              <strong>
+                {bcvSubtotal ? `${fmtCot(bcvSubtotal)}${enBsCot(bcvSubtotal) ? ` · ${enBsCot(bcvSubtotal)}` : ''}` : '—'}
+              </strong>
             </span>
             <span>
-              Total USD: <strong className="text-success">{precioEfectivo || (!bcvSubtotal && usdTotal) ? money(usdTotal) : '—'}</strong>
+              Total USD efectivo:{' '}
+              <strong className="text-success">
+                {precioEfectivo || (!bcvSubtotal && usdTotal)
+                  ? `${money(usdTotal)}${enBsCot(usdTotal) ? ` · ${enBsCot(usdTotal)}` : ''}`
+                  : '—'}
+              </strong>
             </span>
             {ahorro > 0 ? (
               <span>
-                Diferencia: <strong>{money(ahorro)}</strong>{' '}
+                Diferencia: <strong>{fmtCot(ahorro)}</strong>{' '}
                 <Chip tone="success">−{ahorroPct}%</Chip>
               </span>
             ) : null}
@@ -992,8 +1235,9 @@ export function AgregarOfertaModal({
             </div>
           </div>
           <p className="text-ink/55 mt-1 text-xs">
-            Descuento negociado que se le resta al monto. Factura a pagar: <strong>{money(facturaNeta)}</strong> · descuento{' '}
-            <strong>{money(descuentoObt)}</strong>
+            Descuento negociado que se le resta al monto. Factura a pagar: <strong>{fmtCot(facturaNeta)}</strong>
+            {enBsCot(facturaNeta) ? <> (<strong>{enBsCot(facturaNeta)}</strong>)</> : null} · descuento{' '}
+            <strong>{fmtCot(descuentoObt)}</strong>
           </p>
         </div>
 
@@ -1002,8 +1246,8 @@ export function AgregarOfertaModal({
           <div className="text-ink/85 font-semibold">
             🧾 Impuestos{' '}
             <span className="text-ink/55 text-xs font-normal">
-              (se calculan sobre la factura neta {money(facturaNeta)} y se suman al total, salvo que los precios ya traigan el
-              IVA)
+              (se calculan sobre la factura neta {fmtCot(facturaNeta)}
+              {enBsCot(facturaNeta) ? ` · ${enBsCot(facturaNeta)}` : ''} y se suman al total, salvo que los precios ya traigan el IVA)
             </span>
           </div>
           <label className="mt-2 inline-flex items-center gap-2 text-sm">
@@ -1115,15 +1359,33 @@ export function AgregarOfertaModal({
               céntimo. Se ve en el pie de la OC con su motivo.
             </p>
           </div>
-          <div className="mt-2 text-sm">
-            Total a pagar (con impuestos): <strong className="text-royal-700 dark:text-royal-300">{money(totalConImpuestos)}</strong>
-            <span className="text-ink/55">
-              {' '}
-              = {money(facturaNeta)}
-              {ivaFinal ? (ivaAdentro ? ` (con IVA ${money(ivaFinal)} adentro)` : ` + IVA ${money(ivaFinal)}`) : ''}
-              {igtfFinal ? ` + IGTF ${money(igtfFinal)}` : ''}
-              {ajusteMonto ? ` ± ajuste ${money(ajusteMonto)}` : ''}
-            </span>
+          <div className="border-royal-600/30 bg-royal-600/6 mt-3 rounded-[8px] border px-3 py-2 text-sm">
+            <div>
+              Total a pagar (con impuestos):{' '}
+              <strong className="text-royal-700 dark:text-royal-300 font-mono">{fmtCot(totalConImpuestos)}</strong>
+              <span className="text-ink/55">
+                {' '}
+                = {fmtCot(facturaNeta)}
+                {ivaFinal ? (ivaAdentro ? ` (con IVA ${fmtCot(ivaFinal)} adentro)` : ` + IVA ${fmtCot(ivaFinal)}`) : ''}
+                {igtfFinal ? ` + IGTF ${fmtCot(igtfFinal)}` : ''}
+                {ajusteMonto ? ` ± ajuste ${fmtCot(ajusteMonto)}` : ''}
+              </span>
+            </div>
+            <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
+              <span>
+                Conversión en Bolívares ({infoTasa.icono} {infoTasa.corta}
+                {tasaActiva > 0 ? ` · ${moneyBs(tasaActiva)}` : ''}):{' '}
+                <strong className="text-royal-700 dark:text-royal-300 font-mono text-base">
+                  {enBsCot(totalConImpuestos) ?? 'Indicá tasa'}
+                </strong>
+              </span>
+              {ivaFinal > 0 && enBsCot(ivaFinal) ? (
+                <span className="text-ink/60 text-xs">IVA en Bs: {enBsCot(ivaFinal)}</span>
+              ) : null}
+              {igtfFinal > 0 && enBsCot(igtfFinal) ? (
+                <span className="text-ink/60 text-xs">IGTF en Bs: {enBsCot(igtfFinal)}</span>
+              ) : null}
+            </div>
           </div>
         </div>
 

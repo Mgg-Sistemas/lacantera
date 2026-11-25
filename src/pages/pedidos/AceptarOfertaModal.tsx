@@ -10,13 +10,16 @@ import {
   agruparVariantes,
   hayVariantes,
   infoModalidad,
+  moneyBs,
   precioRenglon,
   r2,
   recortarOferta,
+  resolverTasaOferta,
   skusTomados,
   type Modalidad,
   type ScoredOferta,
 } from '@/lib/ofertas'
+import { useTasasCotizacion } from '@/lib/tasasCotizacion'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
 
 /*
@@ -51,6 +54,8 @@ export function AceptarOfertaModal({
   const oferta = scored.oferta
   const aceptar = useAceptarOferta()
   const esHija = !!orden.parent_orden_id
+  const { tasas } = useTasasCotizacion(oferta.detalle?.tasa_tipo === 'USDT')
+  const tr = useMemo(() => resolverTasaOferta(oferta, tasas), [oferta, tasas])
 
   // Lo que se puede tildar: lo pendiente (o lo de la sub-OC) y lo que el proveedor agregó.
   const tomados = useMemo(() => (esHija ? new Set<string>() : skusTomados(hijas)), [esHija, hijas])
@@ -151,12 +156,26 @@ export function AceptarOfertaModal({
             disabled={aceptar.isPending || sinSeleccion || final <= 0}
             title={sinSeleccion ? 'Tildá al menos un producto para comprarle a este proveedor' : undefined}
           >
-            {aceptar.isPending ? 'Eligiendo…' : `Elegir oferta · ${n} producto(s) · Pagar ${money(final)}`}
+            {aceptar.isPending
+              ? 'Eligiendo…'
+              : `Elegir oferta · ${n} producto(s) · Pagar ${modalidad === 'usd' ? money(final) : tr.enDivisa(final)}${tr.tasaBs > 0 ? ` (${tr.enBs(final)})` : ''}`}
           </Button>
         </>
       }
     >
       <div className="space-y-3 text-sm">
+        <div className="border-hairline bg-canvas flex flex-wrap items-center justify-between gap-2 rounded-[8px] border px-3 py-2 text-xs">
+          <span>
+            💱 Tasa de la cotización:{' '}
+            <Chip tone={tr.tipo === 'EUR_BCV' ? 'warning' : 'royal'}>
+              {tr.info.icono} {tr.info.larga}
+              {tr.tasaBs > 0 ? ` · ${moneyBs(tr.tasaBs)}` : ''}
+            </Chip>
+          </span>
+          {tr.tasaBs > 0 && final > 0 ? (
+            <strong className="text-royal-700 dark:text-royal-300 font-mono">Total en Bs: {tr.enBs(final)}</strong>
+          ) : null}
+        </div>
         <p className="text-ink/70">
           {variantes
             ? 'Este proveedor cotizó algún producto en varias marcas. Elegí cuál marca se compra de cada uno (no se compran todas). Se muestran los precios en Bs (BCV) y en $ (USD).'
@@ -250,13 +269,18 @@ export function AceptarOfertaModal({
                           Cantidad: {fmtCant(c)} {r.unidad_compra ?? r.unidad ?? ''}
                         </div>
                         <div>
-                          $ BCV: <strong>{p ? money(p) : '—'}</strong>
+                          {tr.info.corta}: <strong>{p ? tr.enDivisa(p) : '—'}</strong>
+                          {p && tr.tasaBs > 0 ? (
+                            <span className="text-royal-700 dark:text-royal-300 ml-1 font-mono font-semibold">({tr.enBs(p)})</span>
+                          ) : null}
                         </div>
                         <div className="text-success">
                           $ efectivo: <strong>{pu ? money(pu) : '—'}</strong>
+                          {pu && tr.tasaBs > 0 ? <span className="ml-1 font-mono">({tr.enBs(pu)})</span> : null}
                         </div>
                         <div className="text-ink/55">
-                          Total: {p ? money(c * p) : '—'} · {pu ? money(c * pu) : '—'}
+                          Total: {p ? `${tr.enDivisa(c * p)}${tr.tasaBs > 0 ? ` (${tr.enBs(c * p)})` : ''}` : '—'} ·{' '}
+                          {pu ? money(c * pu) : '—'}
                         </div>
                       </label>
                     )
@@ -299,12 +323,15 @@ export function AceptarOfertaModal({
               {hayUsd ? (
                 <>
                   <div className="font-mono text-lg font-semibold">{money(rec.totalUsd)}</div>
+                  {tr.tasaBs > 0 ? (
+                    <div className="text-ink/70 font-mono text-xs font-semibold">Equivale a {tr.enBs(rec.totalUsd)}</div>
+                  ) : null}
                   <div className="text-ink/55 text-xs">
                     Base {money(rec.subtotalUsd)} + imp. {money(r2(rec.totalUsd - Math.max(0, rec.subtotalUsd - rec.descuento) - rec.ajuste))}
                   </div>
                   {ahorro > 0 ? (
                     <Chip tone="success">
-                      −{money(ahorro)} ({Math.round((ahorro / (rec.totalBs || 1)) * 100)}%)
+                      −{tr.enDivisa(ahorro)} ({Math.round((ahorro / (rec.totalBs || 1)) * 100)}%)
                     </Chip>
                   ) : null}
                 </>
@@ -322,13 +349,16 @@ export function AceptarOfertaModal({
                 !hayBs && 'cursor-not-allowed opacity-50',
               )}
             >
-              <div className="text-info font-semibold">Pagar en Bs al cambio (tasa BCV)</div>
+              <div className="text-info font-semibold">Pagar en Bs al cambio ({tr.info.corta})</div>
               {hayBs ? (
                 <>
-                  <div className="font-mono text-lg font-semibold">{money(rec.totalBs)}</div>
+                  <div className="font-mono text-lg font-semibold">{tr.enDivisa(rec.totalBs)}</div>
+                  {tr.tasaBs > 0 ? (
+                    <div className="text-royal-700 dark:text-royal-300 font-mono text-sm font-bold">{tr.enBs(rec.totalBs)}</div>
+                  ) : null}
                   <div className="text-ink/55 text-xs">
-                    Base {money(r2(rec.filas.reduce((a, f) => a + (Number(f.cantidad) || 0) * precioRenglon(f), 0)))} + imp.{' '}
-                    {money(r2((rec.iva && !oferta.iva_incluido ? rec.iva : 0) + rec.igtf))}
+                    Base {tr.enDivisa(r2(rec.filas.reduce((a, f) => a + (Number(f.cantidad) || 0) * precioRenglon(f), 0)))} + imp.{' '}
+                    {tr.enDivisa(r2((rec.iva && !oferta.iva_incluido ? rec.iva : 0) + rec.igtf))}
                   </div>
                 </>
               ) : (
@@ -372,30 +402,39 @@ export function AceptarOfertaModal({
             <>
               {hayBs ? (
                 <div className="mt-1">
-                  Total cotizado en Bs (BCV): <strong>{money(rec.subtotalBcv)}</strong> · con imp. {money(rec.totalBs)}
+                  Total cotizado ({tr.info.corta}): <strong>{tr.enDivisa(rec.subtotalBcv)}</strong> · con imp.{' '}
+                  <strong>{tr.enDivisa(rec.totalBs)}</strong>
+                  {tr.tasaBs > 0 ? (
+                    <span className="text-royal-700 dark:text-royal-300 ml-1 font-mono font-semibold">({tr.enBs(rec.totalBs)})</span>
+                  ) : null}
                 </div>
               ) : null}
               {hayUsd ? (
                 <div>
                   Total cotizado en $ (USD): <strong>{money(rec.subtotalUsd)}</strong> · con imp. {money(rec.totalUsd)}
+                  {tr.tasaBs > 0 ? <span className="text-ink/60 ml-1 font-mono">({tr.enBs(rec.totalUsd)})</span> : null}
                 </div>
               ) : null}
               <div className="mt-1 flex flex-wrap gap-1">
-                {rec.descuento ? <Chip tone="success">− desc. {money(rec.descuento)}</Chip> : null}
+                {rec.descuento ? <Chip tone="success">− desc. {tr.enDivisa(rec.descuento)}</Chip> : null}
                 {rec.iva ? (
                   oferta.iva_incluido ? (
-                    <Chip title="Los precios ya traen el IVA: se guarda para la retención, no se suma">IVA incluido {money(rec.iva)}</Chip>
+                    <Chip title="Los precios ya traen el IVA: se guarda para la retención, no se suma">IVA incluido {tr.enDivisa(rec.iva)}</Chip>
                   ) : (
-                    <Chip>+ IVA {money(rec.iva)}</Chip>
+                    <Chip>+ IVA {tr.enDivisa(rec.iva)}</Chip>
                   )
                 ) : null}
-                {rec.igtf ? <Chip>+ IGTF {money(rec.igtf)}</Chip> : null}
-                {rec.ajuste ? <Chip title={oferta.ajuste_motivo ?? undefined}>± ajuste {money(rec.ajuste)}</Chip> : null}
+                {rec.igtf ? <Chip>+ IGTF {tr.enDivisa(rec.igtf)}</Chip> : null}
+                {rec.ajuste ? <Chip title={oferta.ajuste_motivo ?? undefined}>± ajuste {tr.enDivisa(rec.ajuste)}</Chip> : null}
               </div>
               <div className="mt-2 text-base">
-                Total final de la OC a emitir: <strong className="font-mono">{money(final)}</strong>{' '}
+                Total final de la OC a emitir:{' '}
+                <strong className="font-mono">{modalidad === 'usd' ? money(final) : tr.enDivisa(final)}</strong>{' '}
+                {tr.tasaBs > 0 ? (
+                  <strong className="text-royal-700 dark:text-royal-300 mr-1 font-mono">({tr.enBs(final)})</strong>
+                ) : null}
                 <Chip tone={modalidad === 'usd' ? 'success' : 'info'}>
-                  {modalidad === 'usd' ? 'Pago en $ (Divisa)' : 'Pago en Bs a tasa BCV'}
+                  {modalidad === 'usd' ? 'Pago en $ (Divisa)' : `Pago en Bs (${tr.info.corta})`}
                 </Chip>
               </div>
               <p className="text-ink/55 mt-1 text-xs">

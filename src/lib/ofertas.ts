@@ -11,7 +11,14 @@
   se suman en el total de la oferta (una fila por producto, la más cara), como
   dice el propio `variantesOferta.ts` de MGG. MGG las suma en `precio_total`.
 */
-import type { ItemOrden, Oferta, Orden, EstadisticaProveedor } from '@/lib/api/pedidos'
+import type {
+  DetalleOferta,
+  EstadisticaProveedor,
+  ItemOrden,
+  Oferta,
+  Orden,
+  TipoTasaCotizacion,
+} from '@/lib/api/pedidos'
 
 export const r2 = (n: number): number => Math.round((Number(n) || 0) * 100) / 100
 export const r4 = (n: number): number => Math.round((Number(n) || 0) * 10000) / 10000
@@ -44,6 +51,238 @@ export const cifra2 = (n: number | string | null | undefined): string =>
 
 /** MGG `money(n, 'Bs')`. */
 export const moneyBs = (n: number | string | null | undefined): string => `Bs ${cifra2(n)}`
+
+// ---------------------------------------------------------------------------
+// Tasas de cotización (Dólar BCV, Euro BCV, USDT / Paralelo, Manual)
+// ---------------------------------------------------------------------------
+
+export interface MapaTasasCotizacion {
+  USD_BCV: number
+  EUR_BCV: number
+  USDT: number
+}
+
+export interface OpcionTasaCotizacion {
+  tipo: TipoTasaCotizacion
+  titulo: string
+  corta: string
+  larga: string
+  simbolo: string
+  moneda: string
+  icono: string
+  par: string
+  descripcion: string
+}
+
+export const OPCIONES_TASA_COTIZACION: OpcionTasaCotizacion[] = [
+  {
+    tipo: 'USD_BCV',
+    titulo: 'Dólar BCV',
+    corta: 'USD BCV',
+    larga: 'Tasa Dólar BCV',
+    simbolo: '$',
+    moneda: 'USD',
+    icono: '💵',
+    par: 'Bs/$',
+    descripcion: 'Cotización referenciada al dólar oficial BCV',
+  },
+  {
+    tipo: 'EUR_BCV',
+    titulo: 'Euro BCV',
+    corta: 'EUR BCV',
+    larga: 'Tasa Euro BCV',
+    simbolo: '€',
+    moneda: 'EUR',
+    icono: '💶',
+    par: 'Bs/€',
+    descripcion: 'Cotización referenciada al euro oficial BCV',
+  },
+  {
+    tipo: 'USDT',
+    titulo: 'USDT / Paralelo',
+    corta: 'USDT',
+    larga: 'Tasa USDT / Paralelo',
+    simbolo: 'USDT',
+    moneda: 'USDT',
+    icono: '🪙',
+    par: 'Bs/USDT',
+    descripcion: 'Cotización referenciada a USDT / mercado P2P',
+  },
+  {
+    tipo: 'MANUAL',
+    titulo: 'Tasa acordada',
+    corta: 'Tasa manual',
+    larga: 'Tasa acordada manual',
+    simbolo: '$',
+    moneda: 'USD',
+    icono: '✏️',
+    par: 'Bs/divisa',
+    descripcion: 'Tasa personalizada pactada con el proveedor',
+  },
+]
+
+const TIPOS_TASA_VALIDOS = new Set<TipoTasaCotizacion>(['USD_BCV', 'EUR_BCV', 'USDT', 'MANUAL'])
+
+export function esTipoTasaCotizacion(v: unknown): v is TipoTasaCotizacion {
+  return typeof v === 'string' && TIPOS_TASA_VALIDOS.has(v as TipoTasaCotizacion)
+}
+
+export function infoTasaCotizacion(
+  tipo: TipoTasaCotizacion | null | undefined,
+  etiquetaCustom?: string | null,
+): OpcionTasaCotizacion {
+  const base = OPCIONES_TASA_COTIZACION.find((o) => o.tipo === tipo) ?? OPCIONES_TASA_COTIZACION[0]
+  const custom = (etiquetaCustom ?? '').trim()
+  if (base.tipo === 'MANUAL' && custom) {
+    return {
+      ...base,
+      titulo: custom,
+      corta: custom,
+      larga: `Tasa ${custom}`,
+    }
+  }
+  return base
+}
+
+/** Formatea el monto en la moneda de referencia de la cotización ($1.234,56, €1.234,56 o USDT 1.234,56). */
+export function moneyCotizacion(
+  n: number | string | null | undefined,
+  tipo: TipoTasaCotizacion | null | undefined = 'USD_BCV',
+): string {
+  const v = cifra2(n)
+  if (tipo === 'EUR_BCV') return `€${v}`
+  if (tipo === 'USDT') return `USDT ${v}`
+  return `$${v}`
+}
+
+export interface MetaTasaCotizacion {
+  tipo: TipoTasaCotizacion
+  tasaBs: number | null
+  fija: boolean
+  etiqueta: string | null
+}
+
+const PREFIJO_NOTA_TASA = /^\[TASA:(USD_BCV|EUR_BCV|USDT|MANUAL)\|([0-9.]+)?\|([01])\|([^\]]*)\]\r?\n?/
+
+/** Guarda un marcador limpio al inicio de `notas` para compatibilidad inmediata aun sin migración SQL. */
+export function empacarNotaTasa(notasUsuario: string, meta: MetaTasaCotizacion): string {
+  const limpia = desempacarNotaTasa(notasUsuario).notas.trim()
+  const tasaStr = meta.tasaBs && meta.tasaBs > 0 ? String(Math.round(meta.tasaBs * 1e8) / 1e8) : ''
+  const etq = (meta.etiqueta ?? '').replace(/[\]|[\r\n]/g, '').trim().slice(0, 60)
+  const header = `[TASA:${meta.tipo}|${tasaStr}|${meta.fija ? '1' : '0'}|${etq}]`
+  return limpia ? `${header}\n${limpia}` : header
+}
+
+export function desempacarNotaTasa(notasCrudas: string | null | undefined): {
+  meta: MetaTasaCotizacion | null
+  notas: string
+} {
+  const raw = String(notasCrudas ?? '')
+  const m = PREFIJO_NOTA_TASA.exec(raw)
+  if (!m) return { meta: null, notas: raw }
+  const tipo = esTipoTasaCotizacion(m[1]) ? m[1] : 'USD_BCV'
+  const tasaNum = Number(m[2])
+  return {
+    meta: {
+      tipo,
+      tasaBs: Number.isFinite(tasaNum) && tasaNum > 0 ? tasaNum : null,
+      fija: m[3] === '1' || tipo === 'MANUAL',
+      etiqueta: m[4]?.trim() || null,
+    },
+    notas: raw.slice(m[0].length),
+  }
+}
+
+export function notasSinMarcaTasa(notasCrudas: string | null | undefined): string {
+  return desempacarNotaTasa(notasCrudas).notas
+}
+
+export function extraerMetaTasaDetalle(det: DetalleOferta | null | undefined): MetaTasaCotizacion | null {
+  if (!det || !esTipoTasaCotizacion(det.tasa_tipo)) return null
+  const t = Number(det.tasa_bs)
+  return {
+    tipo: det.tasa_tipo,
+    tasaBs: Number.isFinite(t) && t > 0 ? t : null,
+    fija: Boolean(det.tasa_fija) || det.tasa_tipo === 'MANUAL',
+    etiqueta: det.tasa_etiqueta?.trim() || null,
+  }
+}
+
+export function extraerMetaTasaOferta(oferta: Pick<Oferta, 'detalle' | 'notas'> | null | undefined): MetaTasaCotizacion {
+  if (!oferta) return { tipo: 'USD_BCV', tasaBs: null, fija: false, etiqueta: null }
+  const deDetalle = extraerMetaTasaDetalle(oferta.detalle)
+  if (deDetalle) return deDetalle
+  const deNotas = desempacarNotaTasa(oferta.notas).meta
+  if (deNotas) return deNotas
+  return { tipo: 'USD_BCV', tasaBs: null, fija: false, etiqueta: null }
+}
+
+export interface TasaResueltaCotizacion {
+  tipo: TipoTasaCotizacion
+  info: OpcionTasaCotizacion
+  /** Tasa activa en Bs por unidad para convertir ahora mismo. */
+  tasaBs: number
+  /** Tasa guardada al momento de registrar la cotización (si existe). */
+  tasaCotizadaBs: number | null
+  fija: boolean
+  /** Convierte un monto de la cotización a Bolívares. */
+  aBs: (monto: number | string | null | undefined) => number
+  /** Formatea el equivalente en Bs (`Bs 1.234,56`) o `—` si aún no hay tasa. */
+  enBs: (monto: number | string | null | undefined) => string
+  /** Formatea el monto en su símbolo de cotización (`$`, `€`, `USDT`). */
+  enDivisa: (monto: number | string | null | undefined) => string
+}
+
+export function construirTasaResuelta(
+  meta: MetaTasaCotizacion,
+  tasas?: Partial<MapaTasasCotizacion> | null,
+): TasaResueltaCotizacion {
+  const info = infoTasaCotizacion(meta.tipo, meta.etiqueta)
+  const enVivo =
+    meta.tipo === 'EUR_BCV'
+      ? num(tasas?.EUR_BCV)
+      : meta.tipo === 'USDT'
+        ? num(tasas?.USDT)
+        : meta.tipo === 'USD_BCV'
+          ? num(tasas?.USD_BCV)
+          : 0
+  const guardada = num(meta.tasaBs)
+  const tasaBs = meta.fija || meta.tipo === 'MANUAL' ? guardada || enVivo : enVivo || guardada
+  const aBs = (monto: number | string | null | undefined) => r2(num(monto) * tasaBs)
+  return {
+    tipo: meta.tipo,
+    info,
+    tasaBs,
+    tasaCotizadaBs: guardada > 0 ? guardada : null,
+    fija: meta.fija,
+    aBs,
+    enBs: (monto) => (tasaBs > 0 ? moneyBs(aBs(monto)) : '—'),
+    enDivisa: (monto) => moneyCotizacion(monto, meta.tipo),
+  }
+}
+
+export function resolverTasaOferta(
+  oferta: Pick<Oferta, 'detalle' | 'notas'> | null | undefined,
+  tasas?: Partial<MapaTasasCotizacion> | null,
+): TasaResueltaCotizacion {
+  return construirTasaResuelta(extraerMetaTasaOferta(oferta), tasas)
+}
+
+export function resolverTasaOrden(
+  orden: Pick<Orden, 'proveedor_id' | 'oferta_detalle'> | null | undefined,
+  ofertasDeMadre?: Oferta[] | null,
+  tasas?: Partial<MapaTasasCotizacion> | null,
+): TasaResueltaCotizacion {
+  const deOrden = extraerMetaTasaDetalle(orden?.oferta_detalle)
+  if (deOrden) return construirTasaResuelta(deOrden, tasas)
+  if (orden?.proveedor_id && ofertasDeMadre?.length) {
+    const of =
+      ofertasDeMadre.find((f) => f.proveedor_id === orden.proveedor_id && f.estado === 'aceptada') ??
+      ofertasDeMadre.find((f) => f.proveedor_id === orden.proveedor_id)
+    if (of) return resolverTasaOferta(of, tasas)
+  }
+  return construirTasaResuelta({ tipo: 'USD_BCV', tasaBs: null, fija: false, etiqueta: null }, tasas)
+}
 
 // ---------------------------------------------------------------------------
 // Condición de pago y modalidad (MGG `CONDICIONES_PAGO`, `modalidadPago.ts`)
@@ -201,18 +440,31 @@ export interface ScoredOferta {
 
 const clamp01 = (n: number) => (Number.isNaN(n) ? 0 : Math.min(1, Math.max(0, n)))
 
-export function scoreOfertas(ofertas: Oferta[], statsByProv: Map<number, EstadisticaProveedor>): ScoredOferta[] {
+export function scoreOfertas(
+  ofertas: Oferta[],
+  statsByProv: Map<number, EstadisticaProveedor>,
+  tasas?: Partial<MapaTasasCotizacion> | null,
+): ScoredOferta[] {
   if (!ofertas.length) return []
-  const precios = ofertas.map(costoEfectivo)
+  // Si hay tasas activas, comparamos el costo real convertido a Bs para no mezclar € con $ como 1:1.
+  const costosComparables = ofertas.map((o) => {
+    const base = costoEfectivo(o)
+    if (!tasas) return base
+    const tr = resolverTasaOferta(o, tasas)
+    return tr.tasaBs > 0 ? r2(base * tr.tasaBs) : base
+  })
+  const todasConTasa = !tasas || ofertas.every((o) => resolverTasaOferta(o, tasas).tasaBs > 0)
+  const precios = todasConTasa ? costosComparables : ofertas.map(costoEfectivo)
   const minP = Math.min(...precios)
   const maxP = Math.max(...precios)
   const rangeP = maxP - minP
   let bestPuntualidad = -Infinity
   let bestCalidad = -Infinity
 
-  const enriched = ofertas.map((o) => {
+  const enriched = ofertas.map((o, idx) => {
     const stats = statsByProv.get(o.proveedor_id) ?? { ...STATS_NEUTRAS, proveedor_id: o.proveedor_id }
-    const precio = rangeP === 0 ? 1 : 1 - (costoEfectivo(o) - minP) / rangeP
+    const pComp = precios[idx]
+    const precio = rangeP === 0 ? 1 : 1 - (pComp - minP) / rangeP
     const puntualidad = clamp01(num(stats.puntualidad_pct))
     const calidad = clamp01(num(stats.calidad_avg) / 5)
     const cumplimiento = clamp01(num(stats.cumplimiento_pct))
@@ -223,14 +475,14 @@ export function scoreOfertas(ofertas: Oferta[], statsByProv: Map<number, Estadis
       PESOS_SCORE.cumplimiento * cumplimiento
     if (num(stats.puntualidad_pct) > bestPuntualidad) bestPuntualidad = num(stats.puntualidad_pct)
     if (num(stats.calidad_avg) > bestCalidad) bestCalidad = num(stats.calidad_avg)
-    return { oferta: o, stats, score: { total, precio, puntualidad, calidad, cumplimiento } }
+    return { oferta: o, stats, score: { total, precio, puntualidad, calidad, cumplimiento }, pComp }
   })
 
   const maxTotal = Math.max(...enriched.map((e) => e.score.total))
-  return enriched.map((e) => ({
+  return enriched.map(({ pComp, ...e }) => ({
     ...e,
     recomendada: e.score.total === maxTotal,
-    mejorPrecio: costoEfectivo(e.oferta) === minP,
+    mejorPrecio: Math.abs(pComp - minP) < 0.005,
     masPuntual: num(e.stats.puntualidad_pct) === bestPuntualidad && e.stats.total_evaluaciones > 0,
     mejorCalidad: num(e.stats.calidad_avg) === bestCalidad && e.stats.total_evaluaciones > 0,
   }))

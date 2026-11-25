@@ -40,7 +40,8 @@ import {
   textoNoPago,
   type TonoEstado,
 } from '@/lib/pedidos'
-import { desglosarOc, infoModalidad } from '@/lib/ofertas'
+import { desglosarOc, infoModalidad, resolverTasaOrden, type MapaTasasCotizacion } from '@/lib/ofertas'
+import { useTasasCotizacion } from '@/lib/tasasCotizacion'
 import { esCredito, nombreMetodoPago, montoAPagar, saldoCredito, totalRetenciones } from '@/lib/pagos'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
 import { CrearOrdenModal } from './CrearOrdenModal'
@@ -225,6 +226,7 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
   const aprobar = useAprobarOrden()
   const cancelar = useCancelarOrden()
   const navigate = useNavigate()
+  const { tasas: tasasCot } = useTasasCotizacion()
 
   const ordenes = useMemo(() => pedidos.data ?? [], [pedidos.data])
 
@@ -549,7 +551,7 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
           {pedidos.isPending ? (
             <Vacio icono={<span className="text-3xl">◔</span>} titulo="Cargando órdenes..." />
           ) : viewMode === 'kanban' ? (
-            <KanbanBoard
+              <KanbanBoard
               ordenes={filteredOrdenes}
               cols={kanbanCols}
               columna={columna}
@@ -558,6 +560,7 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
               tope={permisos.compras ? TOPE_COLUMNA_OC : null}
               proveedor={nombreProveedor}
               noLeidos={noLeidos.data}
+              tasas={tasasCot}
               onOpen={(id) => setModal({ kind: 'detail', ordenId: id })}
               onVerMas={(estado) => void navigate(`/app/pedidos/historico?estado=${estado}`)}
             />
@@ -568,6 +571,7 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
               canManageProcurement={canManageProcurement}
               proveedor={nombreProveedor}
               noLeidos={noLeidos.data}
+              tasas={tasasCot}
               onView={(id, alAbrir) => setModal({ kind: 'detail', ordenId: id, alAbrir })}
               onApprove={(o) => setModal({ kind: 'approve', orden: o })}
             />
@@ -778,6 +782,7 @@ function OrdenesTable({
   canManageProcurement,
   proveedor,
   noLeidos,
+  tasas,
   onView,
   onApprove,
 }: {
@@ -786,6 +791,7 @@ function OrdenesTable({
   canManageProcurement: boolean
   proveedor: NombreProveedor
   noLeidos: Map<number, number> | undefined
+  tasas: MapaTasasCotizacion
   onView: (id: number, alAbrir?: 'pdf' | 'whatsapp') => void
   onApprove: (o: Orden) => void
 }) {
@@ -844,7 +850,23 @@ function OrdenesTable({
                 </td>
                 <td className="px-4 py-2.5">{quienSolicita(o) ?? '—'}</td>
                 <td className="px-4 py-2.5 text-right font-mono">{o.items.length}</td>
-                <td className="px-4 py-2.5 text-right font-mono">{money(o.total)}</td>
+                <td className="px-4 py-2.5 text-right font-mono">
+                  {(() => {
+                    const tr = resolverTasaOrden(o, null, tasas)
+                    const totalNum = Number(o.total) || 0
+                    return (
+                      <>
+                        <div>{o.modalidad_pago === 'usd' ? money(o.total) : tr.enDivisa(o.total)}</div>
+                        {totalNum > 0 && tr.tasaBs > 0 ? (
+                          <div className="text-royal-700 dark:text-royal-300 text-[11px] font-semibold">
+                            {tr.enBs(totalNum)}
+                            {tr.tipo !== 'USD_BCV' ? ` · ${tr.info.corta}` : ''}
+                          </div>
+                        ) : null}
+                      </>
+                    )
+                  })()}
+                </td>
                 <td className="px-4 py-2.5">
                   <EstadoBadge estado={o.estado} />
                 </td>
@@ -891,6 +913,7 @@ function KanbanBoard({
   tope,
   proveedor,
   noLeidos,
+  tasas,
   onOpen,
   onVerMas,
 }: {
@@ -903,6 +926,7 @@ function KanbanBoard({
   tope: number | null
   proveedor: NombreProveedor
   noLeidos: Map<number, number> | undefined
+  tasas: MapaTasasCotizacion
   onOpen: (id: number) => void
   onVerMas: (estado: EstadoOrden) => void
 }) {
@@ -949,6 +973,7 @@ function KanbanBoard({
                     hijas={hijasDe.get(o.id)}
                     proveedor={proveedor(o.proveedor_id)}
                     sinLeer={noLeidos?.get(o.id) ?? 0}
+                    tasas={tasas}
                     onOpen={onOpen}
                   />
                 ))
@@ -975,14 +1000,17 @@ const KanbanCard = memo(function KanbanCard({
   hijas,
   proveedor,
   sinLeer,
+  tasas,
   onOpen,
 }: {
   orden: Orden
   hijas: Orden[] | undefined
   proveedor: string | null
   sinLeer: number
+  tasas: MapaTasasCotizacion
   onOpen: (id: number) => void
 }) {
+  const tr = resolverTasaOrden(orden, null, tasas)
   const solicita = quienSolicita(orden)
   const cargo = quienCargo(orden)
   const n = orden.items.length
@@ -1135,29 +1163,42 @@ const KanbanCard = memo(function KanbanCard({
       {proveedor && orden.modalidad_pago ? (
         <div className="mt-1 text-[11px]">
           <Chip tone={orden.modalidad_pago === 'usd' ? 'success' : 'info'}>
-            {infoModalidad(orden.modalidad_pago).icono} {infoModalidad(orden.modalidad_pago).label}
+            {infoModalidad(orden.modalidad_pago).icono}{' '}
+            {orden.modalidad_pago === 'usd' ? infoModalidad('usd').label : `Pago en Bs (${tr.info.corta})`}
           </Chip>
+          {tr.tipo !== 'USD_BCV' ? (
+            <Chip tone={tr.tipo === 'EUR_BCV' ? 'warning' : 'neutral'} className="ml-1">
+              {tr.info.icono} {tr.info.corta}
+            </Chip>
+          ) : null}
           {bcv > 0 && efe > 0 && efe < bcv ? (
             <div className="text-ink/55 mt-0.5">
-              Cotiz. BCV: {money(bcv)} → en $: {money(efe)} (-{money(bcv - efe)})
+              Cotiz. {tr.info.corta}: {tr.enDivisa(bcv)} → en $: {money(efe)} (-{tr.enDivisa(bcv - efe)})
             </div>
           ) : efe > 0 && orden.modalidad_pago === 'usd' ? (
             <div className="text-ink/55 mt-0.5">Opción en $: {money(efe)}</div>
           ) : null}
           {iva ? (
             <div className="text-ink/55">
-              incl. IVA {ivaPct}% · {money(iva)}
+              incl. IVA {ivaPct}% · {tr.enDivisa(iva)}
             </div>
           ) : null}
         </div>
       ) : null}
       {pago ? <div className="mt-1 text-[11px]">{pago}</div> : null}
       {recepcion ? <div className="mt-1 text-[11px]">{recepcion}</div> : null}
-      <div className="mt-2 flex items-center justify-between">
-        <span className={cn('font-mono font-semibold', !cuadra && 'text-warning')} title={cuadra ? undefined : 'El total no cuadra con sus partes'}>
-          {cuadra ? '' : '⚠ '}
-          {money(orden.total)}
-        </span>
+      <div className="mt-2 flex items-end justify-between gap-2">
+        <div>
+          <div className={cn('font-mono font-semibold', !cuadra && 'text-warning')} title={cuadra ? undefined : 'El total no cuadra con sus partes'}>
+            {cuadra ? '' : '⚠ '}
+            {orden.modalidad_pago === 'usd' ? money(orden.total) : tr.enDivisa(orden.total)}
+          </div>
+          {Number(orden.total) > 0 && tr.tasaBs > 0 ? (
+            <div className="text-royal-700 dark:text-royal-300 font-mono text-[11px] font-semibold">
+              {tr.enBs(orden.total)}
+            </div>
+          ) : null}
+        </div>
         <span className="text-ink/45 text-xs" title={fechaHoraVE(orden.creado_en)}>
           {relTime(orden.creado_en)}
         </span>

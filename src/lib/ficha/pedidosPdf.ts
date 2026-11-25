@@ -13,7 +13,16 @@ import {
   type Columna,
   type EmpresaPapel,
 } from '@/lib/ficha/papel'
-import { DATOS_TECNICOS, LOGISTICA, desglosarOc, infoModalidad, labelCondicionPago } from '@/lib/ofertas'
+import {
+  DATOS_TECNICOS,
+  LOGISTICA,
+  desglosarOc,
+  infoModalidad,
+  labelCondicionPago,
+  moneyBs,
+  resolverTasaOrden,
+  type TasaResueltaCotizacion,
+} from '@/lib/ofertas'
 import type { Orden } from '@/lib/api/pedidos'
 import {
   etiquetaDocumento,
@@ -296,6 +305,8 @@ export interface DatosOcPdf {
   categoriaDe: (articuloId: number | null | undefined) => string | null
   /** La firma guardada de quien aprobó la OC (fase 3). Sin ella, la raya va en blanco. */
   firmaAprobador?: string | null
+  /** Tasa elegida en la cotización y su equivalencia en Bs. */
+  tasaCotizacion?: TasaResueltaCotizacion | null
 }
 
 /**
@@ -334,6 +345,9 @@ export async function armarOrdenCompraPdf(o: Orden, empresa: EmpresaPapel, d: Da
     ['Dirección', d.proveedor?.direccion ?? null],
   ])
 
+  const tr = d.tasaCotizacion ?? resolverTasaOrden(o)
+  const fmtOc = (n: number | string | null | undefined) => (o.modalidad_pago === 'usd' ? money2(n) : tr.enDivisa(n))
+
   y = seccion(doc, y, 'Condiciones')
   y = etiquetaValor(
     doc,
@@ -347,7 +361,15 @@ export async function armarOrdenCompraPdf(o: Orden, empresa: EmpresaPapel, d: Da
         ['Clasificación', o.clasificacion?.length ? o.clasificacion.join(', ') : null],
         ['Entrega prometida', fechaCortaVE(d.fechaEntregaPrometida)],
         ['Condiciones de pago', labelCondicionPago(o.condiciones_pago)],
-        ['Modalidad de pago', o.modalidad_pago ? infoModalidad(o.modalidad_pago).larga : null],
+        ['Tasa de cotización', `${tr.info.larga}${tr.tasaBs > 0 ? ` (${moneyBs(tr.tasaBs)})` : ''}`],
+        [
+          'Modalidad de pago',
+          o.modalidad_pago
+            ? o.modalidad_pago === 'usd'
+              ? infoModalidad('usd').larga
+              : `Pago en Bs al cambio (${tr.info.corta})`
+            : null,
+        ],
         ['Aprobada por', o.aprobada_por_nombre],
         ['Aprobada el', o.aprobada_en ? fechaHoraVE(o.aprobada_en) : null],
         ['OC creada por', o.oc_creada_por_nombre],
@@ -442,8 +464,20 @@ export async function armarOrdenCompraPdf(o: Orden, empresa: EmpresaPapel, d: Da
         ? [it.servicio_categoria, it.servicio_tipo].filter(Boolean).join(' · ') || '—'
         : (d.categoriaDe(it.articulo_id) ?? '—'),
       `${fmtCant(it.cantidad)} ${it.unidad_compra ?? it.unidad ?? ''}`.trim(),
-      `${money2(it.precio)}${it.unidad_compra ? ` / ${it.unidad_compra}` : ''}`,
-      money2((Number(it.cantidad) || 0) * (Number(it.precio) || 0)),
+      [
+        `${fmtOc(it.precio)}${it.unidad_compra ? ` / ${it.unidad_compra}` : ''}`,
+        tr.tasaBs > 0 && Number(it.precio) > 0 ? tr.enBs(it.precio) : '',
+      ]
+        .filter(Boolean)
+        .join('\n'),
+      [
+        fmtOc((Number(it.cantidad) || 0) * (Number(it.precio) || 0)),
+        tr.tasaBs > 0 && (Number(it.cantidad) || 0) * (Number(it.precio) || 0) > 0
+          ? tr.enBs((Number(it.cantidad) || 0) * (Number(it.precio) || 0))
+          : '',
+      ]
+        .filter(Boolean)
+        .join('\n'),
     ]),
   )
 
@@ -452,15 +486,18 @@ export async function armarOrdenCompraPdf(o: Orden, empresa: EmpresaPapel, d: Da
   const total = Number(o.total) || 0
   const lineas: Array<[string, string]> = []
   if (Math.abs(total - des.subtotal) > 0.005 || des.ivaIncluido) {
-    lineas.push([des.ivaIncluido ? 'Subtotal ítems (con IVA)' : 'Subtotal ítems', money2(des.subtotal)])
-    if (des.descuento) lineas.push(['Descuento', `-${money2(des.descuento)}`])
-    if (des.iva && !des.ivaIncluido) lineas.push(['IVA', money2(des.iva)])
-    if (des.igtf) lineas.push(['IGTF', money2(des.igtf)])
-    if (des.ajuste) lineas.push([o.ajuste_motivo ? `Ajuste · ${o.ajuste_motivo}` : 'Ajuste', money2(des.ajuste)])
+    lineas.push([des.ivaIncluido ? 'Subtotal ítems (con IVA)' : 'Subtotal ítems', fmtOc(des.subtotal)])
+    if (des.descuento) lineas.push(['Descuento', `-${fmtOc(des.descuento)}`])
+    if (des.iva && !des.ivaIncluido) lineas.push(['IVA', fmtOc(des.iva)])
+    if (des.igtf) lineas.push(['IGTF', fmtOc(des.igtf)])
+    if (des.ajuste) lineas.push([o.ajuste_motivo ? `Ajuste · ${o.ajuste_motivo}` : 'Ajuste', fmtOc(des.ajuste)])
     const otros = Math.round((total - des.esperado) * 100) / 100
-    if (Math.abs(otros) > 0.005) lineas.push(['Otros ajustes', money2(otros)])
+    if (Math.abs(otros) > 0.005) lineas.push(['Otros ajustes', fmtOc(otros)])
   }
-  lineas.push(['TOTAL', money2(total)])
+  lineas.push(['TOTAL', fmtOc(total)])
+  if (tr.tasaBs > 0 && total > 0) {
+    lineas.push([`TOTAL EN BS (${tr.info.corta} · ${moneyBs(tr.tasaBs)})`, tr.enBs(total)])
+  }
   if (des.ivaIncluido && des.iva) {
     lineas.push(['Base sin IVA (informativo)', money2(des.subtotal - des.iva)])
     lineas.push(['IVA (incluido en los precios) (informativo)', money2(des.iva)])

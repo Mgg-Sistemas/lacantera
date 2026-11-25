@@ -69,8 +69,11 @@ import {
   labelCondicionPago,
   montoFinalOferta,
   moneyBs,
+  resolverTasaOferta,
+  resolverTasaOrden,
   type ScoredOferta,
 } from '@/lib/ofertas'
+import { useTasasCotizacion } from '@/lib/tasasCotizacion'
 import {
   mensajeRecepcion,
   mensajeRevisionAlmacen,
@@ -271,6 +274,10 @@ export function OrdenDetailModal({
   const proveedorDe = (id: number | null | undefined) => (id ? proveedores?.find((p) => p.id === id) : undefined)
   const prov = proveedorDe(o.proveedor_id)
   const { data: tasa } = useTasaVigente()
+  const { tasas: tasasCot } = useTasasCotizacion(
+    o.oferta_detalle?.tasa_tipo === 'USDT' || ofertas.some((f) => f.detalle?.tasa_tipo === 'USDT'),
+  )
+  const tasaOc = useMemo(() => resolverTasaOrden(o, ofertas, tasasCot), [o, ofertas, tasasCot])
   const evaluacionQ = useEvaluacionDeOrden(o.id, permisos.compras && o.estado === 'finalizada')
   const evaluacion = evaluacionQ.data
   // Un servicio no lo recibe el almacén: Compras confirma que se prestó (MGG «🔧 Servicio realizado»).
@@ -396,25 +403,35 @@ export function OrdenDetailModal({
           : null,
         fechaEntregaPrometida: ofertaAceptada?.fecha_entrega_prometida ?? null,
         categoriaDe: (id) => (id ? (categoriaDe.get(id) ?? null) : null),
+        tasaCotizacion: tasaOc,
       })
     })
   }
 
-  // Las cotizaciones de la orden, del monto final más bajo al más alto (MGG).
+  // Las cotizaciones de la orden, ordenadas por costo equivalente en Bs cuando hay tasa.
   function cotizacionesMensaje(): CotizacionMensaje[] {
     return [...ofertas]
-      .map((f) => ({ f, monto: montoFinalOferta(f).final }))
-      .sort((a, b) => a.monto - b.monto)
-      .map(({ f, monto }) => {
+      .map((f) => {
+        const tr = resolverTasaOferta(f, tasasCot)
+        const monto = montoFinalOferta(f).final
+        return { f, tr, monto, ordenBs: tr.tasaBs > 0 ? monto * tr.tasaBs : monto }
+      })
+      .sort((a, b) => a.ordenBs - b.ordenBs)
+      .map(({ f, tr, monto }) => {
         const elegida = f.estado === 'aceptada' && (o.proveedor_id ? f.proveedor_id === o.proveedor_id : true)
         return {
           proveedor: proveedorDe(f.proveedor_id)?.nombre ?? '—',
           monto,
+          simbolo: tr.info.simbolo,
+          tasaLabel: tr.info.corta,
+          tasaBs: tr.tasaBs > 0 ? tr.tasaBs : null,
           elegida,
           elegidaPor: elegida ? f.decidida_por_nombre : null,
         }
       })
   }
+
+  const tasaEfectivaWs = tasaOc.tasaBs > 0 ? tasaOc.tasaBs : tasa ? Number(tasa.tasa) : null
 
   function whatsappAprobar() {
     const cotizaciones = cotizacionesMensaje()
@@ -425,7 +442,9 @@ export function OrdenDetailModal({
         condicion: o.condiciones_pago ? labelCondicionPago(o.condiciones_pago) : null,
         empresa: empresaDelPapel(empresa).razonSocial,
         cotizaciones,
-        tasaBs: tasa ? Number(tasa.tasa) : null,
+        tasaBs: tasaEfectivaWs,
+        tasaLabel: tasaOc.info.corta,
+        simbolo: o.modalidad_pago === 'usd' ? '$' : tasaOc.info.simbolo,
       }),
     })
   }
@@ -439,7 +458,13 @@ export function OrdenDetailModal({
 
   /** «💬 WhatsApp para pagar» (MGG `textoOrdenPago`), con el saldo si es crédito. */
   const textoPago = () =>
-    textoOrdenPago(o, { ...datosMensaje, cotizaciones: cotizacionesMensaje(), tasaBs: tasa ? Number(tasa.tasa) : null })
+    textoOrdenPago(o, {
+      ...datosMensaje,
+      cotizaciones: cotizacionesMensaje(),
+      tasaBs: tasaEfectivaWs,
+      tasaLabel: tasaOc.info.corta,
+      simbolo: o.modalidad_pago === 'usd' ? '$' : tasaOc.info.simbolo,
+    })
 
   // El WhatsApp de cada paso se arma con la orden ya al día (el canal en vivo la trae).
   const avisoTexto: { titulo: string; texto: string } | null = !avisoPaso
@@ -487,17 +512,19 @@ export function OrdenDetailModal({
       case 'anulada':
       case 'desistida_proveedor':
         return { titulo: `Avisar por WhatsApp · ${oc}`, texto: textoOrdenCerrada(o, datosMensaje) }
-      default:
-        return {
-          titulo: `Avisar para aprobar · ${oc}`,
-          texto: textoOrdenAprobacion(o, {
-            proveedor: prov?.nombre ?? '',
-            condicion: o.condiciones_pago ? labelCondicionPago(o.condiciones_pago) : null,
-            empresa: empresaNombre,
-            cotizaciones: cotizacionesMensaje(),
-            tasaBs: tasa ? Number(tasa.tasa) : null,
-          }),
-        }
+        default:
+          return {
+            titulo: `Avisar para aprobar · ${oc}`,
+            texto: textoOrdenAprobacion(o, {
+              proveedor: prov?.nombre ?? '',
+              condicion: o.condiciones_pago ? labelCondicionPago(o.condiciones_pago) : null,
+              empresa: empresaNombre,
+              cotizaciones: cotizacionesMensaje(),
+              tasaBs: tasaEfectivaWs,
+              tasaLabel: tasaOc.info.corta,
+              simbolo: o.modalidad_pago === 'usd' ? '$' : tasaOc.info.simbolo,
+            }),
+          }
     }
   }
   const [porAbrir, setPorAbrir] = useState(alAbrir ?? null)
@@ -1004,6 +1031,21 @@ export function OrdenDetailModal({
               <Chip tone="royal">{o.condiciones_pago ? labelCondicionPago(o.condiciones_pago) : 'Contado / anticipado'}</Chip>
             </Fila>
           ) : null}
+          {conPrecio || o.oc_codigo || det?.tasa_tipo || ofertaAceptada ? (
+            <Fila k="Tasa de cotización">
+              <div className="flex flex-wrap items-center gap-2">
+                <Chip tone={tasaOc.tipo === 'EUR_BCV' ? 'warning' : 'royal'}>
+                  {tasaOc.info.icono} {tasaOc.info.larga}
+                  {tasaOc.tasaBs > 0 ? ` · ${moneyBs(tasaOc.tasaBs)}` : ''}
+                </Chip>
+                {conPrecio && tasaOc.tasaBs > 0 ? (
+                  <span className="text-royal-700 dark:text-royal-300 font-mono text-sm font-semibold">
+                    Conversión en Bs: {tasaOc.enBs(o.total)}
+                  </span>
+                ) : null}
+              </div>
+            </Fila>
+          ) : null}
           {det && (DATOS_TECNICOS.some((t) => det[t.clave]) || det.logistica || (bcvOferta > 0 && efeOferta > 0)) ? (
             <Fila k="Datos de la oferta">
               <div className="space-y-0.5 text-xs">
@@ -1021,7 +1063,7 @@ export function OrdenDetailModal({
                   <div>
                     💵 Efectivo: {money(efeOferta)}{' '}
                     <Chip tone="success">−{Math.round(((bcvOferta - efeOferta) / bcvOferta) * 100)}%</Chip>{' '}
-                    <span className="text-ink/50">(BCV {money(bcvOferta)})</span>
+                    <span className="text-ink/50">({tasaOc.info.corta} {tasaOc.enDivisa(bcvOferta)})</span>
                   </div>
                 ) : null}
               </div>
@@ -1031,14 +1073,17 @@ export function OrdenDetailModal({
             <Fila k="Modalidad de pago">
               <div className="flex flex-wrap items-center gap-2">
                 <Chip tone={o.modalidad_pago === 'usd' ? 'success' : 'info'}>
-                  {infoModalidad(o.modalidad_pago).icono} {infoModalidad(o.modalidad_pago).larga} · {money(o.total)}
+                  {infoModalidad(o.modalidad_pago).icono}{' '}
+                  {o.modalidad_pago === 'usd' ? infoModalidad('usd').larga : `Pago en Bs al cambio (${tasaOc.info.corta})`} ·{' '}
+                  {o.modalidad_pago === 'usd' ? money(o.total) : tasaOc.enDivisa(o.total)}
+                  {tasaOc.tasaBs > 0 ? ` · ${tasaOc.enBs(o.total)}` : ''}
                 </Chip>
                 {o.modalidad_pago === 'usd' && bcvOferta > 0 ? (
-                  <span className="text-ink/50 text-xs">(Cotización original a tasa BCV: {money(bcvOferta)})</span>
+                  <span className="text-ink/50 text-xs">(Cotización original a {tasaOc.info.corta}: {tasaOc.enDivisa(bcvOferta)})</span>
                 ) : null}
                 {(o.estado === 'oc_creada' || o.estado === 'confirmada_metodo') && canManageProcurement ? (
                   <Button size="sm" variant="ghost" disabled={cambiarModalidad.isPending} onClick={() => void onCambiarModalidad()}>
-                    {o.modalidad_pago === 'usd' ? '🔄 Cambiar a Pago en Bs (BCV)' : '🔄 Cambiar a Pago en $ (Divisa)'}
+                    {o.modalidad_pago === 'usd' ? `🔄 Cambiar a Pago en Bs (${tasaOc.info.corta})` : '🔄 Cambiar a Pago en $ (Divisa)'}
                   </Button>
                 ) : null}
               </div>
@@ -1100,7 +1145,14 @@ export function OrdenDetailModal({
           {o.metodo_pago?.length || o.retenciones?.length || Number(o.descuento_pago) > 0 || esCredito(o) ? (
             ['confirmada_metodo', 'oc_aprobada', 'cuenta_abierta', 'por_recibir', 'pagada', 'recibida', 'finalizada'].includes(o.estado) ? (
               <Fila k="Monto a pagar">
-                <strong className="text-success font-mono">{money(montoAPagar(o))}</strong>
+                <strong className="text-success font-mono">
+                  {o.modalidad_pago === 'usd' ? money(montoAPagar(o)) : tasaOc.enDivisa(montoAPagar(o))}
+                </strong>
+                {tasaOc.tasaBs > 0 ? (
+                  <strong className="text-royal-700 dark:text-royal-300 ml-2 font-mono">
+                    · {tasaOc.enBs(montoAPagar(o))}
+                  </strong>
+                ) : null}
                 {o.retenciones?.length || Number(o.descuento_pago) > 0 ? (
                   <span className="text-ink/50 text-xs"> (total − retenciones{Number(o.descuento_pago) > 0 ? ' − descuento' : ''})</span>
                 ) : null}
@@ -1216,28 +1268,44 @@ export function OrdenDetailModal({
                 <thead className="text-ink/55 text-left text-xs">
                   <tr>
                     <th className="py-1 pr-2">OC</th>
-                    <th className="py-1 pr-2">Proveedor</th>
+                    <th className="py-1 pr-2">Proveedor / Tasa</th>
                     <th className="py-1 pr-2 text-right">Productos</th>
-                    <th className="py-1 pr-2 text-right">Total</th>
+                    <th className="py-1 pr-2 text-right">Total (divisa · Bs)</th>
                     <th className="py-1">Estado</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {misHijas.map((h) => (
-                    <tr key={h.id} className="border-hairline hover:bg-ink/3 cursor-pointer border-t" onClick={() => onAbrir(h.id)}>
-                      <td className="py-1.5 pr-2 font-mono text-xs">
-                        {h.oc_codigo ?? '—'}
-                        <div className="text-ink/45">{h.codigo}</div>
-                      </td>
-                      <td className="py-1.5 pr-2">{proveedorDe(h.proveedor_id)?.nombre ?? '—'}</td>
-                      <td className="py-1.5 pr-2 text-right">{h.items.filter((i) => i.comprar !== false).length}</td>
-                      <td className="py-1.5 pr-2 text-right font-mono">{money(h.total)}</td>
-                      <td className="py-1.5">
-                        <EstadoBadge estado={h.estado} />
-                        {!esHijaViva(h) ? <span className="text-ink/45 ml-1 text-xs">(sus productos vuelven a esta OP)</span> : null}
-                      </td>
-                    </tr>
-                  ))}
+                  {misHijas.map((h) => {
+                    const th = resolverTasaOrden(h, ofertas, tasasCot)
+                    return (
+                      <tr key={h.id} className="border-hairline hover:bg-ink/3 cursor-pointer border-t" onClick={() => onAbrir(h.id)}>
+                        <td className="py-1.5 pr-2 font-mono text-xs">
+                          {h.oc_codigo ?? '—'}
+                          <div className="text-ink/45">{h.codigo}</div>
+                        </td>
+                        <td className="py-1.5 pr-2">
+                          <div>{proveedorDe(h.proveedor_id)?.nombre ?? '—'}</div>
+                          <div className="mt-0.5">
+                            <Chip tone={th.tipo === 'EUR_BCV' ? 'warning' : 'neutral'}>
+                              {th.info.icono} {th.info.corta}
+                              {th.tasaBs > 0 ? ` · ${moneyBs(th.tasaBs)}` : ''}
+                            </Chip>
+                          </div>
+                        </td>
+                        <td className="py-1.5 pr-2 text-right">{h.items.filter((i) => i.comprar !== false).length}</td>
+                        <td className="py-1.5 pr-2 text-right font-mono">
+                          <div>{h.modalidad_pago === 'usd' ? money(h.total) : th.enDivisa(h.total)}</div>
+                          {th.tasaBs > 0 ? (
+                            <div className="text-royal-700 dark:text-royal-300 text-xs font-semibold">{th.enBs(h.total)}</div>
+                          ) : null}
+                        </td>
+                        <td className="py-1.5">
+                          <EstadoBadge estado={h.estado} />
+                          {!esHijaViva(h) ? <span className="text-ink/45 ml-1 text-xs">(sus productos vuelven a esta OP)</span> : null}
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
@@ -1471,8 +1539,24 @@ export function OrdenDetailModal({
                     ) : null}
                     {conPrecio ? (
                       <>
-                        <td className="px-3 py-2 text-right">{money(it.precio)}</td>
-                        <td className="px-3 py-2 text-right">{money(Number(it.cantidad) * Number(it.precio))}</td>
+                        <td className="px-3 py-2 text-right font-mono">
+                          <div>{o.modalidad_pago === 'usd' ? money(it.precio) : tasaOc.enDivisa(it.precio)}</div>
+                          {tasaOc.tasaBs > 0 && Number(it.precio) > 0 ? (
+                            <div className="text-royal-700 dark:text-royal-300 text-xs">{tasaOc.enBs(it.precio)}</div>
+                          ) : null}
+                        </td>
+                        <td className="px-3 py-2 text-right font-mono">
+                          <div>
+                            {o.modalidad_pago === 'usd'
+                              ? money(Number(it.cantidad) * Number(it.precio))
+                              : tasaOc.enDivisa(Number(it.cantidad) * Number(it.precio))}
+                          </div>
+                          {tasaOc.tasaBs > 0 && Number(it.cantidad) * Number(it.precio) > 0 ? (
+                            <div className="text-royal-700 dark:text-royal-300 text-xs font-medium">
+                              {tasaOc.enBs(Number(it.cantidad) * Number(it.precio))}
+                            </div>
+                          ) : null}
+                        </td>
                       </>
                     ) : (
                       <td className="px-3 py-2 text-right">
@@ -1530,26 +1614,67 @@ export function OrdenDetailModal({
               <tfoot className="text-sm">
                 {(
                   [
-                    [desglose.ivaIncluido ? 'Base (precios con IVA)' : 'Base', money(desglose.subtotal), ''],
-                    desglose.descuento ? ['Descuento obtenido', `−${money(desglose.descuento)}`, 'text-success'] : null,
-                    desglose.iva ? [desglose.ivaIncluido ? 'IVA (incluido en los precios) · ya sumado' : 'IVA', money(desglose.iva), ''] : null,
-                    desglose.igtf ? ['IGTF', money(desglose.igtf), ''] : null,
-                    desglose.ajuste ? [o.ajuste_motivo ? `Ajuste · ${o.ajuste_motivo}` : 'Ajuste', money(desglose.ajuste), ''] : null,
+                    [
+                      desglose.ivaIncluido ? 'Base (precios con IVA)' : 'Base',
+                      o.modalidad_pago === 'usd' ? money(desglose.subtotal) : tasaOc.enDivisa(desglose.subtotal),
+                      tasaOc.tasaBs > 0 ? tasaOc.enBs(desglose.subtotal) : '',
+                      '',
+                    ],
+                    desglose.descuento
+                      ? [
+                          'Descuento obtenido',
+                          `−${o.modalidad_pago === 'usd' ? money(desglose.descuento) : tasaOc.enDivisa(desglose.descuento)}`,
+                          tasaOc.tasaBs > 0 ? `−${tasaOc.enBs(desglose.descuento)}` : '',
+                          'text-success',
+                        ]
+                      : null,
+                    desglose.iva
+                      ? [
+                          desglose.ivaIncluido ? 'IVA (incluido en los precios) · ya sumado' : 'IVA',
+                          o.modalidad_pago === 'usd' ? money(desglose.iva) : tasaOc.enDivisa(desglose.iva),
+                          tasaOc.tasaBs > 0 ? tasaOc.enBs(desglose.iva) : '',
+                          '',
+                        ]
+                      : null,
+                    desglose.igtf
+                      ? [
+                          'IGTF',
+                          o.modalidad_pago === 'usd' ? money(desglose.igtf) : tasaOc.enDivisa(desglose.igtf),
+                          tasaOc.tasaBs > 0 ? tasaOc.enBs(desglose.igtf) : '',
+                          '',
+                        ]
+                      : null,
+                    desglose.ajuste
+                      ? [
+                          o.ajuste_motivo ? `Ajuste · ${o.ajuste_motivo}` : 'Ajuste',
+                          o.modalidad_pago === 'usd' ? money(desglose.ajuste) : tasaOc.enDivisa(desglose.ajuste),
+                          tasaOc.tasaBs > 0 ? tasaOc.enBs(desglose.ajuste) : '',
+                          '',
+                        ]
+                      : null,
                   ].filter((x): x is string[] => !!x && (desglose.total !== desglose.subtotal || desglose.ivaIncluido))
-                ).map(([k, v, c]) => (
+                ).map(([k, v, vBs, c]) => (
                   <tr key={k} className="border-hairline border-t">
                     <td colSpan={(revisadaAlmacen ? 8 : 6) + (conRecepcion ? 1 : 0)} className="text-ink/60 px-3 py-1.5 text-right">
                       {k}
                     </td>
-                    <td className={cn('px-3 py-1.5 text-right', c)}>{v}</td>
+                    <td className={cn('px-3 py-1.5 text-right font-mono', c)}>
+                      <div>{v}</div>
+                      {vBs ? <div className="text-ink/55 text-xs">{vBs}</div> : null}
+                    </td>
                     <td />
                   </tr>
                 ))}
                 <tr className="border-hairline border-t font-semibold">
                   <td colSpan={(revisadaAlmacen ? 8 : 6) + (conRecepcion ? 1 : 0)} className="px-3 py-2 text-right">
-                    TOTAL
+                    TOTAL ({o.modalidad_pago === 'usd' ? 'Divisa $' : tasaOc.info.corta})
                   </td>
-                  <td className={cn('px-3 py-2 text-right', !desglose.cuadra && 'text-warning')}>{money(o.total)}</td>
+                  <td className={cn('px-3 py-2 text-right font-mono', !desglose.cuadra && 'text-warning')}>
+                    <div>{o.modalidad_pago === 'usd' ? money(o.total) : tasaOc.enDivisa(o.total)}</div>
+                    {tasaOc.tasaBs > 0 ? (
+                      <div className="text-royal-700 dark:text-royal-300 text-xs font-bold">{tasaOc.enBs(o.total)}</div>
+                    ) : null}
+                  </td>
                   <td />
                 </tr>
               </tfoot>

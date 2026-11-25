@@ -164,3 +164,26 @@ export function useTasaBcv() {
     retry: 2,
   })
 }
+
+/** El euro oficial BCV en vivo (respaldo cuando aún no se ha registrado EUR hoy en `tasas_cambio`). */
+export function useTasaEurBcv(enabled = true) {
+  return useQuery({
+    queryKey: ['tasa-en-vivo', 'EUR'],
+    enabled,
+    queryFn: () => desdeDolarapi('EUR'),
+    staleTime: 30 * 60_000,
+    refetchInterval: 30 * 60_000,
+    retry: 2,
+  })
+}
+
+/** Tasa P2P USDT en vivo (opcional, bajo demanda). */
+export function useTasaUsdtVivo(enabled = false) {
+  return useQuery({
+    queryKey: ['tasa-en-vivo', 'USDT'],
+    enabled,
+    queryFn: () => desdeBinance(),
+    staleTime: 30 * 60_000,
+    retry: 1,
+  })
+}

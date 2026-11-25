@@ -19,12 +19,17 @@ import {
   codigoMadre,
   infoModalidad,
   itemsPendientes,
+  moneyBs,
   montoFinalOferta,
+  notasSinMarcaTasa,
   r2,
+  resolverTasaOferta,
   scoreOfertas,
   skusTomados,
   type ScoredOferta,
+  type TasaResueltaCotizacion,
 } from '@/lib/ofertas'
+import { useTasasCotizacion } from '@/lib/tasasCotizacion'
 import { mensajeDe, toast } from '@/lib/avisosFlotantes'
 import { abrirDeAlmacen } from '@/lib/abrirArchivo'
 import { ConfirmDialog } from './Dialogos'
@@ -83,8 +88,9 @@ export function OfertasComparativa({
   const puedeDecidir = canDecidir && enEtapaOc && ofertas.length >= MIN_OFERTAS
   const puedeAgregar = canDecidir && enEtapaOc && ofertas.length < MAX_OFERTAS
 
+  const { tasas } = useTasasCotizacion(ofertas.some((o) => o.detalle?.tasa_tipo === 'USDT'))
   const statsMap = useMemo(() => new Map(stats.map((s) => [s.proveedor_id, s])), [stats])
-  const scored = useMemo(() => scoreOfertas(ofertas, statsMap), [ofertas, statsMap])
+  const scored = useMemo(() => scoreOfertas(ofertas, statsMap, tasas), [ofertas, statsMap, tasas])
   const tomados = useMemo(() => skusTomados(hijas), [hijas])
   const pendientesHija = esHija ? itemsPendientes(madre, hijas) : []
 
@@ -175,6 +181,8 @@ export function OfertasComparativa({
               {scored.map((s) => {
                 const o = s.oferta
                 const prov = proveedorDe(o.proveedor_id)
+                const tr = resolverTasaOferta(o, tasas)
+                const notaLimpia = notasSinMarcaTasa(o.notas).trim()
                 const m = montoFinalOferta(o)
                 const bcv = Number(o.precio_total) || 0
                 const efe = Number(o.precio_efectivo) || 0
@@ -206,13 +214,18 @@ export function OfertasComparativa({
                       <td className="px-3 py-2">
                         <div className="flex flex-wrap items-center gap-1">
                           <strong>{prov?.nombre ?? `Proveedor ${o.proveedor_id}`}</strong>
+                          <Chip tone={tr.tipo === 'EUR_BCV' ? 'warning' : 'neutral'}>
+                            {tr.info.icono} {tr.info.corta}
+                            {tr.tasaBs > 0 ? ` · ${moneyBs(tr.tasaBs)}` : ''}
+                          </Chip>
                           {recomendada ? <Chip tone="royal">★ Recomendada</Chip> : null}
                           {aceptada && ordenDeLaOferta?.modalidad_pago ? (
                             <Chip tone="success">
-                              Aceptada · {ordenDeLaOferta.modalidad_pago === 'usd' ? '💵 Pago en $' : '🏦 Pago en Bs'}
+                              Aceptada · {ordenDeLaOferta.modalidad_pago === 'usd' ? '💵 Pago en $' : `🏦 Pago en Bs (${tr.info.corta})`}
                             </Chip>
                           ) : null}
                         </div>
+                        {notaLimpia ? <div className="text-ink/55 mt-0.5 text-xs">📝 {notaLimpia}</div> : null}
                         <div className="mt-1 flex flex-wrap items-center gap-1 text-xs">
                           {s.mejorPrecio ? <Chip tone="info">Mejor precio</Chip> : null}
                           {s.masPuntual ? <Chip tone="info">Más puntual</Chip> : null}
@@ -221,21 +234,27 @@ export function OfertasComparativa({
                         </div>
                       </td>
                       <td className="px-3 py-2">
-                        <strong className="font-mono">{money(m.final)}</strong>
+                        <strong className="font-mono">{tr.enDivisa(m.final)}</strong>
+                        {tr.tasaBs > 0 ? (
+                          <div className="text-royal-700 dark:text-royal-300 font-mono text-xs font-semibold">
+                            {tr.enBs(m.final)}
+                          </div>
+                        ) : null}
                         <div className="text-ink/50 text-[11px]">
                           {[
-                            `base ${money(m.base)}`,
-                            m.descuento ? `desc. ${money(m.descuento)}` : '',
-                            Number(o.iva) ? `${o.iva_incluido ? 'IVA incl.' : 'IVA'} ${money(o.iva)}` : '',
-                            Number(o.igtf) ? `IGTF ${money(o.igtf)}` : '',
-                            Number(o.ajuste) ? `ajuste ${money(o.ajuste)}` : '',
+                            `base ${tr.enDivisa(m.base)}`,
+                            m.descuento ? `desc. ${tr.enDivisa(m.descuento)}` : '',
+                            Number(o.iva) ? `${o.iva_incluido ? 'IVA incl.' : 'IVA'} ${tr.enDivisa(o.iva)}` : '',
+                            Number(o.igtf) ? `IGTF ${tr.enDivisa(o.igtf)}` : '',
+                            Number(o.ajuste) ? `ajuste ${tr.enDivisa(o.ajuste)}` : '',
                           ]
                             .filter(Boolean)
                             .join(' · ')}
                         </div>
                         {ahorro > 0 ? (
-                          <div className="text-success text-[11px]" title={`Ahorro ${money(ahorro)} (BCV − efectivo)`}>
-                            Divisa: {money(efe)} <Chip tone="success">−{Math.round((ahorro / bcv) * 100)}%</Chip>
+                          <div className="text-success text-[11px]" title={`Ahorro ${tr.enDivisa(ahorro)} (${tr.info.corta} − efectivo)`}>
+                            Divisa: {money(efe)} {tr.tasaBs > 0 ? `(${tr.enBs(efe)}) ` : ''}
+                            <Chip tone="success">−{Math.round((ahorro / bcv) * 100)}%</Chip>
                           </div>
                         ) : null}
                         {aceptada && ordenDeLaOferta?.modalidad_pago ? (
@@ -329,7 +348,7 @@ export function OfertasComparativa({
                           {quedan.length === 0 ? (
                             <p className="text-ink/55 text-xs">Todos los productos de esta oferta ya fueron asignados a un proveedor.</p>
                           ) : (
-                            <DetalleOferta oferta={o} items={quedan} />
+                            <DetalleOferta oferta={o} items={quedan} tasa={tr} />
                           )}
                         </td>
                       </tr>
@@ -383,8 +402,16 @@ export function OfertasComparativa({
   )
 }
 
-/** La subtabla por producto (MGG: Producto, Marca, Cant., BCV, USD, Diferencia, Var. %). */
-function DetalleOferta({ oferta, items }: { oferta: Oferta; items: Oferta['items'] }) {
+/** La subtabla por producto (MGG: Producto, Marca, Cant., tasa elegida + Bs, USD, Diferencia, Var. %). */
+function DetalleOferta({
+  oferta,
+  items,
+  tasa,
+}: {
+  oferta: Oferta
+  items: Oferta['items']
+  tasa: TasaResueltaCotizacion
+}) {
   const tb = items.reduce((a, i) => a + (Number(i.cantidad) || 0) * (Number(i.precio) || 0), 0)
   const tu = items.reduce((a, i) => a + (Number(i.cantidad) || 0) * (Number(i.precio_usd) || 0), 0)
   return (
@@ -394,8 +421,8 @@ function DetalleOferta({ oferta, items }: { oferta: Oferta; items: Oferta['items
           <th className="py-1 pr-2">Producto</th>
           <th className="py-1 pr-2">Marca / modelo</th>
           <th className="py-1 pr-2 text-right">Cant.</th>
-          <th className="py-1 pr-2 text-right">Precio BCV</th>
-          <th className="py-1 pr-2 text-right">Total BCV</th>
+          <th className="py-1 pr-2 text-right">Precio ({tasa.info.corta})</th>
+          <th className="py-1 pr-2 text-right">Total ({tasa.info.corta} · Bs)</th>
           <th className="py-1 pr-2 text-right">Precio USD</th>
           <th className="py-1 pr-2 text-right">Total USD</th>
           <th className="py-1 pr-2 text-right">Diferencia</th>
@@ -427,17 +454,55 @@ function DetalleOferta({ oferta, items }: { oferta: Oferta; items: Oferta['items
                 ) : null}
               </td>
               <td className="py-1 pr-2 text-right font-mono">
-                {p ? money(p) : '—'}
+                {p ? (
+                  <>
+                    <div>{tasa.enDivisa(p)}</div>
+                    {tasa.tasaBs > 0 ? (
+                      <div className="text-royal-700 dark:text-royal-300 text-[10.5px] font-medium">{tasa.enBs(p)}</div>
+                    ) : null}
+                  </>
+                ) : (
+                  '—'
+                )}
                 {p && i.unidad_compra && factor ? (
                   <div className="text-ink/45">
-                    ≈ {money(p / factor)}/{i.unidad}
+                    ≈ {tasa.enDivisa(p / factor)}/{i.unidad}
                   </div>
                 ) : null}
               </td>
-              <td className="py-1 pr-2 text-right font-mono">{p ? money(c * p) : '—'}</td>
-              <td className="py-1 pr-2 text-right font-mono">{pu ? money(pu) : '—'}</td>
-              <td className="py-1 pr-2 text-right font-mono">{pu ? money(c * pu) : '—'}</td>
-              <td className={cn('py-1 pr-2 text-right font-mono', dif > 0 && 'text-success')}>{dif ? money(dif) : '—'}</td>
+              <td className="py-1 pr-2 text-right font-mono">
+                {p ? (
+                  <>
+                    <div>{tasa.enDivisa(c * p)}</div>
+                    {tasa.tasaBs > 0 ? (
+                      <div className="text-royal-700 dark:text-royal-300 text-[10.5px] font-semibold">{tasa.enBs(c * p)}</div>
+                    ) : null}
+                  </>
+                ) : (
+                  '—'
+                )}
+              </td>
+              <td className="py-1 pr-2 text-right font-mono">
+                {pu ? (
+                  <>
+                    <div>{money(pu)}</div>
+                    {tasa.tasaBs > 0 ? <div className="text-ink/55 text-[10.5px]">{tasa.enBs(pu)}</div> : null}
+                  </>
+                ) : (
+                  '—'
+                )}
+              </td>
+              <td className="py-1 pr-2 text-right font-mono">
+                {pu ? (
+                  <>
+                    <div>{money(c * pu)}</div>
+                    {tasa.tasaBs > 0 ? <div className="text-ink/55 text-[10.5px]">{tasa.enBs(c * pu)}</div> : null}
+                  </>
+                ) : (
+                  '—'
+                )}
+              </td>
+              <td className={cn('py-1 pr-2 text-right font-mono', dif > 0 && 'text-success')}>{dif ? tasa.enDivisa(dif) : '—'}</td>
               <td className="py-1 text-right font-mono">{p > 0 && pu > 0 ? `${(((p - pu) / p) * 100).toFixed(1)}%` : '—'}</td>
             </tr>
           )
@@ -446,13 +511,33 @@ function DetalleOferta({ oferta, items }: { oferta: Oferta; items: Oferta['items
       <tfoot>
         <tr className="border-hairline border-t font-semibold">
           <td colSpan={4} className="py-1 pr-2 text-right">
-            TOTAL
+            TOTAL ({tasa.info.corta})
           </td>
-          <td className="py-1 pr-2 text-right font-mono">{tb ? money(tb) : '—'}</td>
+          <td className="py-1 pr-2 text-right font-mono">
+            {tb ? (
+              <>
+                <div>{tasa.enDivisa(tb)}</div>
+                {tasa.tasaBs > 0 ? (
+                  <div className="text-royal-700 dark:text-royal-300 text-[11px]">{tasa.enBs(tb)}</div>
+                ) : null}
+              </>
+            ) : (
+              '—'
+            )}
+          </td>
           <td />
-          <td className="py-1 pr-2 text-right font-mono">{tu ? money(tu) : '—'}</td>
+          <td className="py-1 pr-2 text-right font-mono">
+            {tu ? (
+              <>
+                <div>{money(tu)}</div>
+                {tasa.tasaBs > 0 ? <div className="text-ink/60 text-[11px]">{tasa.enBs(tu)}</div> : null}
+              </>
+            ) : (
+              '—'
+            )}
+          </td>
           <td className={cn('py-1 pr-2 text-right font-mono', tb > tu && tu > 0 && 'text-success')}>
-            {tb && tu ? money(tb - tu) : '—'}
+            {tb && tu ? tasa.enDivisa(tb - tu) : '—'}
           </td>
           <td />
         </tr>

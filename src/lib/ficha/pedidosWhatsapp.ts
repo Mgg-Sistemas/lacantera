@@ -108,10 +108,10 @@ export function mensajeSolicitudServicio(o: Orden): string {
 // Fase 2: la OC (MGG `ordenPagoTxt.ts`)
 // ---------------------------------------------------------------------------
 
-/** MGG `montoTxt`: «$1.234,56» o «Bs 1.234,56». */
+/** MGG `montoTxt`: «$1.234,56», «€1.234,56» o «Bs 1.234,56». */
 export function montoTxt(n: number | string | null | undefined, moneda = '$'): string {
   const v = (Number(n) || 0).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  return moneda === '$' ? `$${v}` : `${moneda} ${v}`
+  return moneda === '$' || moneda === '€' ? `${moneda}${v}` : `${moneda} ${v}`
 }
 
 /** MGG `detalleTxt`: el motivo y la finalidad, sin repetir. */
@@ -124,21 +124,26 @@ export function detalleTxt(o: Pick<Orden, 'motivo' | 'finalidad'>): string {
 /** Una cotización de la orden para el mensaje «para aprobar». */
 export interface CotizacionMensaje {
   proveedor: string
-  /** Monto final a pagar de la cotización, en $. */
+  /** Monto final a pagar de la cotización, en la moneda de referencia. */
   monto: number
+  simbolo?: string
+  tasaLabel?: string
+  tasaBs?: number | null
   elegida: boolean
   /** Quién la escogió (solo la elegida). */
   elegidaPor?: string | null
 }
 
-/** MGG `lineasCotizaciones`: el monto en $ y en Bs con la tasa del día; sin tasa, solo en $. */
-export function lineasCotizaciones(cotizaciones: CotizacionMensaje[], tasaBs?: number | null): string[] {
+/** MGG `lineasCotizaciones`: el monto en divisa y en Bs según la tasa elegida de cada cotización. */
+export function lineasCotizaciones(cotizaciones: CotizacionMensaje[], tasaBsRespaldo?: number | null): string[] {
   if (!cotizaciones.length) return []
-  const tasa = Number(tasaBs) > 0 ? Number(tasaBs) : null
-  const montos = (n: number) => [montoTxt(n, '$'), tasa ? montoTxt(n * tasa, 'Bs') : null].filter(Boolean).join(' · ')
   const L: string[] = ['', `📊 *COTIZACIONES (${cotizaciones.length}):*`]
   cotizaciones.forEach((c, i) => {
-    L.push(`• *Cotización ${i + 1}:* ${c.proveedor || '—'} · ${montos(c.monto)}${c.elegida ? ' ✅' : ''}`)
+    const tasa = Number(c.tasaBs ?? tasaBsRespaldo) > 0 ? Number(c.tasaBs ?? tasaBsRespaldo) : null
+    const sim = c.simbolo || '$'
+    const etq = c.tasaLabel ? ` (${c.tasaLabel})` : ''
+    const montos = [montoTxt(c.monto, sim) + etq, tasa ? montoTxt(c.monto * tasa, 'Bs') : null].filter(Boolean).join(' · ')
+    L.push(`• *Cotización ${i + 1}:* ${c.proveedor || '—'} · ${montos}${c.elegida ? ' ✅' : ''}`)
   })
   const i = cotizaciones.findIndex((c) => c.elegida)
   if (i >= 0) {
@@ -162,6 +167,8 @@ export function textoOrdenAprobacion(
     empresa: string
     cotizaciones?: CotizacionMensaje[]
     tasaBs?: number | null
+    tasaLabel?: string | null
+    simbolo?: string | null
   },
 ): string {
   const detalle = detalleTxt(o)
@@ -169,6 +176,8 @@ export function textoOrdenAprobacion(
   const productos = (o.items ?? []).filter((i) => i.comprar !== false)
   const solicita = (quienSolicita(o) ?? '').trim()
   const analista = (o.oc_creada_por_nombre ?? o.aprobada_por_nombre ?? '').trim()
+  const sim = d.simbolo || '$'
+  const tasa = Number(d.tasaBs) > 0 ? Number(d.tasaBs) : null
 
   const L: string[] = []
   L.push(`🔹 *ORDEN:* ${o.oc_codigo ?? o.codigo}`)
@@ -181,8 +190,9 @@ export function textoOrdenAprobacion(
   if (analista) L.push(`🛒 *Analista de compras:* ${analista}`)
   if (productos.length) L.push(`📦 *Productos:* ${productos.length}`)
   if (d.condicion) L.push(`📋 *Condición:* ${d.condicion}`)
+  if (d.tasaLabel) L.push(`💱 *Tasa de cotización:* ${d.tasaLabel}${tasa ? ` (${montoTxt(tasa, 'Bs')})` : ''}`)
   L.push(...lineasCotizaciones(d.cotizaciones ?? [], d.tasaBs))
-  L.push(`💵 *Total:* ${montoTxt(o.total, '$')}`)
+  L.push(`💵 *Total:* ${montoTxt(o.total, sim)}${tasa ? ` · *${montoTxt(Number(o.total) * tasa, 'Bs')}*` : ''}`)
   L.push(`🏢 *${d.empresa.toUpperCase()}*`)
   return L.join('\n')
 }
@@ -230,6 +240,8 @@ export interface DatosMensajePago {
   condicion: string | null
   cotizaciones?: CotizacionMensaje[]
   tasaBs?: number | null
+  tasaLabel?: string | null
+  simbolo?: string | null
 }
 
 const fechaDia = (iso: string): string => iso.slice(0, 10).split('-').reverse().join('/')
@@ -294,7 +306,7 @@ export function textoOrdenPago(o: Orden, d: DatosMensajePago): string {
   const enBs = abonado > 0 ? saldoCredito(o) : aPagar
   if (tasa) {
     L.push(
-      `💱 *En Bs:* ${montoTxt(enBs * tasa, 'Bs')} (tasa ${tasa.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 4 })})`,
+      `💱 *En Bs${d.tasaLabel ? ` (${d.tasaLabel})` : ''}:* ${montoTxt(enBs * tasa, 'Bs')} (tasa ${tasa.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 4 })})`,
     )
   }
   if (!credito) {
