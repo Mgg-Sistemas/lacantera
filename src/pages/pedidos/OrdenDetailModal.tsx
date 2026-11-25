@@ -248,6 +248,7 @@ export function OrdenDetailModal({
   const yo = permisos.yo
   const canManageProcurement = permisos.gestiona
   const puedeAprobarOc = permisos.aprueba_oc
+  const puedeRegistrarPago = canManageProcurement || puedeAprobarOc
   const isPendiente = o.estado === 'pendiente'
   const enRevisionAlmacen = o.estado === 'revision_almacen'
   const canApprove = canManageProcurement && isPendiente
@@ -753,7 +754,7 @@ export function OrdenDetailModal({
               💳 Editar método de pago / datos
             </Button>
           ) : null}
-          {puedeAprobarOc ? (
+          {puedeRegistrarPago ? (
             <Button className="bg-success hover:bg-success hover:brightness-95" onClick={() => setSub({ kind: 'pagar' })}>
               💵 Marcar pagada
             </Button>
@@ -782,7 +783,7 @@ export function OrdenDetailModal({
               🧾 Documento y retenciones
             </Button>
           ) : null}
-          {puedeAprobarOc && aceptaAbonos(o) ? (
+          {puedeRegistrarPago && aceptaAbonos(o) ? (
             <Button className="bg-success hover:bg-success hover:brightness-95" onClick={() => setSub({ kind: 'abono' })}>
               💵 Registrar abono
             </Button>
@@ -1919,7 +1920,7 @@ export function OrdenDetailModal({
       {sub.kind === 'credito' ? (
         <CreditoModal
           orden={o}
-          puedeAbonar={puedeAprobarOc && aceptaAbonos(o)}
+          puedeAbonar={puedeRegistrarPago && aceptaAbonos(o)}
           onAbonar={() => setSub({ kind: 'abono' })}
           onClose={() => setSub({ kind: 'none' })}
         />

@@ -219,7 +219,7 @@ export function ServicioDirectoView({ permisos }: { permisos: PermisosPedidos })
                 💳 Editar método de pago / datos
               </Button>
             ) : null}
-            {permisos.aprueba_oc ? (
+            {gestiona || permisos.aprueba_oc ? (
               <Button size="sm" className="bg-success hover:bg-success hover:brightness-95" onClick={() => ir({ kind: 'pagar', id: s.id })}>
                 💵 Marcar pagado
               </Button>
