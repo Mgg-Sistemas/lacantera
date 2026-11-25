@@ -56,7 +56,7 @@ begin
     raise exception 'Escriba por qué se elimina la salida (mínimo 4 caracteres).' using errcode = '22023';
   end if;
 
-  -- Bloquear movimientos de la nota de salida
+  -- Obtener movimientos de la nota de salida
   select array_agg(m.id order by m.id)
     into v_mov_ids
     from public.inventario_movimientos m
@@ -108,12 +108,14 @@ begin
      and (
        ne.nota_salida = v_nota
        or (v_solicitud_id is not null and ne.solicitud_salida_id = v_solicitud_id)
-       or ne.movimiento_salida_id = any(coalesce(v_mov_ids, '{}'::bigint[]))
        or exists (
          select 1
            from public.nota_entrega_renglones ner
           where ner.nota_id = ne.id
-            and ner.movimiento_id = any(coalesce(v_mov_ids, '{}'::bigint[]))
+            and (
+              ner.movimiento_id = any(coalesce(v_mov_ids, '{}'::bigint[]))
+              or ner.movimiento_salida_id = any(coalesce(v_mov_ids, '{}'::bigint[]))
+            )
        )
      )
    limit 1;
@@ -126,7 +128,8 @@ begin
 
   -- Verificar que los movimientos no pertenezcan a combustible, traslados, dotación, taller o conteos
   if coalesce(cardinality(v_mov_ids), 0) > 0 then
-    if exists (select 1 from public.despachos_combustible where movimiento_id = any(v_mov_ids) or merma_de_mov_id = any(v_mov_ids))
+    if exists (select 1 from public.despachos_combustible where movimiento_id = any(v_mov_ids))
+       or exists (select 1 from public.combustible_mov_datos where movimiento_id = any(v_mov_ids) or merma_de_mov_id = any(v_mov_ids))
        or exists (select 1 from public.traslados where mov_salida = any(v_mov_ids) or mov_en_camino = any(v_mov_ids) or mov_llegada = any(v_mov_ids) or mov_vuelta = any(v_mov_ids))
        or exists (select 1 from public.asignaciones_herramienta where movimiento_id = any(v_mov_ids))
        or exists (select 1 from public.mantenimiento_repuestos where movimiento_id = any(v_mov_ids))
@@ -143,20 +146,20 @@ begin
   -- Abrir compuerta local de esta transacción
   perform set_config('lacantera.eliminando_salida_admin', 'si', true);
 
-  -- Si existía alguna nota de entrega ANULADA apuntando a esta salida, soltar su referencia histórica
+  -- Si existía alguna nota de entrega ANULADA apuntando a esta salida, soltar sus referencias históricas
   update public.nota_entrega_renglones
-     set movimiento_id = null
-   where movimiento_id = any(coalesce(v_mov_ids, '{}'::bigint[]));
+     set movimiento_id = null,
+         movimiento_salida_id = null
+   where movimiento_id = any(coalesce(v_mov_ids, '{}'::bigint[]))
+      or movimiento_salida_id = any(coalesce(v_mov_ids, '{}'::bigint[]));
 
   update public.notas_entrega
      set nota_salida = null,
-         solicitud_salida_id = null,
-         movimiento_salida_id = null
+         solicitud_salida_id = null
    where estado = 'ANULADA'
      and (
        nota_salida = v_nota
        or (v_solicitud_id is not null and solicitud_salida_id = v_solicitud_id)
-       or movimiento_salida_id = any(coalesce(v_mov_ids, '{}'::bigint[]))
      );
 
   -- Si alguien había generado un REVERSO previo sobre alguno de estos movimientos,
@@ -239,11 +242,10 @@ begin
     );
     raise notice 'Salida eliminada y material devuelto al patio: %', v_res;
   elsif exists (select 1 from public.solicitudes_salida where numero = 'SS-2026-0154') then
-    -- Por si SS-2026-0154 estuviera sin nota_salida asociada
     delete from public.solicitudes_salida where numero = 'SS-2026-0154';
     raise notice 'Solicitud SS-2026-0154 eliminada.';
   else
-    raise notice 'SS-2026-0154 / NS-2026-0156 ya no existe (ya había sido eliminada).';
+    raise notice 'SS-2026-0154 / NS-2026-0156 ya no existe.';
   end if;
 end;
 $$;
