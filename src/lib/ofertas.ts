@@ -91,10 +91,10 @@ export const OPCIONES_TASA_COTIZACION: OpcionTasaCotizacion[] = [
     titulo: 'Euro BCV',
     corta: 'EUR BCV',
     larga: 'Tasa Euro BCV',
-    simbolo: '€',
+    simbolo: '$',
     moneda: 'EUR',
     icono: '💶',
-    par: 'Bs/€',
+    par: 'Bs/$',
     descripcion: 'Cotización referenciada al euro oficial BCV',
   },
   {
@@ -102,10 +102,10 @@ export const OPCIONES_TASA_COTIZACION: OpcionTasaCotizacion[] = [
     titulo: 'USDT / Paralelo',
     corta: 'USDT',
     larga: 'Tasa USDT / Paralelo',
-    simbolo: 'USDT',
+    simbolo: '$',
     moneda: 'USDT',
     icono: '🪙',
-    par: 'Bs/USDT',
+    par: 'Bs/$',
     descripcion: 'Cotización referenciada a USDT / mercado P2P',
   },
   {
@@ -116,7 +116,7 @@ export const OPCIONES_TASA_COTIZACION: OpcionTasaCotizacion[] = [
     simbolo: '$',
     moneda: 'USD',
     icono: '✏️',
-    par: 'Bs/divisa',
+    par: 'Bs/$',
     descripcion: 'Tasa personalizada pactada con el proveedor',
   },
 ]
@@ -144,15 +144,13 @@ export function infoTasaCotizacion(
   return base
 }
 
-/** Formatea el monto en la moneda de referencia de la cotización ($1.234,56, €1.234,56 o USDT 1.234,56). */
+/** Formatea el monto siempre con signo `$` (`$1.234,56`); la tasa elegida se indica aparte. */
 export function moneyCotizacion(
   n: number | string | null | undefined,
-  tipo: TipoTasaCotizacion | null | undefined = 'USD_BCV',
+  _tipo?: TipoTasaCotizacion | null,
 ): string {
-  const v = cifra2(n)
-  if (tipo === 'EUR_BCV') return `€${v}`
-  if (tipo === 'USDT') return `USDT ${v}`
-  return `$${v}`
+  void _tipo
+  return `$${cifra2(n)}`
 }
 
 export interface MetaTasaCotizacion {
