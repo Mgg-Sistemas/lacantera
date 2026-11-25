@@ -233,13 +233,13 @@ export function OfertasComparativa({
                           <span className="text-ink/50">{expandida ? '▾ Detalle por producto' : '▸ Clic para ver detalle por producto'}</span>
                         </div>
                       </td>
-                      <td className="px-3 py-2">
-                        <strong className="font-mono">{tr.enDivisa(m.final)}</strong>
-                        {tr.tasaBs > 0 ? (
-                          <div className="text-royal-700 dark:text-royal-300 font-mono text-xs font-semibold">
-                            {tr.enBs(m.final)}
-                          </div>
-                        ) : null}
+                      <td className="px-3 py-2 whitespace-nowrap">
+                        <div className="flex flex-wrap items-baseline gap-2 font-mono">
+                          <strong>{tr.enDivisa(m.final)}</strong>
+                          {tr.tasaBs > 0 ? (
+                            <span className="text-royal-700 dark:text-royal-300 text-xs font-semibold">{tr.enBs(m.final)}</span>
+                          ) : null}
+                        </div>
                         <div className="text-ink/50 text-[11px]">
                           {[
                             `base ${tr.enDivisa(m.base)}`,
@@ -420,13 +420,19 @@ function DetalleOferta({
         <tr>
           <th className="py-1 pr-2">Producto</th>
           <th className="py-1 pr-2">Marca / modelo</th>
-          <th className="py-1 pr-2 text-right">Cant.</th>
-          <th className="py-1 pr-2 text-right">Precio ({tasa.info.corta})</th>
-          <th className="py-1 pr-2 text-right">Total ({tasa.info.corta} · Bs)</th>
-          <th className="py-1 pr-2 text-right">Precio USD</th>
-          <th className="py-1 pr-2 text-right">Total USD</th>
-          <th className="py-1 pr-2 text-right">Diferencia</th>
-          <th className="py-1 text-right">Var. %</th>
+          <th className="py-1 pr-2 text-right whitespace-nowrap">Cant.</th>
+          <th className="py-1 pr-2 text-right whitespace-nowrap">Precio ($)</th>
+          <th className="py-1 pr-2 text-right whitespace-nowrap">Precio (Bs)</th>
+          <th className="py-1 pr-2 text-right whitespace-nowrap">Total ($)</th>
+          <th className="py-1 pr-2 text-right whitespace-nowrap">Total (Bs)</th>
+          {tu > 0 ? (
+            <>
+              <th className="py-1 pr-2 text-right whitespace-nowrap">Efectivo ($)</th>
+              <th className="py-1 pr-2 text-right whitespace-nowrap">Total efec. ($)</th>
+              <th className="py-1 pr-2 text-right whitespace-nowrap">Diferencia</th>
+              <th className="py-1 text-right whitespace-nowrap">Var. %</th>
+            </>
+          ) : null}
         </tr>
       </thead>
       <tbody>
@@ -437,15 +443,15 @@ function DetalleOferta({
           const dif = p > 0 && pu > 0 ? r2(c * p - c * pu) : 0
           const factor = Number(i.factor_compra) || 0
           return (
-            <tr key={`${oferta.id}-${k}`} className="border-hairline border-t">
-              <td className="py-1 pr-2">
+            <tr key={`${oferta.id}-${k}`} className="border-hairline border-t align-middle">
+              <td className="py-1.5 pr-2">
                 {i.nombre}
                 {i.articulo_nombre && i.articulo_nombre !== i.nombre ? (
                   <span className="text-ink/45"> → {i.articulo_nombre}</span>
                 ) : null}
               </td>
-              <td className="py-1 pr-2">{[i.marca, i.modelo].filter(Boolean).join(' · ') || '—'}</td>
-              <td className="py-1 pr-2 text-right">
+              <td className="py-1.5 pr-2">{[i.marca, i.modelo].filter(Boolean).join(' · ') || '—'}</td>
+              <td className="py-1.5 pr-2 text-right whitespace-nowrap tabular-nums">
                 {fmtCant(c)} {i.unidad_compra ?? i.unidad ?? ''}
                 {i.unidad_compra && factor ? (
                   <div className="text-ink/45">
@@ -453,93 +459,58 @@ function DetalleOferta({
                   </div>
                 ) : null}
               </td>
-              <td className="py-1 pr-2 text-right font-mono">
-                {p ? (
-                  <>
-                    <div>{tasa.enDivisa(p)}</div>
-                    {tasa.tasaBs > 0 ? (
-                      <div className="text-royal-700 dark:text-royal-300 text-[10.5px] font-medium">{tasa.enBs(p)}</div>
-                    ) : null}
-                  </>
-                ) : (
-                  '—'
-                )}
+              <td className="py-1.5 pr-2 text-right font-mono whitespace-nowrap tabular-nums">
+                {p ? tasa.enDivisa(p) : '—'}
                 {p && i.unidad_compra && factor ? (
                   <div className="text-ink/45">
                     ≈ {tasa.enDivisa(p / factor)}/{i.unidad}
                   </div>
                 ) : null}
               </td>
-              <td className="py-1 pr-2 text-right font-mono">
-                {p ? (
-                  <>
-                    <div>{tasa.enDivisa(c * p)}</div>
-                    {tasa.tasaBs > 0 ? (
-                      <div className="text-royal-700 dark:text-royal-300 text-[10.5px] font-semibold">{tasa.enBs(c * p)}</div>
-                    ) : null}
-                  </>
-                ) : (
-                  '—'
-                )}
+              <td className="text-royal-700 dark:text-royal-300 py-1.5 pr-2 text-right font-mono whitespace-nowrap tabular-nums">
+                {p && tasa.tasaBs > 0 ? tasa.enBs(p) : '—'}
               </td>
-              <td className="py-1 pr-2 text-right font-mono">
-                {pu ? (
-                  <>
-                    <div>{money(pu)}</div>
-                    {tasa.tasaBs > 0 ? <div className="text-ink/55 text-[10.5px]">{tasa.enBs(pu)}</div> : null}
-                  </>
-                ) : (
-                  '—'
-                )}
+              <td className="py-1.5 pr-2 text-right font-mono font-medium whitespace-nowrap tabular-nums">
+                {p ? tasa.enDivisa(c * p) : '—'}
               </td>
-              <td className="py-1 pr-2 text-right font-mono">
-                {pu ? (
-                  <>
-                    <div>{money(c * pu)}</div>
-                    {tasa.tasaBs > 0 ? <div className="text-ink/55 text-[10.5px]">{tasa.enBs(c * pu)}</div> : null}
-                  </>
-                ) : (
-                  '—'
-                )}
+              <td className="text-royal-700 dark:text-royal-300 py-1.5 pr-2 text-right font-mono font-semibold whitespace-nowrap tabular-nums">
+                {p && tasa.tasaBs > 0 ? tasa.enBs(c * p) : '—'}
               </td>
-              <td className={cn('py-1 pr-2 text-right font-mono', dif > 0 && 'text-success')}>{dif ? tasa.enDivisa(dif) : '—'}</td>
-              <td className="py-1 text-right font-mono">{p > 0 && pu > 0 ? `${(((p - pu) / p) * 100).toFixed(1)}%` : '—'}</td>
+              {tu > 0 ? (
+                <>
+                  <td className="py-1.5 pr-2 text-right font-mono whitespace-nowrap tabular-nums">{pu ? money(pu) : '—'}</td>
+                  <td className="py-1.5 pr-2 text-right font-mono whitespace-nowrap tabular-nums">{pu ? money(c * pu) : '—'}</td>
+                  <td className={cn('py-1.5 pr-2 text-right font-mono whitespace-nowrap tabular-nums', dif > 0 && 'text-success')}>
+                    {dif ? tasa.enDivisa(dif) : '—'}
+                  </td>
+                  <td className="py-1.5 text-right font-mono whitespace-nowrap tabular-nums">
+                    {p > 0 && pu > 0 ? `${(((p - pu) / p) * 100).toFixed(1)}%` : '—'}
+                  </td>
+                </>
+              ) : null}
             </tr>
           )
         })}
       </tbody>
       <tfoot>
         <tr className="border-hairline border-t font-semibold">
-          <td colSpan={4} className="py-1 pr-2 text-right">
+          <td colSpan={5} className="py-1.5 pr-2 text-right">
             TOTAL ({tasa.info.corta})
           </td>
-          <td className="py-1 pr-2 text-right font-mono">
-            {tb ? (
-              <>
-                <div>{tasa.enDivisa(tb)}</div>
-                {tasa.tasaBs > 0 ? (
-                  <div className="text-royal-700 dark:text-royal-300 text-[11px]">{tasa.enBs(tb)}</div>
-                ) : null}
-              </>
-            ) : (
-              '—'
-            )}
+          <td className="py-1.5 pr-2 text-right font-mono whitespace-nowrap tabular-nums">{tb ? tasa.enDivisa(tb) : '—'}</td>
+          <td className="text-royal-700 dark:text-royal-300 py-1.5 pr-2 text-right font-mono whitespace-nowrap tabular-nums">
+            {tb && tasa.tasaBs > 0 ? tasa.enBs(tb) : '—'}
           </td>
-          <td />
-          <td className="py-1 pr-2 text-right font-mono">
-            {tu ? (
-              <>
-                <div>{money(tu)}</div>
-                {tasa.tasaBs > 0 ? <div className="text-ink/60 text-[11px]">{tasa.enBs(tu)}</div> : null}
-              </>
-            ) : (
-              '—'
-            )}
-          </td>
-          <td className={cn('py-1 pr-2 text-right font-mono', tb > tu && tu > 0 && 'text-success')}>
-            {tb && tu ? tasa.enDivisa(tb - tu) : '—'}
-          </td>
-          <td />
+          {tu > 0 ? (
+            <>
+              <td />
+              <td className="py-1.5 pr-2 text-right font-mono whitespace-nowrap tabular-nums">{tu ? money(tu) : '—'}</td>
+              <td className={cn('py-1.5 pr-2 text-right font-mono whitespace-nowrap tabular-nums', tb > tu && tu > 0 && 'text-success')}>
+                {tb && tu ? tasa.enDivisa(tb - tu) : '—'}
+              </td>
+              <td />
+            </>
+          ) : null}
         </tr>
       </tfoot>
     </table>

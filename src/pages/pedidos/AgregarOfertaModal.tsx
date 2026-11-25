@@ -1036,12 +1036,12 @@ export function AgregarOfertaModal({
                           onChange={(e) => setFila(f.key, { precio: comoNumero(e.target.value, { maxDecimales: 4, sinNegativos: true }) })}
                         />
                         {p > 0 && enBsCot(p) ? (
-                          <div className="text-royal-700 dark:text-royal-300 mt-0.5 text-right font-mono text-[10px] font-medium">
+                          <div className="text-royal-700 dark:text-royal-300 mt-0.5 text-right font-mono text-[10px] font-medium whitespace-nowrap tabular-nums">
                             {enBsCot(p)}
                           </div>
                         ) : null}
                       </td>
-                      <td className="bg-[rgba(80,140,255,.05)] px-2 py-1.5 text-right font-mono">
+                      <td className="bg-[rgba(80,140,255,.05)] px-2 py-1.5 text-right font-mono whitespace-nowrap tabular-nums">
                         {tb ? (
                           <>
                             <div>{fmtCot(tb)}</div>
@@ -1062,10 +1062,10 @@ export function AgregarOfertaModal({
                           onChange={(e) => setFila(f.key, { precio_usd: comoNumero(e.target.value, { maxDecimales: 4, sinNegativos: true }) })}
                         />
                         {pu > 0 && enBsCot(pu) ? (
-                          <div className="text-ink/55 mt-0.5 text-right font-mono text-[10px]">{enBsCot(pu)}</div>
+                          <div className="text-ink/55 mt-0.5 text-right font-mono text-[10px] whitespace-nowrap tabular-nums">{enBsCot(pu)}</div>
                         ) : null}
                       </td>
-                      <td className="bg-[rgba(255,120,120,.05)] px-2 py-1.5 text-right font-mono">
+                      <td className="bg-[rgba(255,120,120,.05)] px-2 py-1.5 text-right font-mono whitespace-nowrap tabular-nums">
                         {tu ? (
                           <>
                             <div>{money(tu)}</div>
@@ -1075,7 +1075,7 @@ export function AgregarOfertaModal({
                           '—'
                         )}
                       </td>
-                      <td className={cn('px-2 py-1.5 text-right font-mono', dif > 0 && 'text-success')}>
+                      <td className={cn('px-2 py-1.5 text-right font-mono whitespace-nowrap tabular-nums', dif > 0 && 'text-success')}>
                         {dif ? (
                           <>
                             <div>{fmtCot(dif)}</div>

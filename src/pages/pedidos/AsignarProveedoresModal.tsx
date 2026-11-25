@@ -392,106 +392,146 @@ export function AsignarProveedoresModal({
             </label>
 
             <div className="border-hairline overflow-x-auto rounded-[6px] border">
-              <table className="w-full min-w-[760px] text-[0.84rem]">
-                <thead className="bg-ink/4 text-ink/55 text-left text-xs">
-                  <tr>
-                    <th className="w-10 px-2 py-2" />
-                    <th className="px-2 py-2">Producto</th>
-                    <th className="px-2 py-2 text-right">Cant.</th>
-                    <th className="px-2 py-2 text-right">
-                      Precio {nombre(ofertaSel)} · {mod === 'usd' ? 'Divisa $' : tasaSel.info.corta}
-                    </th>
-                    <th className="px-2 py-2 text-right">Subtotal ({tasaSel.info.simbolo} · Bs)</th>
-                    <th className="px-2 py-2">Asignación</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {opItems
-                    .filter(
-                      (it) =>
-                        !soloConPrecio ||
-                        !ofertaSel ||
-                        asign.get(it.sku) === ofertaSel.id ||
-                        precioEn(ofertaSel, it.sku, 'bs') > 0 ||
-                        precioEn(ofertaSel, it.sku, 'usd') > 0,
-                    )
-                    .map((it) => {
-                    const bloqueado = tomados.has(it.sku)
-                    const asignadoA = asign.get(it.sku)
-                    const aOtro = asignadoA != null && asignadoA !== ofertaSel?.id
-                    const precio = ofertaSel ? precioEn(ofertaSel, it.sku, mod) : 0
-                    const otra = ofertaSel ? precioEn(ofertaSel, it.sku, mod === 'usd' ? 'bs' : 'usd') : 0
-                    const fila = ofertaSel ? filaDe(ofertaSel, it.sku) : undefined
-                    const cant = Number(fila?.cantidad) || Number(it.cantidad) || 0
-                    return (
-                      <tr key={it.sku} className={cn('border-hairline border-t', bloqueado && 'opacity-60')}>
-                        <td className="px-2 py-1.5">
-                          <input
-                            type="checkbox"
-                            className="accent-royal-600 size-4"
-                            disabled={bloqueado || precio <= 0 || aOtro || !ofertaSel}
-                            title={precio <= 0 ? 'Este proveedor no cotizó el producto' : undefined}
-                            checked={!!ofertaSel && asignadoA === ofertaSel.id}
-                            onChange={(e) => toggle(it.sku, e.target.checked)}
-                          />
-                        </td>
-                        <td className="px-2 py-1.5">
-                          {it.nombre}
-                          <span className="text-ink/45"> · {it.sku}</span>
-                        </td>
-                        <td className="px-2 py-1.5 text-right">
-                          {fmtCant(cant)} {it.unidad ?? ''}
-                        </td>
-                        <td className="px-2 py-1.5 text-right font-mono">
-                          {precio > 0 ? (
-                            <>
-                              <div>{mod === 'usd' ? money(precio) : tasaSel.enDivisa(precio)}</div>
-                              {tasaSel.tasaBs > 0 ? (
-                                <div className="text-royal-700 dark:text-royal-300 text-[0.74rem] font-semibold">
-                                  {tasaSel.enBs(precio)}
-                                </div>
-                              ) : null}
-                            </>
-                          ) : (
-                            <span className="text-ink/45 font-sans">no cotizó</span>
-                          )}
-                          {otra > 0 && Math.abs(otra - precio) > 0.001 ? (
-                            <div className="text-ink/45 text-[0.7rem]">
-                              {mod === 'usd' ? `${tasaSel.enDivisa(otra)} · ${tasaSel.info.corta}` : `${money(otra)} · divisa`}
-                            </div>
-                          ) : null}
-                        </td>
-                        <td className="px-2 py-1.5 text-right font-mono">
-                          {precio > 0 ? (
-                            <>
-                              <div>{mod === 'usd' ? money(cant * precio) : tasaSel.enDivisa(cant * precio)}</div>
-                              {tasaSel.tasaBs > 0 ? (
-                                <div className="text-royal-700 dark:text-royal-300 text-[0.74rem] font-semibold">
-                                  {tasaSel.enBs(r2(cant * precio))}
-                                </div>
-                              ) : null}
-                            </>
-                          ) : (
-                            '—'
-                          )}
-                        </td>
-                        <td className="px-2 py-1.5">
-                          {bloqueado ? (
-                            <Chip tone="success">
-                              🔒 {proveedorDe(hijaDeSku.get(it.sku)?.proveedor_id)?.nombre ?? hijaDeSku.get(it.sku)?.codigo ?? 'sub-OC'} (OC
-                              creada)
-                            </Chip>
-                          ) : asignadoA != null ? (
-                            <Chip tone="royal">{nombre(ofertas.find((o) => o.id === asignadoA))}</Chip>
-                          ) : (
-                            <span className="text-ink/45">sin asignar</span>
-                          )}
-                        </td>
+              {(() => {
+                const filasVisibles = opItems.filter(
+                  (it) =>
+                    !soloConPrecio ||
+                    !ofertaSel ||
+                    asign.get(it.sku) === ofertaSel.id ||
+                    precioEn(ofertaSel, it.sku, 'bs') > 0 ||
+                    precioEn(ofertaSel, it.sku, 'usd') > 0,
+                )
+                const sumaVisible = filasVisibles.reduce((acc, it) => {
+                  const p = ofertaSel ? precioEn(ofertaSel, it.sku, mod) : 0
+                  const fila = ofertaSel ? filaDe(ofertaSel, it.sku) : undefined
+                  const cant = Number(fila?.cantidad) || Number(it.cantidad) || 0
+                  return acc + (p > 0 ? r2(cant * p) : 0)
+                }, 0)
+                return (
+                  <table className="w-full min-w-[860px] text-[0.84rem]">
+                    <thead className="text-ink/60 text-left text-xs">
+                      <tr className="bg-ink/4 border-hairline border-b">
+                        <th className="w-10 px-2.5 py-2" rowSpan={2} />
+                        <th className="px-2.5 py-2" rowSpan={2}>
+                          Producto
+                        </th>
+                        <th className="px-2.5 py-2 text-right whitespace-nowrap" rowSpan={2}>
+                          Cant.
+                        </th>
+                        <th
+                          className="border-hairline bg-ink/[0.03] border-l px-3 py-1.5 text-center font-semibold whitespace-nowrap"
+                          colSpan={2}
+                        >
+                          Precio unitario · {mod === 'usd' ? 'Divisa $' : tasaSel.info.corta}
+                        </th>
+                        <th
+                          className="border-hairline bg-royal-600/[0.06] border-l px-3 py-1.5 text-center font-semibold whitespace-nowrap"
+                          colSpan={2}
+                        >
+                          Subtotal · {mod === 'usd' ? 'Divisa $' : tasaSel.info.corta}
+                        </th>
+                        <th className="border-hairline border-l px-3 py-2 whitespace-nowrap" rowSpan={2}>
+                          Asignación
+                        </th>
                       </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+                      <tr className="bg-ink/[0.02] text-[11px]">
+                        <th className="border-hairline bg-ink/[0.03] border-l px-3 py-1 text-right font-medium whitespace-nowrap">
+                          Monto ($)
+                        </th>
+                        <th className="bg-ink/[0.03] px-3 py-1 text-right font-medium whitespace-nowrap">En Bs</th>
+                        <th className="border-hairline bg-royal-600/[0.06] border-l px-3 py-1 text-right font-medium whitespace-nowrap">
+                          Monto ($)
+                        </th>
+                        <th className="bg-royal-600/[0.06] px-3 py-1 text-right font-medium whitespace-nowrap">En Bs</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filasVisibles.map((it) => {
+                        const bloqueado = tomados.has(it.sku)
+                        const asignadoA = asign.get(it.sku)
+                        const aOtro = asignadoA != null && asignadoA !== ofertaSel?.id
+                        const precio = ofertaSel ? precioEn(ofertaSel, it.sku, mod) : 0
+                        const otra = ofertaSel ? precioEn(ofertaSel, it.sku, mod === 'usd' ? 'bs' : 'usd') : 0
+                        const fila = ofertaSel ? filaDe(ofertaSel, it.sku) : undefined
+                        const cant = Number(fila?.cantidad) || Number(it.cantidad) || 0
+                        const subMonto = r2(cant * precio)
+                        return (
+                          <tr key={it.sku} className={cn('border-hairline border-t align-middle', bloqueado && 'opacity-65')}>
+                            <td className="px-2.5 py-2">
+                              <input
+                                type="checkbox"
+                                className="accent-royal-600 size-4"
+                                disabled={bloqueado || precio <= 0 || aOtro || !ofertaSel}
+                                title={precio <= 0 ? 'Este proveedor no cotizó el producto' : undefined}
+                                checked={!!ofertaSel && asignadoA === ofertaSel.id}
+                                onChange={(e) => toggle(it.sku, e.target.checked)}
+                              />
+                            </td>
+                            <td className="px-2.5 py-2">
+                              <span className="font-medium">{it.nombre}</span>
+                              <span className="text-ink/45 font-mono text-xs"> · {it.sku}</span>
+                            </td>
+                            <td className="px-2.5 py-2 text-right font-mono whitespace-nowrap tabular-nums">
+                              {fmtCant(cant)} <span className="text-ink/50 font-sans text-xs">{it.unidad ?? ''}</span>
+                            </td>
+                            <td className="border-hairline bg-ink/[0.015] border-l px-3 py-2 text-right font-mono whitespace-nowrap tabular-nums">
+                              {precio > 0 ? (
+                                <>
+                                  <div>{mod === 'usd' ? money(precio) : tasaSel.enDivisa(precio)}</div>
+                                  {otra > 0 && Math.abs(otra - precio) > 0.001 ? (
+                                    <div className="text-ink/45 text-[0.7rem]">
+                                      {mod === 'usd' ? `${tasaSel.enDivisa(otra)} · ${tasaSel.info.corta}` : `${money(otra)} · divisa`}
+                                    </div>
+                                  ) : null}
+                                </>
+                              ) : (
+                                <span className="text-ink/45 font-sans">no cotizó</span>
+                              )}
+                            </td>
+                            <td className="bg-ink/[0.015] text-royal-700 dark:text-royal-300 px-3 py-2 text-right font-mono text-[0.8rem] font-medium whitespace-nowrap tabular-nums">
+                              {precio > 0 && tasaSel.tasaBs > 0 ? tasaSel.enBs(precio) : '—'}
+                            </td>
+                            <td className="border-hairline bg-royal-600/[0.03] border-l px-3 py-2 text-right font-mono font-semibold whitespace-nowrap tabular-nums">
+                              {precio > 0 ? (mod === 'usd' ? money(subMonto) : tasaSel.enDivisa(subMonto)) : '—'}
+                            </td>
+                            <td className="bg-royal-600/[0.03] text-royal-700 dark:text-royal-300 px-3 py-2 text-right font-mono text-[0.8rem] font-semibold whitespace-nowrap tabular-nums">
+                              {precio > 0 && tasaSel.tasaBs > 0 ? tasaSel.enBs(subMonto) : '—'}
+                            </td>
+                            <td className="border-hairline border-l px-3 py-2 whitespace-nowrap">
+                              {bloqueado ? (
+                                <Chip tone="success">
+                                  🔒 {proveedorDe(hijaDeSku.get(it.sku)?.proveedor_id)?.nombre ?? hijaDeSku.get(it.sku)?.codigo ?? 'sub-OC'} (OC
+                                  creada)
+                                </Chip>
+                              ) : asignadoA != null ? (
+                                <Chip tone="royal">{nombre(ofertas.find((o) => o.id === asignadoA))}</Chip>
+                              ) : (
+                                <span className="text-ink/45">sin asignar</span>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                    {sumaVisible > 0 ? (
+                      <tfoot>
+                        <tr className="border-hairline bg-ink/4 border-t text-xs font-semibold">
+                          <td colSpan={5} className="px-3 py-2 text-right">
+                            SUBTOTAL COTIZADO ({tasaSel.info.corta})
+                          </td>
+                          <td className="border-hairline border-l px-3 py-2 text-right font-mono whitespace-nowrap tabular-nums">
+                            {mod === 'usd' ? money(sumaVisible) : tasaSel.enDivisa(sumaVisible)}
+                          </td>
+                          <td className="text-royal-700 dark:text-royal-300 px-3 py-2 text-right font-mono whitespace-nowrap tabular-nums">
+                            {tasaSel.tasaBs > 0 ? tasaSel.enBs(sumaVisible) : '—'}
+                          </td>
+                          <td className="border-hairline border-l" />
+                        </tr>
+                      </tfoot>
+                    ) : null}
+                  </table>
+                )
+              })()}
             </div>
 
             <Card>

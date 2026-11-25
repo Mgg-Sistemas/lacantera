@@ -850,7 +850,7 @@ function OrdenesTable({
                 </td>
                 <td className="px-4 py-2.5">{quienSolicita(o) ?? '—'}</td>
                 <td className="px-4 py-2.5 text-right font-mono">{o.items.length}</td>
-                <td className="px-4 py-2.5 text-right font-mono">
+                <td className="px-4 py-2.5 text-right font-mono whitespace-nowrap tabular-nums">
                   {(() => {
                     const tr = resolverTasaOrden(o, null, tasas)
                     const totalNum = Number(o.total) || 0

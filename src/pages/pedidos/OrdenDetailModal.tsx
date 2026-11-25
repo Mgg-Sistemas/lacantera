@@ -1275,42 +1275,45 @@ export function OrdenDetailModal({
           <Card className="mt-5">
             <h4 className="text-ink/85 mb-2 font-semibold">🧩 Sub-órdenes por proveedor ({misHijas.length})</h4>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[560px] text-sm">
+              <table className="w-full min-w-[640px] text-sm">
                 <thead className="text-ink/55 text-left text-xs">
                   <tr>
-                    <th className="py-1 pr-2">OC</th>
-                    <th className="py-1 pr-2">Proveedor / Tasa</th>
-                    <th className="py-1 pr-2 text-right">Productos</th>
-                    <th className="py-1 pr-2 text-right">Total (divisa · Bs)</th>
-                    <th className="py-1">Estado</th>
+                    <th className="py-1 pr-3 whitespace-nowrap">OC</th>
+                    <th className="py-1 pr-3">Proveedor / Tasa</th>
+                    <th className="py-1 pr-3 text-right whitespace-nowrap">Productos</th>
+                    <th className="py-1 pr-3 text-right whitespace-nowrap">Total ($)</th>
+                    <th className="py-1 pr-3 text-right whitespace-nowrap">Total (Bs)</th>
+                    <th className="py-1 whitespace-nowrap">Estado</th>
                   </tr>
                 </thead>
                 <tbody>
                   {misHijas.map((h) => {
                     const th = resolverTasaOrden(h, ofertas, tasasCot)
                     return (
-                      <tr key={h.id} className="border-hairline hover:bg-ink/3 cursor-pointer border-t" onClick={() => onAbrir(h.id)}>
-                        <td className="py-1.5 pr-2 font-mono text-xs">
+                      <tr key={h.id} className="border-hairline hover:bg-ink/3 cursor-pointer border-t align-middle" onClick={() => onAbrir(h.id)}>
+                        <td className="py-2 pr-3 font-mono text-xs whitespace-nowrap">
                           {h.oc_codigo ?? '—'}
                           <div className="text-ink/45">{h.codigo}</div>
                         </td>
-                        <td className="py-1.5 pr-2">
-                          <div>{proveedorDe(h.proveedor_id)?.nombre ?? '—'}</div>
-                          <div className="mt-0.5">
+                        <td className="py-2 pr-3">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="font-medium">{proveedorDe(h.proveedor_id)?.nombre ?? '—'}</span>
                             <Chip tone={th.tipo === 'EUR_BCV' ? 'warning' : 'neutral'}>
                               {th.info.icono} {th.info.corta}
                               {th.tasaBs > 0 ? ` · ${moneyBs(th.tasaBs)}` : ''}
                             </Chip>
                           </div>
                         </td>
-                        <td className="py-1.5 pr-2 text-right">{h.items.filter((i) => i.comprar !== false).length}</td>
-                        <td className="py-1.5 pr-2 text-right font-mono">
-                          <div>{h.modalidad_pago === 'usd' ? money(h.total) : th.enDivisa(h.total)}</div>
-                          {th.tasaBs > 0 ? (
-                            <div className="text-royal-700 dark:text-royal-300 text-xs font-semibold">{th.enBs(h.total)}</div>
-                          ) : null}
+                        <td className="py-2 pr-3 text-right font-mono whitespace-nowrap tabular-nums">
+                          {h.items.filter((i) => i.comprar !== false).length}
                         </td>
-                        <td className="py-1.5">
+                        <td className="py-2 pr-3 text-right font-mono font-semibold whitespace-nowrap tabular-nums">
+                          {h.modalidad_pago === 'usd' ? money(h.total) : th.enDivisa(h.total)}
+                        </td>
+                        <td className="text-royal-700 dark:text-royal-300 py-2 pr-3 text-right font-mono text-xs font-semibold whitespace-nowrap tabular-nums">
+                          {th.tasaBs > 0 ? th.enBs(h.total) : '—'}
+                        </td>
+                        <td className="py-2 whitespace-nowrap">
                           <EstadoBadge estado={h.estado} />
                           {!esHijaViva(h) ? <span className="text-ink/45 ml-1 text-xs">(sus productos vuelven a esta OP)</span> : null}
                         </td>
@@ -1411,8 +1414,10 @@ export function OrdenDetailModal({
                 {conRecepcion ? <th className="px-3 py-2 text-right font-medium">Recibido</th> : null}
                 {conPrecio ? (
                   <>
-                    <th className="px-3 py-2 text-right font-medium">Precio</th>
-                    <th className="px-3 py-2 text-right font-medium">Subtotal</th>
+                    <th className="px-3 py-2 text-right font-medium whitespace-nowrap">Precio ($)</th>
+                    <th className="px-3 py-2 text-right font-medium whitespace-nowrap">Precio (Bs)</th>
+                    <th className="px-3 py-2 text-right font-medium whitespace-nowrap">Subtotal ($)</th>
+                    <th className="px-3 py-2 text-right font-medium whitespace-nowrap">Subtotal (Bs)</th>
                   </>
                 ) : (
                   <th className="px-3 py-2 text-right font-medium">Comprar</th>
@@ -1550,23 +1555,21 @@ export function OrdenDetailModal({
                     ) : null}
                     {conPrecio ? (
                       <>
-                        <td className="px-3 py-2 text-right font-mono">
-                          <div>{o.modalidad_pago === 'usd' ? money(it.precio) : tasaOc.enDivisa(it.precio)}</div>
-                          {tasaOc.tasaBs > 0 && Number(it.precio) > 0 ? (
-                            <div className="text-royal-700 dark:text-royal-300 text-xs">{tasaOc.enBs(it.precio)}</div>
-                          ) : null}
+                        <td className="px-3 py-2 text-right font-mono whitespace-nowrap tabular-nums">
+                          {o.modalidad_pago === 'usd' ? money(it.precio) : tasaOc.enDivisa(it.precio)}
                         </td>
-                        <td className="px-3 py-2 text-right font-mono">
-                          <div>
-                            {o.modalidad_pago === 'usd'
-                              ? money(Number(it.cantidad) * Number(it.precio))
-                              : tasaOc.enDivisa(Number(it.cantidad) * Number(it.precio))}
-                          </div>
-                          {tasaOc.tasaBs > 0 && Number(it.cantidad) * Number(it.precio) > 0 ? (
-                            <div className="text-royal-700 dark:text-royal-300 text-xs font-medium">
-                              {tasaOc.enBs(Number(it.cantidad) * Number(it.precio))}
-                            </div>
-                          ) : null}
+                        <td className="text-royal-700 dark:text-royal-300 px-3 py-2 text-right font-mono text-xs whitespace-nowrap tabular-nums">
+                          {tasaOc.tasaBs > 0 && Number(it.precio) > 0 ? tasaOc.enBs(it.precio) : '—'}
+                        </td>
+                        <td className="px-3 py-2 text-right font-mono font-medium whitespace-nowrap tabular-nums">
+                          {o.modalidad_pago === 'usd'
+                            ? money(Number(it.cantidad) * Number(it.precio))
+                            : tasaOc.enDivisa(Number(it.cantidad) * Number(it.precio))}
+                        </td>
+                        <td className="text-royal-700 dark:text-royal-300 px-3 py-2 text-right font-mono text-xs font-semibold whitespace-nowrap tabular-nums">
+                          {tasaOc.tasaBs > 0 && Number(it.cantidad) * Number(it.precio) > 0
+                            ? tasaOc.enBs(Number(it.cantidad) * Number(it.precio))
+                            : '—'}
                         </td>
                       </>
                     ) : (
@@ -1666,25 +1669,23 @@ export function OrdenDetailModal({
                   ].filter((x): x is string[] => !!x && (desglose.total !== desglose.subtotal || desglose.ivaIncluido))
                 ).map(([k, v, vBs, c]) => (
                   <tr key={k} className="border-hairline border-t">
-                    <td colSpan={(revisadaAlmacen ? 8 : 6) + (conRecepcion ? 1 : 0)} className="text-ink/60 px-3 py-1.5 text-right">
+                    <td colSpan={(revisadaAlmacen ? 9 : 7) + (conRecepcion ? 1 : 0)} className="text-ink/60 px-3 py-1.5 text-right">
                       {k}
                     </td>
-                    <td className={cn('px-3 py-1.5 text-right font-mono', c)}>
-                      <div>{v}</div>
-                      {vBs ? <div className="text-ink/55 text-xs">{vBs}</div> : null}
-                    </td>
+                    <td className={cn('px-3 py-1.5 text-right font-mono whitespace-nowrap tabular-nums', c)}>{v}</td>
+                    <td className="text-ink/60 px-3 py-1.5 text-right font-mono text-xs whitespace-nowrap tabular-nums">{vBs || '—'}</td>
                     <td />
                   </tr>
                 ))}
                 <tr className="border-hairline border-t font-semibold">
-                  <td colSpan={(revisadaAlmacen ? 8 : 6) + (conRecepcion ? 1 : 0)} className="px-3 py-2 text-right">
+                  <td colSpan={(revisadaAlmacen ? 9 : 7) + (conRecepcion ? 1 : 0)} className="px-3 py-2 text-right">
                     TOTAL ({o.modalidad_pago === 'usd' ? 'Divisa $' : tasaOc.info.corta})
                   </td>
-                  <td className={cn('px-3 py-2 text-right font-mono', !desglose.cuadra && 'text-warning')}>
-                    <div>{o.modalidad_pago === 'usd' ? money(o.total) : tasaOc.enDivisa(o.total)}</div>
-                    {tasaOc.tasaBs > 0 ? (
-                      <div className="text-royal-700 dark:text-royal-300 text-xs font-bold">{tasaOc.enBs(o.total)}</div>
-                    ) : null}
+                  <td className={cn('px-3 py-2 text-right font-mono whitespace-nowrap tabular-nums', !desglose.cuadra && 'text-warning')}>
+                    {o.modalidad_pago === 'usd' ? money(o.total) : tasaOc.enDivisa(o.total)}
+                  </td>
+                  <td className="text-royal-700 dark:text-royal-300 px-3 py-2 text-right font-mono text-xs font-bold whitespace-nowrap tabular-nums">
+                    {tasaOc.tasaBs > 0 ? tasaOc.enBs(o.total) : '—'}
                   </td>
                   <td />
                 </tr>
