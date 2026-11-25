@@ -6,12 +6,24 @@ import { Chip } from '@/components/ui/Chip'
 import { Segmento } from '@/components/ui/Segmento'
 import { cn } from '@/lib/cn'
 import type { Proveedor } from '@/lib/api/catalogo'
-import { useAsignarProveedores, type EstadisticaProveedor, type Oferta, type Orden } from '@/lib/api/pedidos'
+import {
+  useAsignarProveedores,
+  useCambiarModalidad,
+  useGuardarOferta,
+  type EstadisticaProveedor,
+  type Oferta,
+  type Orden,
+  type TipoTasaCotizacion,
+} from '@/lib/api/pedidos'
 import { fmtCant, money } from '@/lib/pedidos'
 import {
+  empacarNotaTasa,
+  infoTasaCotizacion,
   moneyBs,
+  notasSinMarcaTasa,
   precioRenglon,
   r2,
+  r4,
   recortarOferta,
   representanteGrupo,
   resolverTasaOferta,
@@ -37,6 +49,7 @@ export function AsignarProveedoresModal({
   stats,
   proveedorDe,
   onCargarOferta,
+  onEditarOferta,
   onClose,
   onDone,
 }: {
@@ -46,10 +59,13 @@ export function AsignarProveedoresModal({
   stats: EstadisticaProveedor[]
   proveedorDe: (id: number | null | undefined) => Proveedor | undefined
   onCargarOferta: (soloSkus: Set<string>) => void
+  onEditarOferta?: (oferta: Oferta) => void
   onClose: () => void
   onDone: () => void
 }) {
   const asignar = useAsignarProveedores()
+  const guardarOferta = useGuardarOferta()
+  const cambiarModalidadOc = useCambiarModalidad()
   const [error, setError] = useState<string | null>(null)
   const [sel, setSel] = useState<number | null>(ofertas[0]?.id ?? null)
   // sku → oferta a la que se asignó en esta sesión.
@@ -119,6 +135,78 @@ export function AsignarProveedoresModal({
       else x.delete(sku)
       return x
     })
+  }
+
+  async function cambiarTasaRapido(o: Oferta, nuevoTipo: TipoTasaCotizacion) {
+    const info = infoTasaCotizacion(nuevoTipo)
+    const tasaValor =
+      nuevoTipo === 'EUR_BCV' ? tasas.EUR_BCV : nuevoTipo === 'USDT' ? tasas.USDT : tasas.USD_BCV
+    const soloTeniaUsd = !cotizoBs(o) && cotizoUsd(o) && nuevoTipo !== 'USD_BCV'
+    try {
+      await guardarOferta.mutateAsync({
+        ordenId: madre.id,
+        ofertaId: o.id,
+        proveedorId: o.proveedor_id,
+        proveedorNuevo: null,
+        motivoCambio: null,
+        datos: {
+          items: o.items.map((it) => ({
+            sku: it.sku,
+            cantidad: Number(it.cantidad) || 0,
+            precio: soloTeniaUsd ? r4(Number(it.precio_usd) || 0) : r4(Number(it.precio) || 0),
+            precio_usd: soloTeniaUsd
+              ? null
+              : Number(it.precio_usd) > 0
+                ? r4(Number(it.precio_usd))
+                : null,
+            marca: it.marca ?? null,
+            modelo: it.modelo ?? null,
+            unidad_compra: it.unidad_compra ?? null,
+            factor_compra: it.factor_compra ?? null,
+            articulo_id: it.articulo_id ?? null,
+            agregado: it.agregado || undefined,
+          })),
+          descuento: Number(o.descuento) || null,
+          iva: Number(o.iva) || null,
+          igtf: Number(o.igtf) || null,
+          iva_incluido: !!o.iva_incluido,
+          ajuste: Number(o.ajuste) || null,
+          ajuste_motivo: o.ajuste_motivo ?? null,
+          fecha_entrega_prometida: o.fecha_entrega_prometida ?? null,
+          condiciones_pago: o.condiciones_pago || 'contado',
+          notas: empacarNotaTasa(notasSinMarcaTasa(o.notas), {
+            tipo: nuevoTipo,
+            tasaBs: tasaValor > 0 ? tasaValor : null,
+            fija: false,
+            etiqueta: null,
+          }),
+          detalle: {
+            ...(o.detalle ?? {}),
+            tasa_tipo: nuevoTipo,
+            tasa_moneda: info.moneda,
+            tasa_bs: tasaValor > 0 ? tasaValor : null,
+            tasa_fija: false,
+            tasa_etiqueta: null,
+          },
+          adjuntos: o.adjuntos ?? [],
+        },
+      })
+      if (soloTeniaUsd) {
+        setModalidades((m) => new Map(m).set(o.id, 'bs'))
+        const hijasProv = hijas.filter(
+          (h) =>
+            h.proveedor_id === o.proveedor_id &&
+            ['oc_creada', 'confirmada_metodo'].includes(h.estado) &&
+            h.modalidad_pago === 'usd',
+        )
+        for (const h of hijasProv) {
+          await cambiarModalidadOc.mutateAsync({ id: h.id, modalidad: 'bs' }).catch(() => undefined)
+        }
+      }
+      toast(`Cotización de ${nombre(o)} actualizada a ${info.larga}`, 'success')
+    } catch (e) {
+      toast(mensajeDe(e, 'No se pudo cambiar la tasa de la cotización'), 'error')
+    }
   }
 
   async function confirmar() {
@@ -235,9 +323,36 @@ export function AsignarProveedoresModal({
                     {tasaSel.tasaBs > 0 ? ` · ${moneyBs(tasaSel.tasaBs)}` : ''}
                   </Chip>
                 </div>
-                <span className="text-ink/55">
-                  Conversión en Bs calculada con {tasaSel.info.corta}
-                </span>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {(
+                    [
+                      ['USD_BCV', '💵 USD BCV'],
+                      ['EUR_BCV', '💶 Euro BCV'],
+                      ['USDT', '🪙 USDT'],
+                    ] as const
+                  ).map(([t, lbl]) => (
+                    <button
+                      key={t}
+                      type="button"
+                      disabled={guardarOferta.isPending || tasaSel.tipo === t}
+                      onClick={() => void cambiarTasaRapido(ofertaSel, t)}
+                      className={cn(
+                        'rounded border px-2 py-1 text-[11px] font-semibold transition-colors',
+                        tasaSel.tipo === t
+                          ? 'border-royal-600 bg-royal-600/15 text-royal-700 dark:text-royal-300 cursor-default'
+                          : 'border-hairline bg-surface text-ink/75 hover:border-royal-600/50 hover:text-ink cursor-pointer',
+                      )}
+                      title={`Cambiar tasa de esta cotización a ${lbl}`}
+                    >
+                      {tasaSel.tipo === t ? `✓ ${lbl}` : lbl}
+                    </button>
+                  ))}
+                  {onEditarOferta ? (
+                    <Button size="sm" variant="ghost" onClick={() => onEditarOferta(ofertaSel)}>
+                      ✎ Editar oferta
+                    </Button>
+                  ) : null}
+                </div>
               </div>
             ) : null}
 

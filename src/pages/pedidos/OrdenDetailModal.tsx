@@ -163,8 +163,19 @@ const PUNTO: Record<TonoEstado, string> = {
   neutral: 'bg-ink/30',
 }
 
-/** Donde se ve el panel de ofertas (MGG `mostrarOfertas`). */
-const ESTADOS_CON_OFERTAS = new Set(['aprobada', 'desistida_proveedor', 'oc_creada', 'confirmada_metodo', 'oc_aprobada', 'pagada'])
+/** Donde se ve el panel de ofertas (MGG `mostrarOfertas`, incluido `asignada` para editar cotizaciones en multiproveedor). */
+const ESTADOS_CON_OFERTAS = new Set([
+  'aprobada',
+  'asignada',
+  'desistida_proveedor',
+  'oc_creada',
+  'confirmada_metodo',
+  'oc_aprobada',
+  'cuenta_abierta',
+  'por_recibir',
+  'pagada',
+  'recibida',
+])
 
 export function EstadoBadge({ estado }: { estado: string }) {
   const e = ESTADOS[estado as keyof typeof ESTADOS]
@@ -1787,6 +1798,7 @@ export function OrdenDetailModal({
           stats={stats ?? []}
           proveedorDe={proveedorDe}
           onCargarOferta={(skus) => setSub({ kind: 'oferta', oferta: null, soloSkus: skus, volverAAsignar: true })}
+          onEditarOferta={(of) => setSub({ kind: 'oferta', oferta: of, volverAAsignar: true })}
           onClose={() => setSub({ kind: 'none' })}
           onDone={() => setSub({ kind: 'none' })}
         />
