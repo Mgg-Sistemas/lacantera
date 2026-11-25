@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { dinero } from '@/lib/formato'
 import { useTasaVigente } from '@/lib/api/tasas'
-import { useMisAcciones } from '@/lib/api/usuarios'
+import { useMiPerfil, useMisAcciones } from '@/lib/api/usuarios'
 import {
   CONDICION_VENTA,
   unidadesDeVenta,
@@ -78,9 +78,17 @@ export function Renglones({
 }: Props) {
   const { data: tasaHoy } = useTasaVigente()
   const tasa = Number(tasaHoy?.tasa ?? 0)
+  const { data: miPerfil } = useMiPerfil()
   const { puede } = useMisAcciones()
   const puedeRegalar = puede('VENTAS.VENDER_BAJO_MINIMO')
-  const puedePrecioManual = puede('VENTAS.PRECIO_MANUAL_CON_LISTA')
+  const usuarioLimpio = (miPerfil?.usuario ?? '').trim().toLowerCase()
+  const nombreLimpio = (miPerfil?.nombre ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toUpperCase()
+  const esGenesis = usuarioLimpio.includes('genesis') || nombreLimpio.includes('GENESIS')
+  const puedePrecioManual = puede('VENTAS.PRECIO_MANUAL_CON_LISTA') || esGenesis
 
   // Un artículo sale una vez en el selector aunque tenga precio en dos unidades.
   const articulos = precios.filter(
