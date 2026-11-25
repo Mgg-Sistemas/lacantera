@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
-import { FileText, PackageMinus, Printer, Truck } from 'lucide-react'
+import { FileText, PackageMinus, Printer, Trash2, Truck } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
+import { Modal } from '@/components/ui/Modal'
 import { PageHeader } from '@/components/PageHeader'
 import { RangoDeFechas } from '@/components/RangoDeFechas'
 import { SIN_RANGO } from '@/components/rango'
@@ -11,11 +12,13 @@ import { Card } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { SelectBuscable } from '@/components/ui/SelectBuscable'
+import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
 import { Visor } from '@/components/Visor'
+import { enCastellano } from '@/lib/castellano'
 import { useEmpresa } from '@/lib/api/empresa'
 import { useSesion } from '@/lib/sesion'
-import { useArticulos, usePerfiles } from '@/lib/api/catalogo'
+import { useArticulos, useMisRoles, usePerfiles } from '@/lib/api/catalogo'
 import {
   grupoEnCorto,
   nombreDeMovimiento,
@@ -28,6 +31,7 @@ import {
 import { fecha, fechaHora } from '@/lib/formato'
 import {
   leerMotivoDeLaSalida,
+  useEliminarSalidaEntregada,
   useNotasDeEntregaDeSalidas,
   useSolicitudesDeSalida,
   type SolicitudDeSalida,
@@ -109,10 +113,20 @@ export function Salidas() {
   const [rango, setRango] = useState<Rango>(SIN_RANGO)
   const [reporte, setReporte] = useState<ArchivoArmado | null>(null)
   const [abriendoFormato, setAbriendoFormato] = useState(false)
+  const [eliminandoSalida, setEliminandoSalida] = useState<{
+    notaSalida: string
+    ordenNumero: string | null
+    resumen: string
+  } | null>(null)
+  const [motivoEliminar, setMotivoEliminar] = useState('')
+  const [falloEliminar, setFalloEliminar] = useState<string | null>(null)
 
   const { data: almacenes } = useAlmacenes()
   const { data: articulos } = useArticulos()
   const { data: perfiles } = usePerfiles()
+  const { puede: tieneRol } = useMisRoles()
+  const esAdmin = tieneRol('ADMIN')
+  const eliminarSalida = useEliminarSalidaEntregada()
   const { data: empresa } = useEmpresa()
   const { nombre: yo } = useSesion()
   const grupos = useGruposDeSalida()
@@ -471,6 +485,16 @@ export function Salidas() {
                         notaEntrega={m.nota_salida ? notasEntregaPorSalida?.get(m.nota_salida) : undefined}
                         notaDeSalida={notaDeSalida}
                         notaDeTraslado={notaDeTraslado}
+                        esAdmin={esAdmin}
+                        onEliminarSalida={(notaSalida, ordenNumero) => {
+                          setFalloEliminar(null)
+                          setMotivoEliminar('')
+                          setEliminandoSalida({
+                            notaSalida,
+                            ordenNumero,
+                            resumen: `${numeroLegible(m.cantidad)} ${m.unidad} de ${m.articulo?.nombre ?? 'material'} (${m.almacen?.nombre ?? 'almacén'})`,
+                          })
+                        }}
                       />
                     </td>
 
@@ -516,6 +540,65 @@ export function Salidas() {
         nombreArchivo={reporte?.nombre ?? ''}
         titulo="Historial de salidas y traslados"
       />
+
+      {eliminandoSalida ? (
+        <Modal
+          abierto
+          onCerrar={() => {
+            if (!eliminarSalida.isPending) setEliminandoSalida(null)
+          }}
+          titulo={`Eliminar salida ${eliminandoSalida.notaSalida}`}
+          descripcion={`Se eliminará ${eliminandoSalida.ordenNumero ? `la orden ${eliminandoSalida.ordenNumero} y ` : ''}la nota ${eliminandoSalida.notaSalida}, devolviendo ${eliminandoSalida.resumen} a su almacén de origen.`}
+          ancho="sm"
+          acciones={
+            <>
+              <Button
+                variant="ghost"
+                disabled={eliminarSalida.isPending}
+                onClick={() => setEliminandoSalida(null)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="danger"
+                icon={<Trash2 />}
+                disabled={motivoEliminar.trim().length < 4 || eliminarSalida.isPending}
+                onClick={async () => {
+                  setFalloEliminar(null)
+                  try {
+                    await eliminarSalida.mutateAsync({
+                      nota_salida: eliminandoSalida.notaSalida,
+                      motivo: motivoEliminar.trim(),
+                    })
+                    setEliminandoSalida(null)
+                  } catch (e) {
+                    setFalloEliminar(enCastellano(e))
+                  }
+                }}
+              >
+                {eliminarSalida.isPending ? 'Eliminando…' : 'Eliminar y devolver material'}
+              </Button>
+            </>
+          }
+        >
+          <div className="space-y-3">
+            {falloEliminar ? (
+              <p className="text-danger bg-danger/10 border-danger/25 rounded-[6px] border px-3 py-2 text-xs">
+                {falloEliminar}
+              </p>
+            ) : null}
+            <Textarea
+              label="Motivo de la eliminación"
+              placeholder="Ej.: Cantidad errónea (eran 32 m³ de piedra); se registrará de nuevo."
+              rows={3}
+              autoFocus
+              maxLength={500}
+              value={motivoEliminar}
+              onChange={(e) => setMotivoEliminar(e.target.value)}
+            />
+          </div>
+        </Modal>
+      ) : null}
     </>
   )
 }
@@ -534,17 +617,27 @@ function PapelesDelMovimiento({
   notaEntrega,
   notaDeSalida,
   notaDeTraslado,
+  esAdmin,
+  onEliminarSalida,
 }: {
   m: Movimiento
   orden: SolicitudDeSalida | undefined
   notaEntrega: NotaEntrega | undefined
   notaDeSalida: ReturnType<typeof useNotaDeSalida>
   notaDeTraslado: ReturnType<typeof useNotaDeTraslado>
+  esAdmin: boolean
+  onEliminarSalida: (notaSalida: string, ordenNumero: string | null) => void
 }) {
   const esSalida = m.signo < 0 && SALIDAS.includes(m.tipo)
   const esTraslado = m.tipo === 'TRANSFERENCIA_SALIDA'
   const puedeDejarNotaEntrega =
     esSalida && Boolean(m.nota_salida) && Boolean(m.destino_externo) && m.tipo !== 'SALIDA_INTERCAMBIO'
+  const puedeEliminarSalida =
+    esAdmin &&
+    esSalida &&
+    Boolean(m.nota_salida) &&
+    m.tipo !== 'SALIDA_INTERCAMBIO' &&
+    (!notaEntrega || notaEntrega.estado === 'ANULADA')
   if (!esSalida && !esTraslado) return null
 
   return (
@@ -608,6 +701,17 @@ function PapelesDelMovimiento({
             Generar nota de despacho
           </label>
         ) : null
+      ) : null}
+      {puedeEliminarSalida && m.nota_salida ? (
+        <Button
+          size="sm"
+          variant="ghost"
+          className="text-danger hover:text-danger"
+          icon={<Trash2 />}
+          onClick={() => onEliminarSalida(m.nota_salida!, orden?.numero ?? null)}
+        >
+          Eliminar salida
+        </Button>
       ) : null}
       {esTraslado ? (
         <Button

@@ -212,6 +212,7 @@ const INTENTOS_EN_PALABRAS: Record<string, string> = {
   guardar_clase_de_salida: 'Guardar una razón de salida',
   rechazar_solicitud_salida: 'No aprobar una solicitud de salida',
   cancelar_solicitud_salida: 'Cancelar una solicitud de salida',
+  eliminar_salida_entregada: 'Eliminar una salida entregada y devolver el material',
   aprobar_compra: 'Aprobar una compra',
   devolver_a_cotizacion: 'Devolverle un pedido a compras',
   autorizar_varias: 'Extender permisos',

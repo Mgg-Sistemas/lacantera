@@ -8,6 +8,7 @@ import {
   PackageMinus,
   SendHorizontal,
   Smartphone,
+  Trash2,
   Truck,
   X,
 } from 'lucide-react'
@@ -22,7 +23,7 @@ import { Segmento } from '@/components/ui/Segmento'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { Cargando, ErrorDeCarga, Vacio } from '@/components/ui/Estado'
-import { usePerfiles } from '@/lib/api/catalogo'
+import { useMisRoles, usePerfiles } from '@/lib/api/catalogo'
 import { useMiPerfil, useMisPermisos } from '@/lib/api/usuarios'
 import { useSesion } from '@/lib/sesion'
 import { useMiFirma } from '@/lib/api/firmas'
@@ -34,6 +35,7 @@ import {
   useAprobarSolicitud,
   useCancelarSolicitud,
   useComoAprueboSalidas,
+  useEliminarSalidaEntregada,
   useEntregarSolicitud,
   useNotasDeEntregaDeSalidas,
   usePersonasDeLaEmpresa,
@@ -164,6 +166,11 @@ export function Solicitudes() {
   const rechazar = useRechazarSolicitud()
   const cancelar = useCancelarSolicitud()
   const entregar = useEntregarSolicitud()
+  const eliminarEntregada = useEliminarSalidaEntregada()
+  const { puede: tieneRol } = useMisRoles()
+  const esAdmin = tieneRol('ADMIN')
+  const [eliminandoEntregada, setEliminandoEntregada] = useState<SolicitudDeSalida | null>(null)
+  const [motivoEliminar, setMotivoEliminar] = useState('')
   const nota = useNotaDeSalida()
   const puedoSacar = alcanza('SALIDAS', 'ESCRITURA')
   const { data: empresa } = useEmpresa()
@@ -510,6 +517,27 @@ export function Solicitudes() {
             Cancelar
           </Button>
         ) : null}
+
+        {esAdmin &&
+        s.estado === 'ENTREGADA' &&
+        Boolean(s.nota_salida) &&
+        s.clase !== 'ENTREGA_POR_INTERCAMBIO' &&
+        (!ne || ne.estado === 'ANULADA') ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-danger hover:text-danger"
+            icon={<Trash2 />}
+            onClick={() => {
+              alActuar?.()
+              setFallo(null)
+              setMotivoEliminar('')
+              setEliminandoEntregada(s)
+            }}
+          >
+            Eliminar salida
+          </Button>
+        ) : null}
       </>
     )
   }
@@ -837,6 +865,59 @@ export function Solicitudes() {
       {ws ? <ModalWhatsappCompra titulo={ws.titulo} texto={ws.texto} onCerrar={() => setWs(null)} /> : null}
 
       {editando ? <ModalEditarSolicitud s={editando} onCerrar={() => setEditando(null)} /> : null}
+
+      {eliminandoEntregada && eliminandoEntregada.nota_salida ? (
+        <Modal
+          abierto
+          onCerrar={() => {
+            if (!eliminarEntregada.isPending) setEliminandoEntregada(null)
+          }}
+          titulo={`Eliminar salida ${eliminandoEntregada.numero}`}
+          descripcion={`Se eliminará la orden ${eliminandoEntregada.numero} y su nota ${eliminandoEntregada.nota_salida}, devolviendo el material a ${eliminandoEntregada.almacen?.nombre ?? 'su almacén'}.`}
+          ancho="sm"
+          acciones={
+            <>
+              <Button
+                variant="ghost"
+                disabled={eliminarEntregada.isPending}
+                onClick={() => setEliminandoEntregada(null)}
+              >
+                Volver
+              </Button>
+              <Button
+                variant="danger"
+                icon={<Trash2 />}
+                disabled={motivoEliminar.trim().length < 4 || eliminarEntregada.isPending}
+                onClick={async () => {
+                  try {
+                    await eliminarEntregada.mutateAsync({
+                      nota_salida: eliminandoEntregada.nota_salida!,
+                      motivo: motivoEliminar.trim(),
+                    })
+                    setEliminandoEntregada(null)
+                    if (detalleId === eliminandoEntregada.id) setDetalleId(null)
+                  } catch (e) {
+                    setEliminandoEntregada(null)
+                    setFallo(enCastellano(e))
+                  }
+                }}
+              >
+                {eliminarEntregada.isPending ? 'Eliminando…' : 'Eliminar y devolver material'}
+              </Button>
+            </>
+          }
+        >
+          <Textarea
+            label="Motivo de la eliminación"
+            placeholder="Ej.: Cantidad errónea (eran 32 m³ de piedra); se registrará de nuevo."
+            rows={3}
+            autoFocus
+            maxLength={500}
+            value={motivoEliminar}
+            onChange={(e) => setMotivoEliminar(e.target.value)}
+          />
+        </Modal>
+      ) : null}
 
       {cerrando ? (
         <Modal

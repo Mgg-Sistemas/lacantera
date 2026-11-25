@@ -468,6 +468,34 @@ export function useEntregarSolicitud() {
 }
 
 /**
+ * Elimina una salida ya entregada (`NS-...` y su orden `SS-...` si la tiene) y
+ * devuelve el material a su almacén de origen. Reservado a `ADMIN`.
+ */
+export function useEliminarSalidaEntregada() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (v: { nota_salida: string; motivo: string }) =>
+      rpc<{
+        nota_salida: string
+        solicitud_eliminada: string | null
+        movimientos_eliminados: number
+        motivo: string
+      }>('eliminar_salida_entregada', {
+        p_nota_salida: v.nota_salida,
+        p_motivo: v.motivo,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['solicitudes-salida'] })
+      void qc.invalidateQueries({ queryKey: ['existencias'] })
+      void qc.invalidateQueries({ queryKey: ['existencias-totales'] })
+      void qc.invalidateQueries({ queryKey: ['movimientos'] })
+      void qc.invalidateQueries({ queryKey: ['salidas-resumen'] })
+      void qc.invalidateQueries({ queryKey: ['notificaciones'] })
+    },
+  })
+}
+
+/**
  * Cómo apruebo las solicitudes de salida: `respaldo` si estoy en la lista de
  * autorizados (o soy administrador) y apruebo en cualquier almacén, y `sitios`
  * los almacenes por los que respondo.
