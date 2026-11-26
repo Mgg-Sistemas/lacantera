@@ -53,6 +53,7 @@ import { list as listProveedores, insert as insertProveedor } from '@/modules/pr
 import { EmpresaActualSelector } from './EmpresaActualSelector';
 import { EditorFichasFiscalesEmpresa } from './EditorFichasFiscalesEmpresa';
 import { Link } from 'react-router';
+import '@/styles/gtCompat.css';
 import '@/modules/libroFiscal/libroFiscal.css';
 import '@/modules/libroFiscal/libroFiscalV8.css';
 import { norm } from '@/shared/lib/texto';

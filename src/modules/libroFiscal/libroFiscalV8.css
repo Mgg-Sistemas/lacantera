@@ -82,14 +82,16 @@ dialog.lfv8-lado .lfv8-reg-lado { position: sticky; top: 0; }
 .lfv8-total-imp h2 { margin: 0 0 .5rem; font-size: 1rem; font-weight: 700; display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; }
 .lfv8-total-imp h2 span { font-size: .78rem; font-weight: 500; color: var(--text-muted); }
 .lfv8-total-imp .lfv8-botones { display: flex; gap: .35rem; flex-wrap: wrap; }
-.lfv8-cuenta { display: inline-flex; align-items: center; gap: .3rem; min-height: 34px; padding: .25rem .6rem; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--bg-1); color: var(--text-muted); cursor: pointer; font-size: .8rem; }
-.lfv8-cuenta strong { font-family: var(--font-mono); color: var(--text); }
-.lfv8-cuenta.falta { border-color: rgba(245,177,51,0.5); color: #ffcc66; }
+.lfv8-cuenta { display: inline-flex; align-items: center; gap: .35rem; min-height: 34px; padding: .25rem .75rem; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--bg-1); color: var(--text); cursor: pointer; font-size: .8125rem; font-weight: 500; transition: all 0.15s ease; }
+.lfv8-cuenta strong { font-family: var(--font-mono); color: var(--text); font-weight: 700; }
+.lfv8-cuenta:hover:not(:disabled) { border-color: var(--primary); background: var(--surface-3); color: var(--text); }
+.lfv8-cuenta.falta { border-color: rgba(245,177,51,0.6); color: #ffcc66; background: rgba(245,177,51,0.08); }
 .lfv8-cuenta.falta strong { color: #ffcc66; }
+.lfv8-cuenta.falta:hover:not(:disabled) { background: rgba(245,177,51,0.18); border-color: #ffcc66; }
 .lfv8-cuenta.pd { border-color: rgba(74,168,255,0.4); color: #7fc1ff; }
 .lfv8-cuenta.pd strong { color: #7fc1ff; }
-.lfv8-cuenta[aria-pressed="true"] { background: var(--grad-primary); color: #1a0e00; border-color: transparent; box-shadow: var(--glow-primary); }
-.lfv8-cuenta[aria-pressed="true"] strong { color: #1a0e00; }
+.lfv8-cuenta[aria-pressed="true"] { background: var(--grad-primary) !important; color: #ffffff !important; border-color: var(--primary) !important; box-shadow: var(--glow-primary); font-weight: 700; }
+.lfv8-cuenta[aria-pressed="true"] strong { color: #ffffff !important; }
 .lfv8-cuenta:disabled { opacity: .45; cursor: default; }
 
 /* ── Filtros (contenedor) ── */
@@ -99,16 +101,17 @@ dialog.lfv8-lado .lfv8-reg-lado { position: sticky; top: 0; }
 .lfv8-campo > span { font-size: .78rem; color: var(--text-muted); font-weight: 600; }
 
 /* ── Chips ── */
-.lfv8-chips { display: flex; gap: .35rem; flex-wrap: wrap; }
-.lfv8-chip { display: inline-flex; align-items: center; gap: .35rem; min-height: 34px; padding: .3rem .8rem; font-size: .82rem; font-weight: 500; background: var(--bg-1); color: var(--text-muted); border: 1px solid var(--border); border-radius: 999px; cursor: pointer; }
-.lfv8-chip:hover { color: var(--text); border-color: var(--border-strong); }
-.lfv8-chip[aria-pressed="true"] { background: var(--grad-primary-soft); color: var(--primary-3); border-color: rgba(255,138,0,0.5); }
+.lfv8-chips { display: flex; gap: .4rem; flex-wrap: wrap; }
+.lfv8-chip { display: inline-flex; align-items: center; gap: .35rem; min-height: 32px; padding: .3rem .85rem; font-size: .8125rem; font-weight: 600; background: var(--bg-1); color: var(--text-muted); border: 1px solid var(--border); border-radius: 999px; cursor: pointer; transition: all 0.15s ease; }
+.lfv8-chip:hover { color: var(--text); border-color: var(--primary); background: var(--surface-3); }
+.lfv8-chip[aria-pressed="true"] { background: var(--grad-primary-soft); color: var(--primary-2); border-color: var(--primary); font-weight: 700; }
 
 /* ── Barra de vista y view-switch ── */
 .lfv8-barra-vista { display: flex; justify-content: space-between; align-items: center; gap: .75rem; flex-wrap: wrap; margin-bottom: .75rem; }
 .lfv8-view-switch { display: inline-flex; gap: .25rem; padding: .25rem; background: var(--bg-2); border: 1px solid var(--border); border-radius: 999px; }
-.lfv8-view-switch button { background: transparent; border: 0; color: var(--text-muted); padding: .5rem 1.1rem; border-radius: 999px; font-size: .85rem; font-weight: 600; cursor: pointer; min-height: 38px; }
-.lfv8-view-switch button[aria-pressed="true"] { background: var(--grad-primary); color: #1a0e00; box-shadow: var(--glow-primary); }
+.lfv8-view-switch button { background: transparent; border: 0; color: var(--text-muted); padding: .45rem 1.1rem; border-radius: 999px; font-size: .82rem; font-weight: 600; cursor: pointer; min-height: 34px; transition: all 0.15s ease; }
+.lfv8-view-switch button:hover { color: var(--text); background: var(--surface-3); }
+.lfv8-view-switch button[aria-pressed="true"] { background: var(--grad-primary); color: #ffffff; font-weight: 700; box-shadow: var(--shadow-sm); }
 .lfv8-activos { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; font-size: .82rem; }
 .lfv8-activo { display: inline-flex; align-items: center; gap: .3rem; padding: .2rem .3rem .2rem .65rem; border-radius: 999px; background: var(--surface-3); border: 1px solid var(--border-strong); }
 .lfv8-activo button { background: transparent; border: 0; color: var(--text-muted); cursor: pointer; width: 26px; height: 26px; border-radius: 50%; }
@@ -215,11 +218,11 @@ dialog.lfv8-lado .lfv8-reg-lado { position: sticky; top: 0; }
 .lfv8-acciones-libro { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: .75rem; }
 
 /* ── Búsqueda estilo v8 ── */
-.lfv8-buscar { position: relative; margin-bottom: 1rem; }
-.lfv8-buscar label { display: block; font-size: .78rem; color: var(--text-muted); font-weight: 600; margin-bottom: .35rem; }
-.lfv8-buscar input { width: 100%; padding: .85rem 1rem .85rem 2.6rem; font-size: 1rem; background: var(--bg-1); color: var(--text); border: 1px solid var(--border-strong); border-radius: var(--r-lg); }
-.lfv8-buscar input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(255,138,0,0.15); }
-.lfv8-buscar .lfv8-lupa { position: absolute; left: .95rem; bottom: .8rem; color: var(--text-dim); font-size: 1.1rem; pointer-events: none; }
+section.lfv8-buscar, .lfv8-buscar { position: relative; margin-bottom: 1rem; display: block; }
+section.lfv8-buscar label, .lfv8-buscar label { display: block; font-size: .78rem; color: var(--text-muted); font-weight: 600; margin-bottom: .35rem; }
+section.lfv8-buscar input, .lfv8-buscar input { width: 100%; padding: .8rem 1rem .8rem 2.6rem; font-size: .95rem; background: var(--bg-1); color: var(--text); border: 1px solid var(--border-strong); border-radius: var(--r-md); min-height: 42px; box-sizing: border-box; }
+section.lfv8-buscar input:focus, .lfv8-buscar input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in oklab, var(--primary) 25%, transparent); }
+section.lfv8-buscar .lfv8-lupa, .lfv8-buscar .lfv8-lupa { position: absolute; left: .95rem; bottom: .75rem; color: var(--text-dim); font-size: 1.1rem; pointer-events: none; }
 
 /* ── Rango de fechas ── */
 .lfv8-rango { display: flex; gap: .4rem; align-items: center; }
@@ -487,7 +490,7 @@ dialog.lfv8-lado .lfv8-reg-lado { position: sticky; top: 0; }
 .lfv8-alerta-media { border: 1px solid rgba(245,177,51,0.55); background: rgba(245,177,51,0.08); color: #ffd99a; border-radius: var(--r-md); padding: .5rem .7rem; font-size: .8rem; margin-bottom: .5rem; display: flex; justify-content: space-between; align-items: center; gap: .5rem; flex-wrap: wrap; }
 
 .lfv8-barra { display: flex; flex-direction: column; gap: .5rem; margin: .4rem 0 .6rem; }
-.lfv8-buscar { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .8rem; }
+.lfv8-barra .lfv8-buscar { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .8rem; position: static; margin-bottom: 0; }
 .lfv8-buscar-q { flex: 1 1 300px; max-width: 560px; min-height: 40px; }
 .lfv8-barra-res { font-size: .8rem; color: var(--text-dim); font-variant-numeric: tabular-nums; }
 .lfv8-barra-filtros { display: flex; flex-wrap: wrap; gap: .5rem .8rem; align-items: flex-end; }

@@ -1,0 +1,440 @@
+/* ============================================================
+   La Cantera · Retenciones · Buzón Móvil y Multi-Empresa
+   Estilos para la vista de teléfono (soportes, adjuntos, WhatsApp)
+   y la bandeja multi-empresa de escritorio. Paleta Tierra.
+   ============================================================ */
+
+.buzon-movil {
+  max-width: 680px;
+  margin: 0 auto;
+  padding-bottom: 2.5rem;
+}
+
+.buzon-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.buzon-head h1 {
+  margin: 0;
+  font-size: 1.45rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text);
+}
+
+.buzon-audio-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.buzon-audio-toggle.activo {
+  border-color: var(--primary);
+  background: var(--grad-primary-soft);
+  color: var(--primary-2);
+  font-weight: 600;
+}
+
+.buzon-tabs-top {
+  display: flex;
+  gap: 0.5rem;
+  background: var(--surface-2);
+  padding: 0.35rem;
+  border-radius: var(--r-lg);
+  margin-bottom: 1rem;
+  border: 1px solid var(--border);
+}
+
+.buzon-tab-btn {
+  flex: 1;
+  min-height: 48px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border-radius: var(--r-md);
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: all 0.15s ease;
+}
+
+.buzon-tab-btn.activo {
+  background: var(--surface-3);
+  color: var(--text);
+  box-shadow: inset 0 -2px 0 var(--primary);
+}
+
+/* Selector horizontal de empresas */
+.buzon-empresas-scroll {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.4rem;
+  margin-bottom: 1rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.buzon-empresa-chip {
+  flex: 0 0 auto;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.buzon-empresa-chip.sel {
+  border-color: var(--primary);
+  background: var(--grad-primary-soft);
+  color: var(--primary-3);
+}
+
+/* Tarjeta de factura en la lista móvil */
+.buzon-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.9rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.15s ease;
+}
+
+.buzon-card:hover {
+  border-color: var(--primary);
+}
+
+.buzon-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.buzon-card-empresa {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.buzon-estatus-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+}
+
+.buzon-estatus-recibida {
+  background: rgba(140, 109, 0, 0.15);
+  color: var(--warning);
+  border: 1px solid rgba(140, 109, 0, 0.4);
+}
+
+.buzon-estatus-en_revision {
+  background: rgba(245, 177, 51, 0.15);
+  color: #ffcc66;
+  border: 1px solid rgba(245, 177, 51, 0.4);
+}
+
+.buzon-estatus-retenida {
+  background: rgba(46, 125, 79, 0.15);
+  color: var(--success);
+  border: 1px solid rgba(46, 125, 79, 0.4);
+}
+
+.buzon-estatus-descartada {
+  background: var(--surface-3);
+  color: var(--text-muted);
+  border: 1px solid var(--border-strong);
+}
+
+.buzon-card-prov {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.25;
+}
+
+.buzon-card-rif {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.buzon-card-montos {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  background: var(--surface-2);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--r-md);
+  margin-top: 0.2rem;
+}
+
+.buzon-card-monto-principal {
+  font-family: var(--font-mono);
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.buzon-card-monto-alt {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* Bandeja escritorio */
+.buzon-desktop-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface-2);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+}
+
+.buzon-badge-alerta {
+  background: var(--primary);
+  color: #ffffff;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  margin-left: 0.35rem;
+}
+
+/* Selector táctil de empresas en formulario móvil */
+.buzon-selector-tactil {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.buzon-tactil-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 56px;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--r-md);
+  border: 2px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.buzon-tactil-btn:active {
+  transform: scale(0.98);
+}
+
+.buzon-tactil-btn.sel {
+  border-color: var(--primary);
+  background: var(--grad-primary-soft);
+}
+
+.buzon-tactil-btn .emp-nom {
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+.buzon-tactil-btn .emp-rif {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  margin-top: 0.15rem;
+}
+
+.buzon-tactil-btn-otra {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--r-md);
+  border: 2px dashed var(--border-strong);
+  background: var(--bg-1);
+  color: var(--primary-2);
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+
+.buzon-tactil-btn-otra:hover {
+  border-color: var(--primary);
+  background: var(--surface-2);
+}
+
+/* Botones de tipo de documento en formulario móvil */
+.buzon-doc-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 48px;
+  padding: 0.5rem 0.5rem;
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.buzon-doc-btn:active {
+  transform: scale(0.98);
+}
+
+.buzon-doc-btn.sel {
+  border: 2px solid var(--primary);
+  background: var(--grad-primary-soft);
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 0 10px rgba(204, 63, 0, 0.25);
+}
+
+.buzon-doc-btn .doc-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 6px var(--primary);
+  flex-shrink: 0;
+}
+
+/* Botones de moneda en formulario móvil */
+.buzon-moneda-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 52px;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.buzon-moneda-btn:active {
+  transform: scale(0.98);
+}
+
+.buzon-moneda-btn.sel {
+  border: 2px solid var(--primary);
+  background: var(--grad-primary-soft);
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 0 10px rgba(204, 63, 0, 0.25);
+}
+
+.buzon-moneda-btn .moneda-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 6px var(--primary);
+  flex-shrink: 0;
+}
+
+/* Ficha fiscal en escritorio */
+.buzon-ficha-fiscal-seccion {
+  background: var(--surface-2);
+  padding: 0.85rem;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  margin-bottom: 0.75rem;
+}
+
+.buzon-ficha-fiscal-seccion h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text);
+}
+
+.buzon-ficha-tag-completa {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 9999px;
+  background: rgba(46, 125, 79, 0.15);
+  color: var(--success);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.buzon-ficha-tag-incompleta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 9999px;
+  background: rgba(245, 177, 51, 0.15);
+  color: #ffcc66;
+  font-size: 0.75rem;
+  font-weight: 700;
+}

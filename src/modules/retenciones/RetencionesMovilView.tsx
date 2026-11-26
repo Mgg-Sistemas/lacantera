@@ -12,6 +12,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link } from 'react-router';
+import './retencionesMovil.css';
 import { useSession } from '@/modules/auth/authStore';
 import { usePermissions } from '@/modules/auth/PermissionsContext';
 import { RUTA_TELEFONO } from '@/modules/auth/vistasTelefono';

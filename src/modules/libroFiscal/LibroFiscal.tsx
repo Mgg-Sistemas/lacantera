@@ -76,6 +76,7 @@ import { ParametrosFormatos } from './ParametrosFormatos';
 import { faltaEnPctConcepto, faltaEnValoresSinR3, rifEmpresaParaGuardar } from './parametrosEmpresa';
 import { aplicarFiltros, buscaEn, paginar, type FiltroLista } from './listas';
 import { Paginador } from './ListaControles';
+import '@/styles/gtCompat.css';
 import './libroFiscal.css';
 import './libroFiscalV8.css';
 import { SearchSelect } from '@/shared/ui/SearchSelect';

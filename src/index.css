@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import './styles/gtCompat.css';
 
 /*
   Tema oscuro por clase, no por preferencia del navegador.

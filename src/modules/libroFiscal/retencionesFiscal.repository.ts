@@ -539,6 +539,7 @@ export interface FiltroRetenciones {
  * así que se pagina (un año de retenciones pasa ese tope sin esfuerzo).
  */
 export async function listRetenciones(f: FiltroRetenciones = {}): Promise<RetencionPracticada[]> {
+  if (!(await tablaDisponible(T_RETENCIONES))) return [];
   const conDocumentos = await tablaDisponible('retencion_documentos');
   const columnas = conDocumentos
     ? '*, retencion_documentos(tipo_documento, factura_afectada_nro, factura_total, exento)'
@@ -566,6 +567,7 @@ export async function listRetenciones(f: FiltroRetenciones = {}): Promise<Retenc
 
 /** Los períodos que tienen retenciones, del más nuevo al más viejo. */
 export async function listPeriodos(): Promise<string[]> {
+  if (!(await tablaDisponible(T_RETENCIONES))) return [];
   const { data, error } = await supabase.from(T_RETENCIONES).select('comprobante_periodo')
     .not('comprobante_periodo', 'is', null).order('comprobante_periodo', { ascending: false });
   if (error) throw error;
@@ -632,6 +634,7 @@ export interface NuevaRetencion {
  * dígitos del número; la comparación fina es `retencionYaRegistrada`.
  */
 async function retencionVigenteDeLaFactura(input: NuevaRetencion): Promise<RetencionPracticada | null> {
+  if (!(await tablaDisponible(T_RETENCIONES))) return null;
   const factura = normalizarFactura(input.facturaNumero);
   if (input.tipo === 'igtf' || !factura || !input.contraparteRif?.trim()) return null;
   const cola = factura.match(/\d+$/)?.[0] ?? factura;
@@ -897,6 +900,14 @@ export async function consultarCorrelativoEstimado(
   const conPeriodo = fmt === 'AAAAMM8';
 
   try {
+    if (!(await tablaDisponible(T_RETENCIONES))) {
+      return {
+        numero: 1,
+        comprobante: conPeriodo && periodo ? `${periodo}00000001` : '0000000001',
+        formato: fmt,
+        explicacion: 'Sin retenciones aún (la tabla no ha sido creada o está vacía). Arranca en 1.',
+      };
+    }
     let q = supabase
       .from(T_RETENCIONES)
       .select('numero, comprobante_nro')
