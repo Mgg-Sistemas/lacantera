@@ -12,6 +12,18 @@ Este directorio contiene la suite completa de scripts SQL para inicializar el m�
 
 Aplique los scripts en orden estricto desde el **SQL Editor de Supabase**:
 
+### Paso 0 (Inmediato): Registro del Módulo Retenciones en la Matriz de Permisos
+- **Archivo:** `00_registrar_modulo_retenciones_permisos.sql`
+- **Estado:** `-- ESTADO: PENDIENTE DE APLICAR`
+- **Contenido:** Registra el módulo `'RETENCIONES'` en la tabla `public.modulos` e inicializa sus filas en `public.rol_permisos`. Habilita de inmediato dar acceso a roles (por ejemplo al rol `IMPUESTOS`) en **Configuración → Usuarios → Roles y permisos**.
+- **Query de Verificación:**
+  ```sql
+  SELECT codigo, nombre, orden FROM public.modulos WHERE codigo = 'RETENCIONES';
+  ```
+- **Resultado Esperado:** 1 fila con `codigo = 'RETENCIONES'`, `nombre = 'Retenciones'`, `orden = 65`.
+
+---
+
 ### Paso 1: Tablas Base, Catálogos y Parámetros Globales
 - **Archivo:** `01_retenciones_tablas_base_y_config.sql`
 - **Estado:** `-- ESTADO: PENDIENTE DE APLICAR`

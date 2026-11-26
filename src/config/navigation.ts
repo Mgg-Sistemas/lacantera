@@ -177,7 +177,7 @@ const MODULO_POR_PREFIJO: [string, string][] = [
   ['/app/despachos', 'DESPACHOS'],
   ['/app/administracion', 'COMPRAS'],
   ['/app/compras', 'COMPRAS'],
-  ['/app/retenciones', 'COMPRAS'],
+  ['/app/retenciones', 'RETENCIONES'],
   // Abierta a todos por `RUTAS_PROPIAS`; el módulo decide solo quién la ve
   // dentro del grupo Compras del menú (los demás entran por «Solicitud de
   // pedido», arriba).

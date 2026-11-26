@@ -22,6 +22,23 @@
 
 BEGIN;
 
+-- 0) Registro del módulo 'RETENCIONES' en el sistema de permisos
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'modulos') THEN
+        INSERT INTO public.modulos (codigo, nombre, descripcion, orden)
+        VALUES ('RETENCIONES', 'Retenciones', 'Retenciones fiscales de IVA, ISLR, ISAE municipal y timbre estadal.', 65)
+        ON CONFLICT (codigo) DO UPDATE SET nombre = EXCLUDED.nombre, descripcion = EXCLUDED.descripcion, orden = EXCLUDED.orden;
+
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'rol_permisos') THEN
+            INSERT INTO public.rol_permisos (rol, modulo, nivel)
+            SELECT r.codigo, 'RETENCIONES', CASE WHEN r.codigo = 'ADMIN' THEN 'TOTAL' ELSE 'NINGUNO' END
+            FROM public.roles r
+            ON CONFLICT (rol, modulo) DO NOTHING;
+        END IF;
+    END IF;
+END $$;
+
 -- 1) Tabla de configuración global si no existe
 CREATE TABLE IF NOT EXISTS public.config (
     key text PRIMARY KEY,
