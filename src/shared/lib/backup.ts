@@ -37,7 +37,7 @@ function ahoraVE(): string {
 function encabezadoRespaldo(actorEmail: string, automatico: boolean): string {
   return [
     '-- ============================================================',
-    '-- GOLDEN TOUCH 1127 C.A. · Respaldo de base de datos',
+    '-- MINERIA INTERNACIONAL TS, C.A. · Respaldo de base de datos',
     `-- Tipo:          ${automatico ? 'AUTOMÁTICO (cada 30 días)' : 'MANUAL'}`,
     `-- Generado por:  ${actorEmail || 'sistema'}`,
     `-- Fecha y hora:  ${ahoraVE()} (America/Caracas)`,
@@ -145,7 +145,7 @@ export async function enviarRespaldoPorCorreo(
       modulo: 'ajustes',
       pdf_base64: bytesABase64(zip),
       nombre_archivo: nombre,
-      asunto: `Respaldo de base de datos · GOLDEN TOUCH 1127 C.A. · ${fecha}`,
+      asunto: `Respaldo de base de datos · MINERIA INTERNACIONAL TS, C.A. · ${fecha}`,
       mensaje: `${automatico ? 'Respaldo automático (cada 30 días)' : 'Respaldo manual'} · Generado por ${actorEmail || 'sistema'} · ${cuando} (America/Caracas).`,
       to_emails: toEmails,
     },

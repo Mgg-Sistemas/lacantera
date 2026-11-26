@@ -1,0 +1,1568 @@
+/* ============================================================
+   Golden Touch · Libro fiscal · Comprobante de retención (Venezuela)
+
+   Formato fiel al comprobante legal físico (ISLR / IVA / ISAE / Patente):
+   - Encabezado con título centrado en negro
+   - Recuadro superior derecho con N° Comprobante, Período fiscal y Fecha
+   - Recuadro de Agente de Retención con Nombre, RIF y Dirección Fiscal
+   - Recuadro de Sujeto Retenido con Nombre, RIF y Dirección Fiscal del beneficiario
+   - Tabla contable de retenciones con líneas y totalizador
+   - Cajas de firma para Agente y Sujeto Retenido, con soporte de estampa
+     digital de sello y firma según la opción elegida por el usuario.
+   - Marca de agua "ANULADO" si la retención fue anulada.
+   ============================================================ */
+import { supabase } from '@/shared/lib/supabase';
+import { previewPdf } from '@/shared/lib/reportePreview';
+import { EMPRESA_NOMBRE, EMPRESA_RIF } from '@/shared/lib/empresa';
+import { labelSujeto, EMPRESA_EMAIL, type ConfigRetencion } from './retencionesCalculo';
+import { tipoAGt, type RetencionPracticada } from './retencionesFiscal.repository';
+import { formatoParaImprimir } from './formatos.repository';
+import {
+  MARGEN_PDF, fechaPdf, montoPdf, textoPdf,
+} from './pdfComun';
+import { aplicarFormato, type FormatoParaAplicar } from './formatoComprobante';
+import { listImagenesAgente, versionVigente, urlImagen } from './entes.repository';
+import QRCode from 'qrcode';
+import { hoyVenezuela } from '@/shared/lib/rangosFecha';
+import { diaVE } from '@/modules/tesoreria/tasas.repository';
+
+/** La razón social del agente: la de Parámetros o, si falta, la de la empresa. */
+export const razonSocialAgente = (config: ConfigRetencion) => config.razonSocial || EMPRESA_NOMBRE;
+
+/** Las dos partes del comprobante, renglón por renglón: el agente que retiene y el sujeto retenido. */
+export function partesComprobante(r: RetencionPracticada, config: ConfigRetencion): { agente: string[]; sujeto: string[] } {
+  const emailEmpresa = config.email?.trim() || EMPRESA_EMAIL;
+  const empresa = [
+    razonSocialAgente(config),
+    `RIF: ${config.rif || EMPRESA_RIF}`,
+    config.direccionFiscal || '',
+    [config.municipio, config.estado].filter(Boolean).join(' · '),
+    emailEmpresa ? `Correo: ${emailEmpresa}` : '',
+  ].filter(Boolean);
+  const contraparte = [
+    r.contraparteNombre || '—',
+    `RIF: ${r.contraparteRif || '—'}`,
+    ...(r.contraparteDireccion ? [r.contraparteDireccion] : []),
+    ...(r.contraparteEmail ? [`Correo: ${r.contraparteEmail}`] : []),
+  ];
+  if (r.direccion === 'recibida') return { agente: contraparte, sujeto: empresa };
+  const sujeto = r.contraparteSujeto ? [...contraparte, labelSujeto(r.contraparteSujeto)] : contraparte;
+  return { agente: empresa, sujeto };
+}
+
+/** Resuelve el correo del sujeto retenido (proveedor / beneficiario), si existe. */
+export async function emailSujetoRetenido(r: RetencionPracticada): Promise<string | null> {
+  if (r.contraparteEmail && r.contraparteEmail.trim()) {
+    return r.contraparteEmail.trim();
+  }
+  if (r.contraparteId) {
+    try {
+      const { data } = await supabase.from('proveedores').select('email').eq('id', r.contraparteId).maybeSingle();
+      if (data?.email?.trim()) return data.email.trim();
+    } catch { /* continuar con RIF */ }
+  }
+  if (r.contraparteRif) {
+    try {
+      const { data } = await supabase.from('proveedores').select('email').eq('rif', r.contraparteRif.trim()).maybeSingle();
+      if (data?.email?.trim()) return data.email.trim();
+    } catch { /* fallback */ }
+  }
+  return null;
+}
+
+/** Resuelve la dirección fiscal del sujeto retenido (beneficiario). */
+export async function direccionFiscalSujeto(r: RetencionPracticada): Promise<string> {
+  if (r.contraparteDireccion && r.contraparteDireccion.trim()) {
+    return r.contraparteDireccion.trim();
+  }
+  if (r.contraparteId) {
+    try {
+      const { data } = await supabase.from('proveedores').select('direccion').eq('id', r.contraparteId).maybeSingle();
+      if (data?.direccion?.trim()) return data.direccion.trim();
+    } catch { /* continuar con RIF */ }
+  }
+  if (r.contraparteRif) {
+    try {
+      const { data } = await supabase.from('proveedores').select('direccion').eq('rif', r.contraparteRif.trim()).maybeSingle();
+      if (data?.direccion?.trim()) return data.direccion.trim();
+    } catch { /* fallback */ }
+  }
+  return '—';
+}
+
+/** El equivalente en bolívares, cuando la retención está en otra moneda (así se declara). */
+export function lineaEquivalenteBs(r: Pick<RetencionPracticada, 'moneda' | 'montoBs' | 'tasa'>): string | null {
+  if (r.moneda === 'Bs' || !r.montoBs) return null;
+  const tasa = r.tasa ? ` (tasa ${r.tasa.toLocaleString('es-VE', { maximumFractionDigits: 4 })})` : '';
+  return `Equivalente en bolívares: ${montoPdf(r.montoBs, 'Bs')}${tasa}`;
+}
+
+/** Los 8 dígitos del secuencial (Art. 18.1): AAAAMMSSSSSSSS → SSSSSSSS. */
+export function correlativoDeNumero(numero: string | null | undefined): string {
+  const d = String(numero ?? '').replace(/\D/g, '');
+  return d.length >= 14 ? d.slice(6, 14) : d || '—';
+}
+
+/**
+ * Determina el concepto legal a imprimir en el comprobante fiscal.
+ * En retenciones de ISLR (Decreto 1.808), los conceptos corresponden al catálogo tributario.
+ * Descripciones internas de partidas u órdenes (como "Mano de Obra") se corrigen al
+ * concepto normativo aplicable ("Servicios (contratistas y subcontratistas)").
+ */
+export function conceptoFiscalPdf(r: RetencionPracticada): string {
+  const norm = (r.conceptoNombre ?? '').trim();
+  if (r.tipo === 'islr') {
+    if (!norm || norm.toUpperCase() === 'MANO DE OBRA') {
+      return 'Servicios (contratistas y subcontratistas)';
+    }
+  }
+  return norm || (r.tipo === 'islr' ? 'Servicios (contratistas y subcontratistas)' : 'SERVICIOS');
+}
+
+/** El valor de cada columna de la tabla del comprobante (por su campo). */
+export function valoresDeColumnas(r: RetencionPracticada): Record<string, string> {
+  const op = r.operacionNumero != null
+    ? String(r.operacionNumero).padStart(4, '0')
+    : '0001';
+  const signo = r.tipoDocumento === 'nota_credito' ? -1 : 1;
+  const esNd = r.tipoDocumento === 'nota_debito';
+  const esNc = r.tipoDocumento === 'nota_credito';
+  const documento = r.facturaNumero || r.docCodigo || '—';
+  const exentoMonto = r.exento != null ? r.exento : 0;
+  // En IVA el total se puede reconstruir como base + IVA + exento. En ISLR, si se conoce el IVA de la factura,
+  // también se reconstruye exactamente como base + IVA + exento.
+  const totFactura = r.facturaTotal != null
+    ? r.facturaTotal
+    : r.impuesto > 0
+      ? (r.baseImponible + r.impuesto + exentoMonto)
+      : r.tipo === 'islr' ? null : (r.baseImponible + r.impuesto + exentoMonto);
+
+  const causadoMonto = obtenerImpuestoCausado(r);
+
+  return {
+    operacion: op,
+    factura: esNd || esNc ? '—' : documento,
+    fecha: fechaPdf(r.facturaFecha),
+    control: r.facturaControl || '—',
+    nd: esNd ? documento : '—',
+    nc: esNc ? documento : '—',
+    // Código de operación de compra general del ejemplar; no es el tipo de documento del TXT.
+    clase: '01-reg',
+    afectada: r.facturaAfectadaNro || '—',
+    total_factura: totFactura == null ? '—' : montoPdf(totFactura * signo, r.moneda),
+    sin_derecho: montoPdf((r.sinDerechoCreditoIva ?? 0) * signo, r.moneda),
+    exento: montoPdf(exentoMonto * signo, r.moneda),
+    concepto: conceptoFiscalPdf(r),
+    base: montoPdf(r.baseImponible * signo, r.moneda),
+    alicuota: r.alicuota ? `${r.alicuota}%` : '—',
+    iva: montoPdf(causadoMonto * signo, r.moneda),
+    causado: montoPdf(causadoMonto * signo, r.moneda),
+    sustraendo: r.sustraendo ? montoPdf(r.sustraendo, r.moneda) : '0,00',
+    pct: `${r.porcentaje}%`,
+    monto: montoPdf(r.montoRetenido * signo, r.moneda),
+  };
+}
+
+/**
+ * Determina el Impuesto Causado de la operación comercial.
+ * En IVA: el 100 % del IVA de la factura.
+ * En ISLR: el IVA de la factura que grava la operación comercial (o la diferencia entre total y base si no está explícito).
+ */
+export function obtenerImpuestoCausado(r: RetencionPracticada): number {
+  const exento = r.exento != null ? r.exento : 0;
+  if (r.tipo === 'islr') {
+    // 1. Si la retención tiene registrado el IVA de la factura
+    if (r.impuesto && r.impuesto > 0) return r.impuesto;
+    // 2. Si se conoce el total de la factura y supera la base imponible, la diferencia es el IVA causado
+    if (r.facturaTotal != null && r.baseImponible > 0 && r.facturaTotal > r.baseImponible) {
+      return Math.round((r.facturaTotal - r.baseImponible - exento) * 100) / 100;
+    }
+    // 3. Si impuestoCausado está guardado y es distinto del monto retenido (es el IVA)
+    if (r.impuestoCausado != null && r.impuestoCausado > 0 && (r.montoRetenido === 0 || r.impuestoCausado !== r.montoRetenido)) {
+      return r.impuestoCausado;
+    }
+    // 4. Fallback si existe impuestoCausado mayor a 0
+    if (r.impuestoCausado != null && r.impuestoCausado > 0) {
+      return r.impuestoCausado;
+    }
+    return 0;
+  }
+  return r.impuestoCausado ?? r.impuesto ?? 0;
+}
+
+const COLUMNAS_NUMERICAS = new Set(['total_factura', 'sin_derecho', 'exento', 'base', 'alicuota', 'iva', 'causado', 'sustraendo', 'pct', 'monto']);
+
+/** Cadena canónica para verificación tributaria y generación de huella digital SHA-256 (PA 0084 / 0093). */
+export function cadenaCanonicoFiscal(r: RetencionPracticada, config: ConfigRetencion): string {
+  const rifAgente = config.rif || EMPRESA_RIF;
+  const rifSujeto = r.contraparteRif || '—';
+  const comp = r.numeroComprobante || r.id;
+  const fecha = r.facturaFecha || r.createdAt || '';
+  const base = Number(r.baseImponible || 0).toFixed(2);
+  const monto = Number(r.montoRetenido || 0).toFixed(2);
+  const moneda = r.moneda || 'Bs';
+  const estado = r.anulada ? 'ANULADA' : 'VALIDA';
+  const tipoDoc = r.tipoDocumento === 'nota_credito' ? 'NC' : r.tipoDocumento === 'nota_debito' ? 'ND' : 'FACT';
+  const afectada = r.facturaAfectadaNro ? `:AF:${r.facturaAfectadaNro}` : '';
+  return `SENIAT|RET|${r.tipo.toUpperCase()}|${rifAgente}|${comp}|${fecha.slice(0, 10)}|${rifSujeto}|${tipoDoc}:${r.facturaNumero || ''}${afectada}|${moneda}|${base}|${monto}|${estado}`;
+}
+
+/** Calcula el hash SHA-256 de una cadena en representación hexadecimal minúscula. */
+export async function calcularSha256Hex(texto: string): Promise<string> {
+  try {
+    if (typeof globalThis.crypto?.subtle?.digest === 'function') {
+      const buffer = await globalThis.crypto.subtle.digest('SHA-256', new TextEncoder().encode(texto));
+      return Array.from(new Uint8Array(buffer)).map((b) => b.toString(16).padStart(2, '0')).join('');
+    }
+  } catch { /* fallback */ }
+  let h1 = 0xdeadbeef;
+  let h2 = 0x41c6ce57;
+  for (let i = 0; i < texto.length; i++) {
+    const ch = texto.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16).padStart(64, '0');
+}
+
+/** Genera la DataURL del código QR para incrustar en el PDF. */
+export async function generarQrVerificacion(contenido: string): Promise<string | null> {
+  try {
+    return await QRCode.toDataURL(contenido, {
+      errorCorrectionLevel: 'M',
+      margin: 1,
+      width: 140,
+      color: { dark: '#000000', light: '#ffffff' },
+    });
+  } catch {
+    return null;
+  }
+}
+
+export type ModoEjemplar = 'estandar' | 'ambos' | 'original' | 'copia';
+export type EjemplarPdf = 'original' | 'copia';
+
+export interface OpcionesComprobantePdf {
+  incluirLogo?: boolean;
+  incluirFirma?: boolean;
+  incluirSello?: boolean;
+  incluirQr?: boolean;
+  logoDataUrl?: string | null;
+  firmaDataUrl?: string | null;
+  selloDataUrl?: string | null;
+  /** Compatibilidad hacia atrás */
+  incluirFirmaSello?: boolean;
+  /** Ejemplar que se imprime en esta página concreta ('original' o 'copia') */
+  ejemplar?: EjemplarPdf | null;
+  /** Modo de emisión del documento: ambos (Original + Copia), solo original o solo copia */
+  modoEjemplar?: ModoEjemplar;
+  imprimirOriginalYCopia?: boolean;
+}
+
+function formatoImagenDataUrl(dataUrl: string): 'PNG' | 'JPEG' {
+  return /^data:image\/jpe?g/i.test(dataUrl) ? 'JPEG' : 'PNG';
+}
+
+export interface DisponibilidadElementosDigitales {
+  tieneLogo: boolean;
+  tieneFirma: boolean;
+  tieneSello: boolean;
+  tieneAlguno: boolean;
+}
+
+/** Comprueba qué elementos (logo, firma, sello) están cargados y activos en Parámetros del módulo. */
+export async function consultarElementosDigitales(fecha = hoyVenezuela()): Promise<DisponibilidadElementosDigitales> {
+  try {
+    const imagenes = await listImagenesAgente();
+    const l = versionVigente(imagenes.filter((i) => i.clase === 'logo' && i.activo), fecha)
+      || imagenes.find((i) => i.clase === 'logo' && i.activo);
+    const f = versionVigente(imagenes.filter((i) => i.clase === 'firma' && i.activo), fecha)
+      || imagenes.find((i) => i.clase === 'firma' && i.activo);
+    const s = versionVigente(imagenes.filter((i) => i.clase === 'sello' && i.activo), fecha)
+      || imagenes.find((i) => i.clase === 'sello' && i.activo);
+    const tieneLogo = !!l?.ruta;
+    const tieneFirma = !!f?.ruta;
+    const tieneSello = !!s?.ruta;
+    return {
+      tieneLogo,
+      tieneFirma,
+      tieneSello,
+      tieneAlguno: tieneLogo || tieneFirma || tieneSello,
+    };
+  } catch {
+    return { tieneLogo: false, tieneFirma: false, tieneSello: false, tieneAlguno: false };
+  }
+}
+
+/** Alias para compatibilidad */
+export async function hayFirmaYSelloCargado(fecha = hoyVenezuela()): Promise<{ tieneFirma: boolean; tieneSello: boolean; tieneAlguno: boolean }> {
+  const d = await consultarElementosDigitales(fecha);
+  return { tieneFirma: d.tieneFirma, tieneSello: d.tieneSello, tieneAlguno: d.tieneFirma || d.tieneSello };
+}
+
+/** Convierte una URL a Data URL base64 para jsPDF. */
+async function urlADataUrl(url: string): Promise<string> {
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  const blob = await resp.blob();
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+/** Carga las imágenes de logo, firma y sello digital de la empresa SOLO si están cargadas en Parámetros del módulo. */
+export async function cargarElementosDigitales(fecha = hoyVenezuela()): Promise<{
+  logoDataUrl: string | null;
+  firmaDataUrl: string | null;
+  selloDataUrl: string | null;
+}> {
+  let logoDataUrl: string | null = null;
+  let firmaDataUrl: string | null = null;
+  let selloDataUrl: string | null = null;
+
+  try {
+    const imagenes = await listImagenesAgente();
+    const l = versionVigente(imagenes.filter((i) => i.clase === 'logo' && i.activo), fecha)
+      || imagenes.find((i) => i.clase === 'logo' && i.activo);
+    const f = versionVigente(imagenes.filter((i) => i.clase === 'firma' && i.activo), fecha)
+      || imagenes.find((i) => i.clase === 'firma' && i.activo);
+    const s = versionVigente(imagenes.filter((i) => i.clase === 'sello' && i.activo), fecha)
+      || imagenes.find((i) => i.clase === 'sello' && i.activo);
+
+    if (l?.ruta) {
+      try {
+        const u = await urlImagen(l.ruta);
+        logoDataUrl = await urlADataUrl(u);
+      } catch { /* noop */ }
+    }
+    if (f?.ruta) {
+      try {
+        const u = await urlImagen(f.ruta);
+        firmaDataUrl = await urlADataUrl(u);
+      } catch { /* noop */ }
+    }
+    if (s?.ruta) {
+      try {
+        const u = await urlImagen(s.ruta);
+        selloDataUrl = await urlADataUrl(u);
+      } catch { /* noop */ }
+    }
+  } catch { /* noop */ }
+
+  // ── Fallbacks institucionales para Golden Touch si no hay versión subida en la base ──
+  if (!logoDataUrl) {
+    try {
+      const { loadLogoPdfDataUrl } = await import('@/shared/lib/pdfLogo');
+      logoDataUrl = await loadLogoPdfDataUrl();
+    } catch { /* noop */ }
+  }
+  // Para la firma NO se aplica fallback automático: si la empresa no ha subido una firma
+  // en Parámetros, firmaDataUrl se conserva null para dejar el recuadro en blanco para
+  // firma manuscrita, respetando estrictamente la regla del módulo.
+
+  return { logoDataUrl, firmaDataUrl, selloDataUrl };
+}
+
+/** Construye la instancia jsPDF del comprobante de retención. */
+export async function generarDocComprobanteRetencionPdf(
+  r: RetencionPracticada,
+  config: ConfigRetencion,
+  formato?: FormatoParaAplicar | null,
+  opciones: OpcionesComprobantePdf = {},
+  docExistente?: any,
+): Promise<any> {
+  const [{ jsPDF }, { default: autoTable }] = await Promise.all([
+    import('jspdf'), import('jspdf-autotable'),
+  ]);
+
+  const leerDocCabecera = async () => {
+    try {
+      if (r.documentoId) {
+        const res = await supabase.from('retencion_documentos')
+          .select('tipo_documento, factura_afectada_nro, factura_total, exento, iva_monto, iva_alicuota')
+          .eq('id', r.documentoId)
+          .maybeSingle();
+        if (res.data) return res.data;
+      }
+      if (r.facturaNumero) {
+        const res = await supabase.from('retencion_documentos')
+          .select('tipo_documento, factura_afectada_nro, factura_total, exento, iva_monto, iva_alicuota')
+          .eq('factura_nro', r.facturaNumero)
+          .maybeSingle();
+        if (res.data) return res.data;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  const leerPerfilesProv = async () => {
+    if (!r.contraparteId) return null;
+    try {
+      const res = await supabase.from('retencion_contraparte_perfiles')
+        .select('licencia_numero, licencia_estado')
+        .eq('proveedor_id', r.contraparteId)
+        .order('desde', { ascending: false });
+      return res.data;
+    } catch {
+      return null;
+    }
+  };
+
+  // Consultas de enriquecimiento: dirección del sujeto, correo del proveedor, documento fiscal y licencias municipales
+  const [direccionSujeto, emailSujeto, docCabecera, perfilesProv] = await Promise.all([
+    direccionFiscalSujeto(r),
+    emailSujetoRetenido(r),
+    leerDocCabecera(),
+    leerPerfilesProv(),
+  ]);
+
+  const tipoDocumento = docCabecera?.tipo_documento ?? r.tipoDocumento ?? null;
+  const facturaAfectadaNro = docCabecera?.factura_afectada_nro ?? r.facturaAfectadaNro ?? null;
+  const exentoMonto = docCabecera?.exento != null
+    ? Number(docCabecera.exento)
+    : (r.exento != null ? r.exento : 0);
+  const facturaTotal = docCabecera?.factura_total != null
+    ? Number(docCabecera.factura_total)
+    : r.facturaTotal != null
+      ? r.facturaTotal
+      // En ISLR no se inventa el total a partir de una base que puede ser parcial.
+      : r.tipo === 'islr' ? null : (r.baseImponible + r.impuesto + exentoMonto);
+
+  let licenciaSujeto = r.licenciaSujeto ?? null;
+  if (!licenciaSujeto && perfilesProv && perfilesProv.length > 0) {
+    const pVig = perfilesProv.find((p: any) => p.licencia_numero?.trim());
+    if (pVig?.licencia_numero) licenciaSujeto = pVig.licencia_numero.trim();
+  }
+
+  const licenciaAgente = config.licenciaMunicipal?.trim() || null;
+
+  const rEnriquecida: RetencionPracticada = {
+    ...r,
+    contraparteDireccion: direccionSujeto,
+    contraparteEmail: emailSujeto,
+    tipoDocumento: (tipoDocumento as any),
+    facturaAfectadaNro,
+    facturaTotal,
+    exento: exentoMonto,
+    licenciaSujeto,
+    impuesto: r.impuesto || (docCabecera?.iva_monto != null ? Number(docCabecera.iva_monto) : 0),
+    alicuota: r.alicuota || (docCabecera?.iva_alicuota != null ? Number(docCabecera.iva_alicuota) : 0),
+  };
+
+  const f = aplicarFormato(r.tipo, formato);
+  const orientacion = f.orientacion === 'vertical' ? 'portrait' : 'landscape';
+  let doc: any;
+  if (docExistente) {
+    doc = docExistente;
+    doc.addPage('letter', orientacion);
+  } else {
+    doc = new jsPDF({ unit: 'pt', format: 'letter', orientation: orientacion });
+  }
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+  const M = MARGEN_PDF;
+  const UTIL = W - M * 2;
+  let y = M + 6;
+
+  // 1. Título principal a todo el ancho (sin reducirse, centrado en la página)
+  doc.setTextColor(0, 0, 0);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12.5);
+  const lineasEncabezado = doc.splitTextToSize(textoPdf(f.textos.encabezado), UTIL) as string[];
+  doc.text(lineasEncabezado, W / 2, y, { align: 'center' });
+  y += (lineasEncabezado.length * 13) + 3;
+
+  // 2. Subtítulo (nota legal del decreto / gaceta oficial) debajo del título
+  if (f.textos.nota_legal && f.textos.nota_legal.trim()) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.8);
+    doc.setTextColor(0, 0, 0);
+    const lineasNotaLegal = doc.splitTextToSize(textoPdf(f.textos.nota_legal.trim()), UTIL) as string[];
+    doc.text(lineasNotaLegal, W / 2, y, { align: 'center' });
+    y += (lineasNotaLegal.length * 8.2) + 6;
+  } else {
+    y += 4;
+  }
+
+  // 3. Resto del formato: Logo a la izquierda y Recuadro de Comprobante a la derecha
+  const fechaEmisionRef = r.fecha || r.facturaFecha || diaVE(r.createdAt) || hoyVenezuela();
+  const cargados = await cargarElementosDigitales(fechaEmisionRef);
+  const logoDataUrl = opciones.logoDataUrl !== undefined ? opciones.logoDataUrl : cargados.logoDataUrl;
+  const firmaDataUrl = opciones.firmaDataUrl !== undefined ? opciones.firmaDataUrl : cargados.firmaDataUrl;
+  const selloDataUrl = opciones.selloDataUrl !== undefined ? opciones.selloDataUrl : cargados.selloDataUrl;
+  const tieneLogo = (opciones.incluirLogo ?? Boolean(opciones.logoDataUrl)) && !!logoDataUrl;
+  const logoW = 75;
+  const logoH = 34;
+
+  const restoY = y;
+  if (tieneLogo) {
+    try {
+      doc.addImage(logoDataUrl!, formatoImagenDataUrl(logoDataUrl!), M, restoY, logoW, logoH);
+    } catch { /* noop */ }
+  }
+
+  const ejemplar = opciones.ejemplar ?? null;
+
+  // Recuadro superior derecho: N° DE COMPROBANTE y su CORRELATIVO (Art. 18.1),
+  // PERÍODO FISCAL, FECHA DE EMISIÓN y FECHA DE ENTREGA (Art. 18.3).
+  const boxW = Math.min(260, UTIL * 0.46);
+  const boxH = 60;
+  const boxX = W - M - boxW;
+
+  const badgeH = ejemplar ? 14 : 0;
+  const badgeGap = ejemplar ? 3 : 0;
+  const badgeY = restoY;
+  const boxY = restoY + badgeH + badgeGap;
+  const colDivX = boxX + 118; // divisor vertical que alinea perfectamente ambas columnas
+
+  // Badge oficial de Ejemplar (Original / Copia) según Providencia SENIAT
+  if (ejemplar) {
+    const textoBadge = ejemplar === 'original'
+      ? 'ORIGINAL · SUJETO RETENIDO'
+      : 'COPIA · AGENTE DE RETENCIÓN';
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.6);
+    doc.setFillColor(242, 244, 246);
+    doc.rect(boxX, badgeY, boxW, badgeH, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.2);
+    doc.setTextColor(0, 0, 0);
+    doc.text(textoBadge, boxX + boxW / 2, badgeY + 10, { align: 'center' });
+  }
+
+  // Dibujar recuadro con cuadrícula interna (3 filas de 20 pt cada una)
+  doc.setDrawColor(0, 0, 0);
+  doc.setLineWidth(0.6);
+  doc.rect(boxX, boxY, boxW, boxH);
+  doc.line(boxX, boxY + 20, boxX + boxW, boxY + 20);
+  doc.line(boxX, boxY + 40, boxX + boxW, boxY + 40);
+  doc.line(colDivX, boxY, colDivX, boxY + boxH);
+
+  // Fila 1 - N° DE COMPROBANTE y su número completo (Art. 18.1)
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.2);
+  doc.setTextColor(0, 0, 0);
+  doc.text(textoPdf(f.rotulos.n_comprobante || 'N° DE COMPROBANTE'), boxX + 6, boxY + 13);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.text(textoPdf(r.numeroComprobante ?? '—'), colDivX + 6, boxY + 13);
+
+  // Fila 2 - PERÍODO FISCAL y CORRELATIVO N°
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6);
+  doc.text(textoPdf(f.rotulos.periodo || 'PERIODO FISCAL'), boxX + 6, boxY + 27.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  const pDigits = (r.periodo ?? '').replace(/\D/g, '');
+  const anioStr = pDigits.length >= 4 ? pDigits.slice(0, 4) : (r.facturaFecha?.slice(0, 4) ?? '');
+  const mesStr = pDigits.length >= 6 ? pDigits.slice(4, 6) : (r.facturaFecha?.slice(5, 7) ?? '');
+  doc.text(`AÑO: ${anioStr}   MES: ${mesStr}`, boxX + 6, boxY + 36.5);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6);
+  doc.text(textoPdf(f.rotulos.correlativo || 'CORRELATIVO N°'), colDivX + 6, boxY + 27.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.text(correlativoDeNumero(r.numeroComprobante), colDivX + 6, boxY + 36.5);
+
+  // Fila 3 - FECHA DE EMISIÓN y FECHA DE ENTREGA (Art. 18.3)
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6);
+  doc.text(textoPdf(f.rotulos.fecha_emision || 'FECHA DE EMISION'), boxX + 6, boxY + 47.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.text(textoPdf(fechaPdf(r.fecha || r.facturaFecha || r.createdAt)), boxX + 6, boxY + 56.5);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6);
+  doc.text(textoPdf(f.rotulos.fecha_entrega || 'FECHA DE ENTREGA'), colDivX + 6, boxY + 47.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  // Fecha Recibido / Entrega es opcional: sin dato, el espacio queda en blanco.
+  doc.text(r.fechaEntrega ? textoPdf(fechaPdf(r.fechaEntrega)) : '', colDivX + 6, boxY + 56.5);
+
+  y = Math.max(boxY + boxH, tieneLogo ? restoY + logoH : 0) + 8;
+
+  // ── Determinación de partes (Agente vs Sujeto Retenido) ──
+  const esRecibida = r.direccion === 'recibida';
+  const nombreAgente = esRecibida ? (r.contraparteNombre || '—') : razonSocialAgente(config);
+  const rifAgente = esRecibida ? (r.contraparteRif || '—') : (config.rif || EMPRESA_RIF);
+  const dirAgente = esRecibida
+    ? direccionSujeto
+    : ([config.direccionFiscal, config.municipio, config.estado].filter(Boolean).join(', ') || '—');
+
+  const nombreSujeto = esRecibida ? razonSocialAgente(config) : (r.contraparteNombre || '—');
+  const rifSujeto = esRecibida ? (config.rif || EMPRESA_RIF) : (r.contraparteRif || '—');
+  const dirSujeto = esRecibida
+    ? ([config.direccionFiscal, config.municipio, config.estado].filter(Boolean).join(', ') || '—')
+    : direccionSujeto;
+
+  // Correo de la empresa y del proveedor (si existe)
+  const emailEmpresa = config.email?.trim() || EMPRESA_EMAIL;
+  const emailAgenteEfectivo = esRecibida ? (emailSujeto || null) : emailEmpresa;
+  const emailSujetoEfectivo = esRecibida ? emailEmpresa : (emailSujeto || null);
+
+  // ── Denominación y sincronización de términos (Agente vs Sujeto) ──
+  const rotuloSujetoConfig = (f.rotulos.sujeto || '').trim();
+  const sujetoTermino = rotuloSujetoConfig.toUpperCase().includes('BENEFICIARIO')
+    ? 'BENEFICIARIO'
+    : rotuloSujetoConfig.toUpperCase().includes('PROVEEDOR')
+      ? 'PROVEEDOR'
+      : rotuloSujetoConfig.toUpperCase().includes('CONTRIBUYENTE')
+        ? 'CONTRIBUYENTE'
+        : 'SUJETO RETENIDO';
+
+  const rotuloAgenteConfig = (f.rotulos.agente || '').trim();
+  const agenteTermino = rotuloAgenteConfig.toUpperCase().includes('AGENTE')
+    ? rotuloAgenteConfig.toUpperCase()
+    : 'AGENTE DE RETENCIÓN';
+
+  const rotuloAgenteNombre = rotuloAgenteConfig || 'AGENTE DE RETENCIÓN';
+  const rotuloAgenteDir = `DIRECCIÓN FISCAL DEL ${agenteTermino}`;
+  const rotuloAgenteRif = `REGISTRO DE INFORMACIÓN FISCAL DEL ${agenteTermino}`;
+
+  const rotuloSujetoNombre = rotuloSujetoConfig || `NOMBRE O RAZÓN SOCIAL DEL ${sujetoTermino}`;
+  const rotuloSujetoDir = `DIRECCIÓN FISCAL DEL ${sujetoTermino}`;
+  const rotuloSujetoRif = `REGISTRO DE INFORMACIÓN FISCAL DEL ${sujetoTermino}`;
+
+  // ── Recuadros: AGENTE DE RETENCIÓN y SUJETO RETENIDO ──
+  const colIzqW = UTIL * 0.62;
+  const colDerX = M + colIzqW;
+
+  // Adaptación dinámica al texto del Agente
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  const lineasNombreAgente = doc.splitTextToSize(textoPdf(nombreAgente), colIzqW - 14) as string[];
+  doc.setFontSize(7);
+  const lineasDirAgente = doc.splitTextToSize(textoPdf(dirAgente), colIzqW - 14) as string[];
+
+  const licenciaAgenteEfectiva = esRecibida ? licenciaSujeto : licenciaAgente;
+  const licenciaSujetoEfectiva = esRecibida ? licenciaAgente : licenciaSujeto;
+
+  // Altura requerida con paddings holgados para Agente
+  const altoIzqAgente = 8 + 8 + (lineasNombreAgente.length * 9.5) + 6 + 8 + (lineasDirAgente.length * 8.5) + 8;
+  let altoDerAgente = 26;
+  if (emailAgenteEfectivo) altoDerAgente += 19;
+  if (licenciaAgenteEfectiva) altoDerAgente += 19;
+  altoDerAgente += 6;
+  const altoAgente = Math.max(altoIzqAgente, altoDerAgente, 50);
+
+  // Dibujar recuadro Agente
+  doc.setDrawColor(0, 0, 0);
+  doc.setLineWidth(0.6);
+  doc.rect(M, y, UTIL, altoAgente);
+  doc.line(colDerX, y, colDerX, y + altoAgente);
+
+  // Textos Izquierda Agente
+  let curY = y + 8.5;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.8);
+  doc.setTextColor(0, 0, 0);
+  doc.text(textoPdf(rotuloAgenteNombre), M + 6, curY);
+  curY += 8.5;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.text(lineasNombreAgente, M + 6, curY);
+  curY += (lineasNombreAgente.length * 9.5) + 5;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.8);
+  doc.text(textoPdf(rotuloAgenteDir), M + 6, curY);
+  curY += 8;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.text(lineasDirAgente, M + 6, curY);
+
+  // Textos Derecha Agente
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.8);
+  doc.text(textoPdf(rotuloAgenteRif), colDerX + 6, y + 8.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.text(textoPdf(rifAgente), colDerX + 6, y + 19);
+
+  let curDerAgenteY = y + 19;
+  if (emailAgenteEfectivo) {
+    curDerAgenteY += 10;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.5);
+    doc.text('CORREO ELECTRÓNICO:', colDerX + 6, curDerAgenteY);
+    curDerAgenteY += 9;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.2);
+    doc.text(textoPdf(emailAgenteEfectivo), colDerX + 6, curDerAgenteY);
+  }
+
+  if (licenciaAgenteEfectiva) {
+    curDerAgenteY += 10;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.5);
+    doc.text('N° LICENCIA MUNICIPAL / RIM:', colDerX + 6, curDerAgenteY);
+    curDerAgenteY += 9;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.2);
+    doc.text(textoPdf(licenciaAgenteEfectiva), colDerX + 6, curDerAgenteY);
+  }
+
+  y += altoAgente;
+
+  // Adaptación dinámica al texto del Sujeto Retenido
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  const lineasNombreSujeto = doc.splitTextToSize(textoPdf(nombreSujeto), colIzqW - 14) as string[];
+  doc.setFontSize(7);
+  const lineasDirSujeto = doc.splitTextToSize(textoPdf(dirSujeto), colIzqW - 14) as string[];
+
+  const altoIzqSujeto = 8 + 8 + (lineasNombreSujeto.length * 9.5) + 6 + 8 + (lineasDirSujeto.length * 8.5) + 8;
+  let altoDerSujeto = 26;
+  if (emailSujetoEfectivo) altoDerSujeto += 19;
+  if (licenciaSujetoEfectiva) altoDerSujeto += 19;
+  altoDerSujeto += 6;
+  const altoSujeto = Math.max(altoIzqSujeto, altoDerSujeto, 50);
+
+  // Dibujar recuadro Sujeto
+  doc.rect(M, y, UTIL, altoSujeto);
+  doc.line(colDerX, y, colDerX, y + altoSujeto);
+
+  // Textos Izquierda Sujeto
+  curY = y + 8.5;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.8);
+  doc.text(textoPdf(rotuloSujetoNombre), M + 6, curY);
+  curY += 8.5;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.text(lineasNombreSujeto, M + 6, curY);
+  curY += (lineasNombreSujeto.length * 9.5) + 5;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.8);
+  doc.text(textoPdf(rotuloSujetoDir), M + 6, curY);
+  curY += 8;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.text(lineasDirSujeto, M + 6, curY);
+
+  // Textos Derecha Sujeto
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.8);
+  doc.text(textoPdf(rotuloSujetoRif), colDerX + 6, y + 8.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.text(textoPdf(rifSujeto), colDerX + 6, y + 19);
+
+  let curDerSujetoY = y + 19;
+  if (emailSujetoEfectivo) {
+    curDerSujetoY += 10;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.5);
+    doc.text('CORREO ELECTRÓNICO:', colDerX + 6, curDerSujetoY);
+    curDerSujetoY += 9;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.2);
+    doc.text(textoPdf(emailSujetoEfectivo), colDerX + 6, curDerSujetoY);
+  }
+
+  if (licenciaSujetoEfectiva) {
+    curDerSujetoY += 10;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.5);
+    doc.text('N° LICENCIA MUNICIPAL / RIM:', colDerX + 6, curDerSujetoY);
+    curDerSujetoY += 9;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.2);
+    doc.text(textoPdf(licenciaSujetoEfectiva), colDerX + 6, curDerSujetoY);
+  }
+
+  y += altoSujeto + 10;
+
+  // ── Concepto y documento afectado (PA 071 Art. 15) ──
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  const labelImp = r.tipo === 'islr' ? 'I.S.L.R.' : r.tipo === 'iva' ? 'I.V.A.' : r.tipo === 'municipal' ? 'I.S.A.E.' : 'Impuesto';
+  const conceptoFiscal = conceptoFiscalPdf(rEnriquecida);
+  const textoConcepto = `Retención de ${labelImp}${conceptoFiscal ? ` por concepto de: ${textoPdf(conceptoFiscal)}` : ''}`;
+  doc.text(textoConcepto, M, y);
+
+  if (rEnriquecida.facturaAfectadaNro || rEnriquecida.tipoDocumento === 'nota_credito' || rEnriquecida.tipoDocumento === 'nota_debito') {
+    const tipoDoc = rEnriquecida.tipoDocumento === 'nota_credito'
+      ? 'NOTA DE CRÉDITO'
+      : rEnriquecida.tipoDocumento === 'nota_debito'
+        ? 'NOTA DE DÉBITO'
+        : 'DOCUMENTO DE AJUSTE';
+    const textoDocAfectado = `${tipoDoc}${rEnriquecida.facturaAfectadaNro ? ` · FACTURA AFECTADA N°: ${rEnriquecida.facturaAfectadaNro}` : ''}`;
+    doc.setFont('helvetica', 'bold');
+    doc.text(textoDocAfectado, W - M, y, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+  }
+  y += 4;
+
+  // ── Columnas y tabla de la operación ──
+  const valores = valoresDeColumnas(rEnriquecida);
+  const cabecera = f.columnas.map((c) => c.rotulo);
+  const fila = f.columnas.map((c) => valores[c.campo] ?? '—');
+  const estilosCols: Record<number, { halign?: 'right' | 'left' | 'center'; cellWidth?: number }> = {};
+  f.columnas.forEach((c, i) => {
+    estilosCols[i] = {
+      ...(COLUMNAS_NUMERICAS.has(c.campo) ? { halign: 'right' as const } : c.campo === 'operacion' || c.campo === 'fecha' ? { halign: 'center' as const } : { halign: 'left' as const }),
+      ...(c.ancho ? { cellWidth: c.ancho } : {}),
+    };
+  });
+
+  // Fila de totales alineada con las columnas del formato
+  const primerColNumericaIdx = f.columnas.findIndex((col) => COLUMNAS_NUMERICAS.has(col.campo));
+  const idxRotuloTotal = primerColNumericaIdx > 0 ? primerColNumericaIdx - 1 : 0;
+
+  const signoTabla = rEnriquecida.tipoDocumento === 'nota_credito' ? -1 : 1;
+  const causadoTotales = obtenerImpuestoCausado(rEnriquecida);
+  const filaTotales = f.columnas.map((c, i) => {
+    if (c.campo === 'total_factura') {
+      const total = rEnriquecida.facturaTotal ?? (rEnriquecida.impuesto > 0 ? (rEnriquecida.baseImponible + rEnriquecida.impuesto + (rEnriquecida.exento ?? 0)) : (r.tipo === 'islr' ? null : r.baseImponible + r.impuesto + (rEnriquecida.exento ?? 0)));
+      return total == null ? '—' : montoPdf(total * signoTabla, r.moneda);
+    }
+    if (c.campo === 'sin_derecho') return montoPdf((rEnriquecida.sinDerechoCreditoIva ?? 0) * signoTabla, r.moneda);
+    if (c.campo === 'exento') return montoPdf((rEnriquecida.exento ?? 0) * signoTabla, r.moneda);
+    if (c.campo === 'base') return montoPdf(r.baseImponible * signoTabla, r.moneda);
+    if (c.campo === 'iva') return montoPdf(causadoTotales * signoTabla, r.moneda);
+    if (c.campo === 'causado') return montoPdf(causadoTotales * signoTabla, r.moneda);
+    if (c.campo === 'sustraendo') return r.sustraendo ? montoPdf(r.sustraendo, r.moneda) : '0,00';
+    if (c.campo === 'monto') return montoPdf(r.montoRetenido * signoTabla, r.moneda);
+    if (i === idxRotuloTotal) return f.rotulos.total || 'TOTALES:';
+    return '';
+  });
+
+  autoTable(doc, {
+    startY: y,
+    head: [cabecera.map((h) => textoPdf(h))],
+    body: [fila.map((c) => textoPdf(c))],
+    foot: [filaTotales.map((c) => textoPdf(c))],
+    theme: 'plain',
+    styles: {
+      fontSize: 7.2,
+      cellPadding: { top: 4, bottom: 4, left: 2.5, right: 2.5 },
+      textColor: [0, 0, 0],
+      overflow: 'linebreak',
+    },
+    headStyles: {
+      fillColor: false,
+      textColor: [0, 0, 0],
+      fontStyle: 'normal',
+      fontSize: 7.2,
+      lineWidth: { top: 0.6, bottom: 0.6 },
+      lineColor: [0, 0, 0],
+    },
+    footStyles: {
+      fillColor: false,
+      textColor: [0, 0, 0],
+      fontStyle: 'normal',
+      fontSize: 7.2,
+      lineWidth: { top: 0.6, bottom: 0.6 },
+      lineColor: [0, 0, 0],
+      halign: 'right',
+    },
+    columnStyles: estilosCols,
+    didParseCell: (data) => {
+      const col = f.columnas[data.column.index];
+      if (!col) return;
+      const esNumerica = COLUMNAS_NUMERICAS.has(col.campo);
+      if (data.section === 'head') {
+        data.cell.styles.halign = esNumerica ? 'right' : (col.campo === 'operacion' || col.campo === 'fecha' ? 'center' : 'left');
+      } else if (data.section === 'foot') {
+        data.cell.styles.halign = 'right';
+      } else {
+        data.cell.styles.halign = esNumerica ? 'right' : (col.campo === 'operacion' || col.campo === 'fecha' ? 'center' : 'left');
+      }
+    },
+    margin: { left: M, right: M },
+  });
+
+  y = (doc as any).lastAutoTable.finalY + 12;
+
+  // Equivalente en Bs si aplica
+  const enBs = lineaEquivalenteBs(r);
+  if (enBs) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(50, 50, 50);
+    doc.text(textoPdf(enBs), W - M, y, { align: 'right' });
+    y += 12;
+  }
+
+  // ── ANULADO: marca de agua diagonal ──
+  if (r.anulada) {
+    doc.saveGraphicsState();
+    doc.setGState(new (doc as any).GState({ opacity: 0.15 }));
+    doc.setTextColor(200, 0, 0);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(72);
+    const cx = W / 2;
+    const cy = H / 2;
+    const ang = Math.atan2(H, W) * (180 / Math.PI);
+    doc.text(textoPdf('ANULADO'), cx, cy, { align: 'center', angle: ang });
+    doc.restoreGraphicsState();
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'normal');
+    if (r.anuladaMotivo) {
+      doc.setFontSize(8.5);
+      doc.setTextColor(180, 40, 40);
+      doc.text(textoPdf(`Motivo de anulación: ${r.anuladaMotivo}`), M, y);
+      doc.setTextColor(0, 0, 0);
+      y += 14;
+    }
+  }
+
+  // ── Verificación Digital Fiscal (PA SNAT/2026/0084 y 0093) ──
+  const conQr = opciones.incluirQr ?? (config?.incluirQr ?? true);
+  let qrDataUrl: string | null = null;
+  let hashSha256 = '';
+  if (conQr) {
+    try {
+      const canonico = cadenaCanonicoFiscal(rEnriquecida, config);
+      hashSha256 = await calcularSha256Hex(canonico);
+      qrDataUrl = await generarQrVerificacion(`SENIAT|${canonico}|SHA256:${hashSha256.slice(0, 16)}`);
+    } catch {
+      qrDataUrl = null;
+    }
+  }
+
+  // ── Bloque inferior de Firmas y Verificación Digital ──
+  const altoCajaFirma = 54;
+  const firmaY = Math.max(y + 14, H - 95);
+
+  doc.setDrawColor(0, 0, 0);
+  doc.setLineWidth(0.6);
+
+  // Estampa de firma y/o sello digital en la caja del agente
+  const conFirma = ((opciones.incluirFirma ?? Boolean(opciones.firmaDataUrl)) || (opciones.incluirFirmaSello && opciones.incluirFirma === undefined)) && !!firmaDataUrl;
+  const conSello = ((opciones.incluirSello ?? Boolean(opciones.selloDataUrl)) || (opciones.incluirFirmaSello && opciones.incluirSello === undefined)) && !!selloDataUrl;
+
+  if (conQr && qrDataUrl) {
+    // Disposición en 3 cajas: Agente (Izquierda) | Verificación Digital (Centro) | Sujeto (Derecha)
+    const anchoCaja = (UTIL - 24) / 3;
+    const xAgente = M;
+    const xCentro = M + anchoCaja + 12;
+    const xSujeto = M + (anchoCaja + 12) * 2;
+    const xFinAgente = xAgente + anchoCaja;
+
+    // Caja 1: Agente
+    let rotuloFirmaAgente = (f.rotulos.firma_agente || `${agenteTermino}:`).trim();
+    if (/\bde ret(\.|encion|ención)?$/i.test(rotuloFirmaAgente)) {
+      rotuloFirmaAgente = rotuloFirmaAgente.replace(/\bde ret(\.|encion|ención)?$/i, 'de retención');
+    }
+    doc.rect(xAgente, firmaY, anchoCaja, altoCajaFirma);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.2);
+    doc.setTextColor(0, 0, 0);
+    doc.text(textoPdf(rotuloFirmaAgente), xAgente + 6, firmaY + 12, { maxWidth: anchoCaja - 12 });
+
+    let xEstampasInicio = xFinAgente;
+    if (conFirma && conSello) {
+      const wFirma = 55;
+      const wSello = 40;
+      xEstampasInicio = xFinAgente - (wFirma + wSello + 6) - 6;
+      try {
+        doc.addImage(firmaDataUrl!, formatoImagenDataUrl(firmaDataUrl!), xEstampasInicio, firmaY + 4, wFirma, 44);
+        doc.addImage(selloDataUrl!, formatoImagenDataUrl(selloDataUrl!), xEstampasInicio + wFirma + 6, firmaY + 5, wSello, 42);
+      } catch { /* noop */ }
+    } else if (conFirma) {
+      const wFirma = 75;
+      xEstampasInicio = xFinAgente - wFirma - 8;
+      try {
+        doc.addImage(firmaDataUrl!, formatoImagenDataUrl(firmaDataUrl!), xEstampasInicio, firmaY + 4, wFirma, 44);
+      } catch { /* noop */ }
+    } else if (conSello) {
+      const wSello = 50;
+      xEstampasInicio = xFinAgente - wSello - 8;
+      try {
+        doc.addImage(selloDataUrl!, formatoImagenDataUrl(selloDataUrl!), xEstampasInicio, firmaY + 5, wSello, 42);
+      } catch { /* noop */ }
+    }
+
+    const maxTextoAgenteW = (conFirma || conSello)
+      ? Math.max(70, xEstampasInicio - (xAgente + 6) - 6)
+      : anchoCaja - 12;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    const lineasPorAgente = doc.splitTextToSize(`Por ${textoPdf(nombreAgente)}`, maxTextoAgenteW) as string[];
+    if (lineasPorAgente.length > 1) {
+      doc.text(lineasPorAgente[0], xAgente + 6, firmaY + 21);
+      doc.text(lineasPorAgente[1], xAgente + 6, firmaY + 29);
+      doc.text(textoPdf(rifAgente), xAgente + 6, firmaY + 38);
+    } else {
+      doc.text(lineasPorAgente[0] || `Por ${textoPdf(nombreAgente)}`, xAgente + 6, firmaY + 23);
+      doc.text(textoPdf(rifAgente), xAgente + 6, firmaY + 34);
+    }
+
+    // Caja 2: Verificación Digital (QR + SHA-256)
+    doc.rect(xCentro, firmaY, anchoCaja, altoCajaFirma);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.2);
+    doc.setTextColor(0, 0, 0);
+    doc.text(textoPdf(f.rotulos.verificacion_digital || 'VERIFICACIÓN DIGITAL FISCAL'), xCentro + 6, firmaY + 11);
+
+    // QR de 34x34
+    doc.addImage(qrDataUrl, 'PNG', xCentro + 6, firmaY + 14, 34, 34);
+
+    // Leyendas a la derecha del QR
+    const xTextosQr = xCentro + 44;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(5.8);
+    doc.text('SISTEMA COMPUTARIZADO', xTextosQr, firmaY + 20);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(5.2);
+    doc.text('PA SNAT/2026/0084 · 0093', xTextosQr, firmaY + 27);
+    doc.text('Emisión Digital Inalterable', xTextosQr, firmaY + 34);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(5);
+    doc.text('SHA-256:', xTextosQr, firmaY + 42);
+    doc.setFont('courier', 'normal');
+    doc.setFontSize(4.8);
+    doc.text(`${hashSha256.slice(0, 22)}...`, xTextosQr + 24, firmaY + 42);
+
+    // Caja 3: Sujeto Retenido
+    let rotuloFirmaSujeto = (f.rotulos.firma_sujeto || `${sujetoTermino}:`).trim();
+    if (/\bde ret(\.|encion|ención)?$/i.test(rotuloFirmaSujeto)) {
+      rotuloFirmaSujeto = rotuloFirmaSujeto.replace(/\bde ret(\.|encion|ención)?$/i, 'de retención');
+    }
+    doc.rect(xSujeto, firmaY, anchoCaja, altoCajaFirma);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.2);
+    doc.setTextColor(0, 0, 0);
+    doc.text(textoPdf(rotuloFirmaSujeto), xSujeto + 6, firmaY + 12, { maxWidth: anchoCaja - 12 });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    const lineasPorSujeto = doc.splitTextToSize(`Por ${textoPdf(nombreSujeto)}`, anchoCaja - 12) as string[];
+    if (lineasPorSujeto.length > 1) {
+      doc.text(lineasPorSujeto[0], xSujeto + 6, firmaY + 21);
+      doc.text(lineasPorSujeto[1], xSujeto + 6, firmaY + 29);
+      doc.text(textoPdf(rifSujeto), xSujeto + 6, firmaY + 38);
+    } else {
+      doc.text(lineasPorSujeto[0] || `Por ${textoPdf(nombreSujeto)}`, xSujeto + 6, firmaY + 23);
+      doc.text(textoPdf(rifSujeto), xSujeto + 6, firmaY + 34);
+    }
+  } else {
+    // Disposición tradicional en 2 cajas
+    const anchoCajaFirma = (UTIL - 16) / 2;
+    const xFinAgente = M + anchoCajaFirma;
+
+    let rotuloFirmaAgente = (f.rotulos.firma_agente || `${agenteTermino}:`).trim();
+    if (/\bde ret(\.|encion|ención)?$/i.test(rotuloFirmaAgente)) {
+      rotuloFirmaAgente = rotuloFirmaAgente.replace(/\bde ret(\.|encion|ención)?$/i, 'de retención');
+    }
+    doc.rect(M, firmaY, anchoCajaFirma, altoCajaFirma);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(0, 0, 0);
+    doc.text(textoPdf(rotuloFirmaAgente), M + 8, firmaY + 12, { maxWidth: anchoCajaFirma - 16 });
+
+    let xEstampasInicio = xFinAgente;
+    if (conFirma && conSello) {
+      const wFirma = 85;
+      const wSello = 60;
+      xEstampasInicio = xFinAgente - (wFirma + wSello + 8) - 8;
+      try {
+        doc.addImage(firmaDataUrl!, formatoImagenDataUrl(firmaDataUrl!), xEstampasInicio, firmaY + 4, wFirma, 44);
+        doc.addImage(selloDataUrl!, formatoImagenDataUrl(selloDataUrl!), xEstampasInicio + wFirma + 8, firmaY + 5, wSello, 42);
+      } catch { /* noop */ }
+    } else if (conFirma) {
+      const wFirma = 110;
+      xEstampasInicio = xFinAgente - wFirma - 12;
+      try {
+        doc.addImage(firmaDataUrl!, formatoImagenDataUrl(firmaDataUrl!), xEstampasInicio, firmaY + 4, wFirma, 44);
+      } catch { /* noop */ }
+    } else if (conSello) {
+      const wSello = 70;
+      xEstampasInicio = xFinAgente - wSello - 14;
+      try {
+        doc.addImage(selloDataUrl!, formatoImagenDataUrl(selloDataUrl!), xEstampasInicio, firmaY + 5, wSello, 42);
+      } catch { /* noop */ }
+    }
+
+    const maxTextoAgenteW = (conFirma || conSello)
+      ? Math.max(90, xEstampasInicio - (M + 8) - 8)
+      : anchoCajaFirma - 16;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.2);
+    const lineasPorAgente = doc.splitTextToSize(`Por ${textoPdf(nombreAgente)}`, maxTextoAgenteW) as string[];
+    if (lineasPorAgente.length > 1) {
+      doc.text(lineasPorAgente[0], M + 8, firmaY + 21);
+      doc.text(lineasPorAgente[1], M + 8, firmaY + 29);
+      doc.text(textoPdf(rifAgente), M + 8, firmaY + 38);
+    } else {
+      doc.text(lineasPorAgente[0] || `Por ${textoPdf(nombreAgente)}`, M + 8, firmaY + 23);
+      doc.text(textoPdf(rifAgente), M + 8, firmaY + 34);
+    }
+
+    const xSujetoFirma = M + anchoCajaFirma + 16;
+    let rotuloFirmaSujeto = (f.rotulos.firma_sujeto || `${sujetoTermino}:`).trim();
+    if (/\bde ret(\.|encion|ención)?$/i.test(rotuloFirmaSujeto)) {
+      rotuloFirmaSujeto = rotuloFirmaSujeto.replace(/\bde ret(\.|encion|ención)?$/i, 'de retención');
+    }
+    doc.rect(xSujetoFirma, firmaY, anchoCajaFirma, altoCajaFirma);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(0, 0, 0);
+    doc.text(textoPdf(rotuloFirmaSujeto), xSujetoFirma + 8, firmaY + 12, { maxWidth: anchoCajaFirma - 16 });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.2);
+    const lineasPorSujeto = doc.splitTextToSize(`Por ${textoPdf(nombreSujeto)}`, anchoCajaFirma - 16) as string[];
+    if (lineasPorSujeto.length > 1) {
+      doc.text(lineasPorSujeto[0], xSujetoFirma + 8, firmaY + 21);
+      doc.text(lineasPorSujeto[1], xSujetoFirma + 8, firmaY + 29);
+      doc.text(textoPdf(rifSujeto), xSujetoFirma + 8, firmaY + 38);
+    } else {
+      doc.text(lineasPorSujeto[0] || `Por ${textoPdf(nombreSujeto)}`, xSujetoFirma + 8, firmaY + 23);
+      doc.text(textoPdf(rifSujeto), xSujetoFirma + 8, firmaY + 34);
+    }
+  }
+
+  // ── Pie de página: leyenda configurable del Art. 19, texto configurado y destino del ejemplar ──
+  const leyendaArt19 = String(f.textos.leyenda_art19 ?? '').trim();
+  if (leyendaArt19) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(50, 50, 50);
+    doc.text(textoPdf(leyendaArt19), M, H - 25, { maxWidth: UTIL });
+  }
+  const pieTexto = f.textos.pie || razonSocialAgente(config);
+  if (ejemplar) {
+    const rotuloDestino = ejemplar === 'original'
+      ? 'DESTINO: ORIGINAL (SUJETO RETENIDO)'
+      : 'DESTINO: COPIA (AGENTE DE RETENCIÓN)';
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.2);
+    doc.setTextColor(60, 60, 60);
+    doc.text(textoPdf(rotuloDestino), W - M, H - 18, { align: 'right' });
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(0, 0, 0);
+    doc.text(textoPdf(pieTexto), M, H - 18, { maxWidth: UTIL - 210 });
+  } else {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(0, 0, 0);
+    doc.text(textoPdf(pieTexto), M, H - 18, { maxWidth: UTIL });
+  }
+
+  return doc;
+}
+
+/**
+ * Emite las páginas correspondientes a un comprobante según el modo de ejemplar
+ * ('ambos': Original + Copia consecutivas, 'original' o 'copia').
+ */
+export async function anexarPaginasComprobantePdf(
+  r: RetencionPracticada,
+  config: ConfigRetencion,
+  formato: FormatoParaAplicar | null | undefined,
+  opciones: OpcionesComprobantePdf = {},
+  docExistente?: any,
+): Promise<any> {
+  const permitirDoble = opciones.imprimirOriginalYCopia ?? config?.imprimirOriginalYCopia ?? true;
+  const modo: ModoEjemplar = opciones.modoEjemplar || (!permitirDoble ? 'estandar' : 'ambos');
+  let doc = docExistente;
+
+  if (modo === 'ambos') {
+    doc = await generarDocComprobanteRetencionPdf(r, config, formato, { ...opciones, ejemplar: 'original' }, doc);
+    doc = await generarDocComprobanteRetencionPdf(r, config, formato, { ...opciones, ejemplar: 'copia' }, doc);
+  } else if (modo === 'copia') {
+    doc = await generarDocComprobanteRetencionPdf(r, config, formato, { ...opciones, ejemplar: 'copia' }, doc);
+  } else if (modo === 'original') {
+    doc = await generarDocComprobanteRetencionPdf(r, config, formato, { ...opciones, ejemplar: 'original' }, doc);
+  } else {
+    // Formato estándar oficial (conforme a Gaceta Oficial / Providencia SENIAT sin badges de ejemplar)
+    doc = await generarDocComprobanteRetencionPdf(r, config, formato, { ...opciones, ejemplar: null }, doc);
+  }
+
+  return doc;
+}
+
+/**
+ * Limpia y normaliza el nombre de un proveedor o contraparte a formato PascalCase alfanumérico limpio.
+ * Ej: "Máquina Ejemplar, C.A." -> "MaquinaEjemplarCA"
+ *     "INVERSIONES 2020 C.A." -> "Inversiones2020CA"
+ */
+export function normalizarNombreParaArchivo(nombre: string | null | undefined): string {
+  if (!nombre) return 'SinProveedor';
+  const sinAcentos = nombre.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const palabras = sinAcentos.split(/[^a-zA-Z0-9]+/).filter(Boolean);
+  if (!palabras.length) return 'SinProveedor';
+
+  const SIGLAS_COMUNES = new Set(['CA', 'SA', 'SRL', 'RL', 'SL', 'CIA', 'RIF', 'C', 'A', 'S']);
+
+  return palabras.map((p) => {
+    const upper = p.toUpperCase();
+    if (SIGLAS_COMUNES.has(upper) || p.length === 1) {
+      return upper;
+    }
+    if (p === upper) {
+      return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+    }
+    return p.charAt(0).toUpperCase() + p.slice(1);
+  }).join('');
+}
+
+export function normalizarNumeroFacturaParaArchivo(facturaNumero: string | null | undefined, fallback?: string | null): string {
+  const num = (facturaNumero ?? '').trim();
+  if (num) {
+    const limpio = num.replace(/[^\w-]+/g, '');
+    if (limpio) return limpio;
+  }
+  const fb = (fallback ?? '').trim().replace(/[^\w-]+/g, '');
+  return fb || '0000';
+}
+
+/**
+ * Nombre estructurado del PDF para comprobantes de retención:
+ * ComprobanteDeRetencion + TIPO Impuesto + NombreProveedor + NumeroFactura
+ * Ej: ComprobanteDeRetencion_ISLR_MaquinaEjemplarCA_00001.pdf
+ */
+export function nombreArchivoComprobantePdf(
+  r: Pick<RetencionPracticada, 'tipo' | 'contraparteNombre' | 'facturaNumero' | 'numeroComprobante'> & { id?: string },
+): string {
+  const tipo = (r.tipo ?? 'RETENCION').toUpperCase();
+  const proveedor = normalizarNombreParaArchivo(r.contraparteNombre);
+  const factura = normalizarNumeroFacturaParaArchivo(r.facturaNumero, r.numeroComprobante ?? r.id?.slice(0, 8));
+  return `ComprobanteDeRetencion_${tipo}_${proveedor}_${factura}.pdf`;
+}
+
+/**
+ * Nombre estructurado del PDF para lote de comprobantes de una factura.
+ */
+export function nombreArchivoComprobantesFacturaPdf(
+  facturaNumero: string,
+  retenciones: RetencionPracticada[],
+): string {
+  const tiposUnicos = Array.from(new Set(retenciones.map((r) => (r.tipo ?? '').toUpperCase()).filter(Boolean)));
+  const tipoStr = tiposUnicos.length > 0 ? tiposUnicos.join('_') : 'RETENCION';
+  const primerProveedor = retenciones.find((r) => r.contraparteNombre)?.contraparteNombre;
+  const proveedor = normalizarNombreParaArchivo(primerProveedor);
+  const factura = normalizarNumeroFacturaParaArchivo(facturaNumero, retenciones[0]?.numeroComprobante);
+  return `ComprobanteDeRetencion_${tipoStr}_${proveedor}_${factura}.pdf`;
+}
+
+export async function verComprobanteRetencionPdf(
+  r: RetencionPracticada,
+  config: ConfigRetencion,
+  formato?: FormatoParaAplicar | null,
+  opciones: OpcionesComprobantePdf = {},
+): Promise<void> {
+  const fechaRef = r.fecha || r.facturaFecha || r.createdAt || hoyVenezuela();
+  const fechaFiltro = /^\d{4}-\d{2}-\d{2}$/.test(fechaRef) ? fechaRef : (diaVE(fechaRef) || hoyVenezuela());
+  const disp = await consultarElementosDigitales(fechaFiltro);
+
+  const permitirDoble = opciones.imprimirOriginalYCopia ?? config?.imprimirOriginalYCopia ?? true;
+  let modoEjemplar: ModoEjemplar = opciones.modoEjemplar
+    ?? (!permitirDoble ? 'estandar' : ((typeof localStorage !== 'undefined' ? localStorage.getItem('retenciones:modoEjemplar') as ModoEjemplar : null) || 'ambos'));
+  let conLogo = disp.tieneLogo && (opciones.incluirLogo ?? (config?.incluirLogo ?? true));
+  let conFirma = disp.tieneFirma && (opciones.incluirFirma ?? (opciones.incluirFirmaSello ? true : (config?.incluirFirma ?? true)));
+  let conSello = disp.tieneSello && (opciones.incluirSello ?? (opciones.incluirFirmaSello ? true : (config?.incluirSello ?? true)));
+  let conQr = opciones.incluirQr ?? (config?.incluirQr ?? true);
+
+  const generarDoc = () => anexarPaginasComprobantePdf(r, config, formato, {
+    modoEjemplar,
+    incluirLogo: conLogo,
+    incluirFirma: conFirma,
+    incluirSello: conSello,
+    incluirQr: conQr,
+    imprimirOriginalYCopia: permitirDoble,
+  });
+
+  const doc = await generarDoc();
+  const filename = nombreArchivoComprobantePdf(r);
+
+  previewPdf(doc, filename, {
+    extraControls: ({ bar, updatePdf }) => {
+      const container = document.createElement('div');
+      container.style.cssText = 'display:flex;align-items:center;gap:.5rem;margin-left:auto;margin-right:.5rem;flex-wrap:wrap;';
+
+      // Selector de Ejemplar (Estándar / Original y Copia / Solo Original / Solo Copia)
+      const selEjemplar = document.createElement('select');
+      selEjemplar.style.cssText =
+        'background:#21262d;color:#e6edf3;border:1px solid #30363d;border-radius:6px;padding:.35rem .6rem;font:600 .82rem system-ui;cursor:pointer;outline:none;';
+      selEjemplar.title = 'Seleccionar modo de emisión del comprobante';
+
+      const optEstandar = document.createElement('option');
+      optEstandar.value = 'estandar';
+      optEstandar.textContent = '📄 Formato Estándar (Gaceta Oficial)';
+
+      const optAmbos = document.createElement('option');
+      optAmbos.value = 'ambos';
+      optAmbos.textContent = '📄 Original y Copia';
+
+      const optOriginal = document.createElement('option');
+      optOriginal.value = 'original';
+      optOriginal.textContent = '📄 Solo Original';
+
+      const optCopia = document.createElement('option');
+      optCopia.value = 'copia';
+      optCopia.textContent = '📄 Solo Copia';
+
+      if (!permitirDoble) {
+        selEjemplar.append(optEstandar, optAmbos, optOriginal, optCopia);
+      } else {
+        selEjemplar.append(optAmbos, optOriginal, optCopia, optEstandar);
+      }
+      selEjemplar.value = modoEjemplar;
+
+      selEjemplar.onchange = async () => {
+        modoEjemplar = selEjemplar.value as ModoEjemplar;
+        try { localStorage.setItem('retenciones:modoEjemplar', modoEjemplar); } catch { /* ignorar */ }
+        selEjemplar.style.opacity = '0.6';
+        try {
+          const nuevoDoc = await generarDoc();
+          updatePdf(nuevoDoc);
+        } finally {
+          selEjemplar.style.opacity = '1';
+        }
+      };
+
+      container.appendChild(selEjemplar);
+
+      if (!disp.tieneAlguno) {
+        const aviso = document.createElement('span');
+        aviso.style.cssText =
+          'color:#8b949e;font:500 .78rem system-ui;display:inline-flex;align-items:center;gap:.35rem;padding:.35rem .6rem;background:#161b22;border-radius:6px;border:1px solid #30363d;';
+        aviso.title = 'Para estampar logo, firma o sello, cárgalos en Parámetros › Firma / Sello o Logo.';
+        aviso.textContent = 'Sin logo ni firma en Parámetros';
+        container.appendChild(aviso);
+      }
+
+      const toolbar = document.createElement('div');
+      toolbar.style.cssText = 'display:flex;align-items:center;gap:.4rem;';
+
+      const labelTitulo = document.createElement('span');
+      labelTitulo.style.cssText = 'color:#8b949e;font:600 .78rem system-ui;margin-right:.2rem;';
+      labelTitulo.textContent = 'Imprimir:';
+      toolbar.appendChild(labelTitulo);
+
+      const crearCheck = (etiqueta: string, valor: boolean, onChange: (val: boolean) => void) => {
+        const lbl = document.createElement('label');
+        lbl.style.cssText =
+          'color:#e6edf3;font:500 .82rem system-ui;display:inline-flex;align-items:center;gap:.35rem;cursor:pointer;background:#21262d;padding:.35rem .65rem;border-radius:6px;border:1px solid #30363d;user-select:none;';
+        const chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.checked = valor;
+        chk.style.cssText = 'cursor:pointer;accent-color:#ff8a00;width:.95rem;height:.95rem;margin:0;';
+        chk.onchange = async () => {
+          onChange(chk.checked);
+          lbl.style.opacity = '0.6';
+          try {
+            const nuevoDoc = await generarDoc();
+            updatePdf(nuevoDoc);
+          } finally {
+            lbl.style.opacity = '1';
+          }
+        };
+        lbl.append(chk, document.createTextNode(etiqueta));
+        return lbl;
+      };
+
+      if (disp.tieneLogo) {
+        toolbar.appendChild(crearCheck('Logo', conLogo, (v) => {
+          conLogo = v;
+        }));
+      }
+      if (disp.tieneFirma) {
+        toolbar.appendChild(crearCheck('Firma', conFirma, (v) => {
+          conFirma = v;
+        }));
+      }
+      if (disp.tieneSello) {
+        toolbar.appendChild(crearCheck('Sello', conSello, (v) => {
+          conSello = v;
+        }));
+      }
+      toolbar.appendChild(crearCheck('QR Fiscal', conQr, (v) => {
+        conQr = v;
+      }));
+
+      container.appendChild(toolbar);
+
+      const firstBtn = bar.querySelector('button');
+      if (firstBtn) bar.insertBefore(container, firstBtn);
+      else bar.appendChild(container);
+    },
+  });
+}
+
+/**
+ * Genera y visualiza un único PDF con TODOS los comprobantes emitidos de una factura,
+ * permitiendo mandar a imprimir el paquete completo con un solo clic (Original y Copia o según preferencia).
+ */
+export async function verTodosComprobantesFacturaPdf(
+  facturaNumero: string,
+  retenciones: RetencionPracticada[],
+  config: ConfigRetencion,
+  opciones: OpcionesComprobantePdf = {},
+): Promise<void> {
+  const activas = retenciones.filter((r) => !r.anulada && r.numeroComprobante);
+  const seleccionadas = activas.length > 0 ? activas : retenciones.filter((r) => r.numeroComprobante);
+  if (!seleccionadas.length) {
+    throw new Error('Esta factura no tiene comprobantes emitidos para imprimir.');
+  }
+
+  const fechaRef = seleccionadas[0]?.fecha || seleccionadas[0]?.facturaFecha || seleccionadas[0]?.createdAt || hoyVenezuela();
+  const fechaFiltro = /^\d{4}-\d{2}-\d{2}$/.test(fechaRef) ? fechaRef : (diaVE(fechaRef) || hoyVenezuela());
+  const disp = await consultarElementosDigitales(fechaFiltro);
+
+  const permitirDoble = opciones.imprimirOriginalYCopia ?? config?.imprimirOriginalYCopia ?? true;
+  let modoEjemplar: ModoEjemplar = opciones.modoEjemplar
+    ?? (!permitirDoble ? 'estandar' : ((typeof localStorage !== 'undefined' ? localStorage.getItem('retenciones:modoEjemplar') as ModoEjemplar : null) || 'ambos'));
+  let conLogo = disp.tieneLogo && (opciones.incluirLogo ?? (config?.incluirLogo ?? true));
+  let conFirma = disp.tieneFirma && (opciones.incluirFirma ?? (opciones.incluirFirmaSello ? true : (config?.incluirFirma ?? true)));
+  let conSello = disp.tieneSello && (opciones.incluirSello ?? (opciones.incluirFirmaSello ? true : (config?.incluirSello ?? true)));
+  let conQr = opciones.incluirQr ?? (config?.incluirQr ?? true);
+
+  const generarLote = async () => {
+    let doc: any = null;
+    for (const r of seleccionadas) {
+      const formato = await formatoParaImprimir(tipoAGt(r.tipo), diaVE(r.fecha || r.facturaFecha || r.createdAt) || null, hoyVenezuela());
+      doc = await anexarPaginasComprobantePdf(r, config, formato, {
+        modoEjemplar,
+        incluirLogo: conLogo,
+        incluirFirma: conFirma,
+        incluirSello: conSello,
+        incluirQr: conQr,
+        imprimirOriginalYCopia: permitirDoble,
+      }, doc);
+    }
+    return doc;
+  };
+
+  const doc = await generarLote();
+  const filename = nombreArchivoComprobantesFacturaPdf(facturaNumero, seleccionadas);
+
+  previewPdf(doc, filename, {
+    extraControls: ({ bar, updatePdf }) => {
+      const container = document.createElement('div');
+      container.style.cssText = 'display:flex;align-items:center;gap:.5rem;margin-left:auto;margin-right:.5rem;flex-wrap:wrap;';
+
+      const infoLote = document.createElement('span');
+      infoLote.style.cssText =
+        'color:#f5b133;font:600 .78rem system-ui;display:inline-flex;align-items:center;gap:.35rem;padding:.35rem .6rem;background:rgba(245,177,51,0.12);border-radius:6px;border:1px solid rgba(245,177,51,0.3);';
+      const cantPags = modoEjemplar === 'ambos' ? seleccionadas.length * 2 : seleccionadas.length;
+      infoLote.textContent = `Factura ${facturaNumero} · ${seleccionadas.length} comprobante(s) (${cantPags} págs)`;
+      container.appendChild(infoLote);
+
+      // Selector de Ejemplar (Estándar / Original y Copia / Solo Original / Solo Copia)
+      const selEjemplar = document.createElement('select');
+      selEjemplar.style.cssText =
+        'background:#21262d;color:#e6edf3;border:1px solid #30363d;border-radius:6px;padding:.35rem .6rem;font:600 .82rem system-ui;cursor:pointer;outline:none;';
+      selEjemplar.title = 'Seleccionar modo de emisión del comprobante';
+
+      const optEstandar = document.createElement('option');
+      optEstandar.value = 'estandar';
+      optEstandar.textContent = '📄 Formato Estándar (Gaceta Oficial)';
+
+      const optAmbos = document.createElement('option');
+      optAmbos.value = 'ambos';
+      optAmbos.textContent = '📄 Original y Copia';
+
+      const optOriginal = document.createElement('option');
+      optOriginal.value = 'original';
+      optOriginal.textContent = '📄 Solo Original';
+
+      const optCopia = document.createElement('option');
+      optCopia.value = 'copia';
+      optCopia.textContent = '📄 Solo Copia';
+
+      if (!permitirDoble) {
+        selEjemplar.append(optEstandar, optAmbos, optOriginal, optCopia);
+      } else {
+        selEjemplar.append(optAmbos, optOriginal, optCopia, optEstandar);
+      }
+      selEjemplar.value = modoEjemplar;
+
+      selEjemplar.onchange = async () => {
+        modoEjemplar = selEjemplar.value as ModoEjemplar;
+        try { localStorage.setItem('retenciones:modoEjemplar', modoEjemplar); } catch { /* ignorar */ }
+        selEjemplar.style.opacity = '0.6';
+        try {
+          const nuevoDoc = await generarLote();
+          const p = modoEjemplar === 'ambos' ? seleccionadas.length * 2 : seleccionadas.length;
+          infoLote.textContent = `Factura ${facturaNumero} · ${seleccionadas.length} comprobante(s) (${p} págs)`;
+          updatePdf(nuevoDoc);
+        } finally {
+          selEjemplar.style.opacity = '1';
+        }
+      };
+
+      container.appendChild(selEjemplar);
+
+      if (!disp.tieneAlguno) {
+        const aviso = document.createElement('span');
+        aviso.style.cssText =
+          'color:#8b949e;font:500 .78rem system-ui;display:inline-flex;align-items:center;gap:.35rem;padding:.35rem .6rem;background:#161b22;border-radius:6px;border:1px solid #30363d;';
+        aviso.title = 'Para estampar logo, firma o sello, cárgalos en Parámetros › Firma / Sello o Logo.';
+        aviso.textContent = 'Sin logo ni firma en Parámetros';
+        container.appendChild(aviso);
+      }
+
+      const toolbar = document.createElement('div');
+      toolbar.style.cssText = 'display:flex;align-items:center;gap:.4rem;';
+
+      const labelTitulo = document.createElement('span');
+      labelTitulo.style.cssText = 'color:#8b949e;font:600 .78rem system-ui;margin-right:.2rem;';
+      labelTitulo.textContent = 'Imprimir:';
+      toolbar.appendChild(labelTitulo);
+
+      const crearCheck = (etiqueta: string, valor: boolean, onChange: (val: boolean) => void) => {
+        const lbl = document.createElement('label');
+        lbl.style.cssText =
+          'color:#e6edf3;font:500 .82rem system-ui;display:inline-flex;align-items:center;gap:.35rem;cursor:pointer;background:#21262d;padding:.35rem .65rem;border-radius:6px;border:1px solid #30363d;user-select:none;';
+        const chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.checked = valor;
+        chk.style.cssText = 'cursor:pointer;accent-color:#ff8a00;width:.95rem;height:.95rem;margin:0;';
+        chk.onchange = async () => {
+          onChange(chk.checked);
+          lbl.style.opacity = '0.6';
+          try {
+            const nuevoDoc = await generarLote();
+            updatePdf(nuevoDoc);
+          } finally {
+            lbl.style.opacity = '1';
+          }
+        };
+        lbl.append(chk, document.createTextNode(etiqueta));
+        return lbl;
+      };
+
+      if (disp.tieneLogo) {
+        toolbar.appendChild(crearCheck('Logo', conLogo, (v) => {
+          conLogo = v;
+        }));
+      }
+      if (disp.tieneFirma) {
+        toolbar.appendChild(crearCheck('Firma', conFirma, (v) => {
+          conFirma = v;
+        }));
+      }
+      if (disp.tieneSello) {
+        toolbar.appendChild(crearCheck('Sello', conSello, (v) => {
+          conSello = v;
+        }));
+      }
+      toolbar.appendChild(crearCheck('QR Fiscal', conQr, (v) => {
+        conQr = v;
+      }));
+
+      container.appendChild(toolbar);
+
+      const firstBtn = bar.querySelector('button');
+      if (firstBtn) bar.insertBefore(container, firstBtn);
+      else bar.appendChild(container);
+    },
+  });
+}

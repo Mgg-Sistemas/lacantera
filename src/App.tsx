@@ -288,7 +288,10 @@ const Facturacion = pagina(() =>
   import('@/pages/facturacion/Facturacion').then((m) => ({ default: m.Facturacion })),
 )
 const Retenciones = pagina(() =>
-  import('@/pages/retenciones/RetencionesPage').then((m) => ({ default: m.RetencionesPage })),
+  import('@/modules/retenciones/RetencionesPage').then((m) => ({ default: m.RetencionesPage })),
+)
+const RetencionesMovil = pagina(() =>
+  import('@/modules/retenciones/RetencionesMovilView').then((m) => ({ default: m.RetencionesMovilView })),
 )
 const PorCobrar = pagina(() =>
   import('@/pages/facturacion/PorCobrar').then((m) => ({ default: m.PorCobrar })),
@@ -460,6 +463,7 @@ const paginas: Record<string, ReactNode> = {
   '/app/facturacion/notas-debito': <NotasDebito />,
   '/app/facturacion/por-cobrar': <PorCobrar />,
   '/app/retenciones': <Retenciones />,
+  '/app/retenciones/telefono': <RetencionesMovil />,
   '/app/compras/retenciones': <Navigate to="/app/retenciones" replace />,
   '/app/tesoreria/retenciones': <Navigate to="/app/retenciones" replace />,
   '/app/ventas/facturacion': <Navigate to="/app/facturacion" replace />,
