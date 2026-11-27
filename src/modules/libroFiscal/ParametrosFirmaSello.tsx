@@ -7,7 +7,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { toast } from '@/shared/ui/Toast';
 import { useRealtime } from '@/shared/lib/useRealtime';
 import {
-  faltaEnImagen, listImagenesAgente, subirImagenAgente, versionVigente, type ClaseImagenAgente, type ImagenAgente,
+  MAX_FIRMA_SELLO_MB, MAX_LOGO_MB, faltaEnImagen, listImagenesAgente, subirImagenAgente, versionVigente, type ClaseImagenAgente, type ImagenAgente,
 } from './entes.repository';
 import { CLASES_AGENTE, fechaCorta } from './parametrosR1';
 import { ImagenRetencion } from './ImagenRetencion';
@@ -62,7 +62,8 @@ function TarjetaImagen({ clase, titulo, ayuda, versiones, puedeEditar, onCambio 
   const [motivo, setMotivo] = useState('');
   const [subiendo, setSubiendo] = useState(false);
   const [errorSubida, setErrorSubida] = useState<string | null>(null);
-  const faltaArchivo = archivo ? faltaEnImagen(archivo) : null;
+  const maxMb = clase === 'logo' ? MAX_LOGO_MB : MAX_FIRMA_SELLO_MB;
+  const faltaArchivo = archivo ? faltaEnImagen(archivo, maxMb) : null;
   const faltaDesde = desde ? faltaEnFechaRango(desde, `la fecha «vale desde» ${clase === 'logo' ? 'del logo' : clase === 'firma' ? 'de la firma' : 'del sello'}`) : 'Indica desde qué fecha vale la imagen.';
   const faltaFirmante = clase === 'firma' && !firmante.trim() ? 'Indica el nombre y el cargo de quien firma.' : null;
   /** Por qué «Cargar» está apagado (se dice debajo del botón). */
@@ -114,7 +115,7 @@ function TarjetaImagen({ clase, titulo, ayuda, versiones, puedeEditar, onCambio 
       {puedeEditar && (
         <div style={{ marginTop: '.6rem', borderTop: '1px solid var(--border)', paddingTop: '.5rem' }}>
           <div className="form-row" style={{ margin: 0 }}>
-            <label>Imagen nueva (PNG o JPG, hasta 1 MB)</label>
+            <label>Imagen nueva (PNG o JPG, hasta {maxMb} MB)</label>
             <input className="input" type="file" accept="image/png,image/jpeg" onChange={(e) => setArchivo(e.target.files?.[0] ?? null)} />
             {faltaArchivo && <small style={{ color: 'var(--danger)' }}>{faltaArchivo}</small>}
             {errorSubida && <small role="alert" style={{ color: 'var(--danger)' }}>{errorSubida}</small>}

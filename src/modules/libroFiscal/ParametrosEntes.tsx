@@ -282,7 +282,7 @@ function LogoForm({ archivo, onArchivo, desde, onDesde, motivo, onMotivo }: {
   return (
     <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', alignItems: 'flex-end', marginTop: '.4rem' }}>
       <div className="form-row" style={{ flex: '2 1 220px', margin: 0 }}>
-        <label>Imagen (PNG o JPG, hasta 1 MB)</label>
+        <label>Imagen (PNG o JPG, hasta 5 MB)</label>
         <input className="input" type="file" accept="image/png,image/jpeg" onChange={(e) => onArchivo(e.target.files?.[0] ?? null)} />
         {falta && <small style={{ color: 'var(--danger)' }}>{falta}</small>}
       </div>

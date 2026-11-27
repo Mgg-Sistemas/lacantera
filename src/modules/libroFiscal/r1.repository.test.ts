@@ -135,10 +135,11 @@ describe('entes: escritura', () => {
 });
 
 describe('logos e imágenes del agente', () => {
-  it('imagen: PNG o JPG hasta 1 MB; nombre seguro en la ruta', () => {
+  it('imagen: PNG o JPG hasta 5 MB; nombre seguro en la ruta', () => {
     expect(faltaEnImagen({ type: 'image/gif', size: 10 })).toMatch(/PNG o JPG/);
-    expect(faltaEnImagen({ type: 'image/png', size: 1024 * 1024 + 1 })).toMatch(/1 MB/);
-    expect(faltaEnImagen({ type: 'image/jpeg', size: 1024 * 1024 })).toBeNull();
+    expect(faltaEnImagen({ type: 'image/png', size: 5 * 1024 * 1024 + 1 })).toMatch(/5 MB/);
+    expect(faltaEnImagen({ type: 'image/jpeg', size: 5 * 1024 * 1024 })).toBeNull();
+    expect(faltaEnImagen({ type: 'image/png', size: 1024 * 1024 + 1 }, 1)).toMatch(/1 MB/);
     expect(nombreSeguro('Logo Alcaldía (1).PNG')).toBe('logo-alcaldia-1.png');
     expect(rutaLogoEnte('e-1', '2026-10-16', 'Logo Alcaldía.png')).toBe('entes/e-1/2026-10-16-logo-alcaldia.png');
   });

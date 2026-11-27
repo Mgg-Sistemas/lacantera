@@ -12,7 +12,7 @@
    desde R2, retencion_impuestos.ente_id (el puente queda de solo lectura). Se
    elige con el detector de tablas.
 
-   Archivos en el bucket privado `retenciones-logos` (PNG o JPG, hasta 1 MB).
+   Archivos en el bucket privado `retenciones-logos` (PNG o JPG).
    Se sube sin reemplazar; si la versión no se guarda, se borra el archivo
    (la política solo deja borrar un archivo que ninguna versión usa).
    Depende del paquete R1; no se monta en pantalla hasta que BD lo confirme.
@@ -29,7 +29,8 @@ const T_ENTES = 'retencion_entes';
 const T_ENTE_IMPUESTOS = 'retencion_ente_impuestos';
 const T_ENTE_LOGOS = 'retencion_ente_logos';
 const T_AGENTE_IMAGENES = 'retencion_agente_imagenes';
-export const MAX_IMAGEN_BYTES = 1024 * 1024;
+export const MAX_LOGO_MB = 5;
+export const MAX_FIRMA_SELLO_MB = 1;
 
 export type TipoEnte = 'nacional' | 'estadal' | 'municipal';
 /** Clave del impuesto en la base (la de `retenciones.tipo`). Con R2 puede haber claves nuevas. */
@@ -166,10 +167,10 @@ export function enteRepetido(e: { nombre: string; tipo: TipoEnte }, entes: Pick<
   return otro ? `Ya hay un ente ${e.tipo} con ese nombre: «${otro.nombre}» (sin distinguir mayúsculas).` : null;
 }
 
-/** Revisa la imagen antes de subirla: PNG o JPG, hasta 1 MB. */
-export function faltaEnImagen(f: { type: string; size: number }): string | null {
+/** Revisa el formato y tamaño antes de subir la imagen. */
+export function faltaEnImagen(f: { type: string; size: number }, maxMb = MAX_LOGO_MB): string | null {
   if (f.type !== 'image/png' && f.type !== 'image/jpeg') return 'La imagen tiene que ser PNG o JPG.';
-  if (f.size > MAX_IMAGEN_BYTES) return 'La imagen pasa de 1 MB: redúcela antes de subirla.';
+  if (f.size > maxMb * 1024 * 1024) return `La imagen pasa de ${maxMb} MB: redúcela antes de subirla.`;
   return null;
 }
 
@@ -355,8 +356,8 @@ async function fijarImpuestosEnteR2(enteId: string, elegidos: string[], motivo: 
 /* ───────── Imágenes (logo del ente, logo/firma/sello del agente) ───────── */
 
 /** Sube sin reemplazar y guarda la versión; si la versión no queda, borra el archivo subido. */
-async function subirVersion(ruta: string, archivo: File, insertar: () => PromiseLike<{ data: unknown[] | null; error: { code?: string; message?: string } | null }>, textos: { unico: string }): Promise<string> {
-  const falta = faltaEnImagen(archivo);
+async function subirVersion(ruta: string, archivo: File, insertar: () => PromiseLike<{ data: unknown[] | null; error: { code?: string; message?: string } | null }>, textos: { unico: string }, maxMb = MAX_LOGO_MB): Promise<string> {
+  const falta = faltaEnImagen(archivo, maxMb);
   if (falta) throw new Error(falta);
   const { error: errSubida } = await supabase.storage.from(BUCKET_LOGOS)
     .upload(ruta, archivo, { upsert: false, contentType: archivo.type });
@@ -414,7 +415,7 @@ export async function subirImagenAgente(clase: ClaseImagenAgente, archivo: File,
   return subirVersion(ruta, archivo, () => supabase.from(T_AGENTE_IMAGENES).insert({
     clase, ruta, nombre_archivo: archivo.name, desde,
     firmante: clase === 'firma' ? opciones.firmante?.trim() : null, motivo: opciones.motivo?.trim() || null,
-  }).select('id'), { unico: `Ya hay una versión de ${clase === 'logo' ? 'logo' : clase === 'firma' ? 'firma' : 'sello'} que empieza en esa fecha: elige otra fecha.` });
+  }).select('id'), { unico: `Ya hay una versión de ${clase === 'logo' ? 'logo' : clase === 'firma' ? 'firma' : 'sello'} que empieza en esa fecha: elige otra fecha.` }, clase === 'logo' ? MAX_LOGO_MB : MAX_FIRMA_SELLO_MB);
 }
 
 /** La ruta del logo, la firma o el sello de la empresa que vale en una fecha. */

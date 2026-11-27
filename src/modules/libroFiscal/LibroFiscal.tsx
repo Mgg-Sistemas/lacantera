@@ -2764,7 +2764,7 @@ const AJUSTES_PA: DefSeccionPa[] = [
     efecto: 'Filtra las órdenes que entran a Retenciones y define si se exigen IVA, ISLR y/o ISAE.',
     noCambia: 'Las retenciones ya emitidas o registradas en el libro fiscal.' },
   { key: 'firma', capa: 'ajustes', titulo: '🖋️ Firma y sello', linea: 'La firma, el sello y el logo de la empresa en los comprobantes.',
-    que: 'Las imágenes de la empresa que van en cada comprobante: logo, firma (con su firmante) y sello.', ingresa: 'Una imagen PNG o JPG de hasta 1 MB, vigente desde una fecha.',
+    que: 'Las imágenes de la empresa que van en cada comprobante: logo, firma (con su firmante) y sello.', ingresa: 'Un logo PNG o JPG de hasta 5 MB, o una firma o sello de hasta 1 MB, con fecha de vigencia.',
     efecto: 'Los comprobantes nuevos llevan la versión vigente a su fecha de emisión. Sin imagen, el recuadro queda en blanco para firmar a mano.', noCambia: 'Los comprobantes emitidos conservan la versión con que salieron.' },
   { key: 'vencimientos', capa: 'ajustes', titulo: '⏰ Avisos de vencimiento', linea: 'Cuándo avisar de licencias, declaraciones y actividades que vencen.',
     que: 'Los avisos de lo que vence: licencias, declaraciones y actividades con fecha «hasta».', ingresa: 'Con cuántos días de anticipación se avisa y si los avisos están encendidos.',
