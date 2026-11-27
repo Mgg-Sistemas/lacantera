@@ -215,13 +215,17 @@ export function RetencionesPage() {
       'IGTF',
       'ESTADAL',
     ];
-    impuestosQuePractica(claves, hoyVE(), empresaId ?? 'empresa-golden-touch')
+    impuestosQuePractica(claves, hoyVE(), empresaId ?? 'empresa-mits')
       .then((s) => {
+        const esEspecial = esGt ? (configFiscal.esContribuyenteEspecial === true) : Boolean(empresaActual?.esContribuyenteEspecial);
+        if (s && !esEspecial) {
+          s.delete('IVA');
+        }
         setPracticaClaves(s);
         setPractica(s ? new Set(IMPUESTOS_PENDIENTES.map((t) => t.key).filter((k) => s.has(tipoAGt(k)))) : null);
       })
       .catch(() => { setPracticaClaves(null); setPractica(null); });
-  }, [empresaId]);
+  }, [empresaId, esGt, configFiscal.esContribuyenteEspecial, empresaActual?.esContribuyenteEspecial]);
   useEffect(() => { cargarPractica(); }, [cargarPractica]);
 
   // Las vistas (tarjetas, filtros y columnas por impuesto) salen de los impuestos
@@ -509,6 +513,19 @@ export function RetencionesPage() {
     else if (campo === 'tipo') setFTipo(v as '' | TipoRetencion);
   };
 
+  const conteosPorEmpresa = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const e of empresas) {
+      if (esEmpresaGt(e)) {
+        const buzonGt = facturasBuzon.filter((f) => (!f.empresaId || f.empresaId === e.id) && f.estatus !== 'retenida' && f.estatus !== 'descartada').length;
+        map[e.id] = (facturasCompras.length || 0) + buzonGt;
+      } else {
+        map[e.id] = facturasBuzon.filter((f) => f.empresaId === e.id && f.estatus !== 'retenida' && f.estatus !== 'descartada').length;
+      }
+    }
+    return map;
+  }, [empresas, facturasBuzon, facturasCompras]);
+
   return (
     <div>
       {/* ── Cabecera v8 ── */}
@@ -518,7 +535,13 @@ export function RetencionesPage() {
         </p>
         <div className="lfv8-cabeza-acciones">
           {multiempresa && (
-            <EmpresaActualSelector empresas={empresas} empresaId={empresaId} onChange={setEmpresaId} />
+            <EmpresaActualSelector
+              empresas={empresas}
+              empresaId={empresaId}
+              onChange={setEmpresaId}
+              conteos={conteosPorEmpresa}
+              esEspecial={esGt ? (configFiscal.esContribuyenteEspecial === true) : Boolean(empresaActual?.esContribuyenteEspecial)}
+            />
           )}
           <button className="btn btn-ghost" onClick={() => setParametros(true)}>⚙ Parámetros</button>
           {buzonVisible && puedeVista('retenciones') && (
@@ -569,11 +592,28 @@ export function RetencionesPage() {
 
       {/* ── Períodos fiscales (v8: filtros + atención + timeline) ── */}
       {vista === 'periodos' && (
-        <PeriodosRetencion puedeEditar={canWrite} impuestosActivos={impuestosActivos} practicaClaves={practicaClaves} />
+        <PeriodosRetencion
+          puedeEditar={canWrite}
+          impuestosActivos={impuestosActivos}
+          practicaClaves={practicaClaves}
+          empresaId={empresaId}
+          empresaNombre={empresaActual?.nombre}
+        />
       )}
 
       {/* ── Reportes ── */}
-      {vista === 'reportes' && <ReportesView actor={actor} empresaId={empresaId} empresaFicha={empresaFicha} />}
+      {vista === 'reportes' && (
+        <ReportesView
+          actor={actor}
+          empresaId={empresaId}
+          empresaFicha={empresaFicha}
+          empresaNombre={empresaActual?.nombre}
+          esGt={esGt}
+          practicaClaves={practicaClaves}
+          esEspecial={esGt ? (configFiscal.esContribuyenteEspecial === true) : Boolean(empresaActual?.esContribuyenteEspecial)}
+          onCambiarEmpresa={setEmpresaId}
+        />
+      )}
 
       {/* ── Auditoría Fiscal (concisa y explícita) ── */}
       {vista === 'auditoria' && <AuditoriaRetenciones />}
@@ -989,8 +1029,10 @@ function impuestosPendientesDeOrden(
 ): ImpuestoPendiente[] {
   const ya = reg.get(o.id);
   const out: ImpuestoPendiente[] = [];
-  const retiene = (k: ImpuestoPendiente, flag: 'esAgenteRetencionIva' | 'retieneIslr' | 'retieneMunicipal') =>
-    (practica ? practica.has(k) : (config ? config[flag] !== false : true));
+  const retiene = (k: ImpuestoPendiente, flag: 'esAgenteRetencionIva' | 'retieneIslr' | 'retieneMunicipal') => {
+    if (k === 'iva' && config && config.esContribuyenteEspecial !== true) return false;
+    return (practica ? practica.has(k) : (config ? config[flag] !== false : true));
+  };
 
   if (retiene('iva', 'esAgenteRetencionIva') && !o.retencion_iva_path && !ya?.has('iva')) out.push('iva');
   if (retiene('islr', 'retieneIslr') && !o.retencion_islr_path && !ya?.has('islr')) out.push('islr');
