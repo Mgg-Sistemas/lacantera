@@ -22,6 +22,7 @@ import { rotuloNumeroFactura, rotuloTipoDocumento } from './facturasBuzon.reposi
 import type { RetencionItem } from './retenciones.repository';
 import { ESTADOS_NUNCA_RETENCION } from './retenciones.repository';
 import { esEmpresaGt } from './empresaActual';
+import { EMPRESA_NOMBRE } from '@/shared/lib/empresa';
 import type { RegistroSoporteFisico, SoportesFisicosMap } from './soporteFisico.repository';
 import { resolverSoporteFisicoClave } from './soporteFisico.repository';
 
@@ -251,8 +252,8 @@ export function construirColaPorHacer({
         items.push({
           id: `compras-${fc.adjuntoId}`,
           origen: 'compras_archivo',
-          empresaId: 'empresa-golden-touch',
-          empresaNombre: 'Golden Touch',
+          empresaId: empresaId || 'empresa-mits',
+          empresaNombre: EMPRESA_NOMBRE,
           codigo: cod,
           tipoDocumento: 'Factura',
           proveedorNombre: provNombre,
@@ -285,8 +286,8 @@ export function construirColaPorHacer({
         items.push({
           id: `compras-${fc.adjuntoId}`,
           origen: 'compras_archivo',
-          empresaId: 'empresa-golden-touch',
-          empresaNombre: 'Golden Touch',
+          empresaId: empresaId || 'empresa-mits',
+          empresaNombre: EMPRESA_NOMBRE,
           codigo: cod,
           tipoDocumento: 'Factura',
           proveedorNombre: provNombre,
@@ -331,8 +332,8 @@ export function construirColaPorHacer({
       items.push({
         id: `orden-${o.id}`,
         origen: 'compras_orden',
-        empresaId: 'empresa-golden-touch',
-        empresaNombre: 'Golden Touch',
+        empresaId: empresaId || 'empresa-mits',
+        empresaNombre: EMPRESA_NOMBRE,
         codigo: o.oc_codigo ?? o.codigo,
         tipoDocumento: 'Factura',
         proveedorNombre: item.proveedorNombre,

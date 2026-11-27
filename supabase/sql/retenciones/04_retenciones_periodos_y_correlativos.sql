@@ -524,8 +524,7 @@ create policy retencion_periodos_update on public.retencion_periodos for update 
   using ((select public.is_admin()) or (select public.puede('retenciones')))
   with check ((select public.is_admin()) or (select public.puede('retenciones')));
 alter publication supabase_realtime add table public.retencion_periodos;
-$sql_gt$],
-   coalesce(nullif(auth.email(), ''), nullif(current_setting('request.jwt.claim.email', true), ''), session_user::text));
+
 
 -- V2R · 10 de 13 · gt_retenciones_numeracion_continua · migración gt_retenciones_numeracion_continua, versión 20261020100010
 
@@ -1064,8 +1063,7 @@ select upper(x.tipo), x.comprobante_nro, public.retencion_secuencial(x.comproban
  where x.rol = 'practicada' and x.comprobante_nro is not null
    and upper(x.tipo) in (select clave from public.retencion_impuestos where numera)
 on conflict (tipo, numero) do nothing;
-$sql_gt$],
-   coalesce(nullif(auth.email(), ''), nullif(current_setting('request.jwt.claim.email', true), ''), session_user::text));
+
 
 -- R14 · 18 · migración gt_retencion_numeros_por_empresa, versión 20261101100018 (después de R13)
 
@@ -1428,8 +1426,7 @@ end $fn$;
 
 -- 6) Ya nadie usa la versión global del próximo número (la de 1 argumento): se retira.
 drop function if exists public.retencion_serie_siguiente(text);
-$sql_gt$],
-   coalesce(nullif(auth.email(), ''), nullif(current_setting('request.jwt.claim.email', true), ''), session_user::text));
+
 
 -- P-BD-3 Paso 2 «Revocar EXECUTE de siguiente_numero_retencion a los roles de API»: migración
 -- gt_pbd3_revocar_execute_siguiente_numero_retencion, versión 20261102100022. Carril BD GT, 02/11/2026.
@@ -1453,7 +1450,6 @@ $sql_gt$],
 revoke execute on function public.siguiente_numero_retencion(text, text) from anon, authenticated;
 
 -- ── Registro de esta migración, con su SQL completo ──
-$sql_gt$],
-   coalesce(nullif(auth.email(), ''), nullif(current_setting('request.jwt.claim.email', true), ''), session_user::text));
+
 
 COMMIT;

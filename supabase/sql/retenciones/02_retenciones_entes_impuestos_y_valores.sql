@@ -744,8 +744,7 @@ end $$;
 
 alter publication supabase_realtime add table public.retencion_entes, public.retencion_ente_impuestos, public.retencion_ente_logos, public.retencion_agente_imagenes,
   public.retencion_agente_condiciones, public.retencion_contraparte_perfiles, public.retencion_contraparte_actividades;
-$sql_gt$],
-   coalesce(nullif(auth.email(), ''), nullif(current_setting('request.jwt.claim.email', true), ''), session_user::text));
+
 
 
 INSERT INTO public.retencion_entes (nombre, tipo, estado, municipio, motivo) VALUES
@@ -1220,8 +1219,7 @@ create policy retencion_impuesto_versiones_update on public.retencion_impuesto_v
 create policy retencion_historial_read on public.retencion_historial for select to authenticated using (true);
 
 alter publication supabase_realtime add table public.retencion_impuestos, public.retencion_impuesto_versiones;
-$sql_gt$],
-   coalesce(nullif(auth.email(), ''), nullif(current_setting('request.jwt.claim.email', true), ''), session_user::text));
+
 
 -- R3 · 3 de 13 · gt_retencion_parametros · migración gt_retencion_parametros, versión 20261020100003
 
@@ -1663,7 +1661,6 @@ begin
 end $$;
 
 alter publication supabase_realtime add table public.retencion_parametro_claves, public.retencion_parametros, public.retencion_licencia_tipos;
-$sql_gt$],
-   coalesce(nullif(auth.email(), ''), nullif(current_setting('request.jwt.claim.email', true), ''), session_user::text));
+
 
 COMMIT;
