@@ -833,17 +833,14 @@ export function useGuardarProveedor() {
         p_metodo_pago_preferido: p.metodo_pago_preferido ?? null,
       })
       if (id && (p.actividad_economica !== undefined || p.tipo_persona !== undefined || p.numero_administracion !== undefined)) {
-        try {
-          const patch: Record<string, unknown> = {}
-          if (p.actividad_economica !== undefined) patch.actividad_economica = p.actividad_economica || null
-          if (p.tipo_persona !== undefined) patch.tipo_persona = p.tipo_persona || null
-          if (p.numero_administracion !== undefined) patch.numero_administracion = p.numero_administracion || null
-          if (Object.keys(patch).length > 0) {
-            await supabase.from('proveedores').update(patch).eq('id', id)
-          }
-        } catch {
-          // Tolerante si las columnas no se han aplicado todavía en Supabase
-        }
+        await rpc('retencion_guardar_perfil_proveedor', {
+          p_id: id,
+          p_datos: {
+            actividad_economica: p.actividad_economica,
+            tipo_persona: p.tipo_persona,
+            numero_administracion: p.numero_administracion,
+          },
+        })
       }
       return id
     },

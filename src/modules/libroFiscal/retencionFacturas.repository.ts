@@ -248,7 +248,7 @@ function errorLegibleFactura(e: { code?: string; message?: string }): Error {
  * Registra una factura con sus líneas en una sola transacción. La base asigna
  * los números de cada practicada (V2R) y los devuelve. Todo o nada.
  */
-export async function registrarFactura(factura: FacturaNueva, lineas: LineaFacturaNueva[]): Promise<FacturaConLineas> {
+export async function registrarFactura(factura: FacturaNueva, lineas: LineaFacturaNueva[], reintegro?: Record<string, unknown>): Promise<FacturaConLineas> {
   if (!lineas.length) throw new Error('La factura necesita al menos una línea de impuesto.');
   // Enforcement: solo se retiene sobre factura, nota de crédito o nota de débito.
   const faltaTipo = faltaEnTipoDocumentoRetencion(factura.tipoDocumento);
@@ -256,61 +256,12 @@ export async function registrarFactura(factura: FacturaNueva, lineas: LineaFactu
   // R3: la UT de la fecha de la factura (sin UT cargada para esa fecha, no se registra).
   const vigente = await configDeFecha({ ...CONFIG_RETENCION_DEFECTO, valorUt: factura.valorUt ?? 0 },
     (factura.facturaFecha ?? '').slice(0, 10), lineas.map((l) => l.tipo));
-  const { data, error } = await supabase.rpc('retencion_factura_registrar', {
+  const { data, error } = await supabase.rpc(reintegro ? 'retencion_factura_con_reintegro' : 'retencion_factura_registrar', {
+    ...(reintegro && { p_reintegro: reintegro }),
     p_factura: pFacturaDe(factura),
     p_lineas: lineas.map((l) => ({ ...pLineaDe(l), valor_ut: utValida(vigente.valorUt) })),
   });
-  if (error) {
-    if (error.code === '42883' || error.message?.includes('retencion_factura_registrar')) {
-      const lineasCreadas: Record<string, unknown>[] = [];
-      for (const l of lineas) {
-        const payloadPracticada = {
-          fecha_emision: l.fecha || factura.facturaFecha,
-          proveedor_id: factura.proveedorId,
-          proveedor_nombre: factura.contraparteNombre,
-          proveedor_rif: factura.contraparteRif,
-          tipo_impuesto: l.tipo,
-          moneda: l.moneda || factura.moneda || 'USD',
-          tasa: l.tasa || factura.tasa || 1,
-          base_imponible: l.base,
-          alicuota_pct: l.porcentaje,
-          monto_retenido: l.monto,
-          concepto_codigo: l.conceptoCodigo,
-          concepto: l.conceptoNombre,
-          factura_numero: factura.facturaNro,
-          factura_control: factura.facturaControl,
-          factura_fecha: factura.facturaFecha,
-          total_factura: factura.facturaTotal,
-          orden_id: factura.docKind === 'oc' ? factura.docId : null,
-          compra_directa_id: factura.docKind === 'compra_directa' ? factura.docId : null,
-          servicio_directo_id: factura.docKind === 'servicio_directo' ? factura.docId : null,
-        };
-        const { data: retNumero, error: errPracticada } = await supabase.rpc('retenciones_registrar_practicada', { p_datos: payloadPracticada });
-        if (errPracticada) throw errorLegibleFactura(errPracticada);
-        const { data: retFila } = await supabase.from('retenciones').select('*').eq('numero', retNumero).maybeSingle();
-        if (retFila) lineasCreadas.push(retFila);
-      }
-      return {
-        factura: aFacturaCabecera({
-          id: (lineasCreadas[0]?.documento_id as string) || crypto.randomUUID(),
-          rol: 'practicada',
-          tipo_documento: factura.tipoDocumento || 'factura',
-          proveedor_id: factura.proveedorId,
-          rif: factura.contraparteRif,
-          razon_social: factura.contraparteNombre,
-          factura_nro: factura.facturaNro,
-          factura_control: factura.facturaControl,
-          factura_fecha: factura.facturaFecha,
-          factura_total: factura.facturaTotal,
-          moneda: factura.moneda || 'USD',
-          tasa: factura.tasa || 1,
-          retenciones: lineasCreadas,
-        }),
-        lineas: lineasCreadas.map((l) => aRetencion(l)),
-      };
-    }
-    throw errorLegibleFactura(error);
-  }
+  if (error) throw errorLegibleFactura(error);
   const res = (data ?? {}) as { factura?: Record<string, unknown>; lineas?: Record<string, unknown>[] };
   if (!res.factura) throw new Error('La base no devolvió la factura registrada.');
   return {

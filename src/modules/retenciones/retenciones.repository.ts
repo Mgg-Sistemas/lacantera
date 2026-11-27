@@ -12,17 +12,11 @@ import { supabase } from '@/shared/lib/supabase';
 import type { EstadoOrden, Orden } from '@/shared/lib/types';
 import { fechaDesdeAgenteRetencion } from '@/modules/libroFiscal/agenteCondiciones.repository';
 
-const TABLE = 'ordenes_compra';
-const BUCKET = 'compras-oc';
+export const TABLA_ORDENES_RETENCION = 'retencion_ordenes';
+const BUCKET = 'retenciones-comprobantes';
 
-async function tablaOrdenesActiva(): Promise<string> {
-  try {
-    const { error } = await supabase.from('ordenes_compra').select('id').limit(0);
-    if (!error) return 'ordenes_compra';
-  } catch {
-    // fallback
-  }
-  return 'ordenes';
+function ordenFiscal(row: Record<string, unknown>): Orden {
+  return { ...row, id: String(row.id), proveedor_id: row.proveedor_id == null ? null : String(row.proveedor_id) } as unknown as Orden;
 }
 
 export type TipoRetencion = 'iva' | 'islr' | 'municipal';
@@ -69,11 +63,11 @@ export async function listOrdenesPorIds(ids: string[]): Promise<RetencionItem[]>
   const unicos = Array.from(new Set(ids.filter(Boolean)));
   if (unicos.length === 0) return [];
   try {
-    const tabla = await tablaOrdenesActiva();
-    const { data, error } = await supabase.from(tabla).select('*').in('id', unicos);
+    const { data, error } = await supabase.from(TABLA_ORDENES_RETENCION).select('*').in('id', unicos);
     if (error) return [];
-    const pm = await mapProveedores((data ?? []).map((o) => (o as Orden).proveedor_id as string));
-    return (data ?? []).map((o) => ({ orden: o as Orden, proveedorNombre: ((o as Orden).proveedor_id && pm.get((o as Orden).proveedor_id as string)) || '—' }));
+    const ordenes = (data ?? []).map(ordenFiscal);
+    const pm = await mapProveedores(ordenes.map((o) => o.proveedor_id ?? ''));
+    return ordenes.map((o) => ({ orden: o, proveedorNombre: pm.get(o.proveedor_id ?? '') || '—' }));
   } catch {
     return [];
   }
@@ -123,18 +117,15 @@ export function labelRetencionMomento(v?: string | null): string {
  *  y filtra por los estados del Kanban configurados. */
 export async function listRetencionesPendientes(estadosPermitidos?: EstadoOrden[]): Promise<RetencionItem[]> {
   try {
-    const [desdeAgente, tabla] = await Promise.all([
-      fechaDesdeAgenteRetencion(),
-      tablaOrdenesActiva(),
-    ]);
-    const { data, error } = await supabase.from(tabla).select('*')
+    const desdeAgente = await fechaDesdeAgenteRetencion();
+    const { data, error } = await supabase.from(TABLA_ORDENES_RETENCION).select('*')
       .or('comprobante_tipo.eq.factura,factura_recepcion_path.not.is.null')
       .or('retencion_finalizada.is.null,retencion_finalizada.eq.false')
       .not('estado', 'in', `(${ESTADOS_NUNCA_RETENCION.join(',')})`)
       .gte('created_at', '2026-09-25T00:00:00Z')
       .order('created_at', { ascending: true });
     if (error) return [];
-    const filtradas = (data ?? []).filter((o) => ordenAplicaRetencion(o as Orden, desdeAgente, estadosPermitidos) && !esperaPagoParaRetener(o as Orden));
+    const filtradas = (data ?? []).map(ordenFiscal).filter((o) => ordenAplicaRetencion(o, desdeAgente, estadosPermitidos) && !esperaPagoParaRetener(o));
     const pm = await mapProveedores(filtradas.map((o) => (o as Orden).proveedor_id as string));
     return filtradas
       .map((o) => ({ orden: o as Orden, proveedorNombre: ((o as Orden).proveedor_id && pm.get((o as Orden).proveedor_id as string)) || '—' }));
@@ -146,17 +137,14 @@ export async function listRetencionesPendientes(estadosPermitidos?: EstadoOrden[
 /** Retenciones ya finalizadas (comprobantes cargados). Solo a partir de la vigencia del régimen. */
 export async function listRetencionesHechas(): Promise<RetencionItem[]> {
   try {
-    const [desdeAgente, tabla] = await Promise.all([
-      fechaDesdeAgenteRetencion(),
-      tablaOrdenesActiva(),
-    ]);
-    const { data, error } = await supabase.from(tabla).select('*')
+    const desdeAgente = await fechaDesdeAgenteRetencion();
+    const { data, error } = await supabase.from(TABLA_ORDENES_RETENCION).select('*')
       .or('comprobante_tipo.eq.factura,factura_recepcion_path.not.is.null')
       .eq('retencion_finalizada', true)
       .gte('created_at', '2026-09-25T00:00:00Z')
       .order('retencion_finalizada_en', { ascending: false });
     if (error) return [];
-    const filtradas = (data ?? []).filter((o) => ordenAplicaRetencion(o as Orden, desdeAgente));
+    const filtradas = (data ?? []).map(ordenFiscal).filter((o) => ordenAplicaRetencion(o, desdeAgente));
     const pm = await mapProveedores(filtradas.map((o) => (o as Orden).proveedor_id as string));
     return filtradas
       .map((o) => ({ orden: o as Orden, proveedorNombre: ((o as Orden).proveedor_id && pm.get((o as Orden).proveedor_id as string)) || '—' }));
@@ -167,11 +155,8 @@ export async function listRetencionesHechas(): Promise<RetencionItem[]> {
 
 export async function contarRetencionesPendientes(estadosPermitidos?: EstadoOrden[]): Promise<number> {
   try {
-    const [desdeAgente, tabla] = await Promise.all([
-      fechaDesdeAgenteRetencion(),
-      tablaOrdenesActiva(),
-    ]);
-    const { data, error } = await supabase.from(tabla)
+    const desdeAgente = await fechaDesdeAgenteRetencion();
+    const { data, error } = await supabase.from(TABLA_ORDENES_RETENCION)
       .select('id, created_at, oc_creada_en, oc_emitida_en, estado, retencion_momento')
       .or('comprobante_tipo.eq.factura,factura_recepcion_path.not.is.null')
       .or('retencion_finalizada.is.null,retencion_finalizada.eq.false')
@@ -186,17 +171,17 @@ export async function contarRetencionesPendientes(estadosPermitidos?: EstadoOrde
 
 async function subirComprobante(ordenId: string, tipo: TipoRetencion, file: File): Promise<{ path: string; nombre: string }> {
   const safe = file.name.replace(/[^\w.-]+/g, '_');
-  const path = `${ordenId}/retencion_${tipo}_${safe}`;
+  const path = `${ordenId}/${crypto.randomUUID()}_retencion_${tipo}_${safe}`;
   const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
-    upsert: true, contentType: file.type || 'application/pdf',
+    contentType: file.type || 'application/pdf',
   });
   if (error) throw error;
   return { path, nombre: file.name };
 }
 
 /** URL firmada (10 min) para descargar un comprobante de retención. */
-export async function urlRetencion(path: string): Promise<string> {
-  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 10);
+export async function urlRetencion(path: string, factura = false): Promise<string> {
+  const { data, error } = await supabase.storage.from(factura ? 'compras-recepciones' : BUCKET).createSignedUrl(path, 60 * 10);
   if (error) throw error;
   return data.signedUrl;
 }
@@ -220,23 +205,14 @@ export async function finalizarRetencion(input: {
       throw new Error('Los comprobantes deben ser PDF o imagen.');
     }
   }
-  const patch: Record<string, unknown> = {
-    retencion_finalizada: true,
-    retencion_finalizada_por: input.actor,
-    retencion_finalizada_en: new Date().toISOString(),
-  };
+  const comprobantes: Partial<Record<TipoRetencion, { path: string; nombre: string }>> = {};
   for (const [tipo, file] of entries) {
-    const { path, nombre } = await subirComprobante(input.orden.id, tipo, file as File);
-    patch[`retencion_${tipo}_path`] = path;
-    patch[`retencion_${tipo}_nombre`] = nombre;
+    comprobantes[tipo] = await subirComprobante(input.orden.id, tipo, file as File);
   }
-  // Sin permiso sobre la OC (o si la OC ya no existe) la base no toca ninguna fila y no
-  // da error: se pide la fila de vuelta para no dar por finalizada una retención que no quedó.
-  const { data, error } = await supabase.from(TABLE).update(patch).eq('id', input.orden.id).select('id');
+  const { error } = await supabase.rpc('retencion_finalizar_orden', {
+    p_orden_id: Number(input.orden.id), p_comprobantes: comprobantes,
+  });
   if (error) throw error;
-  if (!data?.length) {
-    throw new Error('No se pudo finalizar la retención: no tienes permiso sobre esta OC o la OC ya no existe. Los comprobantes quedaron subidos; se pueden volver a cargar.');
-  }
 }
 
 /** Comprobantes cargados en una OC (para mostrar/descargar en Retenciones y Tesorería). */

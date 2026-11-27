@@ -8,7 +8,6 @@
    ============================================================ */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { listRetenciones, type RetencionPracticada } from '@/modules/libroFiscal/retencionesFiscal.repository';
 import { supabase } from '@/shared/lib/supabase';
 import { Modal } from '@/shared/ui/Modal';
 import { toast } from '@/shared/ui/Toast';
@@ -18,94 +17,6 @@ export const bs = (n: number) =>
 
 export const usd = (n: number) =>
   '$ ' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-export interface ReintegroPersistido {
-  id: string;
-  ordenId?: string | null;
-  codigoOc?: string | null;
-  fechaReintegro: string;
-  referencia: string;
-  cuentaBanco: string;
-  montoBs: number;
-  nota?: string | null;
-  registradoEn: string;
-}
-
-export interface ReintegroManual {
-  id: string;
-  empresaId: string | null;
-  ordenId?: string | null;
-  codigoOc?: string | null;
-  numeroComprobante?: string | null;
-  proveedor: string;
-  proveedorRif?: string | null;
-  proveedorTelefono?: string | null;
-  facturas: string[];
-  fechaEmision: string;
-  fechaReintegro?: string | null;
-  moneda: string;
-  montoBs: number;
-  montoUsd?: number | null;
-  tipoRetencion: string;
-  estado: 'esperando_reintegro' | 'reintegrado';
-  referencia?: string | null;
-  cuentaBanco?: string | null;
-  nota?: string | null;
-  registradoEn: string;
-  registradoPor?: string | null;
-}
-
-const CLAVE_LOCAL_REINTEGROS = 'lacantera.retenciones.reintegros';
-const CLAVE_REINTEGROS_MANUALES = 'lacantera.retenciones.pendientes_reintegro';
-
-export function leerReintegrosLocales(): ReintegroPersistido[] {
-  try {
-    const raw = localStorage.getItem(CLAVE_LOCAL_REINTEGROS);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function guardarReintegrosLocales(items: ReintegroPersistido[]) {
-  try {
-    localStorage.setItem(CLAVE_LOCAL_REINTEGROS, JSON.stringify(items));
-  } catch {
-    // best-effort
-  }
-}
-
-export function leerReintegrosManuales(): ReintegroManual[] {
-  try {
-    const raw = localStorage.getItem(CLAVE_REINTEGROS_MANUALES);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-export function guardarReintegrosManuales(items: ReintegroManual[]): void {
-  try {
-    localStorage.setItem(CLAVE_REINTEGROS_MANUALES, JSON.stringify(items));
-  } catch {
-    // best-effort
-  }
-}
-
-export function registrarReintegroManual(
-  item: Omit<ReintegroManual, 'id' | 'registradoEn' | 'estado'> & { id?: string; estado?: 'esperando_reintegro' | 'reintegrado' },
-): ReintegroManual {
-  const items = leerReintegrosManuales();
-  const nuevo: ReintegroManual = {
-    ...item,
-    id: item.id || `reint-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    estado: item.estado || 'esperando_reintegro',
-    registradoEn: new Date().toISOString(),
-  };
-  items.unshift(nuevo);
-  guardarReintegrosManuales(items);
-  return nuevo;
-}
 
 export function calcularDiasEspera(fechaStr?: string | null): number {
   if (!fechaStr || typeof fechaStr !== 'string') return 0;
@@ -149,16 +60,6 @@ export interface ReintegrosPendientesViewProps {
   actorName?: string | null;
 }
 
-const CUENTAS_RECEPTORAS = [
-  'Banco Digital de los Trabajadores (BDT) - Cuenta Corriente',
-  'Banesco Banco Universal - Cuenta Corriente',
-  'Banco de Venezuela (BDV) - Cuenta Corriente',
-  'Banco Mercantil - Cuenta Corriente',
-  'Bancamiga - Cuenta Corriente',
-  'Caja Principal / Efectivo',
-  'Otra Cuenta Bancaria',
-];
-
 export function ReintegrosPendientesView({
   empresaId,
   empresaNombre,
@@ -174,7 +75,8 @@ export function ReintegrosPendientesView({
   // Modal para registrar reintegro
   const [modalItem, setModalItem] = useState<ReintegroItemFila | null>(null);
   const [regFecha, setRegFecha] = useState(new Date().toISOString().slice(0, 10));
-  const [regCuenta, setRegCuenta] = useState(CUENTAS_RECEPTORAS[0]);
+  const [regCuenta, setRegCuenta] = useState('');
+  const [cuentas, setCuentas] = useState<{id: number; nombre: string}[]>([]);
   const [regRef, setRegRef] = useState('');
   const [regMontoBs, setRegMontoBs] = useState('');
   const [regNota, setRegNota] = useState('');
@@ -185,140 +87,38 @@ export function ReintegrosPendientesView({
   const cargarDatos = useCallback(async () => {
     setCargando(true);
     try {
-      const locales = leerReintegrosLocales();
-      const localesMap = new Map<string, ReintegroPersistido>();
-      for (const loc of locales) {
-        if (loc.ordenId) localesMap.set(`id:${loc.ordenId}`, loc);
-        if (loc.codigoOc) localesMap.set(`oc:${loc.codigoOc.trim().toUpperCase()}`, loc);
-        localesMap.set(loc.id, loc);
-      }
-
-      // 1. Órdenes con retención 'despues_de_pagar' desde Supabase
-      let ordenesEspera: Array<{
-        id: string;
-        codigoOc?: string;
-        proveedorNombre?: string;
-        proveedorRif?: string;
-        facturaNumero?: string;
-        fecha?: string;
-        montoRetenidoBs?: number;
-        montoRetenidoUsd?: number;
-      }> = [];
-
-      try {
-        const { data: ords } = await supabase
-          .from('ordenes')
-          .select('id, codigo, oc_codigo, total, retencion_compras_total, retencion_momento, created_at, factura_numero, proveedor:proveedores(nombre, rif)')
-          .eq('retencion_momento', 'despues_de_pagar')
-          .limit(100);
-
-        if (ords && Array.isArray(ords)) {
-          ordenesEspera = ords.map((o: any) => ({
-            id: String(o.id),
-            codigoOc: o.oc_codigo || o.codigo || `OC-${o.id}`,
-            proveedorNombre: o.proveedor?.nombre || 'Proveedor',
-            proveedorRif: o.proveedor?.rif || null,
-            facturaNumero: o.factura_numero || undefined,
-            fecha: o.created_at ? String(o.created_at).slice(0, 10) : undefined,
-            montoRetenidoBs: Number(o.retencion_compras_total || 0),
-          }));
-        }
-      } catch {
-        // tabla ordenes no tiene la columna o fallo de red
-      }
-
-      // 2. Comprobantes emitidos en libro fiscal practicado
-      const libroRet = await listRetenciones({ direccion: 'practicada' }).catch(() => [] as RetencionPracticada[]);
-      const retPorOrdenId = new Map<string, RetencionPracticada>();
-      for (const r of libroRet) {
-        if (r.docId) retPorOrdenId.set(r.docId, r);
-      }
-
-      const resultado: ReintegroItemFila[] = [];
-
-      // Procesar órdenes registradas
-      if (esMits) {
-        for (const oe of ordenesEspera) {
-          const claveId = oe.id ? `id:${oe.id}` : '';
-          const claveOc = oe.codigoOc ? `oc:${oe.codigoOc.trim().toUpperCase()}` : '';
-          const loc = (claveId && localesMap.get(claveId)) || (claveOc && localesMap.get(claveOc)) || localesMap.get(oe.id);
-
-          const retAsoc = oe.id ? retPorOrdenId.get(oe.id) : null;
-          const fechaValida = (oe.fecha && /^\d{4}-\d{2}-\d{2}$/.test(oe.fecha.slice(0, 10)))
-            ? oe.fecha.slice(0, 10)
-            : (retAsoc?.fecha && /^\d{4}-\d{2}-\d{2}$/.test(retAsoc.fecha.slice(0, 10)))
-            ? retAsoc.fecha.slice(0, 10)
-            : (retAsoc?.facturaFecha && /^\d{4}-\d{2}-\d{2}$/.test(retAsoc.facturaFecha.slice(0, 10)))
-            ? retAsoc.facturaFecha.slice(0, 10)
-            : null;
-
-          const diasEspera = calcularDiasEspera(fechaValida);
-          const esReintegrado = !!loc;
-
-          resultado.push({
-            id: oe.id,
-            ordenId: oe.id,
-            codigoOc: oe.codigoOc,
-            numeroComprobante: retAsoc?.numeroComprobante ?? null,
-            proveedor: oe.proveedorNombre || 'Proveedor',
-            proveedorRif: oe.proveedorRif || retAsoc?.contraparteRif || null,
-            proveedorTelefono: null,
-            facturas: oe.facturaNumero ? [oe.facturaNumero] : (retAsoc?.facturaNumero ? [retAsoc.facturaNumero] : []),
-            fechaEmision: fechaValida || '—',
-            fechaReintegro: loc?.fechaReintegro ?? null,
-            moneda: 'Bs',
-            montoBs: loc?.montoBs ?? oe.montoRetenidoBs ?? 0,
-            montoUsd: oe.montoRetenidoUsd ?? null,
-            tipoRetencion: retAsoc ? retAsoc.tipo.toUpperCase() : 'Retención',
-            estado: esReintegrado ? 'reintegrado' : 'esperando_reintegro',
-            referencia: loc?.referencia ?? null,
-            cuentaBanco: loc?.cuentaBanco ?? null,
-            diasEspera,
-            empresaId: 'empresa-mits',
-          });
-        }
-      }
-
-      // 3. Reintegros registrados para la empresa activa
-      const manuales = leerReintegrosManuales().filter((m) => {
-        if (esMits) {
-          return !m.empresaId || m.empresaId === 'empresa-mits' || m.empresaId === 'empresa-lacantera' || m.empresaId === 'empresa-golden-touch';
-        }
-        return m.empresaId === empresaId;
-      });
-
-      for (const m of manuales) {
-        resultado.push({
-          id: m.id,
-          ordenId: m.ordenId,
-          codigoOc: m.codigoOc,
-          numeroComprobante: m.numeroComprobante,
-          proveedor: m.proveedor,
-          proveedorRif: m.proveedorRif,
-          proveedorTelefono: m.proveedorTelefono,
-          facturas: m.facturas,
-          fechaEmision: m.fechaEmision || '—',
-          fechaReintegro: m.fechaReintegro,
-          moneda: m.moneda || 'Bs',
-          montoBs: m.montoBs,
-          montoUsd: m.montoUsd,
-          tipoRetencion: m.tipoRetencion || 'Retención',
-          estado: m.estado,
-          referencia: m.referencia,
-          cuentaBanco: m.cuentaBanco,
-          diasEspera: calcularDiasEspera(m.fechaEmision),
-          empresaId: m.empresaId,
-        });
-      }
-
-      setFilas(resultado);
+      const [reintegros, cuentasDisponibles] = await Promise.all([
+        supabase.from('retencion_reintegros').select('id, datos, monto_bs, fecha_reintegro, referencia, cuenta_nombre, movimiento_id').is('cancelado_en', null).order('registrado_en', { ascending: false }),
+        supabase.rpc('retencion_cuentas_reintegro'),
+      ]);
+      if (reintegros.error) throw new Error(reintegros.error.message);
+      if (cuentasDisponibles.error) throw new Error(cuentasDisponibles.error.message);
+      setCuentas(cuentasDisponibles.data ?? []);
+      setFilas((reintegros.data ?? []).map((item): ReintegroItemFila => {
+        const datos = item.datos as Partial<ReintegroItemFila>;
+        return {
+          ...datos,
+          id: item.id,
+          proveedor: datos.proveedor || 'Proveedor',
+          facturas: (datos.facturas ?? []).filter(Boolean),
+          fechaEmision: datos.fechaEmision ?? '',
+          moneda: datos.moneda ?? 'Bs',
+          tipoRetencion: datos.tipoRetencion ?? 'Retención',
+          montoBs: Number(item.monto_bs),
+          fechaReintegro: item.fecha_reintegro,
+          referencia: item.referencia,
+          cuentaBanco: item.cuenta_nombre,
+          diasEspera: calcularDiasEspera(datos.fechaEmision),
+          estado: item.movimiento_id ? 'reintegrado' : 'esperando_reintegro',
+        };
+      }));
     } catch (e) {
       console.error('Error al cargar reintegros pendientes:', e);
       toast('Error al consultar reintegros de proveedores', 'error');
     } finally {
       setCargando(false);
     }
-  }, [esMits, empresaId]);
+  }, []);
 
   useEffect(() => {
     void cargarDatos();
@@ -388,7 +188,7 @@ export function ReintegrosPendientesView({
   const abrirModal = (item: ReintegroItemFila) => {
     setModalItem(item);
     setRegFecha(item.fechaReintegro || new Date().toISOString().slice(0, 10));
-    setRegCuenta(item.cuentaBanco || CUENTAS_RECEPTORAS[0]);
+    setRegCuenta(String(cuentas[0]?.id ?? ''));
     setRegRef(item.referencia || '');
     setRegMontoBs(String(item.montoBs));
     setRegNota('');
@@ -398,7 +198,7 @@ export function ReintegrosPendientesView({
     e.preventDefault();
     if (!modalItem) return;
 
-    const monto = parseFloat(regMontoBs.replace(/\./g, '').replace(',', '.'));
+    const monto = Number(regMontoBs);
     if (isNaN(monto) || monto <= 0) {
       toast('Ingresa un monto válido para el reintegro', 'error');
       return;
@@ -410,35 +210,11 @@ export function ReintegrosPendientesView({
 
     setGuardando(true);
     try {
-      if (modalItem.id.startsWith('reint-')) {
-        const items = leerReintegrosManuales();
-        const idx = items.findIndex((x) => x.id === modalItem.id);
-        if (idx !== -1) {
-          items[idx].estado = 'reintegrado';
-          items[idx].fechaReintegro = regFecha;
-          items[idx].referencia = regRef.trim();
-          items[idx].cuentaBanco = regCuenta;
-          items[idx].nota = regNota.trim() || null;
-          items[idx].montoBs = monto;
-          guardarReintegrosManuales(items);
-        }
-      } else {
-        const nuevoReintegro: ReintegroPersistido = {
-          id: modalItem.id,
-          ordenId: modalItem.ordenId,
-          codigoOc: modalItem.codigoOc,
-          fechaReintegro: regFecha,
-          referencia: regRef.trim(),
-          cuentaBanco: regCuenta,
-          montoBs: monto,
-          nota: regNota.trim() || null,
-          registradoEn: new Date().toISOString(),
-        };
-
-        const existentes = leerReintegrosLocales().filter((x) => x.id !== modalItem.id && x.codigoOc !== modalItem.codigoOc);
-        existentes.unshift(nuevoReintegro);
-        guardarReintegrosLocales(existentes);
-      }
+      const { error } = await supabase.rpc('retencion_recibir_reintegro', {
+        p_id: modalItem.id, p_cuenta: Number(regCuenta), p_fecha: regFecha,
+        p_referencia: regRef.trim(), p_nota: regNota.trim() || null,
+      });
+      if (error) throw new Error(error.message);
 
       toast(`✅ Reintegro de ${modalItem.proveedor} registrado con éxito (${bs(monto)})`, 'success');
       setModalItem(null);
@@ -864,8 +640,9 @@ export function ReintegrosPendientesView({
                   onChange={(e) => setRegCuenta(e.target.value)}
                   required
                 >
-                  {CUENTAS_RECEPTORAS.map((c) => (
-                    <option key={c} value={c}>{c}</option>
+                  {!cuentas.length && <option value="">Sin cuentas activas en bolívares</option>}
+                  {cuentas.map((c) => (
+                    <option key={c.id} value={c.id}>{c.nombre}</option>
                   ))}
                 </select>
               </div>
@@ -881,7 +658,7 @@ export function ReintegrosPendientesView({
                   min="0.01"
                   style={{ width: '100%', borderRadius: '6px' }}
                   value={regMontoBs}
-                  onChange={(e) => setRegMontoBs(e.target.value)}
+                  readOnly
                   required
                 />
               </div>

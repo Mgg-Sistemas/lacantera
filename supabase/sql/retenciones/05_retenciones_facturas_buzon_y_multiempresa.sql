@@ -25,256 +25,24 @@
 -- FUNCIONES DE SEGURIDAD Y PERMISOS COMPATIBLES (IDEMPOTENTES)
 -- ============================================================
 
-CREATE OR REPLACE FUNCTION public.is_admin()
-RETURNS boolean
-LANGUAGE plpgsql
-STABLE
-SECURITY DEFINER
-SET search_path = public, auth, pg_temp
-AS $$
-DECLARE
-  v_uid uuid;
-  v_role text;
-  v_email text;
-  v_is boolean;
-BEGIN
-  IF current_user IN ('postgres', 'supabase_admin', 'service_role', 'dashboard_user') THEN
-    RETURN true;
-  END IF;
-
-  BEGIN
-    v_role := current_setting('request.jwt.claim.role', true);
-    IF v_role = 'service_role' THEN
-      RETURN true;
-    END IF;
-  EXCEPTION WHEN OTHERS THEN
-    NULL;
-  END;
-
-  BEGIN
-    v_uid := auth.uid();
-  EXCEPTION WHEN OTHERS THEN
-    v_uid := NULL;
-  END;
-
-  BEGIN
-    v_email := auth.jwt() ->> 'email';
-    IF auth.jwt() ->> 'role' = 'service_role' THEN
-      RETURN true;
-    END IF;
-  EXCEPTION WHEN OTHERS THEN
-    v_email := NULL;
-  END;
-
-  IF v_uid IS NULL AND v_email IS NULL THEN
-    RETURN true;
-  END IF;
-
-  BEGIN
-    EXECUTE 'SELECT private.tiene_rol(''ADMIN'')' INTO v_is;
-    IF v_is IS TRUE THEN
-      RETURN true;
-    END IF;
-  EXCEPTION WHEN OTHERS THEN
-    NULL;
-  END;
-
-  IF v_uid IS NOT NULL THEN
-    BEGIN
-      SELECT EXISTS (
-        SELECT 1 FROM public.usuarios_roles ur
-        WHERE ur.usuario_id = v_uid AND upper(ur.rol) = 'ADMIN'
-      ) INTO v_is;
-      IF v_is IS TRUE THEN
-        RETURN true;
-      END IF;
-    EXCEPTION WHEN OTHERS THEN
-      NULL;
-    END;
-  END IF;
-
-  IF v_email IS NOT NULL AND (lower(v_email) LIKE '%admin%' OR lower(v_email) LIKE '%sistemas%') THEN
-    RETURN true;
-  END IF;
-
-  RETURN false;
-END;
-$$;
-
-CREATE OR REPLACE FUNCTION public.puede(p_modulo text)
-RETURNS boolean
-LANGUAGE plpgsql
-STABLE
-SECURITY DEFINER
-SET search_path = public, auth, pg_temp
-AS $$
-DECLARE
-  v_uid uuid;
-  v_email text;
-  v_is boolean;
-BEGIN
-  IF public.is_admin() THEN
-    RETURN true;
-  END IF;
-
-  BEGIN
-    v_uid := auth.uid();
-  EXCEPTION WHEN OTHERS THEN
-    v_uid := NULL;
-  END;
-
-  BEGIN
-    v_email := auth.jwt() ->> 'email';
-  EXCEPTION WHEN OTHERS THEN
-    v_email := NULL;
-  END;
-
-  IF v_uid IS NULL AND v_email IS NULL THEN
-    RETURN true;
-  END IF;
-
-  BEGIN
-    EXECUTE 'SELECT private.tiene_permiso($1, ''LECTURA'')' INTO v_is USING upper(p_modulo);
-    IF v_is IS TRUE THEN
-      RETURN true;
-    END IF;
-  EXCEPTION WHEN OTHERS THEN
-    NULL;
-  END;
-
-  IF v_uid IS NOT NULL THEN
-    BEGIN
-      SELECT EXISTS (
-        SELECT 1
-        FROM public.rol_permisos rp
-        JOIN public.usuarios_roles ur ON ur.rol = rp.rol
-        WHERE ur.usuario_id = v_uid
-          AND (upper(rp.modulo) = upper(p_modulo) OR lower(rp.modulo) = lower(p_modulo))
-          AND rp.nivel IN ('LECTURA', 'ESCRITURA', 'TOTAL')
-      ) INTO v_is;
-      IF v_is IS TRUE THEN
-        RETURN true;
-      END IF;
-    EXCEPTION WHEN OTHERS THEN
-      NULL;
-    END;
-  END IF;
-
-  RETURN false;
-END;
-$$;
-
-CREATE OR REPLACE FUNCTION public.puede_full(p_modulo text)
-RETURNS boolean
-LANGUAGE plpgsql
-STABLE
-SECURITY DEFINER
-SET search_path = public, auth, pg_temp
-AS $$
-DECLARE
-  v_uid uuid;
-  v_is boolean;
-BEGIN
-  IF public.is_admin() THEN
-    RETURN true;
-  END IF;
-
-  BEGIN
-    v_uid := auth.uid();
-  EXCEPTION WHEN OTHERS THEN
-    v_uid := NULL;
-  END;
-
-  IF v_uid IS NULL THEN
-    RETURN true;
-  END IF;
-
-  BEGIN
-    EXECUTE 'SELECT private.tiene_permiso($1, ''TOTAL'')' INTO v_is USING upper(p_modulo);
-    IF v_is IS TRUE THEN
-      RETURN true;
-    END IF;
-  EXCEPTION WHEN OTHERS THEN
-    NULL;
-  END;
-
-  BEGIN
-    SELECT EXISTS (
-      SELECT 1
-      FROM public.rol_permisos rp
-      JOIN public.usuarios_roles ur ON ur.rol = rp.rol
-      WHERE ur.usuario_id = v_uid
-        AND (upper(rp.modulo) = upper(p_modulo) OR lower(rp.modulo) = lower(p_modulo))
-        AND rp.nivel = 'TOTAL'
-    ) INTO v_is;
-    IF v_is IS TRUE THEN
-      RETURN true;
-    END IF;
-  EXCEPTION WHEN OTHERS THEN
-    NULL;
-  END;
-
-  RETURN false;
-END;
-$$;
-
-CREATE OR REPLACE FUNCTION public.puede_leer(p_modulo text)
-RETURNS boolean
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public, auth, pg_temp
-AS $$
-  SELECT public.puede(p_modulo);
-$$;
-
-CREATE OR REPLACE FUNCTION public.is_operativo()
-RETURNS boolean
-LANGUAGE plpgsql
-STABLE
-SECURITY DEFINER
-SET search_path = public, auth, pg_temp
-AS $$
-DECLARE
-  v_uid uuid;
-  v_is boolean;
-BEGIN
-  IF public.is_admin() THEN
-    RETURN true;
-  END IF;
-
-  BEGIN
-    v_uid := auth.uid();
-  EXCEPTION WHEN OTHERS THEN
-    v_uid := NULL;
-  END;
-
-  IF v_uid IS NULL THEN
-    RETURN true;
-  END IF;
-
-  BEGIN
-    SELECT EXISTS (
-      SELECT 1 FROM public.perfiles p
-      WHERE p.id = v_uid AND p.activo
-    ) INTO v_is;
-    RETURN coalesce(v_is, true);
-  EXCEPTION WHEN OTHERS THEN
-    RETURN true;
-  END;
-END;
-$$;
-
-GRANT EXECUTE ON FUNCTION public.is_admin() TO anon, authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.puede(text) TO anon, authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.puede_full(text) TO anon, authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.puede_leer(text) TO anon, authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.is_operativo() TO anon, authenticated, service_role;
-
-
 BEGIN;
 
--- Adaptación La Cantera: asegurar tablas base de compras y orígenes
+-- Columnas que lee y escribe el libro fiscal de GT.
+alter table public.retenciones
+  add column if not exists fecha date not null default current_date,
+  add column if not exists quincena smallint,
+  add column if not exists rif text,
+  add column if not exists razon_social text,
+  add column if not exists motivo text,
+  add column if not exists comprobante_path text,
+  add column if not exists comprobante_nombre text,
+  drop constraint if exists retenciones_tipo_check,
+  drop constraint if exists retenciones_rol_check;
+alter table public.retenciones
+  add constraint retenciones_tipo_check check (tipo in ('IVA', 'ISLR', 'MUNICIPAL', 'ESTADAL', 'IGTF')),
+  add constraint retenciones_rol_check check (rol in ('practicada', 'sufrida'));
+
+-- Adjuntos adicionales del libro fiscal.
 CREATE TABLE IF NOT EXISTS public.adjuntos_directos (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   modulo text NOT NULL,
@@ -287,27 +55,7 @@ CREATE TABLE IF NOT EXISTS public.adjuntos_directos (
   created_by text
 );
 
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'compras_directas') THEN
-    CREATE TABLE public.compras_directas (
-      id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-      proveedor_id bigint REFERENCES public.proveedores(id)
-    );
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'servicios_directos') THEN
-    CREATE TABLE public.servicios_directos (
-      id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-      proveedor_id bigint REFERENCES public.proveedores(id)
-    );
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'ordenes') THEN
-    CREATE TABLE public.ordenes (
-      id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-      proveedor_id bigint REFERENCES public.proveedores(id)
-    );
-  END IF;
-END $$;
+
 
 -- P03 · 11 de 13 · gt_facturas_del_origen · migración gt_facturas_del_origen, versión 20261020100011
 
@@ -353,7 +101,7 @@ CREATE INDEX IF NOT EXISTS retencion_documento_origenes_adjunto_idx on public.re
 comment on table public.retencion_documento_origenes is 'Retenciones: a qué órdenes, compras o servicios cubre cada documento fiscal y de qué archivo salió';
 
 -- Guarda de adjuntos_directos: campos fijos; nada registrado se toca; el borrado de una factura queda en el historial.
-create function public.adjuntos_directos_guarda()
+create or replace function public.adjuntos_directos_guarda()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare quien text := coalesce(auth.jwt() ->> 'email', current_user);
 begin
@@ -384,7 +132,7 @@ create trigger trg_adjuntos_directos_guarda before insert or update or delete on
   for each row execute function public.adjuntos_directos_guarda();
 
 -- Guarda de la puente: un origen; el archivo es de ESE origen y cuenta como factura; quién y cuándo.
-create function public.retencion_documento_origenes_guarda()
+create or replace function public.retencion_documento_origenes_guarda()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare a public.adjuntos_directos;
 begin
@@ -417,31 +165,28 @@ create trigger trg_retencion_documento_origenes_guarda before insert or update o
 
 -- Un origen con un documento fiscal registrado no se borra (D37: no perder el origen). La FK RESTRICT de la puente es el
 -- respaldo; este trigger va antes y da el código para la pantalla (en esas tablas solo hay triggers de auditoría AFTER).
-create function public.retencion_origen_con_documento()
+create or replace function public.retencion_origen_con_documento()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
   if exists (select 1 from public.retencion_documento_origenes p
-              where (tg_table_name = 'ordenes' and p.orden_id = old.id)
-                 or (tg_table_name = 'compras_directas' and p.compra_directa_id = old.id)
-                 or (tg_table_name = 'servicios_directos' and p.servicio_directo_id = old.id)) then
+              where (tg_table_name = 'compras_ordenes' and p.orden_id = old.id)
+                 or (tg_table_name = 'compras_ordenes' and p.compra_directa_id = old.id)
+                 or (tg_table_name = 'compras_servicios_directos' and p.servicio_directo_id = old.id)) then
     raise exception using errcode = 'P0001',
       message = 'RET_ORIGEN_CON_DOCUMENTO: tiene una factura registrada en Retenciones; para borrarlo, primero hay que borrar ese documento fiscal (solo si está libre).';
   end if;
   return old;
 end $$;
 revoke execute on function public.retencion_origen_con_documento() from public, anon, authenticated;
-DROP TRIGGER IF EXISTS trg_retencion_origen_con_documento ON public.ordenes;
-create trigger trg_retencion_origen_con_documento before delete on public.ordenes
+DROP TRIGGER IF EXISTS trg_retencion_origen_con_documento ON public.compras_ordenes;
+create trigger trg_retencion_origen_con_documento before delete on public.compras_ordenes
   for each row execute function public.retencion_origen_con_documento();
-DROP TRIGGER IF EXISTS trg_retencion_origen_con_documento ON public.compras_directas;
-create trigger trg_retencion_origen_con_documento before delete on public.compras_directas
-  for each row execute function public.retencion_origen_con_documento();
-DROP TRIGGER IF EXISTS trg_retencion_origen_con_documento ON public.servicios_directos;
-create trigger trg_retencion_origen_con_documento before delete on public.servicios_directos
+DROP TRIGGER IF EXISTS trg_retencion_origen_con_documento ON public.compras_servicios_directos;
+create trigger trg_retencion_origen_con_documento before delete on public.compras_servicios_directos
   for each row execute function public.retencion_origen_con_documento();
 
 -- El origen «principal» de retencion_documentos (el que manda la RPC de VF) se copia a la puente.
-create function public.retencion_documentos_a_origenes()
+create or replace function public.retencion_documentos_a_origenes()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
   if tg_op = 'UPDATE'
@@ -472,7 +217,7 @@ alter table public.retencion_documentos add constraint retencion_documentos_form
   and (factura_fecha is null or factura_fecha between date '2000-01-01' and date '2100-12-31'));
 alter table public.retencion_documentos drop constraint if exists retencion_documentos_compra_directa_fk;
 alter table public.retencion_documentos
-  add constraint retencion_documentos_compra_directa_fk foreign key (compra_directa_id) references public.compras_directas (id) on delete set null;
+  add constraint retencion_documentos_compra_directa_fk foreign key (compra_directa_id) references public.compras_ordenes (id) on delete set null;
 CREATE INDEX IF NOT EXISTS retencion_documentos_compra_fk_idx on public.retencion_documentos (compra_directa_id) where compra_directa_id is not null;
 -- Practicada: la emite el proveedor (su RIF, o el proveedor si falta el RIF). Recibida: la emitimos nosotros.
 CREATE unique INDEX IF NOT EXISTS retencion_documentos_unica_practicada on public.retencion_documentos
@@ -482,7 +227,7 @@ CREATE unique INDEX IF NOT EXISTS retencion_documentos_unica_recibida on public.
   (factura_nro, (coalesce(factura_control, '')), tipo_documento)
   where rol = 'sufrida' and factura_nro is not null;
 
-create function public.retencion_documentos_borrado()
+create or replace function public.retencion_documentos_borrado()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
   if exists (select 1 from public.retenciones r where r.documento_id = old.id)
@@ -552,9 +297,9 @@ select a.id as adjunto_id, a.modulo,
        (select array_agg(p.documento_id) from public.retencion_documento_origenes p where p.adjunto_id = a.id) as documentos
   from public.adjuntos_directos a
  where (a.es_factura is true or (a.es_factura is null and a.modulo in ('compra', 'servicio')))
-   and ((a.modulo = 'orden_factura' and exists (select 1 from public.ordenes o where o.id = a.ref_id))
-     or (a.modulo = 'compra' and exists (select 1 from public.compras_directas c where c.id = a.ref_id))
-     or (a.modulo = 'servicio' and exists (select 1 from public.servicios_directos s where s.id = a.ref_id)));
+   and ((a.modulo = 'orden_factura' and exists (select 1 from public.compras_ordenes o where o.id::text = a.ref_id))
+     or (a.modulo = 'compra' and exists (select 1 from public.compras_ordenes c where c.id::text = a.ref_id))
+     or (a.modulo = 'servicio' and exists (select 1 from public.compras_servicios_directos s where s.id::text = a.ref_id)));
 comment on view public.origen_facturas_adjuntos_estado is
   'Cada archivo que cuenta como factura de un origen que existe, y si ya está registrado como documento fiscal';
 
@@ -576,21 +321,21 @@ comment on view public.retencion_documentos_por_origen is 'Cada documento fiscal
 
 create view public.origenes_sin_factura with (security_invoker = true) as
 select 'oc'::text as origen_tipo, o.id as origen_id, coalesce(o.oc_codigo, o.codigo) as codigo, o.recibida_en as desde
-  from public.ordenes o
- where o.recibida_en is not null and o.factura_path is null and o.factura_recepcion_path is null
-   and not exists (select 1 from public.adjuntos_directos a where a.modulo = 'orden_factura' and a.ref_id = o.id)
+  from public.compras_ordenes o
+ where o.recibida_en is not null and o.factura_path is null
+   and not exists (select 1 from public.adjuntos_directos a where a.modulo = 'orden_factura' and a.ref_id = o.id::text)
    and not exists (select 1 from public.retencion_documento_origenes p where p.orden_id = o.id)
 union all
-select 'compra_directa', c.id, c.codigo, c.recepcionada_at
-  from public.compras_directas c
- where c.recepcionada_at is not null and c.adjunto_path is null
-   and not exists (select 1 from public.adjuntos_directos a where a.modulo = 'compra' and a.ref_id = c.id and a.es_factura is not false)
+select 'compra_directa', c.id, c.codigo, c.recibida_en
+  from public.compras_ordenes c
+ where c.recibida_en is not null and c.factura_path is null
+   and not exists (select 1 from public.adjuntos_directos a where a.modulo = 'compra' and a.ref_id = c.id::text and a.es_factura is not false)
    and not exists (select 1 from public.retencion_documento_origenes p where p.compra_directa_id = c.id)
 union all
-select 'servicio_directo', s.id, s.codigo, s.finalizada_at
-  from public.servicios_directos s
- where s.finalizada_at is not null and s.adjunto_path is null
-   and not exists (select 1 from public.adjuntos_directos a where a.modulo = 'servicio' and a.ref_id = s.id and a.es_factura is not false)
+select 'servicio_directo', s.id, s.codigo, s.finalizada_en
+  from public.compras_servicios_directos s
+ where s.finalizada_en is not null and coalesce(jsonb_array_length(s.facturas),0) = 0
+   and not exists (select 1 from public.adjuntos_directos a where a.modulo = 'servicio' and a.ref_id = s.id::text and a.es_factura is not false)
    and not exists (select 1 from public.retencion_documento_origenes p where p.servicio_directo_id = s.id);
 comment on view public.origenes_sin_factura is
   'OC recibidas, compras directas recepcionadas y servicios finalizados sin ningún archivo que cuente como factura (aviso de la pantalla)';
@@ -640,6 +385,7 @@ create policy "compras-oc update op" on storage.objects for update to authentica
          and ((select public.is_admin()) or (select public.puede('pedidos')) or (select public.puede('tesoreria')) or (select public.puede('retenciones')))
          and not exists (select 1 from public.adjuntos_directos a join public.retencion_documento_origenes p on p.adjunto_id = a.id
                           where a.modulo = 'orden_factura' and a.path = storage.objects.name));
+drop policy if exists "compras-oc delete factura huerfana" on storage.objects;
 create policy "compras-oc delete factura huerfana" on storage.objects for delete to authenticated
   using (bucket_id = 'compras-oc' and name like '%/facturas/%'
          and ((select public.is_admin()) or (select public.puede('pedidos')))
@@ -660,7 +406,7 @@ BEGIN
            o.created_at,
            'reenlace P03'
       FROM storage.objects o
-      JOIN public.ordenes r ON r.id::text = split_part(o.name, '/', 1)
+      JOIN public.compras_ordenes r ON r.id::text = split_part(o.name, '/', 1)
      WHERE o.bucket_id = 'op-imagenes'
        AND o.name ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/[0-9a-z]{2,8}-[^/]+$'
        AND NOT EXISTS (SELECT 1 FROM public.adjuntos_directos a WHERE a.path = o.name);
@@ -828,7 +574,7 @@ drop index if exists public.retencion_documentos_compra_fk_idx;
 revoke execute on function public.retencion_agente_valido() from public, anon, authenticated;
 
 -- 2) La única regla de líneas (la misma de VF + R7F)
-create function public.retencion_lineas_insertar(p_doc public.retencion_documentos, p_lineas jsonb, p_periodo text,
+create or replace function public.retencion_lineas_insertar(p_doc public.retencion_documentos, p_lineas jsonb, p_periodo text,
                                                  p_actor text, p_actor_name text)
 returns jsonb
 language plpgsql
@@ -996,7 +742,7 @@ comment on function public.retencion_factura_registrar(jsonb, jsonb) is
   'Registra una factura con sus líneas en una transacción (VF, R7F). Desde R10: con p_factura.solo_documento = true registra solo el documento, para retener después con retencion_lineas_registrar.';
 
 -- 4) Retener DESPUÉS contra un documento ya registrado (misma regla de líneas)
-create function public.retencion_lineas_registrar(p_documento_id uuid, p_lineas jsonb, p_periodo text default null, p_actor_name text default null)
+create or replace function public.retencion_lineas_registrar(p_documento_id uuid, p_lineas jsonb, p_periodo text default null, p_actor_name text default null)
 returns jsonb
 language plpgsql
 security invoker
@@ -1025,7 +771,7 @@ comment on function public.retencion_lineas_registrar(uuid, jsonb, text, text) i
 --      IGTF = contribuyente especial, o agente de percepción de IGTF;
 --      ISLR, MUNICIPAL, ESTADAL = SOLO si su condición «agente_retencion» está cargada y vigente (sin condición, no cuenta:
 --      mejor un falso «no retenible» que llenar el buscador de ruido).
-create function public.retencion_empresa_practica(p_impuesto text, p_fecha date default current_date)
+create or replace function public.retencion_empresa_practica(p_impuesto text, p_fecha date default current_date)
 returns boolean
 language sql
 stable
@@ -1050,13 +796,13 @@ comment on function public.retencion_empresa_practica(text, date) is
 create view public.retencion_facturas_resumen with (security_invoker = true) as
 select d.id as documento_id, d.rol, d.tipo_documento, d.factura_nro, d.factura_control, d.factura_fecha,
        d.factura_total, d.exento, d.iva_monto, d.moneda, d.tasa,
-       d.proveedor_id, coalesce(d.rif, p.rif) as rif, coalesce(d.razon_social, p.razon_social) as razon_social,
+       d.proveedor_id, coalesce(d.rif, p.rif) as rif, coalesce(d.razon_social, p.nombre) as razon_social,
        d.orden_id, d.compra_directa_id, d.servicio_directo_id, d.created_at,
        coalesce(ret.retenido, '{}'::jsonb) as retenido,
        coalesce(dec.decisiones, '{}'::jsonb) as decisiones,
        coalesce(pend.pendientes, '{}'::text[]) as pendientes,
        (d.rol = 'practicada' and cardinality(coalesce(pend.pendientes, '{}'::text[])) > 0) as retenible,
-       lower(concat_ws(' ', d.factura_nro, d.factura_control, coalesce(d.rif, p.rif), coalesce(d.razon_social, p.razon_social))) as buscar
+       lower(concat_ws(' ', d.factura_nro, d.factura_control, coalesce(d.rif, p.rif), coalesce(d.razon_social, p.nombre))) as buscar
   from public.retencion_documentos d
   left join public.proveedores p on p.id = d.proveedor_id
   left join lateral (
@@ -1149,12 +895,12 @@ end $textos$;
 
 
 -- 1) Las formas
-create function public.retencion_rif_valido(p_rif text)
+create or replace function public.retencion_rif_valido(p_rif text)
 returns boolean language sql immutable set search_path = public as $$
   select p_rif is not null and upper(regexp_replace(p_rif, '[^A-Za-z0-9]', '', 'g')) ~ '^[VEJPG][0-9]{9}$'
 $$;
 
-create function public.retencion_buzon_adjuntos_validos(p_adjuntos jsonb, p_factura_id text)
+create or replace function public.retencion_buzon_adjuntos_validos(p_adjuntos jsonb, p_factura_id text)
 returns boolean language sql immutable set search_path = public as $$
   select jsonb_typeof(p_adjuntos) = 'array'
      and jsonb_array_length(p_adjuntos) <= 6
@@ -1264,7 +1010,7 @@ CREATE INDEX IF NOT EXISTS retencion_facturas_externas_fecha_idx on public.reten
 CREATE INDEX IF NOT EXISTS retencion_facturas_externas_creada_idx on public.retencion_facturas_externas (created_at desc);
 
 -- Lo que pone la base (no el teléfono): autor, fechas y la foto del nombre de la empresa
-create function public.retencion_buzon_tocar()
+create or replace function public.retencion_buzon_tocar()
 returns trigger language plpgsql security invoker set search_path = public as $$
 declare quien text := coalesce(nullif(auth.jwt() ->> 'email', ''), current_user); nombre_empresa text; nombre_actor text;
 begin
@@ -1359,14 +1105,18 @@ insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
 values ('retenciones-facturas-externas', 'retenciones-facturas-externas', false, 12582912,
         array['image/jpeg', 'image/png', 'image/webp', 'application/pdf']);
 
+drop policy if exists "retenciones-facturas-externas read" on storage.objects;
 create policy "retenciones-facturas-externas read" on storage.objects for select to authenticated
   using (bucket_id = 'retenciones-facturas-externas' and (select public.puede_leer('retenciones')));
+drop policy if exists "retenciones-facturas-externas insert" on storage.objects;
 create policy "retenciones-facturas-externas insert" on storage.objects for insert to authenticated
   with check (bucket_id = 'retenciones-facturas-externas' and (select public.puede_leer('retenciones'))
               and name ~ '^[a-z0-9][a-z0-9-]{2,63}/[^/]{1,200}$' and position('..' in name) = 0);
+drop policy if exists "retenciones-facturas-externas update" on storage.objects;
 create policy "retenciones-facturas-externas update" on storage.objects for update to authenticated
   using (bucket_id = 'retenciones-facturas-externas' and ((select public.is_admin()) or (select public.puede('retenciones'))))
   with check (bucket_id = 'retenciones-facturas-externas' and ((select public.is_admin()) or (select public.puede('retenciones'))));
+drop policy if exists "retenciones-facturas-externas delete" on storage.objects;
 create policy "retenciones-facturas-externas delete" on storage.objects for delete to authenticated
   using (bucket_id = 'retenciones-facturas-externas' and ((select public.is_admin()) or (select public.puede('retenciones'))));
 
@@ -1722,113 +1472,6 @@ create trigger trg_retencion_agente_valido before insert or update of rol, tipo,
 
 
 -- GT · ENTREGA POR PAQUETE · 59-RESP-aplicar.sql
--- «Modelo de permisos del RESPALDO (traspaso desde MGG)»: migración gt_dump_database_sql_permiso_respaldo,
--- versión 20261102100023. Carril BD GT, 02/11/2026. Origen y autorización: Master GT, por la líder.
--- ALCANCE: esto es GT (respaldo/permisos), NO Retenciones; encargo explícito de la líder.
---
--- QUÉ HACE (3 cambios, nada más):
---   1) ACL: le quita a `anon` el permiso de ejecutar public.dump_database_sql() (hoy lo tiene; en MGG no). Se conservan
---      authenticated (lo usa la app, gateado por dentro), service_role y postgres.
---   2) roles_permisos: agrega el módulo 'respaldo' con lectura=true a los roles 'admin' y 'analista' (los dos que hoy
---      pueden respaldar). El resto queda sin respaldo, asignable después por la UI. Idempotente.
---   3) dump_database_sql(): se conserva TODO el cuerpo actual (SECURITY DEFINER, search_path='public',
---      statement_timeout, columnas GENERATED ALWAYS, array_agg, with ordinality). SOLO cambia el chequeo inicial:
---      de «usuarios.role in ('admin','analista')» (que no mira estado) a «puede_leer('respaldo')» (activo + permiso).
---
-
--- ── Guarda ──
-
-
--- 1) ACL: quitar EXECUTE a anon (se conservan authenticated, service_role, postgres).
-revoke execute on function public.dump_database_sql() from anon;
-
--- 2) roles_permisos: módulo 'respaldo' con lectura=true a 'admin' y 'analista' (preserva el acceso actual).
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'roles_permisos') THEN
-    UPDATE public.roles_permisos
-       SET permisos = jsonb_set(coalesce(permisos, '{}'::jsonb), '{respaldo}', '{"lectura": true}'::jsonb, true)
-     WHERE role IN ('admin', 'analista');
-  END IF;
-END $$;
-
--- 3) dump_database_sql(): mismo cuerpo, SOLO cambia el chequeo inicial a puede_leer('respaldo').
-create or replace function public.dump_database_sql()
- returns text
- language plpgsql
- security definer
- set search_path to 'public'
- set statement_timeout to '60s'
-as $function$
-declare
-  t        record;
-  gencols  text[];
-  filas    text[];
-  partes   text[] := '{}';
-begin
-  if not public.puede_leer('respaldo') then
-    raise exception 'Solo un usuario activo con permiso de Respaldo puede generar el respaldo de datos.';
-  end if;
-
-  partes := array_append(partes,
-    '-- Minería Internacional TS, C.A.-Inventario · Respaldo de DATOS · ' || now()::text || chr(10) ||
-    '-- Restaurar sobre el esquema base (supabase/schema.sql).' || chr(10));
-
-  for t in
-    select table_name
-      from information_schema.tables
-     where table_schema = 'public' and table_type = 'BASE TABLE'
-     order by table_name
-  loop
-    -- Las columnas GENERATED ALWAYS no se escriben: Postgres las rechaza en un INSERT.
-    select coalesce(array_agg(column_name), '{}')
-      into gencols
-      from information_schema.columns
-     where table_schema = 'public'
-       and table_name = t.table_name
-       and is_generated = 'ALWAYS';
-
-    partes := array_append(partes, '-- ===== ' || t.table_name || ' =====');
-
-    -- Un solo SELECT por tabla arma TODOS sus INSERT. `with ordinality` conserva
-    -- el orden de las columnas, para que el respaldo salga siempre igual y se
-    -- pueda comparar un volcado con otro.
-    execute format($q$
-      select coalesce(array_agg(
-               format('INSERT INTO public.%%I (%%s) VALUES (%%s) ON CONFLICT DO NOTHING;',
-                      %L, j.cols, j.vals)
-             ), '{}')
-        from public.%I x
-        cross join lateral (
-          select string_agg(quote_ident(e.key), ', ' order by e.ord) as cols,
-                 string_agg(
-                   case
-                     when e.value is null or jsonb_typeof(e.value) = 'null'
-                       then 'NULL'
-                     when jsonb_typeof(e.value) in ('number', 'boolean')
-                       then e.value #>> '{}'
-                     when jsonb_typeof(e.value) in ('object', 'array')
-                       then quote_literal(e.value::text) || '::jsonb'
-                     else quote_literal(e.value #>> '{}')
-                   end, ', ' order by e.ord) as vals
-            from jsonb_each(to_jsonb(x)) with ordinality as e(key, value, ord)
-           where not (e.key = any($1))
-        ) j
-    $q$, t.table_name, t.table_name)
-    into filas
-    using gencols;
-
-    if array_length(filas, 1) > 0 then
-      partes := array_append(partes, array_to_string(filas, chr(10)));
-    end if;
-    partes := array_append(partes, '');
-  end loop;
-
-  return array_to_string(partes, chr(10));
-end;
-$function$;
-
-
 -- R9 · 13 de 13 · gt_retencion_formas_y_rangos · migración gt_retencion_formas_y_rangos, versión 20261020100013
 
 -- ── Guarda: solo sigue si la base está justo antes de R9 (si no, se detiene sin escribir nada) ──
@@ -1978,13 +1621,13 @@ RETURNS bigint LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS 
   SELECT CASE 
     WHEN p_orden IS NOT NULL THEN (
       COALESCE(
-        (SELECT o.proveedor_id FROM public.ordenes o WHERE o.id = p_orden),
+        (SELECT o.proveedor_id FROM public.compras_ordenes o WHERE o.id = p_orden),
         (SELECT o.proveedor_id FROM public.ordenes_compra o WHERE o.id = p_orden),
         (SELECT o.proveedor_id FROM public.compras_ordenes o WHERE o.id = p_orden)
       )
     )
-    WHEN p_compra IS NOT NULL THEN (SELECT c.proveedor_id FROM public.compras_directas c WHERE c.id = p_compra)
-    ELSE (SELECT s.proveedor_id FROM public.servicios_directos s WHERE s.id = p_servicio) 
+    WHEN p_compra IS NOT NULL THEN (SELECT c.proveedor_id FROM public.compras_ordenes c WHERE c.id = p_compra)
+    ELSE (SELECT s.proveedor_id FROM public.compras_servicios_directos s WHERE s.id = p_servicio)
   END;
 $$;
 REVOKE EXECUTE ON FUNCTION public.retencion_origen_proveedor(bigint, bigint, bigint) FROM public, anon, authenticated;
