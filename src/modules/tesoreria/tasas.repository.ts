@@ -327,30 +327,17 @@ async function ultimaConocida(): Promise<TasaHoy> {
   };
 }
 
-/** Tasa USD del BCV de una fecha (YYYY-MM-DD), o null si no está registrada. La manual manda. */
+/** Tasa USD del catálogo BCV de La Cantera, vigente en la fecha indicada. */
 export async function getTasaUsdDeFecha(fecha: string): Promise<number | null> {
-  const { data, error } = await supabase.from('tasa_cambio').select('tasa, fuente')
-    .eq('moneda', 'USD').eq('fecha', fecha);
+  const { data, error } = await supabase.rpc('obtener_tasa', {
+    p_origen: 'USD',
+    p_destino: 'VES',
+    p_fecha: fecha,
+    p_fuente: 'BCV',
+  });
   if (error) throw error;
-  const rows = (data ?? []) as Array<{ tasa: number; fuente: string | null }>;
-  const r = rows.find((x) => x.fuente === 'manual') ?? rows[0];
-  if (r) return Number(r.tasa);
-
-  const hoy = hoyVE();
-  const info = infoDiaBancario(hoy);
-  if (fecha === hoy || (info.esBancario && fecha === info.fechaEfectivaBcv)) {
-    const hoyTasa = await getTasaHoy();
-    if (hoyTasa.usd != null) return hoyTasa.usd;
-  }
-
-  // Fallback para fechas no hábiles pasadas (ej. sábado/domingo): tomar la tasa más cercana anterior
-  const { data: antData } = await supabase.from('tasa_cambio').select('tasa, fuente')
-    .eq('moneda', 'USD').lte('fecha', fecha).order('fecha', { ascending: false }).limit(4);
-  const antRows = (antData ?? []) as Array<{ tasa: number; fuente: string | null }>;
-  const antR = antRows.find((x) => x.fuente === 'manual') ?? antRows[0];
-  if (antR) return Number(antR.tasa);
-
-  return null;
+  const tasa = Number(data?.[0]?.tasa);
+  return Number.isFinite(tasa) && tasa > 0 ? tasa : null;
 }
 
 /** Tasas USD del BCV de varias fechas (fecha → tasa; la manual manda). Las que no estén registradas no vienen. */
