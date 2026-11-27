@@ -96,9 +96,9 @@ export async function cargarSemillaDeFacturaOrigen(f: FacturaDeOrigen) {
       let nombre: string | null = null;
       let rif: string | null = null;
       if (provId) {
-        const { data: p } = await supabase.from('proveedores').select('razon_social, rif').eq('id', provId).maybeSingle();
-        nombre = texto(p?.razon_social);
-        rif = texto(p?.rif);
+        const { data: p } = await supabase.from('proveedores').select('*').eq('id', provId).maybeSingle();
+        nombre = texto((p as any)?.razon_social || (p as any)?.nombre);
+        rif = texto((p as any)?.rif);
       }
       const total = Number(o.total) || 0;
       const iva = Number(o.iva_monto) || 0;

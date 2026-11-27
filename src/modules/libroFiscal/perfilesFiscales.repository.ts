@@ -127,12 +127,18 @@ export const pideLicencia = (r: Pick<FilaPerfil, 'licenciaEstado' | 'perfilId'>)
 /** Proveedores activos con el estado de su perfil fiscal hoy. */
 export async function listPerfiles(): Promise<FilaPerfil[]> {
   const [prov, est] = await Promise.all([
-    supabase.from('proveedores').select('id, razon_social, rif, telefono, numero_administracion, actividad_economica, estado').order('razon_social'),
+    supabase.from('proveedores').select('*'),
     supabase.from(V_ESTADO).select('*'),
   ]);
   if (prov.error) throw errorRetencion(prov.error, 'No se pudieron leer los proveedores.');
   if (est.error) throw errorRetencion(est.error, 'No se pudo leer el estado de los perfiles fiscales.');
-  return unirPerfiles((prov.data ?? []) as ProveedorBase[], (est.data ?? []) as Record<string, unknown>[]);
+  const mapped = (prov.data ?? []).map((p: any) => ({
+    ...p,
+    id: String(p.id),
+    razon_social: p.razon_social || p.nombre || 'Proveedor',
+    estado: p.estado || (p.activo === false ? 'inactivo' : 'activo'),
+  })) as ProveedorBase[];
+  return unirPerfiles(mapped, (est.data ?? []) as Record<string, unknown>[]);
 }
 
 /* ───────── El perfil y sus versiones ───────── */

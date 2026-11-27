@@ -337,11 +337,27 @@ const COLUMNA_SUJETO: Record<SujetoGt, 'pjd' | 'pjnd' | 'pnr' | 'pnnr'> = {
  * en el catálogo, vacío quiere decir «no aplica», no «falta cargar».
  * Sustraendo y mínimo de 83,3334 UT, solo para la persona natural residente.
  */
+export const CONCEPTOS_ISLR_DEFAULT_FILAS: Record<string, unknown>[] = [
+  { codigo: '001', concepto: 'Honorarios profesionales a personas naturales', pjd: null, pjnd: null, pnr: 3, pnnr: 34, base_pct: 100, activo: true, orden: 1, nota: 'Art. 9 num. 1 Decreto 1.808: 3% PNR con sustraendo' },
+  { codigo: '002', concepto: 'Honorarios profesionales a personas jurídicas', pjd: 5, pjnd: 5, pnr: null, pnnr: null, base_pct: 100, activo: true, orden: 2, nota: 'Art. 9 num. 1 Decreto 1.808: 5% PJD' },
+  { codigo: '003', concepto: 'Comisiones mercantiles y corretaje', pjd: 5, pjnd: 5, pnr: 3, pnnr: 34, base_pct: 100, activo: true, orden: 3, nota: 'Art. 9 num. 2 Decreto 1.808: 5% PJD, 3% PNR' },
+  { codigo: '004', concepto: 'Ejecución de obras y servicios en general (contratistas)', pjd: 2, pjnd: 5, pnr: 1, pnnr: 34, base_pct: 100, activo: true, orden: 4, nota: 'Art. 9 num. 11 Decreto 1.808: 2% PJD, 1% PNR' },
+  { codigo: '005', concepto: 'Arrendamiento de bienes muebles (maquinarias)', pjd: 5, pjnd: 5, pnr: 3, pnnr: 34, base_pct: 100, activo: true, orden: 5, nota: 'Art. 9 num. 14 Decreto 1.808: 5% PJD, 3% PNR' },
+  { codigo: '006', concepto: 'Fletes y transporte de carga terrestre', pjd: 3, pjnd: 5, pnr: 1, pnnr: 34, base_pct: 100, activo: true, orden: 6, nota: 'Art. 9 num. 12 Decreto 1.808: 3% PJD, 1% PNR' },
+  { codigo: '007', concepto: 'Arrendamiento de bienes inmuebles', pjd: 5, pjnd: 5, pnr: 3, pnnr: 34, base_pct: 100, activo: true, orden: 7, nota: 'Art. 9 num. 13 Decreto 1.808: 5% PJD, 3% PNR' },
+  { codigo: '008', concepto: 'Publicidad y propaganda comercial', pjd: 5, pjnd: 5, pnr: 3, pnnr: 34, base_pct: 100, activo: true, orden: 8, nota: 'Art. 9 num. 15 Decreto 1.808: 5% PJD, 3% PNR' },
+  { codigo: '009', concepto: 'Primas de seguros y reaseguros', pjd: 3, pjnd: 5, pnr: 3, pnnr: 10, base_pct: 100, activo: true, orden: 9, nota: 'Art. 9 num. 5 Decreto 1.808: 3% PJD' },
+  { codigo: '010', concepto: 'Suministro de combustibles y lubricantes', pjd: 1, pjnd: 5, pnr: 1, pnnr: 34, base_pct: 100, activo: true, orden: 10, nota: '1% PJD' },
+  { codigo: '028', concepto: 'Mantenimiento y reparación de maquinaria pesada', pjd: 2, pjnd: 5, pnr: 1, pnnr: 34, base_pct: 100, activo: true, orden: 11, nota: '2% PJD, 1% PNR' },
+  { codigo: '041', concepto: 'Adquisición de bienes raíces / inmuebles', pjd: 5, pjnd: 5, pnr: 3, pnnr: 34, base_pct: 100, activo: true, orden: 12, nota: '5% PJD' },
+  { codigo: '054', concepto: 'Asistencia técnica y consultoría', pjd: 5, pjnd: 5, pnr: 3, pnnr: 34, base_pct: 100, activo: true, orden: 13, nota: '5% PJD' },
+];
+
 export function conceptosDeFilaGt(r: Record<string, unknown>): ConceptoRetencion[] {
   const out: ConceptoRetencion[] = [];
   for (const s of ['PJD', 'PJND', 'PNR', 'PNNR'] as const) {
     const pct = r[COLUMNA_SUJETO[s]];
-    if (pct == null) continue;
+    if (pct == null || Number(pct) <= 0) continue;
     out.push({
       id: `${r.codigo}:${s}`, tipo: 'islr', codigo: texto(r.codigo), nombre: String(r.concepto ?? ''),
       sujeto: SUJETO_DE_GT[s], porcentaje: n(pct), basePct: n(r.base_pct) || 100,
@@ -374,27 +390,20 @@ export async function listConceptos(soloActivos = false): Promise<ConceptoRetenc
       .order('orden', { ascending: true });
     if (soloActivos) q = q.eq('activo', true);
     const { data, error } = await q;
-    if (error) {
-      if (
-        error.code === 'PGRST205' ||
-        error.code === '42P01' ||
-        error.message?.includes('schema cache') ||
-        error.message?.includes('does not exist')
-      ) {
-        return conceptosLocales(await leerJsonParametros());
-      }
-      throw errorRetencion(error, 'No se pudo leer el catálogo de conceptos.');
+    let islr: ConceptoRetencion[] = [];
+    if (!error && data && data.length > 0) {
+      islr = data.flatMap((r) => conceptosDeFilaGt(r as Record<string, unknown>));
     }
-    const islr = (data ?? []).flatMap((r) => conceptosDeFilaGt(r as Record<string, unknown>));
-    return [...islr, ...conceptosLocales(await leerJsonParametros())];
+    if (islr.length === 0) {
+      islr = CONCEPTOS_ISLR_DEFAULT_FILAS.flatMap((r) => conceptosDeFilaGt(r));
+    }
+    const locales = conceptosLocales(await leerJsonParametros().catch(() => null));
+    return [...islr, ...locales];
   } catch (err) {
-    if (
-      err instanceof Error &&
-      (err.message.includes('schema cache') || err.message.includes('does not exist'))
-    ) {
-      return conceptosLocales(await leerJsonParametros());
-    }
-    throw err;
+    console.warn('Fallback a catálogo de conceptos predeterminado:', err);
+    const islr = CONCEPTOS_ISLR_DEFAULT_FILAS.flatMap((r) => conceptosDeFilaGt(r));
+    const locales = conceptosLocales(await leerJsonParametros().catch(() => null));
+    return [...islr, ...locales];
   }
 }
 
