@@ -35,7 +35,6 @@ import { semillaFacturaDesdeBuzon, semillaFacturaDesdeOrden, semillaFacturaDesde
 import { cargarSemillaDeFacturaOrigen, facturasPorRegistrar, cargarDatosDirectosPorIds, type FacturaDeOrigen, type DatosDirectoExtra } from '@/modules/libroFiscal/documentosOrigen.repository';
 import { ColaPorHacerView } from './ColaPorHacerView';
 import { construirColaPorHacer, type ItemColaPorHacer } from './colaPorHacer';
-import { v3Disponible } from '@/modules/libroFiscal/periodosRetencion.repository';
 import { buzonDisponible } from '@/modules/libroFiscal/disponibilidad';
 import { CONFIG_RETENCION_DEFECTO, type ConfigRetencion, type TipoImpuesto } from '@/modules/libroFiscal/retencionesCalculo';
 import { hoyVE } from '@/modules/tesoreria/tasas.repository';
@@ -52,13 +51,15 @@ import { rifValido } from '@/shared/lib/rif';
 import { list as listProveedores, insert as insertProveedor } from '@/modules/proveedores/proveedores.repository';
 import { EmpresaActualSelector } from './EmpresaActualSelector';
 import { EditorFichasFiscalesEmpresa } from './EditorFichasFiscalesEmpresa';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
+import { useReintegrosPendientes, type RetencionItem as RetencionItemApi } from '@/lib/api/retenciones';
+import { ModalRegistrarReintegro } from '@/pages/retenciones/ModalRegistrarReintegro';
 import '@/styles/gtCompat.css';
 import '@/modules/libroFiscal/libroFiscal.css';
 import '@/modules/libroFiscal/libroFiscalV8.css';
 import { norm } from '@/shared/lib/texto';
 
-type Vista = 'pendientes' | 'hechas' | 'libro' | 'agrupada' | 'periodos' | 'reportes' | 'auditoria' | 'buzon';
+type Vista = 'pendientes' | 'hechas' | 'libro' | 'agrupada' | 'periodos' | 'reportes' | 'auditoria' | 'buzon' | 'reintegros';
 
 // C-g: marca por-navegador de hasta dónde se «vio» el buzón (el sello de creación de la
 // factura más nueva ya vista). El badge cuenta las creadas después de esa marca; al abrir
@@ -78,7 +79,44 @@ export function RetencionesPage() {
   const actor = user?.email ?? 'sistema';
   const actorName = appUser?.nombre ?? null;
 
-  const [vista, setVista] = useState<Vista>('agrupada');
+  const [params, setParams] = useSearchParams();
+  const tabParam = (params.get('tab') || params.get('vista')) as string | null;
+
+  const normalizarVista = (v?: string | null): Vista => {
+    if (!v) return 'agrupada';
+    if (v === 'libro' || v === 'control') return 'agrupada';
+    if (v === 'por-hacer' || v === 'facturas' || v === 'por_realizar') return 'pendientes';
+    if (v === 'realizadas') return 'hechas';
+    return v as Vista;
+  };
+
+  const [vista, setVistaState] = useState<Vista>(() => normalizarVista(tabParam));
+
+  const setVista = (v: Vista) => {
+    setVistaState(v);
+    setParams(
+      (prev) => {
+        const p = new URLSearchParams(prev);
+        p.set('tab', v);
+        return p;
+      },
+      { replace: true },
+    );
+  };
+
+  useEffect(() => {
+    const raw = params.get('tab') || params.get('vista');
+    if (raw) {
+      const v = normalizarVista(raw);
+      setVistaState(v);
+    }
+  }, [params]);
+
+  // Gestión de reintegros diferidos
+  const { data: reintegros = [], isLoading: cargandoReintegros } = useReintegrosPendientes();
+  const [modalReintegro, setModalReintegro] = useState(false);
+  const [retencionReintegro, setRetencionReintegro] = useState<RetencionItemApi | null>(null);
+
   const [parametros, setParametros] = useState(false);
   const [configFiscal, setConfigFiscal] = useState<ConfigRetencion>(CONFIG_RETENCION_DEFECTO);
   const [pendientes, setPendientes] = useState<RetencionItem[]>([]);
@@ -97,8 +135,6 @@ export function RetencionesPage() {
       .then((us) => setUsuariosDirectorio(us.map((u) => ({ id: u.id, email: u.email, nombre: u.nombre }))))
       .catch(() => {});
   }, []);
-  const [conV3, setConV3] = useState(false);
-  useEffect(() => { v3Disponible().then(setConV3).catch(() => setConV3(false)); }, []);
   // R11: el buzón de facturas del teléfono, solo con sus tablas en la base.
   const [conBuzon, setConBuzon] = useState(false);
   useEffect(() => { buzonDisponible().then(setConBuzon).catch(() => setConBuzon(false)); }, []);
@@ -495,20 +531,31 @@ export function RetencionesPage() {
               )}
             </Link>
           )}
-          <nav className="view-toggle" role="tablist" aria-label="Pantallas del módulo" style={{ margin: 0 }}>
+          <nav className="view-toggle" role="tablist" aria-label="Pantallas del módulo" style={{ margin: 0, overflowX: 'auto', flexWrap: 'wrap' }}>
             <button className={vista === 'pendientes' ? 'active' : ''} onClick={() => setVista('pendientes')}>
               Por hacer{colaPorHacer.length ? ` (${colaPorHacer.length})` : ''}
             </button>
-            <button className={vista === 'hechas' ? 'active' : ''} onClick={() => setVista('hechas')}>Realizadas</button>
-            <button className={vista === 'agrupada' || vista === 'libro' ? 'active' : ''} onClick={() => setVista('agrupada')}>📋 Control de Retenciones</button>
-            {buzonVisible && (
-              <button className={vista === 'buzon' ? 'active' : ''} onClick={() => { setVista('buzon'); marcarBuzonVisto(); }}>
-                📥 Buzón Móvil{buzonNuevas > 0 ? ` (${buzonNuevas})` : ''}
-              </button>
-            )}
-            {conV3 && <button className={vista === 'periodos' ? 'active' : ''} onClick={() => setVista('periodos')}>Períodos</button>}
-            <button className={vista === 'reportes' ? 'active' : ''} onClick={() => setVista('reportes')}>Reportes</button>
-            <button className={vista === 'auditoria' ? 'active' : ''} onClick={() => setVista('auditoria')}>🛡️ Auditoría</button>
+            <button className={vista === 'agrupada' || vista === 'libro' ? 'active' : ''} onClick={() => setVista('agrupada')}>
+              📋 Control de Retenciones
+            </button>
+            <button className={vista === 'hechas' ? 'active' : ''} onClick={() => setVista('hechas')}>
+              Realizadas
+            </button>
+            <button className={vista === 'reintegros' ? 'active' : ''} onClick={() => setVista('reintegros')}>
+              Reintegros{reintegros.length ? ` (${reintegros.length})` : ''}
+            </button>
+            <button className={vista === 'buzon' ? 'active' : ''} onClick={() => { setVista('buzon'); marcarBuzonVisto(); }}>
+              📥 Buzón Móvil{buzonNuevas > 0 ? ` (${buzonNuevas})` : ''}
+            </button>
+            <button className={vista === 'periodos' ? 'active' : ''} onClick={() => setVista('periodos')}>
+              Períodos
+            </button>
+            <button className={vista === 'reportes' ? 'active' : ''} onClick={() => setVista('reportes')}>
+              Reportes
+            </button>
+            <button className={vista === 'auditoria' ? 'active' : ''} onClick={() => setVista('auditoria')}>
+              🛡️ Auditoría
+            </button>
           </nav>
         </div>
       </header>
@@ -521,8 +568,7 @@ export function RetencionesPage() {
       )}
 
       {/* ── Períodos fiscales (v8: filtros + atención + timeline) ── */}
-      {/* Períodos solo con V3R en la base: generar el año, declarar y reabrir. */}
-      {vista === 'periodos' && conV3 && (
+      {vista === 'periodos' && (
         <PeriodosRetencion puedeEditar={canWrite} impuestosActivos={impuestosActivos} practicaClaves={practicaClaves} />
       )}
 
@@ -533,7 +579,101 @@ export function RetencionesPage() {
       {vista === 'auditoria' && <AuditoriaRetenciones />}
 
       {/* ── Buzón Móvil y Multi-Empresa (facturas externas y soportes) ── */}
-      {vista === 'buzon' && buzonVisible && <BuzonFacturasExternasView onRegistrar={abrirDesdeBuzon} />}
+      {vista === 'buzon' && <BuzonFacturasExternasView onRegistrar={abrirDesdeBuzon} />}
+
+      {/* ── Reintegros pendientes (post-pago diferidos) ── */}
+      {vista === 'reintegros' && (
+        <div style={{ marginTop: '.75rem' }}>
+          <div className="card" style={{ marginBottom: '.75rem', borderColor: 'var(--warning, #f59e0b)' }}>
+            <div style={{ display: 'flex', gap: '.5rem', alignItems: 'flex-start' }}>
+              <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+              <div>
+                <strong>Devoluciones pendientes de proveedores (Reintegros post-pago)</strong>
+                <p className="muted" style={{ margin: '.2rem 0 0', fontSize: '.84rem' }}>
+                  Retenciones emitidas después de haber pagado la orden de compra al 100%. El proveedor debe reembolsar el
+                  monto retenido en banco o caja. Al recibir los fondos, pulse <strong>«Registrar reintegro»</strong>.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {cargandoReintegros ? (
+            <div className="muted" style={{ padding: '2rem', textAlign: 'center' }}>Consultando reintegros pendientes…</div>
+          ) : reintegros.length === 0 ? (
+            <div className="card" style={{ textAlign: 'center', padding: '3rem 1rem' }}>
+              <div style={{ fontSize: '2rem', marginBottom: '.5rem' }}>✅</div>
+              <div style={{ fontWeight: 700 }}>No hay reintegros pendientes</div>
+              <p className="muted" style={{ fontSize: '.84rem', margin: '.25rem auto 0', maxWidth: 400 }}>
+                Todos los proveedores con retenciones post-pago han reembolsado los importes correspondientes.
+              </p>
+            </div>
+          ) : (
+            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+              <div className="tabla-responsive">
+                <table className="tabla" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '.85rem' }}>
+                  <thead>
+                    <tr style={{ background: 'var(--bg-2)', borderBottom: '1px solid var(--border)' }}>
+                      <th style={{ padding: '.6rem .75rem' }}>Comprobante (R14)</th>
+                      <th style={{ padding: '.6rem .75rem' }}>Proveedor / Contacto</th>
+                      <th style={{ padding: '.6rem .75rem' }}>Factura</th>
+                      <th style={{ padding: '.6rem .75rem' }}>Emisión</th>
+                      <th style={{ padding: '.6rem .75rem', textAlign: 'right' }}>Por Reintegrar</th>
+                      <th style={{ padding: '.6rem .75rem', textAlign: 'center' }}>Espera</th>
+                      <th style={{ padding: '.6rem .75rem', textAlign: 'right' }}>Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reintegros.map((item) => (
+                      <tr key={item.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                        <td style={{ padding: '.6rem .75rem', fontWeight: 600 }} className="mono">{item.numero_comprobante}</td>
+                        <td style={{ padding: '.6rem .75rem' }}>
+                          <div style={{ fontWeight: 600 }}>{item.proveedor_nombre}</div>
+                          <div className="muted" style={{ fontSize: '.78rem' }}>{item.proveedor_rif} {item.proveedor_telefono ? `· ${item.proveedor_telefono}` : ''}</div>
+                        </td>
+                        <td style={{ padding: '.6rem .75rem' }} className="mono">{item.factura_numero}</td>
+                        <td style={{ padding: '.6rem .75rem' }}>{item.fecha_emision}</td>
+                        <td style={{ padding: '.6rem .75rem', textAlign: 'right', fontWeight: 700 }}>
+                          <span className="mono" style={{ color: 'var(--danger)' }}>
+                            {item.reintegro_monto?.toLocaleString('es-VE', { minimumFractionDigits: 2 })} {item.moneda}
+                          </span>
+                          {item.moneda !== 'VES' && item.monto_retenido_bs ? (
+                            <div className="muted" style={{ fontSize: '.75rem' }}>
+                              Bs. {item.monto_retenido_bs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
+                            </div>
+                          ) : null}
+                        </td>
+                        <td style={{ padding: '.6rem .75rem', textAlign: 'center' }}>
+                          <span style={{ padding: '.15rem .5rem', borderRadius: 999, background: 'rgba(245, 158, 11, 0.15)', color: 'var(--warning, #f59e0b)', fontWeight: 600, fontSize: '.76rem' }}>
+                            {item.dias_espera_reintegro} {item.dias_espera_reintegro === 1 ? 'día' : 'días'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '.6rem .75rem', textAlign: 'right' }}>
+                          <button
+                            type="button"
+                            className="btn btn-sm"
+                            onClick={() => {
+                              setRetencionReintegro(item);
+                              setModalReintegro(true);
+                            }}
+                          >
+                            Registrar reintegro
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <ModalRegistrarReintegro
+            abierta={modalReintegro}
+            onCerrar={() => setModalReintegro(false)}
+            retencion={retencionReintegro}
+          />
+        </div>
+      )}
 
       {/* ── Por hacer: cola unificada con archivo obligatorio por empresa ── */}
       {vista === 'pendientes' && (

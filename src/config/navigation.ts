@@ -962,10 +962,14 @@ export const navigation: NavSection[] = [
         label: 'Retenciones',
         icon: FileSpreadsheet,
         children: [
-          { label: 'Facturas por retener', to: '/app/retenciones' },
+          { label: 'Facturas por retener', to: '/app/retenciones?tab=pendientes' },
+          { label: 'Control de retenciones', to: '/app/retenciones?tab=agrupada' },
+          { label: 'Realizadas', to: '/app/retenciones?tab=hechas' },
           { label: 'Reintegros pendientes', to: '/app/retenciones?tab=reintegros' },
-          { label: 'Libro de retenciones', to: '/app/retenciones?tab=libro' },
+          { label: 'Buzón móvil', to: '/app/retenciones?tab=buzon' },
+          { label: 'Períodos fiscales', to: '/app/retenciones?tab=periodos' },
           { label: 'Reportes y SENIAT (TXT)', to: '/app/retenciones?tab=reportes' },
+          { label: 'Auditoría fiscal', to: '/app/retenciones?tab=auditoria' },
         ],
       },
       {
