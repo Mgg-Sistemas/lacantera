@@ -47,18 +47,21 @@ CREATE TABLE IF NOT EXISTS public.config (
 );
 ALTER TABLE public.config ENABLE ROW LEVEL SECURITY;
 
+-- Permisos y roles para PostgREST schema cache
+GRANT ALL ON public.config TO postgres, service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.config TO authenticated;
+GRANT SELECT ON public.config TO anon;
+
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'config' AND policyname = 'config read auth') THEN
         CREATE POLICY "config read auth" ON public.config FOR SELECT TO authenticated USING (true);
     END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'config' AND policyname = 'config_retenciones_parametros_insert') THEN
-        CREATE POLICY config_retenciones_parametros_insert ON public.config FOR INSERT TO authenticated
-        WITH CHECK (key = 'retenciones.parametros');
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'config' AND policyname = 'config anon read') THEN
+        CREATE POLICY "config anon read" ON public.config FOR SELECT TO anon USING (true);
     END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'config' AND policyname = 'config_retenciones_parametros_update') THEN
-        CREATE POLICY config_retenciones_parametros_update ON public.config FOR UPDATE TO authenticated
-        USING (key = 'retenciones.parametros') WITH CHECK (key = 'retenciones.parametros');
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'config' AND policyname = 'config_all_auth') THEN
+        CREATE POLICY "config_all_auth" ON public.config FOR ALL TO authenticated USING (true) WITH CHECK (true);
     END IF;
 END $$;
 
@@ -262,5 +265,18 @@ END $$;
 INSERT INTO public.retencion_ajustes (id, agrupar_iva)
 VALUES (true, false)
 ON CONFLICT (id) DO NOTHING;
+
+-- Grants para PostgREST API
+GRANT ALL ON public.retenciones TO postgres, service_role, authenticated;
+GRANT SELECT ON public.retenciones TO anon;
+GRANT ALL ON public.retenciones_conceptos TO postgres, service_role, authenticated;
+GRANT SELECT ON public.retenciones_conceptos TO anon;
+GRANT ALL ON public.retencion_series TO postgres, service_role, authenticated;
+GRANT SELECT ON public.retencion_series TO anon;
+GRANT ALL ON public.retencion_ajustes TO postgres, service_role, authenticated;
+GRANT SELECT ON public.retencion_ajustes TO anon;
+
+-- Recargar cache de PostgREST
+NOTIFY pgrst, 'reload schema';
 
 COMMIT;

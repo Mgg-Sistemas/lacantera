@@ -148,9 +148,29 @@ export function jsonDeConfig(c: ConfigRetencion, previo: JsonParametros | null |
 }
 
 async function leerJsonParametros(): Promise<JsonParametros | null> {
-  const { data, error } = await supabase.from('config').select('value').eq('key', CLAVE_CONFIG).maybeSingle();
-  if (error) throw errorRetencion(error, 'No se pudieron leer los parámetros fiscales.');
-  return (data?.value as JsonParametros | undefined) ?? null;
+  try {
+    const { data, error } = await supabase.from('config').select('value').eq('key', CLAVE_CONFIG).maybeSingle();
+    if (error) {
+      if (
+        error.code === 'PGRST205' ||
+        error.code === '42P01' ||
+        error.message?.includes('schema cache') ||
+        error.message?.includes('does not exist')
+      ) {
+        return null;
+      }
+      throw errorRetencion(error, 'No se pudieron leer los parámetros fiscales.');
+    }
+    return (data?.value as JsonParametros | undefined) ?? null;
+  } catch (err) {
+    if (
+      err instanceof Error &&
+      (err.message.includes('schema cache') || err.message.includes('does not exist') || err.message.includes('public.config'))
+    ) {
+      return null;
+    }
+    throw err;
+  }
 }
 
 export async function getConfigRetencion(): Promise<ConfigRetencion> {
@@ -337,13 +357,33 @@ export function conceptosLocales(j: JsonParametros | null | undefined): Concepto
 }
 
 export async function listConceptos(soloActivos = false): Promise<ConceptoRetencion[]> {
-  let q = supabase.from(T_CONCEPTOS).select('codigo, concepto, pjd, pjnd, pnr, pnnr, base_pct, activo, orden, nota')
-    .order('orden', { ascending: true });
-  if (soloActivos) q = q.eq('activo', true);
-  const { data, error } = await q;
-  if (error) throw errorRetencion(error, 'No se pudo leer el catálogo de conceptos.');
-  const islr = (data ?? []).flatMap((r) => conceptosDeFilaGt(r as Record<string, unknown>));
-  return [...islr, ...conceptosLocales(await leerJsonParametros())];
+  try {
+    let q = supabase.from(T_CONCEPTOS).select('codigo, concepto, pjd, pjnd, pnr, pnnr, base_pct, activo, orden, nota')
+      .order('orden', { ascending: true });
+    if (soloActivos) q = q.eq('activo', true);
+    const { data, error } = await q;
+    if (error) {
+      if (
+        error.code === 'PGRST205' ||
+        error.code === '42P01' ||
+        error.message?.includes('schema cache') ||
+        error.message?.includes('does not exist')
+      ) {
+        return conceptosLocales(await leerJsonParametros());
+      }
+      throw errorRetencion(error, 'No se pudo leer el catálogo de conceptos.');
+    }
+    const islr = (data ?? []).flatMap((r) => conceptosDeFilaGt(r as Record<string, unknown>));
+    return [...islr, ...conceptosLocales(await leerJsonParametros())];
+  } catch (err) {
+    if (
+      err instanceof Error &&
+      (err.message.includes('schema cache') || err.message.includes('does not exist'))
+    ) {
+      return conceptosLocales(await leerJsonParametros());
+    }
+    throw err;
+  }
 }
 
 /** Separa el id sintético `codigo:SUJETO` del catálogo de GT. */
