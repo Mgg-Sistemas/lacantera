@@ -267,7 +267,7 @@ export async function registrarFactura(factura: FacturaNueva, lineas: LineaFactu
   if (!res.factura) throw new Error('La base no devolvió la factura registrada.');
   return {
     factura: aFacturaCabecera({ ...res.factura, retenciones: res.lineas ?? [] }),
-    lineas: (res.lineas ?? []).map((l) => aRetencion(l)),
+    lineas: (res.lineas ?? []).map((l) => aRetencion({ ...l, retencion_documentos: res.factura })),
   };
 }
 

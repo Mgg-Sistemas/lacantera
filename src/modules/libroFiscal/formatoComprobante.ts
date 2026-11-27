@@ -62,8 +62,10 @@ export function columnasFabrica(tipo: TipoImpuesto): ColumnaFormato[] {
         ['monto', 'IMPUESTO RETENIDO'],
       ]
     : tipo === 'islr'
-      ? [['factura', 'DOCUMENTO'], ['fecha', 'FECHA'], ['control', 'N° CONTROL'], ['concepto', 'CONCEPTO'], ['total_factura', 'TOTAL FACTURA'], ['base', 'BASE IMPONIBLE'], ['causado', 'IMPUESTO CAUSADO'], ['sustraendo', 'SUSTRAENDO'], ['pct', '% RET.'], ['monto', 'MONTO RETENIDO']]
-      : [['factura', 'DOCUMENTO'], ['fecha', 'FECHA'], ['control', 'N° CONTROL'], ['base', 'BASE IMPONIBLE'], ['pct', '% RET.'], ['monto', 'MONTO RETENIDO']];
+      ? [['factura', 'DOCUMENTO'], ['control', 'N° CONTROL'], ['fecha', 'FECHA'], ['concepto', 'CONCEPTO'], ['total_factura', 'TOTAL FACTURA'], ['base', 'BASE IMPONIBLE'], ['pct', '% RET.'], ['causado', 'IMPUESTO CAUSADO'], ['sustraendo', 'SUSTRAENDO'], ['monto', 'MONTO RETENIDO']]
+      : tipo === 'municipal'
+        ? [['operacion', 'OPER. N°'], ['factura', 'DOCUMENTO'], ['control', 'N° CONTROL'], ['fecha', 'FECHA'], ['concepto', 'CONCEPTO'], ['total_factura', 'TOTAL FACTURA'], ['base', 'BASE IMPONIBLE'], ['pct', '% RET.'], ['monto', 'MONTO RETENIDO']]
+        : [['factura', 'DOCUMENTO'], ['fecha', 'FECHA'], ['control', 'N° CONTROL'], ['base', 'BASE IMPONIBLE'], ['pct', '% RET.'], ['monto', 'MONTO RETENIDO']];
   return cols.map(([campo, rotulo], i) => ({ campo, rotulo, visible: true, orden: i + 1, ancho: null }));
 }
 
@@ -71,7 +73,7 @@ export function columnasFabrica(tipo: TipoImpuesto): ColumnaFormato[] {
 export function textosFabrica(tipo: TipoImpuesto): Record<ClaveTexto, string> {
   const t: Record<string, { encabezado: string; nota_legal: string }> = {
     iva: { encabezado: 'COMPROBANTE DE RETENCION DE IVA', nota_legal: 'Providencia Administrativa SNAT/2025/000054 (G.O. N° 43.171)' },
-    islr: { encabezado: 'COMPROBANTE DE RETENCION DE IMPUESTO SOBRE LA RENTA', nota_legal: 'Decreto 1.808 · Reglamento Parcial de la Ley de ISLR en materia de retenciones' },
+    islr: { encabezado: 'COMPROBANTE DE RETENCION DE IMPUESTO SOBRE LA RENTA', nota_legal: 'Artículo 24 del Decreto 1.808 en materia de retenciones de ISLR, publicado en G.O. N° 36.203 del 12 de mayo de 1997.' },
     municipal: { encabezado: 'COMPROBANTE DE RETENCION DEL IMPUESTO DE ACTIVIDAD ECONOMICA', nota_legal: 'Ordenanza sobre Agente de Retencion de Impuesto de Actividades Economicas' },
     regional: { encabezado: 'COMPROBANTE DE RETENCION DE TIMBRE FISCAL ESTADAL', nota_legal: '' },
     igtf: { encabezado: 'COMPROBANTE DE PERCEPCION DE IGTF', nota_legal: 'Ley de Impuesto a las Grandes Transacciones Financieras' },
@@ -113,12 +115,15 @@ const textoDe = (v: unknown) => (typeof v === 'string' ? v : null);
 export function aplicarFormato(tipo: TipoImpuesto, f: FormatoParaAplicar | null | undefined): FormatoAplicado {
   const fabricaCols = columnasFabrica(tipo);
   const fabricaTextos = textosFabrica(tipo);
+  const fabricaRotulos = tipo === 'islr'
+    ? { ...ROTULOS_FABRICA, sujeto: 'BENEFICIARIO', firma_sujeto: 'BENEFICIARIO' }
+    : { ...ROTULOS_FABRICA };
   if (!f || f.deFabrica) {
-    return { orientacion: 'horizontal', soportePapel: 'hoja_blanca_digital', textos: fabricaTextos, rotulos: { ...ROTULOS_FABRICA }, columnas: fabricaCols };
+    return { orientacion: 'horizontal', soportePapel: 'hoja_blanca_digital', textos: fabricaTextos, rotulos: fabricaRotulos, columnas: fabricaCols };
   }
   const textos = { ...fabricaTextos };
   for (const k of CLAVES_TEXTO) { const v = textoDe(f.textos?.[k]); if (v != null) textos[k] = v; }
-  const rotulos = { ...ROTULOS_FABRICA };
+  const rotulos = fabricaRotulos;
   for (const k of Object.keys(ROTULOS_FABRICA)) { const v = textoDe(f.rotulos?.[k]); if (v != null && v.trim()) rotulos[k] = v; }
   // Columnas: se toman las del formato que existan en el impuesto; las que el formato no nombra quedan como de fábrica.
   const delFormato = new Map<string, Partial<ColumnaFormato>>();

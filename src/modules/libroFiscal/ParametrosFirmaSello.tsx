@@ -61,6 +61,7 @@ function TarjetaImagen({ clase, titulo, ayuda, versiones, puedeEditar, onCambio 
   const [firmante, setFirmante] = useState('');
   const [motivo, setMotivo] = useState('');
   const [subiendo, setSubiendo] = useState(false);
+  const [errorSubida, setErrorSubida] = useState<string | null>(null);
   const faltaArchivo = archivo ? faltaEnImagen(archivo) : null;
   const faltaDesde = desde ? faltaEnFechaRango(desde, `la fecha «vale desde» ${clase === 'logo' ? 'del logo' : clase === 'firma' ? 'de la firma' : 'del sello'}`) : 'Indica desde qué fecha vale la imagen.';
   const faltaFirmante = clase === 'firma' && !firmante.trim() ? 'Indica el nombre y el cargo de quien firma.' : null;
@@ -70,13 +71,16 @@ function TarjetaImagen({ clase, titulo, ayuda, versiones, puedeEditar, onCambio 
   async function subir() {
     if (!archivo || falta) { if (falta) toast(falta, 'error'); return; }
     setSubiendo(true);
+    setErrorSubida(null);
     try {
       await subirImagenAgente(clase, archivo, desde, { firmante, motivo });
       toast(`${titulo}: imagen cargada.`, 'success');
       setArchivo(null); setMotivo('');
       onCambio();
     } catch (e) {
-      toast(e instanceof Error ? e.message : 'No se pudo cargar la imagen.', 'error');
+      const mensaje = e instanceof Error ? e.message : 'No se pudo cargar la imagen.';
+      setErrorSubida(mensaje);
+      toast(mensaje, 'error');
     } finally {
       setSubiendo(false);
     }
@@ -113,6 +117,7 @@ function TarjetaImagen({ clase, titulo, ayuda, versiones, puedeEditar, onCambio 
             <label>Imagen nueva (PNG o JPG, hasta 1 MB)</label>
             <input className="input" type="file" accept="image/png,image/jpeg" onChange={(e) => setArchivo(e.target.files?.[0] ?? null)} />
             {faltaArchivo && <small style={{ color: 'var(--danger)' }}>{faltaArchivo}</small>}
+            {errorSubida && <small role="alert" style={{ color: 'var(--danger)' }}>{errorSubida}</small>}
           </div>
           {clase === 'firma' && (
             <div className="form-row" style={{ margin: '.4rem 0 0' }}>

@@ -546,7 +546,7 @@ export function aRetencion(r: Record<string, unknown>): RetencionPracticada {
   const fechaRef = String(fechaFactura ?? fechaEmision ?? '');
   const tipoDocRaw = r.tipo_documento ?? doc?.tipo_documento;
   const facturaAfectadaRaw = r.factura_afectada_nro ?? doc?.factura_afectada_nro;
-  const facturaTotalRaw = r.factura_total ?? doc?.factura_total;
+  const facturaTotalRaw = doc?.factura_total ?? r.factura_total;
   const exentoRaw = r.exento ?? doc?.exento;
   return {
     id: String(r.id), documentoId: texto(r.documento_id), tipo: tipoDeGt(r.tipo),
@@ -627,7 +627,7 @@ export async function listRetenciones(f: FiltroRetenciones = {}): Promise<Retenc
   if (!(await tablaDisponible(T_RETENCIONES))) return [];
   const conDocumentos = await tablaDisponible('retencion_documentos');
   const columnas = conDocumentos
-    ? '*, retencion_documentos(tipo_documento, factura_afectada_nro, factura_total, exento, proveedor_id, orden_id, compra_directa_id, servicio_directo_id)'
+    ? '*, retencion_documentos(tipo_documento, factura_afectada_nro, factura_total, exento, proveedor_id, rif, razon_social, sujeto, factura_nro, factura_control, factura_fecha, orden_id, compra_directa_id, servicio_directo_id)'
     : '*';
   const filas = await todasLasFilas<Record<string, unknown>>((desde, hasta) => {
     let q = (supabase.from(T_RETENCIONES).select(columnas) as any)

@@ -57,14 +57,14 @@ export async function emailSujetoRetenido(r: RetencionPracticada): Promise<strin
   }
   if (r.contraparteId) {
     try {
-      const { data } = await supabase.from('proveedores').select('email').eq('id', r.contraparteId).maybeSingle();
-      if (data?.email?.trim()) return data.email.trim();
+      const { data } = await supabase.from('proveedores').select('correo').eq('id', r.contraparteId).maybeSingle();
+      if (data?.correo?.trim()) return data.correo.trim();
     } catch { /* continuar con RIF */ }
   }
   if (r.contraparteRif) {
     try {
-      const { data } = await supabase.from('proveedores').select('email').eq('rif', r.contraparteRif.trim()).maybeSingle();
-      if (data?.email?.trim()) return data.email.trim();
+      const { data } = await supabase.from('proveedores').select('correo').eq('rif', r.contraparteRif.trim()).maybeSingle();
+      if (data?.correo?.trim()) return data.correo.trim();
     } catch { /* fallback */ }
   }
   return null;
@@ -123,7 +123,7 @@ export function conceptoFiscalPdf(r: RetencionPracticada): string {
 export function valoresDeColumnas(r: RetencionPracticada): Record<string, string> {
   const op = r.operacionNumero != null
     ? String(r.operacionNumero).padStart(4, '0')
-    : '0001';
+    : r.tipo === 'municipal' ? '—' : '0001';
   const signo = r.tipoDocumento === 'nota_credito' ? -1 : 1;
   const esNd = r.tipoDocumento === 'nota_debito';
   const esNc = r.tipoDocumento === 'nota_credito';
@@ -359,8 +359,8 @@ export async function cargarElementosDigitales(fecha = hoyVenezuela(), empresaId
   const esBase = !empresaId || empresaId === 'empresa-mits' || empresaId === 'empresa-lacantera' || empresaId === 'empresa-golden-touch';
   if (!logoDataUrl && esBase) {
     try {
-      const { loadLogoPdfDataUrl } = await import('@/shared/lib/pdfLogo');
-      logoDataUrl = await loadLogoPdfDataUrl();
+      const { logoComoImagen } = await import('@/lib/ficha/logo');
+      logoDataUrl = await logoComoImagen(400, false);
     } catch { /* noop */ }
   }
   // Para la firma NO se aplica fallback automático: si la empresa no ha subido una firma
@@ -386,15 +386,8 @@ export async function generarDocComprobanteRetencionPdf(
     try {
       if (r.documentoId) {
         const res = await supabase.from('retencion_documentos')
-          .select('tipo_documento, factura_afectada_nro, factura_total, exento, iva_monto, iva_alicuota')
+          .select('tipo_documento, factura_afectada_nro, factura_total, exento, iva_monto, iva_alicuota, razon_social, rif, proveedor_id')
           .eq('id', r.documentoId)
-          .maybeSingle();
-        if (res.data) return res.data;
-      }
-      if (r.facturaNumero) {
-        const res = await supabase.from('retencion_documentos')
-          .select('tipo_documento, factura_afectada_nro, factura_total, exento, iva_monto, iva_alicuota')
-          .eq('factura_nro', r.facturaNumero)
           .maybeSingle();
         if (res.data) return res.data;
       }
@@ -441,10 +434,16 @@ export async function generarDocComprobanteRetencionPdf(
   };
 
   // Consultas de enriquecimiento: dirección del sujeto, correo del proveedor, documento fiscal, licencias y ficha receptora
-  const [direccionSujeto, emailSujeto, docCabecera, perfilesProv, fichaEmpresa] = await Promise.all([
-    direccionFiscalSujeto(r),
-    emailSujetoRetenido(r),
-    leerDocCabecera(),
+  const docCabecera = await leerDocCabecera();
+  const contraparte = {
+    ...r,
+    contraparteId: r.contraparteId ?? (docCabecera?.proveedor_id == null ? null : String(docCabecera.proveedor_id)),
+    contraparteNombre: r.contraparteNombre?.trim() || docCabecera?.razon_social || null,
+    contraparteRif: r.contraparteRif?.trim() || docCabecera?.rif || null,
+  };
+  const [direccionSujeto, emailSujeto, perfilesProv, fichaEmpresa] = await Promise.all([
+    direccionFiscalSujeto(contraparte),
+    emailSujetoRetenido(contraparte),
     leerPerfilesProv(),
     leerFichaEmpresa(),
   ]);
@@ -472,7 +471,7 @@ export async function generarDocComprobanteRetencionPdf(
   const licenciaAgente = configEfectiva.licenciaMunicipal?.trim() || null;
 
   const rEnriquecida: RetencionPracticada = {
-    ...r,
+    ...contraparte,
     contraparteDireccion: direccionSujeto,
     contraparteEmail: emailSujeto,
     tipoDocumento: (tipoDocumento as any),
@@ -525,14 +524,16 @@ export async function generarDocComprobanteRetencionPdf(
   const logoDataUrl = opciones.logoDataUrl !== undefined ? opciones.logoDataUrl : cargados.logoDataUrl;
   const firmaDataUrl = opciones.firmaDataUrl !== undefined ? opciones.firmaDataUrl : cargados.firmaDataUrl;
   const selloDataUrl = opciones.selloDataUrl !== undefined ? opciones.selloDataUrl : cargados.selloDataUrl;
-  const tieneLogo = (opciones.incluirLogo ?? Boolean(opciones.logoDataUrl)) && !!logoDataUrl;
+  const tieneLogo = (opciones.incluirLogo ?? configEfectiva.incluirLogo ?? true) && !!logoDataUrl;
   const logoW = 75;
   const logoH = 34;
 
   const restoY = y;
   if (tieneLogo) {
     try {
-      doc.addImage(logoDataUrl!, formatoImagenDataUrl(logoDataUrl!), M, restoY, logoW, logoH);
+      const imagen = doc.getImageProperties(logoDataUrl!);
+      const escala = Math.min(logoW / imagen.width, logoH / imagen.height);
+      doc.addImage(logoDataUrl!, formatoImagenDataUrl(logoDataUrl!), M, restoY, imagen.width * escala, imagen.height * escala);
     } catch { /* noop */ }
   }
 
@@ -620,14 +621,14 @@ export async function generarDocComprobanteRetencionPdf(
 
   // ── Determinación de partes (Agente vs Sujeto Retenido) ──
   const esRecibida = r.direccion === 'recibida';
-  const nombreAgente = esRecibida ? (r.contraparteNombre || '—') : razonSocialAgente(configEfectiva);
-  const rifAgente = esRecibida ? (r.contraparteRif || '—') : (configEfectiva.rif || EMPRESA_RIF);
+  const nombreAgente = esRecibida ? (contraparte.contraparteNombre || '—') : razonSocialAgente(configEfectiva);
+  const rifAgente = esRecibida ? (contraparte.contraparteRif || '—') : (configEfectiva.rif || EMPRESA_RIF);
   const dirAgente = esRecibida
     ? direccionSujeto
     : ([configEfectiva.direccionFiscal, configEfectiva.municipio, configEfectiva.estado].filter(Boolean).join(', ') || '—');
 
-  const nombreSujeto = esRecibida ? razonSocialAgente(configEfectiva) : (r.contraparteNombre || '—');
-  const rifSujeto = esRecibida ? (configEfectiva.rif || EMPRESA_RIF) : (r.contraparteRif || '—');
+  const nombreSujeto = esRecibida ? razonSocialAgente(configEfectiva) : (contraparte.contraparteNombre || '—');
+  const rifSujeto = esRecibida ? (configEfectiva.rif || EMPRESA_RIF) : (contraparte.contraparteRif || '—');
   const dirSujeto = esRecibida
     ? ([configEfectiva.direccionFiscal, configEfectiva.municipio, configEfectiva.estado].filter(Boolean).join(', ') || '—')
     : direccionSujeto;
@@ -1292,7 +1293,7 @@ export async function verComprobanteRetencionPdf(
   const permitirDoble = (opciones.imprimirOriginalYCopia ?? config?.imprimirOriginalYCopia) === true;
   let modoEjemplar: ModoEjemplar = opciones.modoEjemplar
     ?? (!permitirDoble ? 'estandar' : ((typeof localStorage !== 'undefined' ? localStorage.getItem('retenciones:modoEjemplar') as ModoEjemplar : null) || 'ambos'));
-  let conLogo = disp.tieneLogo && (opciones.incluirLogo ?? (config?.incluirLogo ?? true));
+  let conLogo = opciones.incluirLogo ?? config?.incluirLogo ?? true;
   let conFirma = disp.tieneFirma && (opciones.incluirFirma ?? (opciones.incluirFirmaSello ? true : (config?.incluirFirma ?? true)));
   let conSello = disp.tieneSello && (opciones.incluirSello ?? (opciones.incluirFirmaSello ? true : (config?.incluirSello ?? true)));
   let conQr = opciones.incluirQr ?? (config?.incluirQr ?? true);
@@ -1447,7 +1448,7 @@ export async function verTodosComprobantesFacturaPdf(
   const permitirDoble = (opciones.imprimirOriginalYCopia ?? config?.imprimirOriginalYCopia) === true;
   let modoEjemplar: ModoEjemplar = opciones.modoEjemplar
     ?? (!permitirDoble ? 'estandar' : ((typeof localStorage !== 'undefined' ? localStorage.getItem('retenciones:modoEjemplar') as ModoEjemplar : null) || 'ambos'));
-  let conLogo = disp.tieneLogo && (opciones.incluirLogo ?? (config?.incluirLogo ?? true));
+  let conLogo = opciones.incluirLogo ?? config?.incluirLogo ?? true;
   let conFirma = disp.tieneFirma && (opciones.incluirFirma ?? (opciones.incluirFirmaSello ? true : (config?.incluirFirma ?? true)));
   let conSello = disp.tieneSello && (opciones.incluirSello ?? (opciones.incluirFirmaSello ? true : (config?.incluirSello ?? true)));
   let conQr = opciones.incluirQr ?? (config?.incluirQr ?? true);

@@ -54,13 +54,19 @@ describe('formato del comprobante (R8): lo que no trae la versión es de fábric
       { campo: 'monto', rotulo: 'RETENIDO', orden: 0, ancho: 90 },
       { campo: 'alicuota', visible: true },
     ] });
-    expect(f.columnas.map((c) => c.campo)).toEqual(['monto', 'factura', 'fecha', 'control', 'total_factura', 'base', 'causado', 'sustraendo', 'pct']);
+    expect(f.columnas.map((c) => c.campo)).toEqual(['monto', 'factura', 'control', 'fecha', 'total_factura', 'base', 'pct', 'causado', 'sustraendo']);
     expect(f.columnas[0]).toMatchObject({ rotulo: 'RETENIDO', ancho: 90 });
   });
 
   it('la tabla del PDF tiene un valor para cada columna posible', () => {
     const v = valoresDeColumnas(retencionDeMuestra('islr', '2026-10-21'));
-    for (const c of [...columnasFabrica('iva'), ...columnasFabrica('islr')]) expect(v[c.campo]).toBeDefined();
+    for (const c of [...columnasFabrica('iva'), ...columnasFabrica('islr'), ...columnasFabrica('municipal')]) expect(v[c.campo]).toBeDefined();
+  });
+
+  it('incluye operación, concepto y total de factura en el formato municipal', () => {
+    expect(columnasFabrica('municipal').map((c) => c.campo)).toEqual([
+      'operacion', 'factura', 'control', 'fecha', 'concepto', 'total_factura', 'base', 'pct', 'monto',
+    ]);
   });
 
   it('G.O. 43.484: impuesto causado en IVA e ISLR, campo manual aparte y leyenda configurable vacía', () => {

@@ -1,4 +1,21 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('@/shared/lib/supabase', () => ({
+  supabase: {
+    from: () => {
+      const resultado = { data: [], error: null };
+      const consulta = {
+        select: () => consulta,
+        eq: () => consulta,
+        order: () => consulta,
+        maybeSingle: async () => ({ data: null, error: null }),
+        then: (resolve: (valor: typeof resultado) => unknown) => Promise.resolve(resultado).then(resolve),
+      };
+      return consulta;
+    },
+  },
+}));
+vi.mock('@/lib/ficha/logo', () => ({ logoComoImagen: async () => null }));
 import { EMPRESA_NOMBRE, EMPRESA_RIF } from '@/shared/lib/empresa';
 import { CONFIG_RETENCION_DEFECTO, configDesdeFicha, type ConfigRetencion } from './retencionesCalculo';
 import type { RetencionPracticada } from './retencionesFiscal.repository';

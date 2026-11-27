@@ -133,7 +133,7 @@ export async function retenerDespues(
   if (error) throw errorRetencion(error, 'No se pudo registrar la retención.');
   const res = (data ?? {}) as { factura?: Record<string, unknown>; lineas?: Record<string, unknown>[] };
   if (!res.factura) throw new Error('La base no devolvió la factura.');
-  return { factura: aFacturaCabecera({ ...res.factura, retenciones: res.lineas ?? [] }), lineas: (res.lineas ?? []).map((l) => aRetencion(l)) };
+  return { factura: aFacturaCabecera({ ...res.factura, retenciones: res.lineas ?? [] }), lineas: (res.lineas ?? []).map((l) => aRetencion({ ...l, retencion_documentos: res.factura })) };
 }
 
 /* ───────── Libro › «Sin retención»: las decisiones «no aplica» ───────── */
