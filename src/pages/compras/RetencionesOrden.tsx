@@ -105,6 +105,35 @@ export function RetencionesOrden({ orden }: Props) {
       {isPending ? <Cargando /> : null}
       {error ? <ErrorDeCarga error={error} /> : null}
 
+      {orden.retencion_momento ? (
+        <div className="mt-3 rounded-[6px] border border-hairline bg-surface/40 p-3 text-xs flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-semibold text-ink/85">Cálculo previo de Compras:</span>
+            <Chip tone={orden.retencion_momento === 'antes_de_pagar' ? 'warning' : 'neutral'}>
+              {orden.retencion_momento === 'antes_de_pagar'
+                ? '🔻 Retener antes de pagar'
+                : '🔺 Retener después de pagar'}
+            </Chip>
+            {Number(orden.retencion_compras_total) > 0 ? (
+              <span className="font-mono font-medium text-danger">
+                Retención estimada: -{dinero(orden.moneda, Number(orden.retencion_compras_total))}
+              </span>
+            ) : null}
+          </div>
+          {orden.retencion_momento === 'antes_de_pagar' && Number(orden.retencion_compras_total) > 0 ? (
+            <span className="font-mono text-ink/80">
+              Neto a pagar:{' '}
+              <strong>
+                {dinero(
+                  orden.moneda,
+                  Math.max(0, total - Number(orden.retencion_compras_total)),
+                )}
+              </strong>
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+
       {!isPending && (!retenciones || retenciones.length === 0) ? (
         <div className="rounded-[6px] border border-hairline p-4 text-sm mt-3 bg-surface/50">
           <div className="flex items-start gap-3">

@@ -295,51 +295,123 @@ export function useColaRetenciones() {
       const retenidasOrdenIds = new Set(
         locales.filter((r) => r.estado !== 'ANULADA' && r.orden_id).map((r) => r.orden_id),
       )
+      const retenidasFacturaNums = new Set(
+        locales
+          .filter((r) => r.estado !== 'ANULADA')
+          .map((r) => (r.factura_numero || '').trim().toLowerCase()),
+      )
 
-      // Buscar compras con comprobante_tipo = 'FACTURA'
+      const pendientes: FacturaPendienteRetencion[] = []
+      const ordenIdsCubiertos = new Set<number>()
+
+      // 1. Prioridad: Facturas físicas cargadas en el módulo de Compras (v_facturas_compra)
       try {
-        const res = await supabase
-          .from('compras_ordenes')
-          .select('id, numero, proveedor_id, total, iva, tasa, comprobante_tipo, estado, factura_nombre, proveedores(nombre, rif, email, telefono)')
+        const resFacturas = await supabase
+          .from('v_facturas_compra')
+          .select('*')
+          .neq('estado', 'ANULADA')
+          .order('fecha_emision', { ascending: false })
+          .limit(100)
+
+        if (!resFacturas.error && resFacturas.data) {
+          for (const f of resFacturas.data as any[]) {
+            const numFact = (f.numero_factura || '').trim().toLowerCase()
+            if (f.orden_id && retenidasOrdenIds.has(f.orden_id)) continue
+            if (numFact && retenidasFacturaNums.has(numFact)) continue
+
+            if (f.orden_id) {
+              ordenIdsCubiertos.add(f.orden_id)
+            }
+
+            const total = Number(f.total) || 0
+            const iva = Number(f.iva) || 0
+            const base = Number(f.base_imponible) || Math.max(total - iva, 0)
+            const yaPagada = f.estado === 'PAGADA'
+
+            pendientes.push({
+              orden_id: f.orden_id ?? f.id,
+              orden_numero: f.orden_numero || `F-${f.numero_factura}`,
+              proveedor_id: f.proveedor_id,
+              proveedor_nombre: f.proveedor || `Proveedor #${f.proveedor_id}`,
+              proveedor_rif: f.proveedor_rif || 'J-00000000-0',
+              proveedor_email: null,
+              proveedor_telefono: null,
+              factura_numero: f.numero_factura,
+              factura_control: f.numero_control || null,
+              factura_fecha: f.fecha_emision,
+              moneda: f.moneda || 'USD',
+              tasa: Number(f.tasa) || 1,
+              total,
+              base_imponible: base,
+              iva,
+              estado_orden: f.estado,
+              ya_pagada: yaPagada,
+            })
+          }
+        }
+      } catch {
+        // Tolerante si la vista no está lista
+      }
+
+      // 2. Órdenes con comprobante_tipo = 'FACTURA' que aún no tengan factura física cargada
+      try {
+        let resOrdenes = await supabase
+          .from('ordenes_compra')
+          .select(
+            'id, numero, proveedor_id, total, iva, tasa, comprobante_tipo, estado, proveedores(nombre, rif, email, telefono)',
+          )
           .eq('comprobante_tipo', 'FACTURA')
           .neq('estado', 'CANCELADA')
           .order('id', { ascending: false })
           .limit(50)
 
-        if (!res.error && res.data) {
-          return res.data
-            .filter((r: any) => !retenidasOrdenIds.has(r.id))
-            .map((r: any) => {
-              const yaPagada = ['PAGADA', 'RECIBIDA'].includes(r.estado)
-              const prov = r.proveedores ?? {}
-              const total = Number(r.total) || 0
-              const iva = Number(r.iva) || 0
-              const base = Math.max(total - iva, 0)
-              return {
-                orden_id: r.id,
-                orden_numero: r.numero,
-                proveedor_id: r.proveedor_id,
-                proveedor_nombre: prov.nombre || `Proveedor #${r.proveedor_id}`,
-                proveedor_rif: prov.rif || 'J-00000000-0',
-                proveedor_email: prov.email || null,
-                proveedor_telefono: prov.telefono || null,
-                factura_numero: r.factura_nombre || `F-${r.numero}`,
-                factura_control: null,
-                factura_fecha: new Date().toISOString().slice(0, 10),
-                moneda: 'USD',
-                tasa: Number(r.tasa) || 1,
-                total,
-                base_imponible: base,
-                iva,
-                estado_orden: r.estado,
-                ya_pagada: yaPagada,
-              }
+        if (resOrdenes.error) {
+          resOrdenes = await supabase
+            .from('compras_ordenes')
+            .select(
+              'id, numero, proveedor_id, total, iva, tasa, comprobante_tipo, estado, proveedores(nombre, rif, email, telefono)',
+            )
+            .eq('comprobante_tipo', 'FACTURA')
+            .neq('estado', 'CANCELADA')
+            .order('id', { ascending: false })
+            .limit(50)
+        }
+
+        if (!resOrdenes.error && resOrdenes.data) {
+          for (const r of resOrdenes.data as any[]) {
+            if (retenidasOrdenIds.has(r.id) || ordenIdsCubiertos.has(r.id)) continue
+            const prov = r.proveedores ?? {}
+            const total = Number(r.total) || 0
+            const iva = Number(r.iva) || 0
+            const base = Math.max(total - iva, 0)
+            const yaPagada = ['PAGADA', 'RECIBIDA'].includes(r.estado)
+
+            pendientes.push({
+              orden_id: r.id,
+              orden_numero: r.numero,
+              proveedor_id: r.proveedor_id,
+              proveedor_nombre: prov.nombre || `Proveedor #${r.proveedor_id}`,
+              proveedor_rif: prov.rif || 'J-00000000-0',
+              proveedor_email: prov.email || null,
+              proveedor_telefono: prov.telefono || null,
+              factura_numero: `F-${r.numero}`,
+              factura_control: null,
+              factura_fecha: new Date().toISOString().slice(0, 10),
+              moneda: 'USD',
+              tasa: Number(r.tasa) || 1,
+              total,
+              base_imponible: base,
+              iva,
+              estado_orden: r.estado,
+              ya_pagada: yaPagada,
             })
+          }
         }
       } catch {
-        // En espera de conexión viva
+        // Fallback tolerante
       }
-      return []
+
+      return pendientes
     },
   })
 }

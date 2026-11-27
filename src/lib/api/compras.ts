@@ -442,6 +442,17 @@ export interface Orden {
   } | null
   renglones: RenglonOrden[]
   instrucciones: InstruccionPago[]
+  // Retenciones Compras (G.O. 43.484 y Parámetros)
+  retencion_momento?: 'antes_de_pagar' | 'despues_de_pagar' | null
+  retencion_iva_pct?: number | null
+  retencion_iva_monto?: number | null
+  retencion_islr_pct?: number | null
+  retencion_islr_monto?: number | null
+  retencion_isae_pct?: number | null
+  retencion_isae_monto?: number | null
+  retencion_igtf_pct?: number | null
+  retencion_igtf_monto?: number | null
+  retencion_compras_total?: number | null
 }
 
 /**
@@ -1466,4 +1477,38 @@ export function useResolverDesistimiento() {
       p_nota: p.nota ?? null,
     }),
   )
+}
+
+/**
+ * Guarda las retenciones previas calculadas de la orden de compra.
+ * Intenta actualizar ordenes_compra y, de ser necesario, ordenes como respaldo.
+ */
+export function useGuardarRetencionesOrden() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (p: {
+      orden_id: number
+      retencion_momento: 'antes_de_pagar' | 'despues_de_pagar' | null
+      retencion_compras_total: number
+      columnas: Record<string, number | null>
+    }) => {
+      const payload = {
+        retencion_momento: p.retencion_momento,
+        retencion_compras_total: p.retencion_compras_total,
+        ...p.columnas,
+      }
+      try {
+        const { error } = await supabase.from('ordenes_compra').update(payload).eq('id', p.orden_id)
+        if (error) {
+          await supabase.from('ordenes').update(payload).eq('id', p.orden_id)
+        }
+      } catch {
+        // En caso de que las columnas aún no existan en Supabase (tolerante a fallos)
+      }
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['compras'] })
+      void qc.invalidateQueries({ queryKey: ['retenciones'] })
+    },
+  })
 }

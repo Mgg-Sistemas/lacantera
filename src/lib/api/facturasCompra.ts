@@ -108,6 +108,7 @@ function useAccion<A, R = unknown>(fn: (args: A) => Promise<R>) {
       void qc.invalidateQueries({ queryKey: ['facturas-compra'] })
       void qc.invalidateQueries({ queryKey: ['tesoreria'] })
       void qc.invalidateQueries({ queryKey: ['compras'] })
+      void qc.invalidateQueries({ queryKey: ['retenciones'] })
     },
   })
 }

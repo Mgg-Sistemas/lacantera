@@ -6,13 +6,25 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { ErrorDeCarga } from '@/components/ui/Estado'
-import { useIndicarPago } from '@/lib/api/compras'
+import { useIndicarPago, useGuardarRetencionesOrden } from '@/lib/api/compras'
 import { useMetodosPago, opcionesDe, monedasDe } from '@/lib/api/metodosPago'
 import { useMonedasUsables } from '@/lib/api/tasas'
 import { CamposDePago } from '@/components/CamposDePago'
 import type { DatosPago, Orden } from '@/lib/api/compras'
 import { bolivares, dolares, tasa as fmtTasa } from '@/lib/formato'
 import { cn } from '@/lib/cn'
+import {
+  calcularRetencionesCompras,
+  uiInicialRetenciones,
+  errorRetencionesCompras,
+  columnasRetencionesCompras,
+  TIPOS_RETENCION,
+  RETENCION_INFO,
+  pctTexto,
+  netoAPagarCompras,
+  type RetencionesUi,
+  type TipoRetencion,
+} from '@/modules/pedidos/retencionesCompras'
 
 interface Props {
   abierto: boolean
@@ -208,6 +220,31 @@ export function ModalPago({ abierto, onCerrar, orden }: Props) {
 
   const puedeRepartir = puedeConvertir && ivaPendiente > 0.01 && basePendiente > 0.01
 
+  const guardarRetenciones = useGuardarRetencionesOrden()
+
+  const [retencionMomento, setRetencionMomento] = useState<'antes_de_pagar' | 'despues_de_pagar' | null>(
+    (orden.retencion_momento as 'antes_de_pagar' | 'despues_de_pagar') ?? null,
+  )
+  const [retUi, setRetUi] = useState<RetencionesUi>(() =>
+    uiInicialRetenciones(orden as any),
+  )
+
+  const setRetTipo = (t: TipoRetencion, patch: Partial<RetencionesUi[TipoRetencion]>) => {
+    setRetUi((u) => ({ ...u, [t]: { ...u[t], ...patch } }))
+  }
+
+  // Retenciones: solo si tiene factura y se ha seleccionado momento
+  const usaRetenciones = orden.comprobante_tipo === 'FACTURA' && !!retencionMomento
+  const retBases = {
+    baseImponible: baseOrden,
+    iva: ivaOrden,
+    igtf: conIgtf ? Number(monto || 0) * 0.03 : 0,
+  }
+  const retencionesCalculadas = calcularRetencionesCompras(retUi, retBases)
+  const retTotal = usaRetenciones ? retencionesCalculadas.total : 0
+  const netoCompras = netoAPagarCompras(totalOrden, retTotal)
+  const errorRet = errorRetencionesCompras(totalOrden, retTotal)
+
   const guardar = async () => {
     await indicar.mutateAsync({
       orden_id: orden.id,
@@ -218,6 +255,17 @@ export function ModalPago({ abierto, onCerrar, orden }: Props) {
       nota,
       igtf: conIgtf,
     })
+
+    if (orden.comprobante_tipo === 'FACTURA') {
+      const cols = columnasRetencionesCompras(usaRetenciones ? retencionesCalculadas : null)
+      await guardarRetenciones.mutateAsync({
+        orden_id: orden.id,
+        retencion_momento: usaRetenciones ? retencionMomento : null,
+        retencion_compras_total: usaRetenciones ? retTotal : 0,
+        columnas: cols,
+      })
+    }
+
     onCerrar()
   }
 
@@ -369,6 +417,190 @@ export function ModalPago({ abierto, onCerrar, orden }: Props) {
           </span>
         </label>
       </div>
+
+      {orden.comprobante_tipo === 'FACTURA' ? (
+        <div className="mt-5 rounded-[6px] border border-hairline bg-surface/40 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+            <div>
+              <p className="text-ink/90 text-sm font-semibold">
+                Retenciones fiscales (SENIAT / G.O. 43.484)
+              </p>
+              <p className="text-ink/50 text-xs mt-0.5">
+                Indique si esta orden se retiene antes de pagar o si el pago es completo con retención posterior.
+              </p>
+            </div>
+            {retencionMomento ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setRetencionMomento(null)}
+              >
+                ✕ Sin indicar
+              </Button>
+            ) : null}
+          </div>
+
+          <div className="grid gap-2.5 sm:grid-cols-2 text-xs">
+            <label
+              className={cn(
+                'flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-2.5 transition-colors',
+                retencionMomento === 'antes_de_pagar'
+                  ? 'border-brand/40 bg-brand-soft/20 text-ink/90 font-medium'
+                  : 'border-hairline text-ink/70 hover:bg-surface/80',
+              )}
+            >
+              <input
+                type="radio"
+                name="retencion_momento"
+                checked={retencionMomento === 'antes_de_pagar'}
+                onChange={() => setRetencionMomento('antes_de_pagar')}
+                className="mt-0.5 accent-brand"
+              />
+              <div>
+                <strong>🔻 Retener ANTES de pagar</strong>
+                <p className="text-ink/50 text-[11px] mt-0.5 leading-relaxed">
+                  Tesorería pagará el <strong>neto (monto BAJA)</strong> deduciendo las retenciones calculadas.
+                </p>
+              </div>
+            </label>
+
+            <label
+              className={cn(
+                'flex cursor-pointer items-start gap-2.5 rounded-[6px] border p-2.5 transition-colors',
+                retencionMomento === 'despues_de_pagar'
+                  ? 'border-brand/40 bg-brand-soft/20 text-ink/90 font-medium'
+                  : 'border-hairline text-ink/70 hover:bg-surface/80',
+              )}
+            >
+              <input
+                type="radio"
+                name="retencion_momento"
+                checked={retencionMomento === 'despues_de_pagar'}
+                onChange={() => setRetencionMomento('despues_de_pagar')}
+                className="mt-0.5 accent-brand"
+              />
+              <div>
+                <strong>🔺 Retener DESPUÉS de pagar</strong>
+                <p className="text-ink/50 text-[11px] mt-0.5 leading-relaxed">
+                  Tesorería paga el <strong>total completo</strong>. Retenciones aplica los comprobantes y gestiona reintegros.
+                </p>
+              </div>
+            </label>
+          </div>
+
+          {retencionMomento ? (
+            <div className="mt-4 rounded-[6px] border border-hairline/80 bg-surface/70 p-3 text-xs space-y-3">
+              <p className="text-ink/80 font-medium">¿Qué impuestos se retienen?</p>
+
+              <div className="space-y-2">
+                {TIPOS_RETENCION.map((t) => {
+                  const info = RETENCION_INFO[t]
+                  const u = retUi[t]
+                  const base = t === 'iva' ? ivaOrden : t === 'igtf' ? (conIgtf ? Number(monto || 0) * 0.03 : 0) : baseOrden
+                  const l = retencionesCalculadas[t]
+                  return (
+                    <div
+                      key={t}
+                      className={cn(
+                        'flex flex-wrap items-center justify-between gap-2 rounded-[4px] border border-hairline/50 p-2',
+                        u.activa ? 'bg-surface' : 'opacity-65',
+                      )}
+                    >
+                      <label className="flex items-center gap-2 cursor-pointer min-w-[200px] flex-1">
+                        <input
+                          type="checkbox"
+                          checked={u.activa}
+                          onChange={(e) => setRetTipo(t, { activa: e.target.checked })}
+                          className="accent-brand"
+                        />
+                        <span>
+                          <strong>{info.etiqueta}</strong>{' '}
+                          <span className="text-ink/45 text-[11px]">
+                            · sobre {info.sobre} ({formatoOrden(base)})
+                          </span>
+                        </span>
+                      </label>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="any"
+                            value={u.manual ? String(l.pct) : u.pct}
+                            onChange={(e) => setRetTipo(t, { pct: e.target.value, manual: false, activa: true })}
+                            className="w-14 rounded-[4px] border border-hairline bg-surface px-1.5 py-0.5 text-right font-mono text-xs text-ink/85"
+                            title={`Porcentaje (${info.pctDefault}% sugerido)`}
+                          />
+                          <span className="text-ink/50">%</span>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={u.manual ? u.monto : (l.monto > 0 ? String(l.monto) : '')}
+                            onChange={(e) => setRetTipo(t, { monto: e.target.value, manual: true, activa: true })}
+                            placeholder="0.00"
+                            className="w-20 rounded-[4px] border border-hairline bg-surface px-1.5 py-0.5 text-right font-mono text-xs text-ink/85"
+                            title="Monto retenido (editable manual)"
+                          />
+                          <span className="text-ink/50">{orden.moneda}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Desglose de totales y neto */}
+              <div className="border-t border-hairline pt-2.5 space-y-1.5">
+                <div className="flex justify-between text-ink/60">
+                  <span>Total de la orden:</span>
+                  <span className="font-mono text-ink/85">{formatoOrden(totalOrden)}</span>
+                </div>
+                {TIPOS_RETENCION.filter((t) => retencionesCalculadas[t].monto > 0).map((t) => (
+                  <div key={t} className="flex justify-between text-ink/60">
+                    <span>− Retención {RETENCION_INFO[t].corta} ({pctTexto(retencionesCalculadas[t].pct)}):</span>
+                    <span className="font-mono text-danger">−{formatoOrden(retencionesCalculadas[t].monto)}</span>
+                  </div>
+                ))}
+                <div className="flex justify-between font-semibold pt-1 border-t border-hairline/60">
+                  <span>Total retenido estimado:</span>
+                  <span className="font-mono text-danger">−{formatoOrden(retTotal)}</span>
+                </div>
+
+                {retencionMomento === 'antes_de_pagar' ? (
+                  <div className="mt-2 rounded-[4px] bg-brand-soft/20 border border-brand/30 p-2 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <span className="text-ink/60 block text-[11px]">Neto estimado a pagar:</span>
+                      <strong className="text-sm font-mono text-brand">{formatoOrden(netoCompras)}</strong>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => proponer(netoCompras)}
+                      title="Copiar este monto al campo de pago"
+                    >
+                      Usar neto en el pago
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-ink/50 text-[11px] leading-relaxed pt-1">
+                    Se paga el total completo ({formatoOrden(totalOrden)}); estas retenciones ({formatoOrden(retTotal)}) quedan asentadas para que Retenciones emita los comprobantes R14.
+                  </p>
+                )}
+
+                {errorRet ? (
+                  <p className="text-danger text-[11px] font-medium mt-1">{errorRet}</p>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       <h3 className="text-ink/85 mt-6 mb-2 text-sm font-semibold">Datos de la transacción</h3>
 

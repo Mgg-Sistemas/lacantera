@@ -25,39 +25,75 @@
 
 BEGIN;
 
--- 1. Columnas en public.ordenes para cálculo previo de retenciones en Compras
-ALTER TABLE public.ordenes
-  ADD COLUMN IF NOT EXISTS retencion_momento       text,
-  ADD COLUMN IF NOT EXISTS retencion_iva_pct       numeric,
-  ADD COLUMN IF NOT EXISTS retencion_iva_monto     numeric,
-  ADD COLUMN IF NOT EXISTS retencion_islr_pct      numeric,
-  ADD COLUMN IF NOT EXISTS retencion_islr_monto    numeric,
-  ADD COLUMN IF NOT EXISTS retencion_isae_pct      numeric,
-  ADD COLUMN IF NOT EXISTS retencion_isae_monto    numeric,
-  ADD COLUMN IF NOT EXISTS retencion_igtf_pct      numeric,
-  ADD COLUMN IF NOT EXISTS retencion_igtf_monto    numeric,
-  ADD COLUMN IF NOT EXISTS retencion_compras_total numeric NOT NULL DEFAULT 0;
-
+-- 1. Columnas en public.ordenes_compra y public.ordenes para cálculo previo de retenciones en Compras
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ordenes_retencion_momento_chk') THEN
-    ALTER TABLE public.ordenes ADD CONSTRAINT ordenes_retencion_momento_chk
-      CHECK (retencion_momento IS NULL OR retencion_momento IN ('antes_de_pagar', 'despues_de_pagar'));
+  -- Soporte prioritario para public.ordenes_compra (esquema nativo de La Cantera)
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'ordenes_compra') THEN
+    ALTER TABLE public.ordenes_compra
+      ADD COLUMN IF NOT EXISTS retencion_momento       text,
+      ADD COLUMN IF NOT EXISTS retencion_iva_pct       numeric,
+      ADD COLUMN IF NOT EXISTS retencion_iva_monto     numeric,
+      ADD COLUMN IF NOT EXISTS retencion_islr_pct      numeric,
+      ADD COLUMN IF NOT EXISTS retencion_islr_monto    numeric,
+      ADD COLUMN IF NOT EXISTS retencion_isae_pct      numeric,
+      ADD COLUMN IF NOT EXISTS retencion_isae_monto    numeric,
+      ADD COLUMN IF NOT EXISTS retencion_igtf_pct      numeric,
+      ADD COLUMN IF NOT EXISTS retencion_igtf_monto    numeric,
+      ADD COLUMN IF NOT EXISTS retencion_compras_total numeric NOT NULL DEFAULT 0;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ordenes_compra_retencion_momento_chk') THEN
+      ALTER TABLE public.ordenes_compra ADD CONSTRAINT ordenes_compra_retencion_momento_chk
+        CHECK (retencion_momento IS NULL OR retencion_momento IN ('antes_de_pagar', 'despues_de_pagar'));
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ordenes_compra_ret_no_negativas') THEN
+      ALTER TABLE public.ordenes_compra ADD CONSTRAINT ordenes_compra_ret_no_negativas CHECK (
+        coalesce(retencion_iva_monto, 0)  >= 0 AND coalesce(retencion_islr_monto, 0) >= 0 AND
+        coalesce(retencion_isae_monto, 0) >= 0 AND coalesce(retencion_igtf_monto, 0) >= 0 AND
+        retencion_compras_total >= 0 AND
+        coalesce(retencion_iva_pct, 0)  BETWEEN 0 AND 100 AND coalesce(retencion_islr_pct, 0) BETWEEN 0 AND 100 AND
+        coalesce(retencion_isae_pct, 0) BETWEEN 0 AND 100 AND coalesce(retencion_igtf_pct, 0) BETWEEN 0 AND 100
+      );
+    END IF;
+
+    COMMENT ON COLUMN public.ordenes_compra.retencion_momento IS 'Momento de retención: antes_de_pagar (baja el neto a pagar) o despues_de_pagar (pago completo y retención posterior).';
+    COMMENT ON COLUMN public.ordenes_compra.retencion_compras_total IS 'Suma de retenciones estimadas en la orden de compra. Total de la orden no se reescribe.';
   END IF;
 
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ordenes_ret_compras_no_negativas') THEN
-    ALTER TABLE public.ordenes ADD CONSTRAINT ordenes_ret_compras_no_negativas CHECK (
-      coalesce(retencion_iva_monto, 0)  >= 0 AND coalesce(retencion_islr_monto, 0) >= 0 AND
-      coalesce(retencion_isae_monto, 0) >= 0 AND coalesce(retencion_igtf_monto, 0) >= 0 AND
-      retencion_compras_total >= 0 AND
-      coalesce(retencion_iva_pct, 0)  BETWEEN 0 AND 100 AND coalesce(retencion_islr_pct, 0) BETWEEN 0 AND 100 AND
-      coalesce(retencion_isae_pct, 0) BETWEEN 0 AND 100 AND coalesce(retencion_igtf_pct, 0) BETWEEN 0 AND 100
-    );
+  -- Soporte complementario si existe public.ordenes
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'ordenes' AND table_type = 'BASE TABLE') THEN
+    ALTER TABLE public.ordenes
+      ADD COLUMN IF NOT EXISTS retencion_momento       text,
+      ADD COLUMN IF NOT EXISTS retencion_iva_pct       numeric,
+      ADD COLUMN IF NOT EXISTS retencion_iva_monto     numeric,
+      ADD COLUMN IF NOT EXISTS retencion_islr_pct      numeric,
+      ADD COLUMN IF NOT EXISTS retencion_islr_monto    numeric,
+      ADD COLUMN IF NOT EXISTS retencion_isae_pct      numeric,
+      ADD COLUMN IF NOT EXISTS retencion_isae_monto    numeric,
+      ADD COLUMN IF NOT EXISTS retencion_igtf_pct      numeric,
+      ADD COLUMN IF NOT EXISTS retencion_igtf_monto    numeric,
+      ADD COLUMN IF NOT EXISTS retencion_compras_total numeric NOT NULL DEFAULT 0;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ordenes_retencion_momento_chk') THEN
+      ALTER TABLE public.ordenes ADD CONSTRAINT ordenes_retencion_momento_chk
+        CHECK (retencion_momento IS NULL OR retencion_momento IN ('antes_de_pagar', 'despues_de_pagar'));
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ordenes_ret_compras_no_negativas') THEN
+      ALTER TABLE public.ordenes ADD CONSTRAINT ordenes_ret_compras_no_negativas CHECK (
+        coalesce(retencion_iva_monto, 0)  >= 0 AND coalesce(retencion_islr_monto, 0) >= 0 AND
+        coalesce(retencion_isae_monto, 0) >= 0 AND coalesce(retencion_igtf_monto, 0) >= 0 AND
+        retencion_compras_total >= 0 AND
+        coalesce(retencion_iva_pct, 0)  BETWEEN 0 AND 100 AND coalesce(retencion_islr_pct, 0) BETWEEN 0 AND 100 AND
+        coalesce(retencion_isae_pct, 0) BETWEEN 0 AND 100 AND coalesce(retencion_igtf_pct, 0) BETWEEN 0 AND 100
+      );
+    END IF;
+
+    COMMENT ON COLUMN public.ordenes.retencion_momento IS 'Momento de retención: antes_de_pagar (baja el neto a pagar) o despues_de_pagar (pago completo y retención posterior).';
+    COMMENT ON COLUMN public.ordenes.retencion_compras_total IS 'Suma de retenciones estimadas en la orden de compra. Total de la orden no se reescribe.';
   END IF;
 END $$;
-
-COMMENT ON COLUMN public.ordenes.retencion_momento IS 'Momento de retención: antes_de_pagar (baja el neto a pagar) o despues_de_pagar (pago completo y retención posterior).';
-COMMENT ON COLUMN public.ordenes.retencion_compras_total IS 'Suma de retenciones estimadas en la orden de compra. Total de la orden no se reescribe.';
 
 -- 2. Columnas en public.proveedores para datos y perfiles fiscales
 ALTER TABLE public.proveedores
