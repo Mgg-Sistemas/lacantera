@@ -12,8 +12,18 @@ import { supabase } from '@/shared/lib/supabase';
 import type { EstadoOrden, Orden } from '@/shared/lib/types';
 import { fechaDesdeAgenteRetencion } from '@/modules/libroFiscal/agenteCondiciones.repository';
 
-const TABLE = 'ordenes';
+const TABLE = 'ordenes_compra';
 const BUCKET = 'compras-oc';
+
+async function tablaOrdenesActiva(): Promise<string> {
+  try {
+    const { error } = await supabase.from('ordenes_compra').select('id').limit(0);
+    if (!error) return 'ordenes_compra';
+  } catch {
+    // fallback
+  }
+  return 'ordenes';
+}
 
 export type TipoRetencion = 'iva' | 'islr' | 'municipal';
 export const TIPOS_RETENCION: { key: TipoRetencion; label: string }[] = [
@@ -36,9 +46,18 @@ export interface RetencionItem {
 export async function mapProveedores(ids?: string[]): Promise<Map<string, string>> {
   const unicos = ids ? Array.from(new Set(ids.filter(Boolean))) : [];
   if (ids && unicos.length === 0) return new Map();
-  const q = supabase.from('proveedores').select('id, razon_social');
-  const { data } = unicos.length > 0 ? await q.in('id', unicos) : await q;
-  return new Map((data ?? []).map((p) => [p.id as string, p.razon_social as string]));
+  try {
+    const q = supabase.from('proveedores').select('*');
+    const { data } = unicos.length > 0 ? await q.in('id', unicos) : await q;
+    return new Map(
+      (data ?? []).map((p: any) => [
+        String(p.id),
+        (p.nombre || p.razon_social || p.nombre_comercial || '—') as string,
+      ]),
+    );
+  } catch {
+    return new Map();
+  }
 }
 
 /**
@@ -49,13 +68,15 @@ export async function mapProveedores(ids?: string[]): Promise<Map<string, string
 export async function listOrdenesPorIds(ids: string[]): Promise<RetencionItem[]> {
   const unicos = Array.from(new Set(ids.filter(Boolean)));
   if (unicos.length === 0) return [];
-  const { data, error } = await supabase.from(TABLE).select('*').in('id', unicos);
-  if (error) throw error;
-  const pm = await mapProveedores((data ?? []).map((o) => (o as Orden).proveedor_id as string));
-  return (data ?? []).map((o) => ({
-    orden: o as Orden,
-    proveedorNombre: ((o as Orden).proveedor_id && pm.get((o as Orden).proveedor_id as string)) || '—',
-  }));
+  try {
+    const tabla = await tablaOrdenesActiva();
+    const { data, error } = await supabase.from(tabla).select('*').in('id', unicos);
+    if (error) return [];
+    const pm = await mapProveedores((data ?? []).map((o) => (o as Orden).proveedor_id as string));
+    return (data ?? []).map((o) => ({ orden: o as Orden, proveedorNombre: ((o as Orden).proveedor_id && pm.get((o as Orden).proveedor_id as string)) || '—' }));
+  } catch {
+    return [];
+  }
 }
 
 /**
@@ -101,51 +122,66 @@ export function labelRetencionMomento(v?: string | null): string {
  *  (al finalizar la OC), aún sin finalizar la retención. Excluye órdenes canceladas/desistidas
  *  y filtra por los estados del Kanban configurados. */
 export async function listRetencionesPendientes(estadosPermitidos?: EstadoOrden[]): Promise<RetencionItem[]> {
-  const [desdeAgente, { data, error }] = await Promise.all([
-    fechaDesdeAgenteRetencion(),
-    supabase.from(TABLE).select('*')
+  try {
+    const [desdeAgente, tabla] = await Promise.all([
+      fechaDesdeAgenteRetencion(),
+      tablaOrdenesActiva(),
+    ]);
+    const { data, error } = await supabase.from(tabla).select('*')
       .or('comprobante_tipo.eq.factura,factura_recepcion_path.not.is.null')
       .or('retencion_finalizada.is.null,retencion_finalizada.eq.false')
       .not('estado', 'in', `(${ESTADOS_NUNCA_RETENCION.join(',')})`)
       .gte('created_at', '2026-09-25T00:00:00Z')
-      .order('created_at', { ascending: true }),
-  ]);
-  if (error) throw error;
-  const filtradas = (data ?? []).filter((o) => ordenAplicaRetencion(o as Orden, desdeAgente, estadosPermitidos) && !esperaPagoParaRetener(o as Orden));
-  const pm = await mapProveedores(filtradas.map((o) => (o as Orden).proveedor_id as string));
-  return filtradas
-    .map((o) => ({ orden: o as Orden, proveedorNombre: ((o as Orden).proveedor_id && pm.get((o as Orden).proveedor_id as string)) || '—' }));
+      .order('created_at', { ascending: true });
+    if (error) return [];
+    const filtradas = (data ?? []).filter((o) => ordenAplicaRetencion(o as Orden, desdeAgente, estadosPermitidos) && !esperaPagoParaRetener(o as Orden));
+    const pm = await mapProveedores(filtradas.map((o) => (o as Orden).proveedor_id as string));
+    return filtradas
+      .map((o) => ({ orden: o as Orden, proveedorNombre: ((o as Orden).proveedor_id && pm.get((o as Orden).proveedor_id as string)) || '—' }));
+  } catch {
+    return [];
+  }
 }
 
 /** Retenciones ya finalizadas (comprobantes cargados). Solo a partir de la vigencia del régimen. */
 export async function listRetencionesHechas(): Promise<RetencionItem[]> {
-  const [desdeAgente, { data, error }] = await Promise.all([
-    fechaDesdeAgenteRetencion(),
-    supabase.from(TABLE).select('*')
+  try {
+    const [desdeAgente, tabla] = await Promise.all([
+      fechaDesdeAgenteRetencion(),
+      tablaOrdenesActiva(),
+    ]);
+    const { data, error } = await supabase.from(tabla).select('*')
       .or('comprobante_tipo.eq.factura,factura_recepcion_path.not.is.null')
       .eq('retencion_finalizada', true)
       .gte('created_at', '2026-09-25T00:00:00Z')
-      .order('retencion_finalizada_en', { ascending: false }),
-  ]);
-  if (error) throw error;
-  const filtradas = (data ?? []).filter((o) => ordenAplicaRetencion(o as Orden, desdeAgente));
-  const pm = await mapProveedores(filtradas.map((o) => (o as Orden).proveedor_id as string));
-  return filtradas
-    .map((o) => ({ orden: o as Orden, proveedorNombre: ((o as Orden).proveedor_id && pm.get((o as Orden).proveedor_id as string)) || '—' }));
+      .order('retencion_finalizada_en', { ascending: false });
+    if (error) return [];
+    const filtradas = (data ?? []).filter((o) => ordenAplicaRetencion(o as Orden, desdeAgente));
+    const pm = await mapProveedores(filtradas.map((o) => (o as Orden).proveedor_id as string));
+    return filtradas
+      .map((o) => ({ orden: o as Orden, proveedorNombre: ((o as Orden).proveedor_id && pm.get((o as Orden).proveedor_id as string)) || '—' }));
+  } catch {
+    return [];
+  }
 }
 
 export async function contarRetencionesPendientes(estadosPermitidos?: EstadoOrden[]): Promise<number> {
-  const [desdeAgente, { data, error }] = await Promise.all([
-    fechaDesdeAgenteRetencion(),
-    supabase.from(TABLE)
+  try {
+    const [desdeAgente, tabla] = await Promise.all([
+      fechaDesdeAgenteRetencion(),
+      tablaOrdenesActiva(),
+    ]);
+    const { data, error } = await supabase.from(tabla)
       .select('id, created_at, oc_creada_en, oc_emitida_en, estado, retencion_momento')
       .or('comprobante_tipo.eq.factura,factura_recepcion_path.not.is.null')
       .or('retencion_finalizada.is.null,retencion_finalizada.eq.false')
       .not('estado', 'in', `(${ESTADOS_NUNCA_RETENCION.join(',')})`)
-      .gte('created_at', '2026-09-25T00:00:00Z'),
-  ]);
-  if (error) throw error;
-  return (data ?? []).filter((o) => ordenAplicaRetencion(o as unknown as Orden, desdeAgente, estadosPermitidos) && !esperaPagoParaRetener(o as unknown as Orden)).length;
+      .gte('created_at', '2026-09-25T00:00:00Z');
+    if (error) return 0;
+    return (data ?? []).filter((o) => ordenAplicaRetencion(o as unknown as Orden, desdeAgente, estadosPermitidos) && !esperaPagoParaRetener(o as unknown as Orden)).length;
+  } catch {
+    return 0;
+  }
 }
 
 async function subirComprobante(ordenId: string, tipo: TipoRetencion, file: File): Promise<{ path: string; nombre: string }> {
