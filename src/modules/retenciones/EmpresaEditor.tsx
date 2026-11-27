@@ -51,7 +51,8 @@ export function EmpresaEditor({ empresa, modo, onGuardada, onClose, idForm }: {
   const [estado, setEstado] = useState(empresa?.estado ?? '');
   const [alicuotaMunicipal, setAlicuotaMunicipal] = useState<string>(empresa?.alicuotaMunicipal != null ? String(empresa.alicuotaMunicipal) : '');
   const [licenciaMunicipal, setLicenciaMunicipal] = useState(empresa?.licenciaMunicipal ?? '');
-  const [imprimirOriginalYCopia, setImprimirOriginalYCopia] = useState(empresa?.imprimirOriginalYCopia !== false);
+  const [imprimirOriginalYCopia, setImprimirOriginalYCopia] = useState(empresa?.imprimirOriginalYCopia === true);
+  const [esContribuyenteEspecial, setEsContribuyenteEspecial] = useState(empresa?.esContribuyenteEspecial === true);
 
   const [error, setError] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
@@ -89,6 +90,7 @@ export function EmpresaEditor({ empresa, modo, onGuardada, onClose, idForm }: {
         licenciaMunicipal: licenciaMunicipal.trim() || undefined,
         alicuotaMunicipal: alicuotaMunicipal.trim() === '' ? undefined : Number(alicuotaMunicipal),
         imprimirOriginalYCopia,
+        esContribuyenteEspecial,
       };
     }
 
@@ -105,6 +107,7 @@ export function EmpresaEditor({ empresa, modo, onGuardada, onClose, idForm }: {
         licenciaMunicipal: licenciaMunicipal.trim() || undefined,
         alicuotaMunicipal: alicuotaMunicipal.trim() === '' ? undefined : Number(alicuotaMunicipal),
         imprimirOriginalYCopia,
+        esContribuyenteEspecial,
       };
     }
 
@@ -213,6 +216,27 @@ export function EmpresaEditor({ empresa, modo, onGuardada, onClose, idForm }: {
 
       {verFiscal && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.6rem' }}>
+          {/* Selector de Régimen SENIAT */}
+          <div style={{ gridColumn: '1 / -1', background: 'rgba(255, 255, 255, 0.03)', padding: '.75rem', borderRadius: '6px', border: '1px solid var(--border)' }}>
+            <label style={etq}>Régimen Tributario ante el SENIAT</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '.5rem', marginTop: '.35rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '.6rem', padding: '.55rem .75rem', borderRadius: '6px', border: `1.5px solid ${!esContribuyenteEspecial ? 'var(--primary, #d97706)' : 'var(--border)'}`, background: !esContribuyenteEspecial ? 'rgba(217, 119, 6, 0.08)' : 'transparent', cursor: 'pointer' }}>
+                <input type="radio" name="regimen_seniat" checked={!esContribuyenteEspecial} onChange={() => setEsContribuyenteEspecial(false)} />
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: '.84rem', color: 'var(--text)' }}>🏢 Contribuyente Ordinario</div>
+                  <div className="muted" style={{ fontSize: '.74rem' }}>Paga el 100% del IVA al proveedor. Retiene ISLR e ISAE.</div>
+                </div>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '.6rem', padding: '.55rem .75rem', borderRadius: '6px', border: `1.5px solid ${esContribuyenteEspecial ? '#fbbf24' : 'var(--border)'}`, background: esContribuyenteEspecial ? 'rgba(251, 191, 36, 0.1)' : 'transparent', cursor: 'pointer' }}>
+                <input type="radio" name="regimen_seniat" checked={esContribuyenteEspecial} onChange={() => setEsContribuyenteEspecial(true)} />
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: '.84rem', color: '#fbbf24' }}>⭐ Contribuyente Especial</div>
+                  <div className="muted" style={{ fontSize: '.74rem' }}>Designada por SENIAT. Retiene IVA (75/100%) y percibe IGTF.</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
           <div>
             <label style={etq}>Alícuota del ISAE / Impuesto Municipal (%)</label>
             <input className="input mono" type="number" min={0} max={100} step="any" value={alicuotaMunicipal} onChange={(e) => setAlicuotaMunicipal(e.target.value)} placeholder="la del municipio" />
@@ -221,10 +245,21 @@ export function EmpresaEditor({ empresa, modo, onGuardada, onClose, idForm }: {
             <label style={etq}>Licencia municipal (RIM)</label>
             <input className="input" type="text" maxLength={60} value={licenciaMunicipal} onChange={(e) => setLicenciaMunicipal(e.target.value)} placeholder="N° de licencia de actividad económica" />
           </div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '.5rem', cursor: 'pointer', fontSize: '.86rem', gridColumn: '1 / -1' }}>
-            <input type="checkbox" checked={imprimirOriginalYCopia} onChange={(e) => setImprimirOriginalYCopia(e.target.checked)} />
-            Imprimir el comprobante en Original y Copia
-          </label>
+          <div style={{ gridColumn: '1 / -1', display: 'grid', gap: '.25rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '.5rem', cursor: 'pointer', fontSize: '.86rem' }}>
+              <input type="checkbox" checked={imprimirOriginalYCopia} onChange={(e) => setImprimirOriginalYCopia(e.target.checked)} />
+              <span>Imprimir el comprobante en Original y Copia (Página 1: Sujeto Retenido · Página 2: Agente)</span>
+            </label>
+            {!imprimirOriginalYCopia ? (
+              <div className="muted" style={{ fontSize: '.76rem', marginLeft: '1.45rem', color: 'var(--primary, #d97706)' }}>
+                ℹ️ Modalidad configurada: <strong>Solo Original</strong> (emite 1 página estándar sin duplicado).
+              </div>
+            ) : (
+              <div className="muted" style={{ fontSize: '.76rem', marginLeft: '1.45rem' }}>
+                ℹ️ Modalidad estándar: emite 2 páginas (Original para el proveedor + Copia para el archivo del agente).
+              </div>
+            )}
+          </div>
           <p className="muted" style={{ margin: 0, fontSize: '.78rem', gridColumn: '1 / -1' }}>Los % nacionales (IVA 75/100, alícuota del IVA, IGTF) se configuran en Parámetros → Valores; el régimen, en Parámetros → Régimen.</p>
         </div>
       )}

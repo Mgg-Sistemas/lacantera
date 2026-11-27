@@ -220,6 +220,26 @@ export async function aplicarRegimenMaestro({
     await guardarOActualizarCondicion(cond, empresaId);
   }
 
+  // Sincronización explícita en tabla retencion_empresas_receptoras
+  try {
+    const idStr = empresaId ? String(empresaId).trim() : '';
+    const esMits = !idStr || idStr === 'empresa-mits' || idStr === 'empresa-lacantera' || idStr === 'mits' || idStr === 'lacantera' || idStr === '1';
+    if (empresaId) {
+      await supabase
+        .from('retencion_empresas_receptoras')
+        .update({ es_contribuyente_especial: esEspecial })
+        .or(`id.eq.${empresaId},clave.eq.${empresaId}`);
+    }
+    if (esMits) {
+      await supabase
+        .from('retencion_empresas_receptoras')
+        .update({ es_contribuyente_especial: esEspecial })
+        .or('id.eq.empresa-mits,id.eq.empresa-lacantera,clave.eq.mits,clave.eq.cantera,clave.eq.la_cantera');
+    }
+  } catch {
+    /* sincronización accesoria */
+  }
+
   // Sincronización explícita en tabla config
   try {
     const { data: cfgRow } = await supabase.from('config').select('value').eq('key', 'retenciones.parametros').maybeSingle();

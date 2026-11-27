@@ -72,7 +72,7 @@ VALUES (
         'iva_retencion', 75,
         'iva_retencion_especial', 100,
         'igtf_alicuota', 3,
-        'imprimir_original_copia', true
+        'imprimir_original_copia', false
     ),
     now()
 )

@@ -82,11 +82,11 @@ VALUES (
         'pct_iva_general', 75,
         'pct_iva_especial', 100,
         'pct_igtf', 3,
-        'es_agente_retencion_iva', true,
+        'es_agente_retencion_iva', false,
         'es_contribuyente_especial', false,
         'retiene_islr', true,
         'retiene_municipal', true,
-        'imprimir_original_y_copia', true,
+        'imprimir_original_y_copia', false,
         'incluir_logo', true,
         'incluir_firma', true,
         'incluir_sello', true,
@@ -149,6 +149,56 @@ CREATE TABLE IF NOT EXISTS public.retenciones (
     updated_at timestamptz NOT NULL DEFAULT now()
 );
 
+-- Asegurar cada columna por si la tabla ya existía previamente en la base de datos
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS rol text NOT NULL DEFAULT 'practicada';
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS tipo text;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS estado text NOT NULL DEFAULT 'registrada';
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS numero bigint;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS comprobante_nro text;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS comprobante_periodo text;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS comprobante_fecha date;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS fecha_emision date DEFAULT current_date;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS contraparte_nombre text;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS contraparte_rif text;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS sujeto text;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS factura_numero text;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS factura_control text;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS factura_fecha date;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS fecha_entrega date;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS factura_total numeric(14,2) DEFAULT 0;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS base_imponible numeric(14,2) DEFAULT 0;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS iva_alicuota numeric(5,2);
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS iva_monto numeric(14,2);
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS impuesto_causado numeric(14,2) DEFAULT 0;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS monto_sin_derecho_credito_iva numeric(14,2) DEFAULT 0;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS porcentaje numeric(5,2) NOT NULL DEFAULT 0;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS concepto_codigo text;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS concepto text;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS municipio text;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS sustraendo numeric(14,2) DEFAULT 0;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS monto numeric(14,2) NOT NULL DEFAULT 0;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS moneda text NOT NULL DEFAULT 'Bs';
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS tasa numeric(18,6) DEFAULT 1;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS base_bs numeric(14,2);
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS monto_bs numeric(14,2);
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS descripcion text;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS orden_id uuid;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS compra_directa_id uuid;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS servicio_directo_id uuid;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS empresa_id text DEFAULT 'empresa-mits';
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS valor_ut numeric(14,2) DEFAULT 43;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS anulada_motivo text;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS anulada_por text;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS declarada_at timestamptz;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS declarada_por text;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS actor text;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS actor_name text;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
+
+-- Si hay filas previas con comprobante_fecha nulo, inicializar con fecha_emision o fecha actual
+UPDATE public.retenciones SET comprobante_fecha = coalesce(fecha_emision, current_date) WHERE comprobante_fecha IS NULL;
+
 ALTER TABLE public.retenciones ENABLE ROW LEVEL SECURITY;
 
 DO $$
@@ -182,6 +232,11 @@ CREATE TABLE IF NOT EXISTS public.retenciones_conceptos (
     orden int DEFAULT 0,
     nota text
 );
+
+ALTER TABLE public.retenciones_conceptos ADD COLUMN IF NOT EXISTS base_pct numeric(5,2) DEFAULT 100;
+ALTER TABLE public.retenciones_conceptos ADD COLUMN IF NOT EXISTS activo boolean NOT NULL DEFAULT true;
+ALTER TABLE public.retenciones_conceptos ADD COLUMN IF NOT EXISTS orden int DEFAULT 0;
+ALTER TABLE public.retenciones_conceptos ADD COLUMN IF NOT EXISTS nota text;
 
 ALTER TABLE public.retenciones_conceptos ENABLE ROW LEVEL SECURITY;
 DO $$
@@ -222,6 +277,18 @@ CREATE TABLE IF NOT EXISTS public.retencion_series (
     actualizado_en timestamptz NOT NULL DEFAULT now(),
     actualizado_por text
 );
+
+ALTER TABLE public.retencion_series ADD COLUMN IF NOT EXISTS numera boolean NOT NULL DEFAULT true;
+ALTER TABLE public.retencion_series ADD COLUMN IF NOT EXISTS formato text NOT NULL DEFAULT 'N10';
+ALTER TABLE public.retencion_series ADD COLUMN IF NOT EXISTS modo text NOT NULL DEFAULT 'automatica';
+ALTER TABLE public.retencion_series ADD COLUMN IF NOT EXISTS inicial bigint NOT NULL DEFAULT 1;
+ALTER TABLE public.retencion_series ADD COLUMN IF NOT EXISTS periodicidad text NOT NULL DEFAULT 'mensual';
+ALTER TABLE public.retencion_series ADD COLUMN IF NOT EXISTS vence_dia smallint;
+ALTER TABLE public.retencion_series ADD COLUMN IF NOT EXISTS convive boolean NOT NULL DEFAULT false;
+ALTER TABLE public.retencion_series ADD COLUMN IF NOT EXISTS solo_gt_desde date;
+ALTER TABLE public.retencion_series ADD COLUMN IF NOT EXISTS motivo_cambio text;
+ALTER TABLE public.retencion_series ADD COLUMN IF NOT EXISTS actualizado_en timestamptz NOT NULL DEFAULT now();
+ALTER TABLE public.retencion_series ADD COLUMN IF NOT EXISTS actualizado_por text;
 
 ALTER TABLE public.retencion_series ENABLE ROW LEVEL SECURITY;
 DO $$
