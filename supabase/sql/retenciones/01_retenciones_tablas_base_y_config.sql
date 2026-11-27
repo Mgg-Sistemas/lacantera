@@ -388,9 +388,11 @@ CREATE TABLE IF NOT EXISTS public.retenciones (
     base_bs numeric(14,2),
     monto_bs numeric(14,2),
     descripcion text,
-    orden_id uuid,
-    compra_directa_id uuid,
-    servicio_directo_id uuid,
+    proveedor_id bigint references public.proveedores(id),
+    documento_id uuid,
+    orden_id bigint,
+    compra_directa_id bigint,
+    servicio_directo_id bigint,
     empresa_id text DEFAULT 'empresa-mits',
     valor_ut numeric(14,2) DEFAULT 43,
     anulada_motivo text,
@@ -436,9 +438,29 @@ ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS tasa numeric(18,6) DEFAU
 ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS base_bs numeric(14,2);
 ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS monto_bs numeric(14,2);
 ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS descripcion text;
-ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS orden_id uuid;
-ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS compra_directa_id uuid;
-ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS servicio_directo_id uuid;
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS proveedor_id bigint references public.proveedores(id);
+ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS documento_id uuid;
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'retenciones' AND column_name = 'orden_id' AND data_type = 'uuid') THEN
+    ALTER TABLE public.retenciones ALTER COLUMN orden_id TYPE bigint USING NULL;
+  ELSE
+    ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS orden_id bigint;
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'retenciones' AND column_name = 'compra_directa_id' AND data_type = 'uuid') THEN
+    ALTER TABLE public.retenciones ALTER COLUMN compra_directa_id TYPE bigint USING NULL;
+  ELSE
+    ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS compra_directa_id bigint;
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'retenciones' AND column_name = 'servicio_directo_id' AND data_type = 'uuid') THEN
+    ALTER TABLE public.retenciones ALTER COLUMN servicio_directo_id TYPE bigint USING NULL;
+  ELSE
+    ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS servicio_directo_id bigint;
+  END IF;
+END $$;
 ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS empresa_id text DEFAULT 'empresa-mits';
 ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS valor_ut numeric(14,2) DEFAULT 43;
 ALTER TABLE public.retenciones ADD COLUMN IF NOT EXISTS anulada_motivo text;
@@ -596,6 +618,210 @@ GRANT ALL ON public.retencion_series TO postgres, service_role, authenticated;
 GRANT SELECT ON public.retencion_series TO anon;
 GRANT ALL ON public.retencion_ajustes TO postgres, service_role, authenticated;
 GRANT SELECT ON public.retencion_ajustes TO anon;
+
+-- 1b) Tabla de documentos fiscales (cabecera de facturas y notas para retenciones)
+CREATE TABLE IF NOT EXISTS public.retencion_documentos (
+  id                     uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  rol                    text NOT NULL DEFAULT 'practicada' CHECK (rol IN ('practicada', 'recibida', 'sufrida')),
+  tipo_documento         text NOT NULL DEFAULT 'factura' CHECK (tipo_documento IN ('factura', 'nota_debito', 'nota_credito')),
+  documento_afectado_id  uuid REFERENCES public.retencion_documentos(id),
+  factura_afectada_nro   text,
+  proveedor_id           bigint REFERENCES public.proveedores(id),
+  rif                    text,
+  razon_social           text,
+  sujeto                 text,
+  factura_nro            text,
+  factura_control        text,
+  factura_fecha          date,
+  factura_total          numeric(14,2) DEFAULT 0,
+  exento                 numeric(14,2) DEFAULT 0,
+  iva_alicuota           numeric(5,2),
+  iva_monto              numeric(14,2),
+  moneda                 text NOT NULL DEFAULT 'Bs',
+  tasa                   numeric(18,6) DEFAULT 1,
+  doc_kind               text,
+  doc_id                 text,
+  orden_id               bigint,
+  compra_directa_id      bigint,
+  servicio_directo_id    bigint,
+  adjunto_id             uuid,
+  empresa_id             text DEFAULT 'empresa-mits',
+  operacion              text,
+  concepto               text,
+  nota                   text,
+  periodo                text,
+  actor                  text,
+  actor_name             text,
+  created_at             timestamptz NOT NULL DEFAULT now(),
+  updated_at             timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.retencion_documentos ENABLE ROW LEVEL SECURITY;
+GRANT ALL ON public.retencion_documentos TO postgres, service_role, authenticated;
+GRANT SELECT ON public.retencion_documentos TO anon;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'retencion_documentos' AND policyname = 'retencion_documentos_select') THEN
+    CREATE POLICY "retencion_documentos_select" ON public.retencion_documentos FOR SELECT TO authenticated USING (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'retencion_documentos' AND policyname = 'retencion_documentos_write') THEN
+    CREATE POLICY "retencion_documentos_write" ON public.retencion_documentos FOR ALL TO authenticated USING (true) WITH CHECK (true);
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'retenciones_documento_id_fkey') THEN
+    ALTER TABLE public.retenciones ADD CONSTRAINT retenciones_documento_id_fkey
+      FOREIGN KEY (documento_id) REFERENCES public.retencion_documentos(id) ON DELETE SET NULL;
+  END IF;
+END $$;
+
+-- Funciones de escritura RPC para Retenciones (La Cantera: operaciones por función)
+CREATE OR REPLACE FUNCTION public.guardar_retencion(
+  p_id                            uuid default null,
+  p_rol                           text default 'practicada',
+  p_tipo                          text default 'iva',
+  p_estado                        text default 'registrada',
+  p_comprobante_nro               text default null,
+  p_comprobante_periodo           text default null,
+  p_comprobante_fecha             date default current_date,
+  p_contraparte_nombre            text default null,
+  p_contraparte_rif               text default null,
+  p_sujeto                        text default null,
+  p_factura_numero                text default null,
+  p_factura_control               text default null,
+  p_factura_fecha                 date default null,
+  p_factura_total                 numeric default 0,
+  p_base_imponible                numeric default 0,
+  p_iva_alicuota                  numeric default null,
+  p_iva_monto                     numeric default null,
+  p_impuesto_causado              numeric default 0,
+  p_porcentaje                    numeric default 0,
+  p_concepto_codigo               text default null,
+  p_concepto                      text default null,
+  p_municipio                     text default null,
+  p_sustraendo                    numeric default 0,
+  p_monto                         numeric default 0,
+  p_moneda                        text default 'Bs',
+  p_tasa                          numeric default 1,
+  p_base_bs                       numeric default null,
+  p_monto_bs                      numeric default null,
+  p_descripcion                   text default null,
+  p_proveedor_id                  bigint default null,
+  p_orden_id                      bigint default null,
+  p_compra_directa_id             bigint default null,
+  p_servicio_directo_id           bigint default null,
+  p_documento_id                  uuid default null,
+  p_empresa_id                    text default 'empresa-mits',
+  p_valor_ut                      numeric default 43
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_id uuid := coalesce(p_id, gen_random_uuid());
+BEGIN
+  IF NOT (public.is_admin() OR public.puede('retenciones')) THEN
+    RAISE EXCEPTION 'Sin permiso para registrar retenciones fiscales.' USING errcode = '42501';
+  END IF;
+
+  INSERT INTO public.retenciones (
+    id, rol, tipo, estado, comprobante_nro, comprobante_periodo, comprobante_fecha,
+    contraparte_nombre, contraparte_rif, sujeto, factura_numero, factura_control, factura_fecha,
+    factura_total, base_imponible, iva_alicuota, iva_monto, impuesto_causado, porcentaje,
+    concepto_codigo, concepto, municipio, sustraendo, monto, moneda, tasa, base_bs, monto_bs,
+    descripcion, proveedor_id, orden_id, compra_directa_id, servicio_directo_id, documento_id,
+    empresa_id, valor_ut, actor, actor_name
+  ) VALUES (
+    v_id, coalesce(p_rol, 'practicada'), p_tipo, coalesce(p_estado, 'registrada'),
+    p_comprobante_nro, p_comprobante_periodo, coalesce(p_comprobante_fecha, current_date),
+    trim(p_contraparte_nombre), upper(trim(p_contraparte_rif)), p_sujeto,
+    trim(p_factura_numero), trim(p_factura_control), p_factura_fecha,
+    coalesce(p_factura_total, 0), coalesce(p_base_imponible, 0), p_iva_alicuota, p_iva_monto,
+    coalesce(p_impuesto_causado, 0), coalesce(p_porcentaje, 0), p_concepto_codigo, trim(p_concepto),
+    p_municipio, coalesce(p_sustraendo, 0), coalesce(p_monto, 0), coalesce(p_moneda, 'Bs'),
+    coalesce(p_tasa, 1), p_base_bs, p_monto_bs, trim(p_descripcion),
+    p_proveedor_id, p_orden_id, p_compra_directa_id, p_servicio_directo_id, p_documento_id,
+    coalesce(p_empresa_id, 'empresa-mits'), coalesce(p_valor_ut, 43),
+    coalesce(auth.jwt() ->> 'email', current_user), nullif(trim(auth.jwt() ->> 'name'), '')
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    rol = EXCLUDED.rol,
+    tipo = EXCLUDED.tipo,
+    estado = EXCLUDED.estado,
+    comprobante_nro = EXCLUDED.comprobante_nro,
+    comprobante_periodo = EXCLUDED.comprobante_periodo,
+    comprobante_fecha = EXCLUDED.comprobante_fecha,
+    contraparte_nombre = EXCLUDED.contraparte_nombre,
+    contraparte_rif = EXCLUDED.contraparte_rif,
+    sujeto = EXCLUDED.sujeto,
+    factura_numero = EXCLUDED.factura_numero,
+    factura_control = EXCLUDED.factura_control,
+    factura_fecha = EXCLUDED.factura_fecha,
+    factura_total = EXCLUDED.factura_total,
+    base_imponible = EXCLUDED.base_imponible,
+    iva_alicuota = EXCLUDED.iva_alicuota,
+    iva_monto = EXCLUDED.iva_monto,
+    impuesto_causado = EXCLUDED.impuesto_causado,
+    porcentaje = EXCLUDED.porcentaje,
+    concepto_codigo = EXCLUDED.concepto_codigo,
+    concepto = EXCLUDED.concepto,
+    municipio = EXCLUDED.municipio,
+    sustraendo = EXCLUDED.sustraendo,
+    monto = EXCLUDED.monto,
+    moneda = EXCLUDED.moneda,
+    tasa = EXCLUDED.tasa,
+    base_bs = EXCLUDED.base_bs,
+    monto_bs = EXCLUDED.monto_bs,
+    descripcion = EXCLUDED.descripcion,
+    proveedor_id = EXCLUDED.proveedor_id,
+    orden_id = EXCLUDED.orden_id,
+    compra_directa_id = EXCLUDED.compra_directa_id,
+    servicio_directo_id = EXCLUDED.servicio_directo_id,
+    documento_id = EXCLUDED.documento_id,
+    empresa_id = EXCLUDED.empresa_id,
+    valor_ut = EXCLUDED.valor_ut,
+    updated_at = now();
+
+  RETURN v_id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.anular_retencion(p_id uuid, p_motivo text)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  IF NOT (public.is_admin() OR public.puede_full('retenciones')) THEN
+    RAISE EXCEPTION 'Sin permiso para anular retenciones fiscales.' USING errcode = '42501';
+  END IF;
+
+  IF length(trim(coalesce(p_motivo, ''))) < 3 THEN
+    RAISE EXCEPTION 'Debe indicar el motivo de anulación de la retención.' USING errcode = '22023';
+  END IF;
+
+  UPDATE public.retenciones
+     SET estado = 'anulada',
+         anulada_motivo = trim(p_motivo),
+         anulada_por = coalesce(auth.jwt() ->> 'email', current_user),
+         updated_at = now()
+   WHERE id = p_id;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'No se encontró la retención especificada.' USING errcode = 'P0002';
+  END IF;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.guardar_retencion(uuid, text, text, text, text, text, date, text, text, text, text, text, date, numeric, numeric, numeric, numeric, numeric, numeric, text, text, text, numeric, numeric, text, numeric, numeric, numeric, text, bigint, bigint, bigint, bigint, uuid, text, numeric) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.anular_retencion(uuid, text) TO authenticated, service_role;
+
 
 -- Recargar cache de PostgREST
 NOTIFY pgrst, 'reload schema';

@@ -851,7 +851,44 @@ alter table public.retencion_numeros
   DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'retencion_numeros_empresa_fk') THEN
-    ALTER TABLE public.retencion_numeros ADD CONSTRAINT retencion_numeros_empresa_fk
+    -- Asegurar existencia de retencion_empresas_receptoras para FK en retencion_numeros
+CREATE TABLE IF NOT EXISTS public.retencion_empresas_receptoras (
+  id                         text primary key,
+  clave                      text not null unique,
+  nombre                     text not null,
+  nombre_corto               text,
+  rif                        text not null,
+  color_badge                text not null default '#d97706',
+  activo                     boolean not null default true,
+  orden                      int not null default 10,
+  email                      text,
+  telefono                   text,
+  direccion_fiscal           text,
+  municipio                  text,
+  estado                     text,
+  licencia_municipal         text,
+  es_agente_iva              boolean not null default false,
+  es_contribuyente_especial  boolean not null default false,
+  retiene_islr               boolean not null default true,
+  retiene_municipal          boolean not null default true,
+  pct_iva_general            numeric(5,2) not null default 75,
+  imprimir_original_y_copia  boolean not null default false,
+  created_at                 timestamptz not null default now(),
+  updated_at                 timestamptz not null default now(),
+  actualizado_por            text
+);
+
+INSERT INTO public.retencion_empresas_receptoras (
+  id, clave, nombre, nombre_corto, rif, color_badge, direccion_fiscal, municipio, estado, email, telefono
+) VALUES (
+  'empresa-mits', 'MITS', 'MINERIA INTERNACIONAL TS, C.A.', 'MITS', 'J-50209170-0', '#d97706',
+  'Sector La Cantera, Estado Bolívar', 'Piar', 'Bolívar', 'contacto@mineriainternacionalts.com', '+58 424-9349731'
+)
+ON CONFLICT (id) DO UPDATE SET
+  nombre = EXCLUDED.nombre,
+  rif = EXCLUDED.rif;
+
+ALTER TABLE public.retencion_numeros ADD CONSTRAINT retencion_numeros_empresa_fk
       FOREIGN KEY (empresa_id) REFERENCES public.retencion_empresas_receptoras (id) ON UPDATE CASCADE ON DELETE RESTRICT;
   END IF;
 END $$;
@@ -859,7 +896,44 @@ alter table public.retencion_numeros drop constraint if exists retencion_numeros
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'retencion_numeros_pkey') THEN
-    ALTER TABLE public.retencion_numeros ADD CONSTRAINT retencion_numeros_pkey PRIMARY KEY (empresa_id, tipo, numero);
+    -- Asegurar existencia de retencion_empresas_receptoras para FK en retencion_numeros
+CREATE TABLE IF NOT EXISTS public.retencion_empresas_receptoras (
+  id                         text primary key,
+  clave                      text not null unique,
+  nombre                     text not null,
+  nombre_corto               text,
+  rif                        text not null,
+  color_badge                text not null default '#d97706',
+  activo                     boolean not null default true,
+  orden                      int not null default 10,
+  email                      text,
+  telefono                   text,
+  direccion_fiscal           text,
+  municipio                  text,
+  estado                     text,
+  licencia_municipal         text,
+  es_agente_iva              boolean not null default false,
+  es_contribuyente_especial  boolean not null default false,
+  retiene_islr               boolean not null default true,
+  retiene_municipal          boolean not null default true,
+  pct_iva_general            numeric(5,2) not null default 75,
+  imprimir_original_y_copia  boolean not null default false,
+  created_at                 timestamptz not null default now(),
+  updated_at                 timestamptz not null default now(),
+  actualizado_por            text
+);
+
+INSERT INTO public.retencion_empresas_receptoras (
+  id, clave, nombre, nombre_corto, rif, color_badge, direccion_fiscal, municipio, estado, email, telefono
+) VALUES (
+  'empresa-mits', 'MITS', 'MINERIA INTERNACIONAL TS, C.A.', 'MITS', 'J-50209170-0', '#d97706',
+  'Sector La Cantera, Estado Bolívar', 'Piar', 'Bolívar', 'contacto@mineriainternacionalts.com', '+58 424-9349731'
+)
+ON CONFLICT (id) DO UPDATE SET
+  nombre = EXCLUDED.nombre,
+  rif = EXCLUDED.rif;
+
+ALTER TABLE public.retencion_numeros ADD CONSTRAINT retencion_numeros_pkey PRIMARY KEY (empresa_id, tipo, numero);
   END IF;
 END $$;
 create index if not exists retencion_numeros_empresa_serie_idx on public.retencion_numeros (empresa_id, tipo, secuencial);

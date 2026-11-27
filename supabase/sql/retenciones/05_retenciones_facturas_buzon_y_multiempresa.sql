@@ -291,20 +291,20 @@ DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'compras_directas') THEN
     CREATE TABLE public.compras_directas (
-      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-      proveedor_id uuid
+      id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+      proveedor_id bigint REFERENCES public.proveedores(id)
     );
   END IF;
   IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'servicios_directos') THEN
     CREATE TABLE public.servicios_directos (
-      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-      proveedor_id uuid
+      id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+      proveedor_id bigint REFERENCES public.proveedores(id)
     );
   END IF;
   IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'ordenes') THEN
     CREATE TABLE public.ordenes (
-      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-      proveedor_id uuid
+      id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+      proveedor_id bigint REFERENCES public.proveedores(id)
     );
   END IF;
 END $$;
@@ -335,9 +335,9 @@ comment on table public.adjuntos_directos is
 CREATE TABLE IF NOT EXISTS public.retencion_documento_origenes (
   id                   uuid primary key default gen_random_uuid(),
   documento_id         uuid not null references public.retencion_documentos (id) on delete cascade,
-  orden_id             uuid references public.ordenes (id) on delete restrict,
-  compra_directa_id    uuid references public.compras_directas (id) on delete restrict,
-  servicio_directo_id  uuid references public.servicios_directos (id) on delete restrict,
+  orden_id             bigint,
+  compra_directa_id    bigint,
+  servicio_directo_id  bigint,
   adjunto_id           uuid references public.adjuntos_directos (id) on delete set null,
   creado_por           text,
   created_at           timestamptz not null default now(),
@@ -684,7 +684,8 @@ declare
   l jsonb;
   salida jsonb := '[]'::jsonb;
   dk text := coalesce(nullif(p_factura ->> 'doc_kind', ''), 'manual');
-  did uuid := nullif(p_factura ->> 'doc_id', '')::uuid;
+  did_txt text := nullif(p_factura ->> 'doc_id', '');
+  did bigint := case when did_txt ~ '^[0-9]+$' then did_txt::bigint else null end;
   t text;
   m numeric;
   fl date;
@@ -720,7 +721,7 @@ begin
     coalesce(nullif(p_factura ->> 'tipo_documento', ''), 'factura'),
     nullif(p_factura ->> 'documento_afectado_id', '')::uuid,
     nullif(btrim(p_factura ->> 'factura_afectada_nro'), ''),
-    nullif(p_factura ->> 'proveedor_id', '')::uuid,
+    case when (p_factura ->> 'proveedor_id') ~ '^[0-9]+$' then (p_factura ->> 'proveedor_id')::bigint else null end,
     nullif(btrim(p_factura ->> 'rif'), ''),
     nullif(btrim(p_factura ->> 'razon_social'), ''),
     nullif(p_factura ->> 'sujeto', ''),
@@ -908,7 +909,8 @@ as $$
 declare
   f public.retencion_documentos;
   dk text := coalesce(nullif(p_factura ->> 'doc_kind', ''), 'manual');
-  did uuid := nullif(p_factura ->> 'doc_id', '')::uuid;
+  did_txt text := nullif(p_factura ->> 'doc_id', '');
+  did bigint := case when did_txt ~ '^[0-9]+$' then did_txt::bigint else null end;
   solo boolean := coalesce((p_factura ->> 'solo_documento')::boolean, false);
 begin
   if jsonb_typeof(p_lineas) is distinct from 'array' then
@@ -945,7 +947,7 @@ begin
     coalesce(nullif(p_factura ->> 'tipo_documento', ''), 'factura'),
     nullif(p_factura ->> 'documento_afectado_id', '')::uuid,
     nullif(btrim(p_factura ->> 'factura_afectada_nro'), ''),
-    nullif(p_factura ->> 'proveedor_id', '')::uuid,
+    case when (p_factura ->> 'proveedor_id') ~ '^[0-9]+$' then (p_factura ->> 'proveedor_id')::bigint else null end,
     nullif(btrim(p_factura ->> 'rif'), ''),
     nullif(btrim(p_factura ->> 'razon_social'), ''),
     nullif(p_factura ->> 'sujeto', ''),
