@@ -19,9 +19,10 @@ interface ModalProps {
   minimizable?: boolean;
   children: ReactNode;
   footer?: ReactNode;
+  className?: string;
 }
 
-export function Modal({ title, size = 'md', compact = false, onClose, onMinimizar, minimizable, children, footer }: ModalProps) {
+export function Modal({ title, size = 'md', compact = false, onClose, onMinimizar, minimizable, children, footer, className }: ModalProps) {
   // Minimizar en TODOS los módulos (21/10/2026): salvo que la página traiga su propio onMinimizar o sea un
   // modal pequeño de confirmación, la ventana se oculta sin desmontarse y deja su pestaña en la barra de
   // abajo (hasta MAX_MINIMIZADAS, solo dentro del módulo). Al restaurarla vuelve tal como estaba.
@@ -71,8 +72,8 @@ export function Modal({ title, size = 'md', compact = false, onClose, onMinimiza
   // Regla del sistema: el modal NO se cierra por clic fuera ni con Escape; solo
   // con la ✕ (o un botón explícito del pie). Así no se pierde lo cargado por error.
   return createPortal(
-    <div className="modal-backdrop" style={oculto ? { display: 'none' } : undefined}>
-      <div className={`modal ${compact ? 'modal-compact' : ''} ${size === 'lg' ? 'modal-lg' : size === 'xl' ? 'modal-xl' : ''}`}>
+    <div className={`modal-backdrop ${className ? `${className}-backdrop` : ''}`} style={oculto ? { display: 'none' } : undefined}>
+      <div className={`modal ${compact ? 'modal-compact' : ''} ${size === 'lg' ? 'modal-lg' : size === 'xl' ? 'modal-xl' : ''} ${className ?? ''}`}>
         <div className="modal-header">
           <h3 style={{ margin: 0 }}>{title ?? ''}</h3>
           <div style={{ display: 'flex', gap: '.35rem' }}>

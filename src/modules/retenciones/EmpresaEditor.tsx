@@ -1,31 +1,28 @@
 /* ============================================================
-   Golden Touch · Retenciones · Editor ÚNICO de empresa receptora (C4b)
+   La Cantera · Retenciones · Editor ÚNICO de Empresa Receptora
+   MINERIA INTERNACIONAL TS, C.A. (RIF: J-50209170-0)
 
-   Un solo editor para las empresas que reciben facturas, en vez de tres copias
-   (alta rápida del teléfono, ficha del buzón PC, config fiscal en Parámetros).
-   El MODO decide qué grupos de campos se ven; el LLAMADOR decide el envoltorio
-   (modal en móvil/buzón, inline por fila en Parámetros) — no hay variantes del
-   componente.
-
-   Una sola fuente al guardar: siempre `guardarEmpresaReceptora`. Gracias al
-   presence-gate del repo, cada modo manda SOLO sus campos y no pisa el resto:
-   NUNCA se tocan desde aquí los % nacionales (los gobierna Parámetros → Valores)
-   ni las banderas de régimen (Parámetros → Régimen).
+   Tres modos para tres contextos, un solo guardado (guardarEmpresaReceptora):
+   - 'rapido': nombre + RIF + activo (alta/edición mínima del teléfono).
+   - 'identidad': ficha identidad + contacto (buzón PC).
+   - 'fiscal': lo por-empresa del comprobante (alícuota municipal, licencia, original y copia).
+   - 'completo': editor integral con identidad, contacto y ficha fiscal para PC.
    ============================================================ */
 import { useState, type FormEvent } from 'react';
 import { toast } from '@/shared/ui/Toast';
 import { completarRif, formatearRif } from '@/shared/lib/rif';
 import {
-  guardarEmpresaReceptora, faltaEnEmpresa,
+  faltaEnEmpresa, guardarEmpresaReceptora,
   type EmpresaReceptora, type EmpresaReceptoraInput,
 } from './empresasReceptoras.repository';
 
-const COLOR_POR_DEFECTO = '#2563eb';
+const COLOR_POR_DEFECTO = '#d97706';
 const esColorValido = (c: string | null | undefined) => /^#[0-9a-fA-F]{6}$/.test(String(c ?? ''));
 
 /** 'rapido' = alta/edición mínima del teléfono · 'identidad' = ficha identidad+contacto (buzón PC)
- *  · 'fiscal' = lo por-empresa del comprobante (alícuota municipal, licencia, original y copia). */
-export type ModoEmpresaEditor = 'rapido' | 'identidad' | 'fiscal';
+ *  · 'fiscal' = lo por-empresa del comprobante (alícuota municipal, licencia, original y copia)
+ *  · 'completo' = editor integral con identidad, contacto y ficha fiscal para PC. */
+export type ModoEmpresaEditor = 'rapido' | 'identidad' | 'fiscal' | 'completo';
 
 export function EmpresaEditor({ empresa, modo, onGuardada, onClose, idForm }: {
   /** undefined = crear; definida = editar. El modo 'fiscal' siempre es edición. */
@@ -38,8 +35,9 @@ export function EmpresaEditor({ empresa, modo, onGuardada, onClose, idForm }: {
   idForm?: string;
 }) {
   const esEdicion = !!empresa;
-  const verContacto = modo === 'identidad';
-  const verFiscal = modo === 'fiscal';
+  const verContacto = modo === 'identidad' || modo === 'completo';
+  const verFiscal = modo === 'fiscal' || modo === 'completo';
+  const esModoCompleto = modo === 'completo';
 
   const [nombre, setNombre] = useState(empresa?.nombre ?? '');
   const [nombreCorto, setNombreCorto] = useState(empresa?.nombreCorto ?? '');
@@ -72,6 +70,27 @@ export function EmpresaEditor({ empresa, modo, onGuardada, onClose, idForm }: {
     // Parámetros → Valores (R3), no esta ficha. Los campos que el modo no edita se conservan
     // de la empresa para no blanquearlos al guardar.
     const prev = empresa;
+
+    if (esModoCompleto) {
+      return {
+        id: prev?.id,
+        clave: prev?.clave,
+        orden: prev?.orden,
+        nombre: nombre.trim(),
+        nombreCorto: nombreCorto.trim() || undefined,
+        rif: rif.trim(),
+        colorBadge: colorBadge,
+        activo: activo,
+        email: email.trim() || undefined,
+        telefono: telefono.trim() || undefined,
+        direccionFiscal: direccionFiscal.trim() || undefined,
+        municipio: municipio.trim() || undefined,
+        estado: estado.trim() || undefined,
+        licenciaMunicipal: licenciaMunicipal.trim() || undefined,
+        alicuotaMunicipal: alicuotaMunicipal.trim() === '' ? undefined : Number(alicuotaMunicipal),
+        imprimirOriginalYCopia,
+      };
+    }
 
     if (verFiscal) {
       // Modo fiscal: edita alícuota municipal, licencia y original/copia; la identidad se
@@ -140,11 +159,11 @@ export function EmpresaEditor({ empresa, modo, onGuardada, onClose, idForm }: {
 
   return (
     <form id={idForm} onSubmit={submit} style={{ display: 'grid', gap: '.7rem' }}>
-      {verFiscal && empresa && (
+      {verFiscal && !esModoCompleto && empresa && (
         <div style={{ fontWeight: 700 }}>{empresa.nombreCorto || empresa.nombre} <span className="muted mono" style={{ fontWeight: 400 }}>· {empresa.rif}</span></div>
       )}
 
-      {!verFiscal && (
+      {(!verFiscal || esModoCompleto) && (
         <>
           <div className="surt-grid2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.6rem' }}>
             <div>
@@ -185,7 +204,7 @@ export function EmpresaEditor({ empresa, modo, onGuardada, onClose, idForm }: {
           </div>
           <div><label style={etq}>Dirección fiscal</label><input className="input" style={{ width: '100%' }} value={direccionFiscal} onChange={(e) => setDireccionFiscal(e.target.value)} /></div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.6rem' }}>
-            <div><label style={etq}>Municipio</label><input className="input" style={{ width: '100%' }} value={municipio} onChange={(e) => setMunicipio(e.target.value)} placeholder="Ej. Caroní" /></div>
+            <div><label style={etq}>Municipio</label><input className="input" style={{ width: '100%' }} value={municipio} onChange={(e) => setMunicipio(e.target.value)} placeholder="Ej. Piar" /></div>
             <div><label style={etq}>Estado</label><input className="input" style={{ width: '100%' }} value={estado} onChange={(e) => setEstado(e.target.value)} placeholder="Ej. Bolívar" /></div>
           </div>
           <p className="muted" style={{ margin: 0, fontSize: '.78rem' }}>El régimen y los % de cada empresa se editan en Parámetros → Régimen y Config fiscal por empresa.</p>
