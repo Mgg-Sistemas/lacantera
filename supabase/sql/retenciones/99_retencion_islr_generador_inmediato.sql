@@ -102,19 +102,19 @@ ALTER TABLE public.retenciones_conceptos
 INSERT INTO public.retenciones_conceptos (
     codigo, concepto, pjd, pjnd, pnr, pnnr, base_pct, minimo_ut, sustraendo_factor, aplica_sustraendo, activo, orden, nota
 ) VALUES
-('001', 'Honorarios profesionales pagados a personas naturales residentes', 0, 0, 3.00, 34.00, 100, 83.3334, 83.3334, true, true, 1, 'Art. 9 num. 1 Decreto 1.808: 3% PNR con sustraendo de 83.3334 UT'),
-('002', 'Honorarios profesionales pagados a personas jurídicas domiciliadas', 5.00, 5.00, 0, 0, 100, 0, 0, false, true, 2, 'Art. 9 num. 1 Decreto 1.808: 5% PJD sin sustraendo'),
-('003', 'Comisiones mercantiles y corretaje', 5.00, 5.00, 3.00, 34.00, 100, 83.3334, 83.3334, true, true, 3, 'Art. 9 num. 2 Decreto 1.808: 5% PJD, 3% PNR'),
-('004', 'Ejecución de obras y prestación de servicios en general / Contratistas', 2.00, 5.00, 1.00, 34.00, 100, 83.3334, 83.3334, true, true, 4, 'Art. 9 num. 11 Decreto 1.808: 2% PJD, 1% PNR (Principal en minería y talleres)'),
-('005', 'Arrendamiento de bienes muebles (maquinarias, equipos y camiones)', 5.00, 5.00, 3.00, 34.00, 100, 0, 0, false, true, 5, 'Art. 9 num. 13 Decreto 1.808: 5% PJD, 3% PNR'),
-('006', 'Fletes y servicios de transporte de carga terrestre y mineral', 3.00, 5.00, 1.00, 34.00, 100, 0, 0, false, true, 6, 'Art. 9 num. 14 Decreto 1.808: 3% PJD, 1% PNR'),
-('007', 'Arrendamiento de bienes inmuebles (galpones, oficinas, terrenos)', 5.00, 5.00, 3.00, 34.00, 100, 83.3334, 83.3334, true, true, 7, 'Art. 9 num. 12 Decreto 1.808: 5% PJD, 3% PNR'),
-('008', 'Publicidad, propaganda comercial y artes gráficas', 5.00, 5.00, 3.00, 34.00, 100, 0, 0, false, true, 8, 'Art. 9 num. 15 Decreto 1.808: 5% PJD, 3% PNR'),
-('009', 'Primas de seguros y reaseguros', 3.00, 5.00, 3.00, 10.00, 100, 0, 0, false, true, 9, 'Art. 9 num. 9 Decreto 1.808: 3% PJD'),
-('010', 'Suministro de combustibles, lubricantes, grasas y aditivos', 1.00, 5.00, 1.00, 34.00, 100, 0, 0, false, true, 10, 'Art. 9 num. 11 Decreto 1.808: 1% PJD'),
-('028', 'Mantenimiento, reparación y servicios mecánicos de equipos pesados', 2.00, 5.00, 1.00, 34.00, 100, 0, 0, false, true, 11, 'Art. 9 num. 11 Decreto 1.808: 2% PJD'),
-('041', 'Adquisición de bienes raíces / derechos inmobiliarios', 5.00, 5.00, 3.00, 34.00, 100, 0, 0, false, true, 12, 'Art. 9 num. 16 Decreto 1.808: 5% PJD'),
-('054', 'Asistencia técnica y servicios de consultoría especializada', 5.00, 5.00, 3.00, 34.00, 100, 0, 0, false, true, 13, 'Art. 9 num. 17 Decreto 1.808: 5% PJD')
+('001', 'Honorarios profesionales a personas naturales', 0, 0, 3.00, 34.00, 100, 83.3334, 83.3334, true, true, 1, '3% PNR con sustraendo'),
+('002', 'Honorarios profesionales a personas jurídicas', 5.00, 5.00, 0, 0, 100, 0, 0, false, true, 2, '5% PJD'),
+('003', 'Comisiones mercantiles y corretaje', 5.00, 5.00, 3.00, 34.00, 100, 83.3334, 83.3334, true, true, 3, '5% PJD, 3% PNR'),
+('004', 'Ejecución de obras y servicios en general', 2.00, 5.00, 1.00, 34.00, 100, 83.3334, 83.3334, true, true, 4, '2% PJD, 1% PNR (Contratistas)'),
+('005', 'Arrendamiento de bienes muebles (maquinarias)', 5.00, 5.00, 3.00, 34.00, 100, 0, 0, false, true, 5, '5% PJD, 3% PNR'),
+('006', 'Fletes y transporte de carga terrestre', 3.00, 5.00, 1.00, 34.00, 100, 0, 0, false, true, 6, '3% PJD, 1% PNR'),
+('007', 'Arrendamiento de bienes inmuebles', 5.00, 5.00, 3.00, 34.00, 100, 83.3334, 83.3334, true, true, 7, '5% PJD, 3% PNR'),
+('008', 'Publicidad y propaganda comercial', 5.00, 5.00, 3.00, 34.00, 100, 0, 0, false, true, 8, '5% PJD, 3% PNR'),
+('009', 'Primas de seguros y reaseguros', 3.00, 5.00, 3.00, 10.00, 100, 0, 0, false, true, 9, '3% PJD'),
+('010', 'Suministro de combustibles y lubricantes', 1.00, 5.00, 1.00, 34.00, 100, 0, 0, false, true, 10, '1% PJD'),
+('028', 'Mantenimiento de maquinaria pesada', 2.00, 5.00, 1.00, 34.00, 100, 0, 0, false, true, 11, '2% PJD'),
+('041', 'Adquisición de bienes raíces / inmuebles', 5.00, 5.00, 3.00, 34.00, 100, 0, 0, false, true, 12, '5% PJD'),
+('054', 'Asistencia técnica y consultoría', 5.00, 5.00, 3.00, 34.00, 100, 0, 0, false, true, 13, '5% PJD')
 ON CONFLICT (codigo) DO UPDATE SET
     concepto = EXCLUDED.concepto,
     pjd = EXCLUDED.pjd,
