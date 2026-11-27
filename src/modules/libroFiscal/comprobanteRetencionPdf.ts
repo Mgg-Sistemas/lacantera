@@ -57,14 +57,16 @@ export async function emailSujetoRetenido(r: RetencionPracticada): Promise<strin
   }
   if (r.contraparteId) {
     try {
-      const { data } = await supabase.from('proveedores').select('email').eq('id', r.contraparteId).maybeSingle();
-      if (data?.email?.trim()) return data.email.trim();
+      const { data } = await supabase.from('proveedores').select('*').eq('id', r.contraparteId).maybeSingle();
+      const mail = ((data as any)?.email ?? (data as any)?.correo ?? '').trim();
+      if (mail) return mail;
     } catch { /* continuar con RIF */ }
   }
   if (r.contraparteRif) {
     try {
-      const { data } = await supabase.from('proveedores').select('email').eq('rif', r.contraparteRif.trim()).maybeSingle();
-      if (data?.email?.trim()) return data.email.trim();
+      const { data } = await supabase.from('proveedores').select('*').eq('rif', r.contraparteRif.trim()).maybeSingle();
+      const mail = ((data as any)?.email ?? (data as any)?.correo ?? '').trim();
+      if (mail) return mail;
     } catch { /* fallback */ }
   }
   return null;
