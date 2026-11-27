@@ -191,6 +191,12 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
+  const mostrarError = useCallback((msg: string) => {
+    setError(msg);
+    toast(msg, 'error');
+    setTimeout(() => errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+  }, []);
   // Al registrar con éxito: se queda el resultado para ofrecer «Compartir por WhatsApp».
   const [resultado, setResultado] = useState<Awaited<ReturnType<typeof registrarFactura>> | null>(null);
   const [pagoResultado, setPagoResultado] = useState<MontoPagado | null>(null);
@@ -1165,7 +1171,7 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
 
   async function emitir() {
     const falla = validar();
-    if (falla) { setError(falla); return; }
+    if (falla) { mostrarError(falla); return; }
     setError(null); setSaving(true);
     try {
       const periodo = periodoDe(facturaFecha);
@@ -1307,7 +1313,7 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
         void montoPagadoDeOrden(prim.docId).then((p) => setPagoResultado(p)).catch(() => { /* sin monto: queda «✓ Pagada» o «Por pagar» */ });
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'No se pudo registrar la factura.');
+      mostrarError(e instanceof Error ? e.message : 'No se pudo registrar la factura.');
       setSaving(false);
     }
   }
@@ -1446,7 +1452,7 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
         </>
       )}>
       {dialogo}
-      {error && <div className="card" style={{ borderColor: 'var(--danger)', marginBottom: '.75rem' }}><strong>Error:</strong> {error}</div>}
+      {error && <div ref={errorRef} className="card" style={{ borderColor: 'var(--danger)', color: 'var(--danger)', marginBottom: '.75rem' }}><strong>Error:</strong> {error}</div>}
 
       {/* ── Cintillo de Empresa Receptora Responsable ── */}
       {empresaFicha ? (
@@ -2884,6 +2890,7 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
         </small>
       )}
       {avisoRecibida && <div className="lfv8-alerta-media" style={{ marginTop: '.5rem' }}><span>⚠️ {avisoRecibida}</span></div>}
+      {error && <div className="card" style={{ borderColor: 'var(--danger)', color: 'var(--danger)', marginTop: '.75rem' }}><strong>No se pudo registrar:</strong> {error}</div>}
 
       {verComparativaEnsamblada && (
         <FacturaEnsambladaModal
