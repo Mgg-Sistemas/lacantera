@@ -74,10 +74,11 @@ export interface EmpresaActual {
 }
 
 /**
- * Resuelve la empresa actual del módulo. En single-empresa (detector apagado)
- * devuelve multiempresa=false y empresaId=null: nadie filtra, todo como hoy.
+ * Resuelve la empresa actual del módulo. En single-empresa (detector apagado o
+ * parámetro multiempresaActivo=false) devuelve multiempresa=false y empresaId=null:
+ * nadie filtra, todo como hoy (anclado a Empresa Base MITS).
  */
-export function useEmpresaActual(): EmpresaActual {
+export function useEmpresaActual(multiempresaHabilitado: boolean = true): EmpresaActual {
   const [multiempresa, setMultiempresa] = useState(false);
   const [empresas, setEmpresas] = useState<EmpresaReceptora[]>([]);
   const [empresaId, setEmpresaIdState] = useState<string | null>(null);
@@ -86,6 +87,13 @@ export function useEmpresaActual(): EmpresaActual {
   useEffect(() => {
     let vivo = true;
     (async () => {
+      if (!multiempresaHabilitado) {
+        setMultiempresa(false);
+        setEmpresas([]);
+        setEmpresaIdState(null);
+        setCargando(false);
+        return;
+      }
       const hay = await multiEmpresaDisponible().catch(() => false);
       if (!vivo) return;
       if (!hay) { setMultiempresa(false); setEmpresas([]); setEmpresaIdState(null); setCargando(false); return; }
@@ -97,7 +105,7 @@ export function useEmpresaActual(): EmpresaActual {
       setCargando(false);
     })();
     return () => { vivo = false; };
-  }, []);
+  }, [multiempresaHabilitado]);
 
   const setEmpresaId = useCallback((id: string) => {
     setEmpresaIdState(id);

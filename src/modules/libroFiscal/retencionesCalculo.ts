@@ -116,6 +116,8 @@ export interface ConfigRetencion {
   incluirQr?: boolean;
   /** C4a (D6): el buzón / vista teléfono está activo (visible) para el módulo. Default true. */
   buzonActivo?: boolean;
+  /** Multi-empresa activo (conmutador hero de empresas y buzones segregados). Default true. */
+  multiempresaActivo?: boolean;
 }
 
 /** Estatus del Kanban de compras que por defecto son abordables en Retenciones. */
@@ -153,6 +155,7 @@ export const CONFIG_RETENCION_DEFECTO: ConfigRetencion = {
   incluirSello: true,
   incluirQr: true,
   buzonActivo: true,
+  multiempresaActivo: true,
 };
 
 /* ───────────────── Qué puede practicar la empresa ───────────────── */

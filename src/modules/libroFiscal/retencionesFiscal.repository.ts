@@ -187,18 +187,16 @@ export async function guardarConfigRetencion(c: ConfigRetencion, locales?: Alicu
   const falla = errorPorcentajesIva(c);
   if (falla) throw new Error(falla);
   const previo = await leerJsonParametros();
-  // Con R1 y R3, el régimen y los valores los escribe la base desde sus tablas con fecha:
-  // no se pisan con lo que la pantalla leyó antes.
-  const regimen = opciones?.conservarRegimen && previo
-    ? { agente_retencion_iva: previo.agente_retencion_iva, contribuyente_especial: previo.contribuyente_especial }
-    : {};
   const parametros = opciones?.conservarParametros && previo
     ? Object.fromEntries(CLAVES_R3.filter((k) => k in previo).map((k) => [k, previo[k]]))
     : {};
   const value = {
     ...jsonDeConfig(c, previo),
     ...(locales && !opciones?.conservarParametros ? { municipal_alicuota: n(locales.municipal), estadal_alicuota: n(locales.estadal) } : {}),
-    ...regimen,
+    agente_retencion_iva: c.esAgenteRetencionIva === true,
+    contribuyente_especial: c.esContribuyenteEspecial === true,
+    retiene_municipal: c.retieneMunicipal === true,
+    retiene_islr: c.retieneIslr !== false,
     ...parametros,
   };
   const { data, error } = await supabase.from('config')
@@ -375,6 +373,8 @@ export type DocKind = 'oc' | 'compra_directa' | 'servicio_directo' | 'manual';
 
 export interface RetencionPracticada {
   id: string;
+  /** Multi-empresa: ID de la empresa a la que pertenece la retención. */
+  empresaId?: string | null;
   /** VF: el documento fiscal (factura) al que pertenece la línea, si lo tiene. */
   documentoId?: string | null;
   tipo: TipoImpuesto;
@@ -515,6 +515,7 @@ export function aRetencion(r: Record<string, unknown>): RetencionPracticada {
     declaradaEn: texto(r.declarada_at),
     declaradaPor: texto(r.declarada_por),
     actorName: texto(r.actor_name),
+    empresaId: texto(r.empresa_id ?? (doc as any)?.empresa_id),
     createdAt: String(r.created_at ?? ''),
     updatedAt: texto(r.updated_at),
   };

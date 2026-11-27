@@ -2553,10 +2553,11 @@ const AJUSTES_PA: DefSeccionPa[] = [
   { key: 'vencimientos', capa: 'ajustes', titulo: '⏰ Avisos de vencimiento', linea: 'Cuándo avisar de licencias, declaraciones y actividades que vencen.',
     que: 'Los avisos de lo que vence: licencias, declaraciones y actividades con fecha «hasta».', ingresa: 'Con cuántos días de anticipación se avisa y si los avisos están encendidos.',
     efecto: 'Cambia la lista de vencimientos de la cabecera y los avisos del registro.', noCambia: 'Ninguna fecha ni ningún monto: solo cuándo se avisa.' },
-  { key: 'empresas_fiscal', capa: 'ajustes', titulo: '🌐 Config fiscal por empresa', linea: 'El régimen y los porcentajes de cada empresa (multi-empresa).',
-    que: 'La configuración fiscal de cada empresa receptora: régimen (agente de IVA, especial, ISLR, ISAE) y porcentajes (IVA, IGTF, alícuota, ISAE).',
-    ingresa: 'Por cada empresa: sus banderas de régimen, sus % de retención y su licencia municipal.',
-    efecto: 'El libro, el registro y los reportes de esa empresa usan su propio régimen y sus %.', noCambia: 'La identidad de la empresa (nombre, RIF) se edita en el buzón. Lo ya registrado conserva sus valores.' },
+  { key: 'empresas_fiscal', capa: 'ajustes', titulo: '🏢 Gestión de empresas', linea: 'Empresas receptoras (multi-empresa), sincronización con Administración y ficha fiscal.',
+    que: 'El catálogo y configuración de empresas receptoras: sincronizar desde Administración, altas, edición de RIF, datos fiscales y alícuota ISAE.',
+    ingresa: 'Sincronizar desde Administración, crear empresas, editar RIF, dirección, alícuotas municipales y licencias.',
+    efecto: 'Cada empresa tiene su propio libro, registro y comprobantes.',
+    noCambia: 'Las retenciones ya emitidas.' },
   { key: 'buzon_telefono', capa: 'ajustes', titulo: '📱 Buzón / Vista teléfono', linea: 'Activar el buzón de facturas del teléfono y el padrón de empresas receptoras.',
     que: 'Si el buzón (vista teléfono) está disponible en el módulo y qué empresas reciben facturas.',
     ingresa: 'El interruptor de activación del buzón. (El padrón de empresas se edita acá y en el buzón.)',
@@ -2700,6 +2701,7 @@ export function ConfiguracionFiscalModal({ puedeEditar, onClose, editorFiscalEmp
   function resumen(k: SeccionPa): string {
     switch (k) {
       case 'empresa': return cfg.rif ? `RIF ${cfg.rif} · ${cfg.imprimirOriginalYCopia !== false ? 'Original y Copia' : 'Solo Original'}` : 'Sin configurar';
+      case 'empresas_fiscal': return cfg.multiempresaActivo !== false ? 'Multi-empresa activo · N empresas' : 'Modo Empresa Única · Anclado a MITS';
       case 'compras': {
         const nEstados = cfg.estadosKanbanRetencion?.length ?? ESTADOS_KANBAN_RETENCION_DEFECTO.length;
         const imps = [
@@ -2709,6 +2711,8 @@ export function ConfiguracionFiscalModal({ puedeEditar, onClose, editorFiscalEmp
         ].filter(Boolean);
         return `${nEstados} estatus kanban · Retiene: ${imps.length ? imps.join(', ') : 'ninguno'}`;
       }
+      case 'firma': return 'Logo, firma y sello para comprobantes';
+      case 'buzon_telefono': return cfg.buzonActivo !== false ? 'Buzón activo · Recepción móvil' : 'Buzón desactivado';
       case 'regimen': return `Agente IVA: ${cfg.esAgenteRetencionIva ? 'sí' : 'no'} · Especial: ${cfg.esContribuyenteEspecial ? 'sí' : 'no'}`;
       case 'valores': return `UT Bs ${cfg.valorUt} · IGTF ${cfg.pctIgtf} %`;
       case 'impuestos': return r2 ? 'Ficha de cada impuesto y conceptos del ISLR' : `${conceptos.length} conceptos`;

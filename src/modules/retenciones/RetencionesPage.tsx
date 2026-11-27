@@ -178,7 +178,7 @@ export function RetencionesPage() {
   }, []);
   // Multi-empresa (andamiaje): la empresa actual del módulo. En single-empresa
   // queda inerte (multiempresa=false) y el selector no se muestra.
-  const { multiempresa, empresas, empresaId, empresaActual, setEmpresaId } = useEmpresaActual();
+  const { multiempresa, empresas, empresaId, empresaActual, setEmpresaId } = useEmpresaActual(configFiscal.multiempresaActivo !== false);
   // La ficha fiscal a usar para config/régimen: solo para una empresa NO-GT. GT (o
   // single-empresa) → null, y el libro/registro/reportes usan la config global (R1), como hoy.
   const empresaFicha = multiempresa && empresaActual && !esEmpresaGt(empresaActual) ? empresaActual : null;
@@ -784,7 +784,12 @@ export function RetencionesPage() {
       {parametros && (
         <ConfiguracionFiscalModal
           puedeEditar={canWrite}
-          editorFiscalEmpresas={multiempresa ? <EditorFichasFiscalesEmpresa puedeEditar={canWrite} /> : null}
+          editorFiscalEmpresas={
+            <EditorFichasFiscalesEmpresa
+              puedeEditar={canWrite}
+              onEmpresaCambiada={() => { void reload(); }}
+            />
+          }
           empresasRegimen={multiempresa ? empresas.map((e) => ({ id: e.id, nombre: e.nombreCorto || e.nombre })) : []}
           empresaRegimenId={empresaId}
           puedeBorrarRegimen={isAdmin}
