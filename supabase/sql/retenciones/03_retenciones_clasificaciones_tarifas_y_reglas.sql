@@ -265,7 +265,7 @@ BEGIN
     RETURN coalesce(v_is, true);
   EXCEPTION WHEN OTHERS THEN
     RETURN true;
-  END IF;
+  END;
 END;
 $$;
 
