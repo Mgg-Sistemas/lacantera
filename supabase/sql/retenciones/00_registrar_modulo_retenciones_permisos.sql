@@ -217,6 +217,16 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.puede_escribir(p_modulo text)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public, auth, pg_temp
+AS 
+  SELECT public.puede_full(p_modulo);
+;
+
 CREATE OR REPLACE FUNCTION public.puede_leer(p_modulo text)
 RETURNS boolean
 LANGUAGE sql
@@ -267,6 +277,7 @@ $$;
 GRANT EXECUTE ON FUNCTION public.is_admin() TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.puede(text) TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.puede_full(text) TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.puede_escribir(text) TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.puede_leer(text) TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.is_operativo() TO anon, authenticated, service_role;
 

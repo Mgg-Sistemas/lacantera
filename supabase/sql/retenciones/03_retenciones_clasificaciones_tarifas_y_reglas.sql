@@ -1177,6 +1177,43 @@ CREATE TABLE IF NOT EXISTS public.retencion_regla_pasos (
 );
 comment on table public.retencion_regla_pasos is 'Retenciones: los pasos 1-8 del cálculo de una regla, cada uno con una operación de la lista cerrada';
 
+-- Asegurar existencia de retencion_documentos para retencion_decisiones
+CREATE TABLE IF NOT EXISTS public.retencion_documentos (
+  id                     uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  rol                    text NOT NULL DEFAULT 'practicada' CHECK (rol IN ('practicada', 'recibida', 'sufrida')),
+  tipo_documento         text NOT NULL DEFAULT 'factura' CHECK (tipo_documento IN ('factura', 'nota_debito', 'nota_credito')),
+  documento_afectado_id  uuid REFERENCES public.retencion_documentos(id),
+  factura_afectada_nro   text,
+  proveedor_id           bigint REFERENCES public.proveedores(id),
+  rif                    text,
+  razon_social           text,
+  sujeto                 text,
+  factura_nro            text,
+  factura_control        text,
+  factura_fecha          date,
+  factura_total          numeric(14,2) DEFAULT 0,
+  exento                 numeric(14,2) DEFAULT 0,
+  iva_alicuota           numeric(5,2),
+  iva_monto              numeric(14,2),
+  moneda                 text NOT NULL DEFAULT 'Bs',
+  tasa                   numeric(18,6) DEFAULT 1,
+  doc_kind               text,
+  doc_id                 text,
+  orden_id               bigint,
+  compra_directa_id      bigint,
+  servicio_directo_id    bigint,
+  adjunto_id             uuid,
+  empresa_id             text DEFAULT 'empresa-mits',
+  operacion              text,
+  concepto               text,
+  nota                   text,
+  periodo                text,
+  actor                  text,
+  actor_name             text,
+  created_at             timestamptz NOT NULL DEFAULT now(),
+  updated_at             timestamptz NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS public.retencion_decisiones (
   id               uuid primary key default gen_random_uuid(),
   documento_id     uuid not null references public.retencion_documentos (id) on delete restrict,

@@ -549,10 +549,28 @@ begin
         || 'Si el SENIAT designó a la empresa, marcá la casilla en Parámetros fiscales.';
 end $$;
 
+-- Asegurar existencia de catálogo de actividades económicas (CIIU)
+CREATE TABLE IF NOT EXISTS public.actividades_economicas (
+  codigo      text PRIMARY KEY,
+  descripcion text NOT NULL,
+  tipo        text NOT NULL DEFAULT 'actividad' CHECK (tipo IN ('seccion', 'actividad')),
+  activa      boolean NOT NULL DEFAULT true,
+  creada_en   timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.actividades_economicas ENABLE ROW LEVEL SECURITY;
+GRANT ALL ON public.actividades_economicas TO postgres, service_role, authenticated;
+GRANT SELECT ON public.actividades_economicas TO anon;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'actividades_economicas' AND policyname = 'actividades_economicas_select') THEN
+    CREATE POLICY "actividades_economicas_select" ON public.actividades_economicas FOR SELECT TO authenticated USING (true);
+  END IF;
+END $$;
+
 -- 5) Perfil fiscal del proveedor, con vigencia
 CREATE TABLE IF NOT EXISTS public.retencion_contraparte_perfiles (
   id                     uuid primary key default gen_random_uuid(),
-  proveedor_id           uuid not null references public.proveedores (id) on delete restrict,
+  proveedor_id           bigint not null references public.proveedores (id) on delete restrict,
   tipo_persona           text not null check (tipo_persona in ('natural', 'juridica')),
   residente              boolean not null default true,   -- residente (PN) o domiciliada (PJ)
   sujeto                 text generated always as (
@@ -609,7 +627,7 @@ create trigger trg_retencion_contraparte_perfiles_tocar before insert or update 
 --    y/o el código de la ORDENANZA de un ente municipal (la que da la alícuota del ISAE; texto hasta R4, que añade la FK).
 CREATE TABLE IF NOT EXISTS public.retencion_contraparte_actividades (
   id                uuid primary key default gen_random_uuid(),
-  proveedor_id      uuid not null references public.proveedores (id) on delete restrict,
+  proveedor_id           bigint not null references public.proveedores (id) on delete restrict,
   ciiu_codigo       text references public.actividades_economicas (codigo) on delete restrict,
   ente_id           uuid references public.retencion_entes (id) on delete restrict,
   ordenanza_codigo  text check (ordenanza_codigo is null or length(btrim(ordenanza_codigo)) > 0),
@@ -631,6 +649,28 @@ CREATE unique INDEX IF NOT EXISTS retencion_contraparte_actividades_unica on pub
 CREATE unique INDEX IF NOT EXISTS retencion_contraparte_actividades_principal on public.retencion_contraparte_actividades
   (proveedor_id) where activa and principal;
 comment on table public.retencion_contraparte_actividades is 'Retenciones: las N actividades económicas de cada proveedor (CIIU y/o código de la ordenanza del municipio)';
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'retencion_contraparte_perfiles' AND column_name = 'proveedor_id' AND data_type = 'uuid'
+  ) THEN
+    ALTER TABLE public.retencion_contraparte_perfiles DROP CONSTRAINT IF EXISTS retencion_contraparte_perfiles_proveedor_id_fkey;
+    ALTER TABLE public.retencion_contraparte_perfiles ALTER COLUMN proveedor_id TYPE bigint USING NULL;
+    ALTER TABLE public.retencion_contraparte_perfiles ADD CONSTRAINT retencion_contraparte_perfiles_proveedor_id_fkey FOREIGN KEY (proveedor_id) REFERENCES public.proveedores(id) ON DELETE RESTRICT;
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'retencion_contraparte_actividades' AND column_name = 'proveedor_id' AND data_type = 'uuid'
+  ) THEN
+    ALTER TABLE public.retencion_contraparte_actividades DROP CONSTRAINT IF EXISTS retencion_contraparte_actividades_proveedor_id_fkey;
+    ALTER TABLE public.retencion_contraparte_actividades ALTER COLUMN proveedor_id TYPE bigint USING NULL;
+    ALTER TABLE public.retencion_contraparte_actividades ADD CONSTRAINT retencion_contraparte_actividades_proveedor_id_fkey FOREIGN KEY (proveedor_id) REFERENCES public.proveedores(id) ON DELETE RESTRICT;
+  END IF;
+END $$;
+
 DROP TRIGGER IF EXISTS trg_retencion_contraparte_actividades_tocar ON public.retencion_contraparte_actividades;
 create trigger trg_retencion_contraparte_actividades_tocar before insert or update on public.retencion_contraparte_actividades
   for each row execute function public.retencion_r1_tocar();
@@ -1226,6 +1266,105 @@ BEGIN
     END IF;
   END LOOP;
 END $$;
+
+
+
+-- Funciones de escritura RPC para Perfiles Fiscales de Proveedores (La Cantera: operaciones por función)
+CREATE OR REPLACE FUNCTION public.guardar_retencion_contraparte_perfil(
+  p_proveedor_id         bigint,
+  p_tipo_persona         text,
+  p_residente            boolean default true,
+  p_tipo_contribuyente   text default 'ordinario',
+  p_es_agente_retencion  boolean default false,
+  p_licencia_tipo        text default null,
+  p_licencia_numero      text default null,
+  p_licencia_estado      text default 'por_solicitar',
+  p_licencia_vence       date default null,
+  p_licencia_ente_id     uuid default null,
+  p_observacion          text default null,
+  p_motivo               text default 'Actualización de perfil fiscal',
+  p_desde                date default current_date
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_id uuid;
+BEGIN
+  IF NOT (public.is_admin() OR public.puede('retenciones')) THEN
+    RAISE EXCEPTION 'Sin permiso de escritura en Retenciones' USING errcode = '42501';
+  END IF;
+
+  INSERT INTO public.retencion_contraparte_perfiles (
+    proveedor_id, tipo_persona, residente, tipo_contribuyente,
+    es_agente_retencion, licencia_tipo, licencia_numero, licencia_estado,
+    licencia_vence, licencia_ente_id, observacion, motivo, desde
+  ) VALUES (
+    p_proveedor_id, p_tipo_persona, coalesce(p_residente, true), coalesce(p_tipo_contribuyente, 'ordinario'),
+    coalesce(p_es_agente_retencion, false), p_licencia_tipo, p_licencia_numero, coalesce(p_licencia_estado, 'por_solicitar'),
+    p_licencia_vence, p_licencia_ente_id, p_observacion, p_motivo, coalesce(p_desde, current_date)
+  )
+  RETURNING id INTO v_id;
+
+  RETURN v_id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.guardar_retencion_contraparte_actividad(
+  p_id               uuid default null,
+  p_proveedor_id     bigint default null,
+  p_ciiu_codigo      text default null,
+  p_ente_id          uuid default null,
+  p_ordenanza_codigo text default null,
+  p_descripcion      text default null,
+  p_principal        boolean default false,
+  p_desde            date default current_date,
+  p_nota             text default null
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_id uuid := coalesce(p_id, gen_random_uuid());
+BEGIN
+  IF NOT (public.is_admin() OR public.puede('retenciones')) THEN
+    RAISE EXCEPTION 'Sin permiso de escritura en Retenciones' USING errcode = '42501';
+  END IF;
+
+  IF p_principal THEN
+    UPDATE public.retencion_contraparte_actividades
+       SET principal = false
+     WHERE proveedor_id = p_proveedor_id AND activa AND principal;
+  END IF;
+
+  INSERT INTO public.retencion_contraparte_actividades (
+    id, proveedor_id, ciiu_codigo, ente_id, ordenanza_codigo, descripcion, principal, desde, nota
+  ) VALUES (
+    v_id, p_proveedor_id, nullif(trim(p_ciiu_codigo), ''), p_ente_id,
+    nullif(trim(p_ordenanza_codigo), ''), nullif(trim(p_descripcion), ''),
+    coalesce(p_principal, false), coalesce(p_desde, current_date), nullif(trim(p_nota), '')
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    ciiu_codigo = EXCLUDED.ciiu_codigo,
+    ente_id = EXCLUDED.ente_id,
+    ordenanza_codigo = EXCLUDED.ordenanza_codigo,
+    descripcion = EXCLUDED.descripcion,
+    principal = EXCLUDED.principal,
+    desde = EXCLUDED.desde,
+    nota = EXCLUDED.nota,
+    actualizado_en = now(),
+    actualizado_por = coalesce(auth.jwt() ->> 'email', current_user);
+
+  RETURN v_id;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.guardar_retencion_contraparte_perfil(bigint, text, boolean, text, boolean, text, text, text, date, uuid, text, text, date) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.guardar_retencion_contraparte_actividad(uuid, bigint, text, uuid, text, text, boolean, date, text) TO authenticated, service_role;
 
 
 COMMIT;
