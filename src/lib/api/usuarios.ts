@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { useMisRoles } from './catalogo'
 import { desenvolver, rpc } from './rpc'
 
 // ---------------------------------------------------------------------------
@@ -132,6 +133,9 @@ export function useRolIncluye() {
  * autoriza: quien llegue a la función igual choca con la reja de la base.
  */
 export function useMisPermisos() {
+  const { roles } = useMisRoles()
+  const esAdmin = roles.includes('ADMIN')
+
   const consulta = useQuery({
     queryKey: ['mis-permisos'],
     queryFn: () => rpc<{ modulo: string; nivel: Nivel }[]>('mis_permisos'),
@@ -142,11 +146,11 @@ export function useMisPermisos() {
 
   return {
     ...consulta,
-    /** Nivel en un módulo. `NINGUNO` mientras carga: se abre al confirmar, no antes. */
-    nivel: (modulo: string): Nivel => mapa.get(modulo) ?? 'NINGUNO',
-    puede: (modulo: string, minimo: Nivel = 'LECTURA') => alcanza(mapa.get(modulo), minimo),
-    /** `true` solo cuando ya se sabe. Evita esconder el menú entero al cargar. */
-    resuelto: consulta.isSuccess,
+    /** Nivel en un módulo. `TOTAL` para ADMIN; `NINGUNO` mientras carga para los demás. */
+    nivel: (modulo: string): Nivel => (esAdmin ? 'TOTAL' : mapa.get(modulo) ?? 'NINGUNO'),
+    puede: (modulo: string, minimo: Nivel = 'LECTURA') => esAdmin || alcanza(mapa.get(modulo), minimo),
+    /** `true` solo cuando ya se sabe o si es admin. Evita esconder el menú entero al cargar. */
+    resuelto: esAdmin || consulta.isSuccess,
   }
 }
 

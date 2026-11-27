@@ -45,7 +45,7 @@ function menuVisible(
               // `soloAdmin` va por encima del permiso de módulo: la auditoría no
               // se reparte por módulos, se tiene o no se tiene.
               (hijo.soloAdmin ? esAdmin : true) &&
-              puede(moduloDeRuta(hijo.to)),
+              (esAdmin || puede(moduloDeRuta(hijo.to))),
           ),
         }))
         .filter((item) => {
@@ -54,7 +54,7 @@ function menuVisible(
           if (item.fueraDelMvp) return false
           // La ayuda del sistema no se reparte por permisos: ver `siempre`.
           if (item.siempre) return true
-          return item.children ? item.children.length > 0 : puede(moduloDeRuta(item.to ?? '/app'))
+          return item.children ? item.children.length > 0 : (esAdmin || puede(moduloDeRuta(item.to ?? '/app')))
         }),
     }))
     .filter((seccion) => seccion.items.length > 0)
@@ -103,15 +103,17 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
     aunque la reja de la ruta y la base ya la dejaran entrar.
   */
   const { puede: puedeAccion, resuelto: accionesResueltas } = useMisAcciones()
+  const esAdmin = tieneRol('ADMIN')
   const puedeVerModulo = (m: string) =>
+    esAdmin ||
     puede(m) ||
     (m === 'ASISTENCIA' && puedeAccion('ASISTENCIA.ESCANEAR')) ||
-    (m === 'COMPRAS' && (puede('TESORERIA') || tieneRol('ADMIN')))
+    (m === 'COMPRAS' && (puede('TESORERIA') || esAdmin))
   const { soloTelefono, resuelto: telefonoResuelto } = useSoloTelefono()
   const secciones =
     telefonoResuelto && soloTelefono
       ? seccionesSoloTelefono(puedeAccion)
-      : menuVisible(puedeVerModulo, permisosResueltos && accionesResueltas, tieneRol('ADMIN'))
+      : menuVisible(puedeVerModulo, (permisosResueltos || esAdmin) && (accionesResueltas || esAdmin), esAdmin)
 
   // Un grupo abierto a la vez: con ocho módulos, permitir varios abiertos
   // convierte el riel en una lista de cuarenta líneas.

@@ -129,6 +129,14 @@ export function ExigePermiso() {
     )
   }
 
+  /*
+    ADMINISTRADOR: ACCESO TOTAL A TODOS LOS MÓDULOS.
+    Una cuenta con rol de Administrador gobierna el sistema y tiene acceso
+    irrestricto a todos los módulos funcionales del sistema.
+  */
+  if (rolesPendientes) return <Cargando />
+  if (tieneRol('ADMIN')) return <Outlet />
+
   if (!resuelto || puede(codigo) || (codigo === 'ASISTENCIA' && puedeAccion('ASISTENCIA.ESCANEAR'))) {
     return <Outlet />
   }
