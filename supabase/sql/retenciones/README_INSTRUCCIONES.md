@@ -108,3 +108,17 @@ Aplique los scripts en orden estricto desde el **SQL Editor de Supabase**:
    WHERE table_name = 'proveedores' AND column_name IN ('actividad_economica', 'tipo_persona');
   ```
 - **Resultado Esperado:** Ambas consultas devuelven 2 filas cada una.
+
+---
+
+### Paso 7: Formas del Comprobante (G.O. 43.484) y Correlativos ISLR R14
+- **Archivo:** `07_retenciones_g43484_formas_comprobante.sql`
+- **Estado:** `-- ESTADO: PENDIENTE DE APLICAR`
+- **Contenido:** Añade columnas normativas a `public.retenciones` (`fecha_entrega`, `impuesto_causado`, `monto_sin_derecho_credito_iva`), actualiza el formato de serie de ISLR a `AAAAMM8` (14 dígitos `AAAAMMSSSSSSSS` conforme a Gaceta Oficial 43.484 y Decreto 1.808) y actualiza la función atómica `public.retencion_lineas_insertar`.
+- **Query de Verificación:**
+  ```sql
+  SELECT count(*) = 3 AS columnas_ok FROM information_schema.columns 
+   WHERE table_name = 'retenciones' AND column_name IN ('fecha_entrega', 'impuesto_causado', 'monto_sin_derecho_credito_iva');
+  SELECT serie_formato FROM public.retencion_impuestos WHERE clave = 'ISLR';
+  ```
+- **Resultado Esperado:** `columnas_ok = true`, `serie_formato = 'AAAAMM8'`.

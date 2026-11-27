@@ -983,11 +983,12 @@ begin
     end if;
     fl := coalesce(nullif(l ->> 'fecha', '')::date, current_date);
     insert into public.retenciones (
-      tipo, documento_id, fecha, base, porcentaje, sustraendo, monto, moneda, tasa, base_bs, monto_bs,
-      iva_alicuota, iva_monto, motivo, concepto_codigo, concepto, municipio, descripcion,
+      tipo, documento_id, fecha, fecha_entrega, base, porcentaje, sustraendo, monto, moneda, tasa, base_bs, monto_bs,
+      iva_alicuota, iva_monto, impuesto_causado, monto_sin_derecho_credito_iva, motivo, concepto_codigo, concepto, municipio, descripcion,
       comprobante_nro, comprobante_periodo, quincena, valor_ut, actor, actor_name, regla_id, foto)
     values (
       t, p_doc.id, fl,
+      nullif(l ->> 'fecha_entrega', '')::date,
       coalesce(nullif(l ->> 'base', '')::numeric, 0),
       coalesce(nullif(l ->> 'porcentaje', '')::numeric, 0),
       nullif(l ->> 'sustraendo', '')::numeric,
@@ -998,6 +999,8 @@ begin
       nullif(l ->> 'monto_bs', '')::numeric,
       nullif(l ->> 'iva_alicuota', '')::numeric,
       nullif(l ->> 'iva_monto', '')::numeric,
+      coalesce(nullif(l ->> 'impuesto_causado', '')::numeric, nullif(l ->> 'iva_monto', '')::numeric, 0),
+      coalesce(nullif(l ->> 'monto_sin_derecho_credito_iva', '')::numeric, 0),
       nullif(btrim(l ->> 'motivo'), ''),
       nullif(l ->> 'concepto_codigo', ''),
       nullif(btrim(l ->> 'concepto'), ''),
@@ -1298,11 +1301,12 @@ begin
     end if;
     fl := coalesce(nullif(l ->> 'fecha', '')::date, current_date);
     insert into public.retenciones (
-      tipo, documento_id, fecha, base, porcentaje, sustraendo, monto, moneda, tasa, base_bs, monto_bs,
-      iva_alicuota, iva_monto, motivo, concepto_codigo, concepto, municipio, descripcion,
+      tipo, documento_id, fecha, fecha_entrega, base, porcentaje, sustraendo, monto, moneda, tasa, base_bs, monto_bs,
+      iva_alicuota, iva_monto, impuesto_causado, monto_sin_derecho_credito_iva, motivo, concepto_codigo, concepto, municipio, descripcion,
       comprobante_nro, comprobante_periodo, quincena, valor_ut, actor, actor_name, regla_id, foto)
     values (
       t, p_doc.id, fl,
+      nullif(l ->> 'fecha_entrega', '')::date,
       coalesce(nullif(l ->> 'base', '')::numeric, 0),
       coalesce(nullif(l ->> 'porcentaje', '')::numeric, 0),
       nullif(l ->> 'sustraendo', '')::numeric,
@@ -1313,6 +1317,8 @@ begin
       nullif(l ->> 'monto_bs', '')::numeric,
       nullif(l ->> 'iva_alicuota', '')::numeric,
       nullif(l ->> 'iva_monto', '')::numeric,
+      coalesce(nullif(l ->> 'impuesto_causado', '')::numeric, nullif(l ->> 'iva_monto', '')::numeric, 0),
+      coalesce(nullif(l ->> 'monto_sin_derecho_credito_iva', '')::numeric, 0),
       nullif(btrim(l ->> 'motivo'), ''),
       nullif(l ->> 'concepto_codigo', ''),
       nullif(btrim(l ->> 'concepto'), ''),
