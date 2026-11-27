@@ -28,7 +28,57 @@ begin
   end if;
 end $$;
 
-/* ── 1. Columnas normativas en public.retenciones ──────────────── */
+/* ── 1. Asegurar tabla public.config y permisos PostgREST ─────── */
+CREATE TABLE IF NOT EXISTS public.config (
+    key text PRIMARY KEY,
+    value jsonb NOT NULL,
+    updated_at timestamptz DEFAULT now()
+);
+ALTER TABLE public.config ENABLE ROW LEVEL SECURITY;
+GRANT ALL ON public.config TO postgres, service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.config TO authenticated;
+GRANT SELECT ON public.config TO anon;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'config' AND policyname = 'config read auth') THEN
+        CREATE POLICY "config read auth" ON public.config FOR SELECT TO authenticated USING (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'config' AND policyname = 'config anon read') THEN
+        CREATE POLICY "config anon read" ON public.config FOR SELECT TO anon USING (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'config' AND policyname = 'config_all_auth') THEN
+        CREATE POLICY "config_all_auth" ON public.config FOR ALL TO authenticated USING (true) WITH CHECK (true);
+    END IF;
+END $$;
+
+INSERT INTO public.config (key, value, updated_at)
+VALUES (
+    'retenciones.parametros',
+    jsonb_build_object(
+        'empresa_nombre', 'MINERIA INTERNACIONAL TS, C.A.',
+        'empresa_rif', 'J-50209170-0',
+        'empresa_domicilio', 'Sector La Cantera, Estado Bolívar, Venezuela',
+        'empresa_municipio', 'Piar',
+        'empresa_estado', 'Bolívar',
+        'empresa_email', 'contacto@mineriainternacionalts.com',
+        'empresa_telefono', '+58 414-0000000',
+        'es_agente_retencion_iva', false,
+        'es_contribuyente_especial', false,
+        'retiene_islr', true,
+        'retiene_municipal', true,
+        'valor_ut', 43,
+        'iva_alicuota', 16,
+        'iva_retencion', 75,
+        'iva_retencion_especial', 100,
+        'igtf_alicuota', 3,
+        'imprimir_original_copia', true
+    ),
+    now()
+)
+ON CONFLICT (key) DO NOTHING;
+
+/* ── 2. Columnas normativas en public.retenciones ──────────────── */
 alter table public.retenciones
   add column if not exists fecha_entrega date,
   add column if not exists impuesto_causado numeric(14,2) default 0
@@ -164,6 +214,9 @@ begin
     raise exception 'G43484_VERIFICACION: ISLR no quedó en AAAAMM8. Se revierte todo.';
   end if;
 end $$;
+
+-- Recargar cache de PostgREST
+NOTIFY pgrst, 'reload schema';
 
 commit;
 
