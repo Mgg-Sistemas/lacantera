@@ -942,7 +942,7 @@ select v.clave, v.nombre,
          where b.impuesto_clave = v.clave and b.activo order by b.desde, b.created_at limit 1),
        v.numera, v.formato, v.operacion, v.exporta, v.orden, 'Valor de arranque (R2; antes V1). A confirmar por el usuario.'
   from (values ('IVA',       'IVA',     true,  'AAAAMM8', false, 'txt',      1),
-               ('ISLR',      'ISLR',    true,  'N10',     false, 'xml',      2),
+               ('ISLR',      'ISLR',    true,  'AAAAMM8', false, 'xml',      2),
                ('MUNICIPAL', 'ISAE',    true,  'N10',     true,  'planilla', 3),
                ('ESTADAL',   'Estadal', true,  'N10',     false, 'planilla', 4),
                ('IGTF',      'IGTF',    false, null,      false, 'ninguno',  5))
@@ -1167,7 +1167,7 @@ select v.clave, v.nombre,
          where b.impuesto_clave = v.clave and b.activo order by b.desde, b.created_at limit 1),
        v.numera, v.formato, v.operacion, v.exporta, v.orden, 'Valor de arranque (R2; antes V1). A confirmar por el usuario.'
   from (values ('IVA',       'IVA',     true,  'AAAAMM8', false, 'txt',      1),
-               ('ISLR',      'ISLR',    true,  'N10',     false, 'xml',      2),
+               ('ISLR',      'ISLR',    true,  'AAAAMM8', false, 'xml',      2),
                ('MUNICIPAL', 'ISAE',    true,  'N10',     true,  'planilla', 3),
                ('ESTADAL',   'Estadal', true,  'N10',     false, 'planilla', 4),
                ('IGTF',      'IGTF',    false, null,      false, 'ninguno',  5))

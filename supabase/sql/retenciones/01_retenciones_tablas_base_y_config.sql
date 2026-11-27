@@ -113,6 +113,7 @@ CREATE TABLE IF NOT EXISTS public.retenciones (
     factura_numero text,
     factura_control text,
     factura_fecha date,
+    fecha_entrega date,
     factura_total numeric(14,2) DEFAULT 0,
     base_imponible numeric(14,2) DEFAULT 0,
     iva_alicuota numeric(5,2),
@@ -232,7 +233,7 @@ END $$;
 
 INSERT INTO public.retencion_series (tipo, numera, formato, modo, inicial, periodicidad) VALUES
 ('IVA', true, 'AAAAMM8', 'automatica', 1, 'quincenal'),
-('ISLR', true, 'N10', 'automatica', 1, 'mensual'),
+('ISLR', true, 'AAAAMM8', 'automatica', 1, 'mensual'),
 ('MUNICIPAL', true, 'N10', 'automatica', 1, 'mensual'),
 ('ESTADAL', true, 'N10', 'automatica', 1, 'mensual')
 ON CONFLICT (tipo) DO NOTHING;
