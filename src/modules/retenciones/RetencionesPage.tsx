@@ -473,10 +473,6 @@ export function RetencionesPage() {
     setVista('agrupada');
   }
 
-  const proveedorIdsPendientes = useMemo(
-    () => new Set(colaPorHacer.map((i) => i.rawOrdenItem?.orden.proveedor_id).filter(Boolean) as string[]),
-    [colaPorHacer],
-  );
 
   // La lista de la vista: búsqueda y fechas (las de siempre), filtros con su conteo y orden.
   const baseLista = useMemo(() => {
@@ -780,7 +776,7 @@ export function RetencionesPage() {
       {registrar && (
         <RegistrarRetencionModal
           semilla={registrar} actor={actor} actorName={actorName} empresaId={empresaId} empresaFicha={empresaFicha}
-          proveedorIdsPendientes={proveedorIdsPendientes} impuestosActivos={impuestosActivos} fichasImpuesto={fichasImpuesto}
+          impuestosActivos={impuestosActivos} fichasImpuesto={fichasImpuesto}
           onClose={() => setRegistrar(null)}
           onHecho={async () => { setRegistrar(null); await reload().catch(() => {}); }}
         />

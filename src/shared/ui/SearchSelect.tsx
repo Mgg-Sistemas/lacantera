@@ -132,7 +132,7 @@ function DropdownPortal({ anchorRef, panelRef, open, onClose, children }: {
   const pos = useAnchoredPos(anchorRef, open);
   if (!open || !pos) return null;
   const style: CSSProperties = {
-    ...PANEL_LOOK, position: 'fixed', zIndex: 9500,
+    ...PANEL_LOOK, position: 'fixed', zIndex: 10061,
     left: pos.left, width: pos.width, maxHeight: pos.maxHeight,
     ...(pos.top != null ? { top: pos.top } : { bottom: pos.bottom }),
   };
@@ -140,7 +140,7 @@ function DropdownPortal({ anchorRef, panelRef, open, onClose, children }: {
     <>
       <div
         role="presentation"
-        style={{ position: 'fixed', inset: 0, zIndex: 9499, background: 'transparent' }}
+        style={{ position: 'fixed', inset: 0, zIndex: 10060, background: 'transparent' }}
         onMouseDown={onClose}
         onTouchStart={onClose}
       />
@@ -249,10 +249,14 @@ export function SearchSelect({
         id={id}
         className="input"
         autoComplete="off"
+        role="combobox"
+        aria-expanded={open && !disabled}
+        aria-autocomplete="list"
         disabled={disabled}
         value={open ? query : (selected?.label ?? (allowCreate ? value : ''))}
         placeholder={selected ? selected.label : ((allowCreate && value) || placeholder)}
         onFocus={() => { if (disabled) return; setOpen(true); setQuery(''); setHi(0); }}
+        onClick={() => { if (!disabled) setOpen(true); }}
         onChange={(e) => { setQuery(e.target.value); setOpen(true); setHi(0); }}
         onKeyDown={onKeyDown}
       />

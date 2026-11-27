@@ -164,10 +164,9 @@ const nuevaLinea = (over: Partial<LineaUI> = {}): LineaUI => ({
 // esManual…) se deja intacto a propósito: «recibida» sigue existiendo para ventas.
 const OFRECER_DIRECCION: boolean = false;
 
-export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, onClose, onHecho, proveedorIdsPendientes, impuestosActivos, fichasImpuesto, empresaId = null, empresaFicha = null }: {
+export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, onClose, onHecho, impuestosActivos, fichasImpuesto, empresaId = null, empresaFicha = null }: {
   semilla?: SemillaFactura;
   /** En una practicada, solo se ofrecen los proveedores con retenciones por realizar (si se pasa). */
-  proveedorIdsPendientes?: Set<string>;
   actor: string;
   actorName: string | null;
   onClose: () => void;
@@ -748,9 +747,8 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
   }, [direccion, facturaFecha, fichasImpuesto, empresaId, impuestosActivos]);
 
   const opcionesProveedor = useMemo(() => {
-    const lista = proveedorIdsPendientes ? proveedores.filter((p) => proveedorIdsPendientes.has(p.id)) : proveedores;
-    return lista.map((p) => ({ value: p.id, label: `${p.razon_social || (p as any).nombre || 'Proveedor'}${p.rif ? ` · ${p.rif}` : ''}` }));
-  }, [proveedores, proveedorIdsPendientes]);
+    return proveedores.map((p) => ({ value: p.id, label: `${p.razon_social || (p as any).nombre || 'Proveedor'}${p.rif ? ` · ${p.rif}` : ''}` }));
+  }, [proveedores]);
 
   const opcionesOrdenes = useMemo(() => {
     return ordenesPendientesFiltradas.map(({ orden: o, proveedorNombre }) => {
@@ -1973,7 +1971,8 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
                 value={proveedorId}
                 onChange={elegirProveedor}
                 options={opcionesProveedor}
-                placeholder="Buscar proveedor por nombre o RIF…"
+                placeholder="Seleccionar proveedor por nombre o RIF…"
+                emptyText="No hay proveedores registrados que coincidan."
                 disabled={Boolean(documento || (s.contraparteId && tieneRetencionesPrevias === true))}
               />
             ) : (

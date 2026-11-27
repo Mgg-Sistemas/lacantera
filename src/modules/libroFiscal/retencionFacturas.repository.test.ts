@@ -118,6 +118,13 @@ describe('traducción al contrato de la función (columnas de GT)', () => {
 });
 
 describe('registro atómico', () => {
+  it('informa si la RPC con reintegro falta sin guardar una factura parcial', async () => {
+    rpc.mockResolvedValue({ data: null, error: { code: 'PGRST202', message: 'No está disponible la función de registro con reintegro.' } });
+    await expect(registrarFactura(factura(), [linea()], { ordenId: '42' })).rejects.toThrow();
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc.mock.calls[0][0]).toBe('retencion_factura_con_reintegro');
+  });
+
   it('manda p_factura y p_lineas a la función y mapea lo devuelto (número asignado por V2)', async () => {
     rpc.mockResolvedValueOnce({
       data: {
