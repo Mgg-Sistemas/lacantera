@@ -1,3 +1,5 @@
+import { Link } from 'react-router'
+import { useMisPermisos } from '@/lib/api/usuarios'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Modal } from '@/components/ui/Modal'
@@ -245,6 +247,7 @@ export function OrdenDetailModal({
   /** «📄 PDF» / «💬 WhatsApp» de la lista o del histórico: se abre con eso ya puesto. */
   alAbrir?: 'pdf' | 'whatsapp'
 }) {
+  const { puede: puedeModulo } = useMisPermisos()
   const yo = permisos.yo
   const canManageProcurement = permisos.gestiona
   const puedeAprobarOc = permisos.aprueba_oc
@@ -908,6 +911,20 @@ export function OrdenDetailModal({
         acciones={buttons}
       >
         <CadenaDeCompra o={o} madre={madre} />
+
+        {o.oc_codigo && (o.factura_tipo ?? o.comprobante_tipo) === 'factura'
+          && !['cancelada', 'anulada', 'desistida_proveedor'].includes(o.estado) ? (
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <Chip tone={o.retencion_finalizada ? 'success' : 'info'}>
+              {o.retencion_finalizada ? 'Retención finalizada' : 'Retención pendiente'}
+            </Chip>
+            {puedeModulo('RETENCIONES') ? (
+              <Link to={`/app/retenciones?tab=${o.retencion_finalizada ? 'libro' : 'pendientes'}&orden=${o.id}&titulo=${encodeURIComponent(o.oc_codigo)}`} onClick={onClose}>
+                <Button variant="outline">Retenciones de esta orden</Button>
+              </Link>
+            ) : null}
+          </div>
+        ) : null}
 
         {o.urgente ? (
           <div className="border-danger bg-danger/8 text-danger mb-3 rounded-[6px] border px-3 py-2 text-sm font-bold">

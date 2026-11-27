@@ -1,3 +1,4 @@
+import { useMisPermisos } from '@/lib/api/usuarios'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { ArrowLeft, Paperclip, Receipt } from 'lucide-react'
@@ -59,6 +60,7 @@ function Cifra({
 export function FichaProveedor() {
   const { id } = useParams()
   const proveedorId = Number(id)
+  const { puede } = useMisPermisos()
 
   const { data: proveedores } = useProveedores(false)
   const { data: r, isPending, error } = useResumenProveedor(proveedorId)
@@ -98,11 +100,16 @@ export function FichaProveedor() {
         title={r.nombre}
         description={[r.rif, p?.nombre_comercial].filter(Boolean).join(' · ')}
         actions={
-          <Link to="/app/compras/proveedores">
-            <Button variant="ghost" icon={<ArrowLeft />}>
-              Proveedores
-            </Button>
-          </Link>
+          <>
+            {puede('RETENCIONES') ? (
+              <Link to={`/app/retenciones?tab=libro&proveedor=${proveedorId}&titulo=${encodeURIComponent(r.nombre)}`}>
+                <Button variant="outline">Retenciones fiscales</Button>
+              </Link>
+            ) : null}
+            <Link to="/app/compras/proveedores">
+              <Button variant="ghost" icon={<ArrowLeft />}>Proveedores</Button>
+            </Link>
+          </>
         }
       />
 

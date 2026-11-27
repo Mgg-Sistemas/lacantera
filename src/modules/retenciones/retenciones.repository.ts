@@ -119,7 +119,7 @@ export async function listRetencionesPendientes(estadosPermitidos?: EstadoOrden[
   try {
     const desdeAgente = await fechaDesdeAgenteRetencion();
     const { data, error } = await supabase.from(TABLA_ORDENES_RETENCION).select('*')
-      .or('comprobante_tipo.eq.factura,factura_recepcion_path.not.is.null')
+      .or('factura_tipo.eq.factura,and(factura_tipo.is.null,comprobante_tipo.eq.factura)')
       .or('retencion_finalizada.is.null,retencion_finalizada.eq.false')
       .not('estado', 'in', `(${ESTADOS_NUNCA_RETENCION.join(',')})`)
       .gte('created_at', '2026-09-25T00:00:00Z')
@@ -139,7 +139,7 @@ export async function listRetencionesHechas(): Promise<RetencionItem[]> {
   try {
     const desdeAgente = await fechaDesdeAgenteRetencion();
     const { data, error } = await supabase.from(TABLA_ORDENES_RETENCION).select('*')
-      .or('comprobante_tipo.eq.factura,factura_recepcion_path.not.is.null')
+      .or('factura_tipo.eq.factura,and(factura_tipo.is.null,comprobante_tipo.eq.factura)')
       .eq('retencion_finalizada', true)
       .gte('created_at', '2026-09-25T00:00:00Z')
       .order('retencion_finalizada_en', { ascending: false });
@@ -158,7 +158,7 @@ export async function contarRetencionesPendientes(estadosPermitidos?: EstadoOrde
     const desdeAgente = await fechaDesdeAgenteRetencion();
     const { data, error } = await supabase.from(TABLA_ORDENES_RETENCION)
       .select('id, created_at, oc_creada_en, oc_emitida_en, estado, retencion_momento')
-      .or('comprobante_tipo.eq.factura,factura_recepcion_path.not.is.null')
+      .or('factura_tipo.eq.factura,and(factura_tipo.is.null,comprobante_tipo.eq.factura)')
       .or('retencion_finalizada.is.null,retencion_finalizada.eq.false')
       .not('estado', 'in', `(${ESTADOS_NUNCA_RETENCION.join(',')})`)
       .gte('created_at', '2026-09-25T00:00:00Z');

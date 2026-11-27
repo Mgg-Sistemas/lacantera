@@ -98,6 +98,7 @@ describe('construirColaPorHacer · Rediseño de Retenciones (Etapa 1)', () => {
       expect(cola).toHaveLength(1);
       expect(cola[0].codigo).toBe('OC-oc-con-archivo');
       expect(cola[0].archivoNombre).toBe('f.pdf');
+      expect(cola[0].archivoBucket).toBe('compras-recepciones');
     });
 
     it('excluye facturas de buzón que no tienen adjuntos', () => {

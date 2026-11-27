@@ -459,13 +459,11 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
       baseStr: numeroATexto(baseCalc),
       ivaStr: numeroATexto(o.iva_monto ?? 0),
     })]);
-    if (o.factura_recepcion_path) {
-      setAdjuntoExistente({
+    setAdjuntoExistente(o.factura_recepcion_path ? {
         nombre: o.factura_recepcion_nombre || `Factura ${o.oc_codigo || o.codigo}`,
-        bucket: 'comprobantes',
+        bucket: 'compras-recepciones',
         path: o.factura_recepcion_path,
-      });
-    }
+    } : null);
     if (o.items && o.items.length > 0) {
       setRenglonesValery(o.items.map((it, idx) => ({
         id: `oc-item-${idx}-${Date.now()}`,

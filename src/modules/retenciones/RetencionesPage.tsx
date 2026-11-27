@@ -80,7 +80,23 @@ export function RetencionesPage() {
   const actorName = appUser?.nombre ?? null;
 
   const [params, setParams] = useSearchParams();
-  const tabParam = (params.get('tab') || params.get('vista')) as string | null;
+  const tabParam = params.get('tab') || params.get('vista');
+  const proveedorParam = params.get('proveedor') ?? '';
+  const ordenParam = params.get('orden') ?? '';
+  const proveedorFoco = /^[1-9]\d*$/.test(proveedorParam) ? proveedorParam : undefined;
+  const ordenFoco = /^[1-9]\d*$/.test(ordenParam) ? ordenParam : undefined;
+  const tituloFoco = params.get('titulo');
+  const busquedaFoco = params.get('busqueda');
+  const focoDeRuta = useMemo<FocoLibro | null>(() => {
+    if (!proveedorFoco && !ordenFoco && !busquedaFoco) return null;
+    return {
+      texto: proveedorFoco || ordenFoco ? '' : busquedaFoco ?? '',
+      desde: '',
+      proveedorId: proveedorFoco,
+      ordenId: ordenFoco,
+      titulo: tituloFoco ?? (ordenFoco ? `orden #${ordenFoco}` : proveedorFoco ? `proveedor #${proveedorFoco}` : undefined),
+    };
+  }, [proveedorFoco, ordenFoco, tituloFoco, busquedaFoco]);
 
   const normalizarVista = (v?: string | null): Vista => {
     if (!v) return 'agrupada';
@@ -396,8 +412,13 @@ export function RetencionesPage() {
       practica,
       configFiscal,
       impuestosActivos: impuestosActivos?.claves ?? null,
+    }).filter((item) => {
+      const orden = item.rawOrdenItem?.orden;
+      const origen = item.rawFacturaOrigen?.origen;
+      if (proveedorFoco && orden?.proveedor_id !== proveedorFoco) return false;
+      return !ordenFoco || orden?.id === ordenFoco || (origen?.tipo === 'oc' && origen.id === ordenFoco);
     }),
-    [empresaId, esGt, facturasBuzon, facturasCompras, pendientes, todasOrdenes, directosExtra, soportesFisicos, registradas, practica, configFiscal, impuestosActivos],
+    [empresaId, esGt, facturasBuzon, facturasCompras, pendientes, todasOrdenes, directosExtra, soportesFisicos, registradas, practica, configFiscal, impuestosActivos, ordenFoco, proveedorFoco],
   );
 
   // La semilla del registro sale del archivo: su orden y, si es una OC que ya está en la lista, proveedor y montos.
@@ -580,7 +601,7 @@ export function RetencionesPage() {
 
       {/* ── Libro fiscal consolidado (con switch interno entre vista por factura, lista o por impuesto) ── */}
       {(vista === 'agrupada' || vista === 'libro') && (
-        <LibroFiscalView canWrite={canWrite} actor={actor} actorName={actorName} empresaId={empresaId} empresaFicha={empresaFicha} foco={focoLibro} />
+        <LibroFiscalView canWrite={canWrite} actor={actor} actorName={actorName} empresaId={empresaId} empresaFicha={empresaFicha} foco={focoDeRuta ?? focoLibro} />
       )}
 
       {/* ── Períodos fiscales (v8: filtros + atención + timeline) ── */}
@@ -622,6 +643,14 @@ export function RetencionesPage() {
           canWrite={canWrite}
           actorName={actorName}
         />
+      )}
+
+      {focoDeRuta && (
+        <div className="card" style={{ marginBottom: '.75rem' }}>
+          {focoDeRuta.titulo || focoDeRuta.texto}
+          {proveedorFoco && <Link to={`/app/compras/proveedores/${proveedorFoco}`} className="btn btn-ghost btn-sm">Ficha del proveedor</Link>}
+          <Link to={`/app/retenciones?tab=${vista}`} className="btn btn-ghost btn-sm">Quitar filtro</Link>
+        </div>
       )}
 
       {/* ── Por hacer: cola unificada con archivo obligatorio por empresa ── */}

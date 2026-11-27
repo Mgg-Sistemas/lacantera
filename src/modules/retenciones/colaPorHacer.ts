@@ -349,7 +349,7 @@ export function construirColaPorHacer({
         baseImponible: Math.max(0, o.total - (o.iva_monto ?? 0) - (o.igtf_monto ?? 0)),
         archivoNombre: o.factura_recepcion_nombre || 'Factura recepción',
         archivoPath: o.factura_recepcion_path,
-        archivoBucket: 'compras-oc',
+        archivoBucket: 'compras-recepciones',
         adjuntosCount: 1,
         impuestosPendientes: pends,
         retencionesCargadasCount: Math.max(0, totalImp - pends.length),

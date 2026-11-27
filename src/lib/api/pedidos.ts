@@ -237,6 +237,7 @@ export interface Orden {
   factura_path: string | null
   factura_nombre: string | null
   factura_tipo: 'factura' | 'nota_entrega' | null
+  retencion_finalizada?: boolean
   finalizada_por_nombre: string | null
   finalizada_en: string | null
 }

@@ -62,7 +62,7 @@ export function semillaFacturaDesdeOrden(item: RetencionItem): SemillaFactura {
     iva: o?.iva_monto ?? 0,
     adjunto: o?.factura_recepcion_path ? {
       nombre: o.factura_recepcion_nombre || 'factura_recepcion',
-      bucket: 'compras-oc',
+      bucket: 'compras-recepciones',
       path: o.factura_recepcion_path,
     } : undefined,
   };

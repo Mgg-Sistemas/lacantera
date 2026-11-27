@@ -125,7 +125,7 @@ export function RetencionesDelProveedor({ proveedorId }: Props) {
           title="Comprobantes de Retención Fiscal (G.O. 43.484)"
           subtitle="Comprobantes R14 (14 dígitos) emitidos a este proveedor bajo el régimen de retenciones."
           action={
-            <Link to={`/app/retenciones?busqueda=${proveedorId}`}>
+            <Link to={`/app/retenciones?tab=libro&proveedor=${proveedorId}`}>
               <Button size="sm" variant="outline">
                 Ir a Retenciones
               </Button>

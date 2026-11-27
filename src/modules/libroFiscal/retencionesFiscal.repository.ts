@@ -612,6 +612,8 @@ export interface FiltroRetenciones {
   desde?: string;
   hasta?: string;
   docId?: string;
+  proveedorId?: string;
+  ordenId?: string;
   incluirAnuladas?: boolean;
   /** Multi-empresa: filtra al libro de ESA empresa. Solo surte efecto si viene (en single-empresa no se pasa). */
   empresaId?: string | null;
@@ -625,7 +627,7 @@ export async function listRetenciones(f: FiltroRetenciones = {}): Promise<Retenc
   if (!(await tablaDisponible(T_RETENCIONES))) return [];
   const conDocumentos = await tablaDisponible('retencion_documentos');
   const columnas = conDocumentos
-    ? '*, retencion_documentos(tipo_documento, factura_afectada_nro, factura_total, exento)'
+    ? '*, retencion_documentos(tipo_documento, factura_afectada_nro, factura_total, exento, proveedor_id, orden_id, compra_directa_id, servicio_directo_id)'
     : '*';
   const filas = await todasLasFilas<Record<string, unknown>>((desde, hasta) => {
     let q = (supabase.from(T_RETENCIONES).select(columnas) as any)
@@ -633,6 +635,8 @@ export async function listRetenciones(f: FiltroRetenciones = {}): Promise<Retenc
       .order('created_at', { ascending: false })
       .order('id', { ascending: false })   // desempate estable: sin esto las páginas se solapan
       .range(desde, hasta);
+    if (f.proveedorId) q = q.eq('proveedor_id', f.proveedorId);
+    if (f.ordenId) q = q.eq('orden_id', f.ordenId);
     if (f.direccion) q = q.eq('rol', rolAGt(f.direccion));
     if (f.tipo) q = q.eq('tipo', tipoAGt(f.tipo));
     if (f.estado) q = q.eq('estado', f.estado);

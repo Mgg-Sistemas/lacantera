@@ -150,6 +150,8 @@ type VistaLibro = 'lista' | 'factura' | 'impuesto' | 'sin';
 export interface FocoLibro {
   /** Número de factura/OC (o RIF) con el que se precarga el buscador del libro. */
   texto: string;
+  proveedorId?: string;
+  ordenId?: string;
   /** Fecha de la factura: se usa como `desde` para no perder períodos anteriores. */
   desde?: string;
   /** Si la factura está pendiente, abre el listado de facturas por registrar solo para ese origen. */
@@ -176,7 +178,7 @@ export function LibroFiscalView({ canWrite = true, actor, actorName, vistaInicia
   const [direccion, setDireccion] = useState<'' | DireccionRetencion>('practicada');
   const [tipo, setTipo] = useState<'' | TipoImpuesto>('');
   const [estado, setEstado] = useState<'' | EstadoRetencion | 'anulada'>('');
-  const [desde, setDesde] = useState(foco?.desde || primeroDelMes());
+  const [desde, setDesde] = useState(foco?.desde ?? primeroDelMes());
   const [hasta, setHasta] = useState(hoyIso());
   const [texto, setTexto] = useState(foco?.texto ?? '');
 
@@ -221,7 +223,7 @@ export function LibroFiscalView({ canWrite = true, actor, actorName, vistaInicia
     if (!foco) return;
     setFocoActual(foco);
     setTexto(foco.texto);
-    if (foco.desde) setDesde(foco.desde);
+    if (foco.desde !== undefined) setDesde(foco.desde);
     if (foco.origenIds?.length) {
       setFocoOrigenIds(foco.origenIds);
       setVerFacturasCompras(true);
@@ -265,7 +267,7 @@ export function LibroFiscalView({ canWrite = true, actor, actorName, vistaInicia
 
   const reload = useCallback(async () => {
     const [rs, cfg] = await Promise.all([
-      listRetenciones({ desde: desde || undefined, hasta: hasta || undefined, incluirAnuladas: true, empresaId: empresaId ?? undefined }),
+      listRetenciones({ desde: desde || undefined, hasta: hasta || undefined, incluirAnuladas: true, empresaId: empresaId ?? undefined, proveedorId: foco?.proveedorId, ordenId: foco?.ordenId }),
       getConfigRetencion().catch(() => CONFIG_RETENCION_DEFECTO),
     ]);
     // Multi-empresa: una empresa NO-GT usa el régimen y los % de su ficha.
@@ -275,7 +277,7 @@ export function LibroFiscalView({ canWrite = true, actor, actorName, vistaInicia
     setImprimirLogo(cfgEmpresa.incluirLogo !== false);
     setImprimirFirma(cfgEmpresa.incluirFirma !== false);
     setImprimirSello(cfgEmpresa.incluirSello !== false);
-  }, [desde, hasta, empresaId, empresaFicha]);
+  }, [desde, hasta, empresaId, empresaFicha, foco?.proveedorId, foco?.ordenId]);
 
   useEffect(() => {
     let cancel = false;
@@ -1606,6 +1608,7 @@ export function LibroFiscalView({ canWrite = true, actor, actorName, vistaInicia
               }}
               onClick={() => {
                 setDecisionRetener(false);
+                if (foco?.proveedorId) setSemillaCompra({ direccion: 'practicada', contraparteId: foco.proveedorId });
                 setFacturaVarias(true);
               }}
             >
