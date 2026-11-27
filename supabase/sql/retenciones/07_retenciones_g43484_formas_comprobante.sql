@@ -40,7 +40,7 @@ ALTER TABLE public.config ADD COLUMN IF NOT EXISTS updated_by text;
 ALTER TABLE public.config ENABLE ROW LEVEL SECURITY;
 GRANT ALL ON public.config TO postgres, service_role;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.config TO authenticated;
-GRANT SELECT ON public.config TO anon;
+
 
 DO $$
 BEGIN
@@ -48,7 +48,7 @@ BEGIN
         CREATE POLICY "config read auth" ON public.config FOR SELECT TO authenticated USING (true);
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'config' AND policyname = 'config anon read') THEN
-        CREATE POLICY "config anon read" ON public.config FOR SELECT TO anon USING (true);
+        NULL;
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'config' AND policyname = 'config_all_auth') THEN
         CREATE POLICY "config_all_auth" ON public.config FOR ALL TO authenticated USING (true) WITH CHECK (true);

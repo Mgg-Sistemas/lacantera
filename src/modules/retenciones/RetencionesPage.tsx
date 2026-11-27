@@ -372,7 +372,7 @@ export function RetencionesPage() {
   // Realtime multiusuario: lo que registra otro (o paga Tesorería o cambia en Régimen/Parámetros) se refleja al instante.
   // C-g: se suma `retencion_facturas_externas` (solo con el buzón en la base) para que una
   // factura cargada desde el teléfono refresque el contador de nuevas aunque la vista esté cerrada.
-  useRealtime(['ordenes', 'retenciones', 'retencion_decisiones', 'retencion_agente_condiciones', 'parametros', 'retencion_impuestos',
+  useRealtime(['compras_ordenes', 'retenciones', 'retencion_decisiones', 'retencion_agente_condiciones', 'parametros', 'retencion_impuestos',
     'adjuntos_directos', 'retencion_documento_origenes',
     ...(conBuzon ? ['retencion_facturas_externas'] : [])], () => {
     cargarImpuestosActivos();
@@ -799,8 +799,8 @@ function RetencionModal({ item, soporte, canWrite, actor, tieneResueltosEnLibro,
     setArchivos((m) => ({ ...m, [tipo]: file ?? undefined }));
   }
 
-  async function descargar(path: string) {
-    try { previewArchivo(await urlRetencion(path), path.split('/').pop() || 'comprobante'); }
+  async function descargar(path: string, factura = false) {
+    try { previewArchivo(await urlRetencion(path, factura), path.split('/').pop() || 'comprobante'); }
     catch { toast('No se pudo abrir el comprobante', 'error'); }
   }
 
@@ -856,7 +856,7 @@ function RetencionModal({ item, soporte, canWrite, actor, tieneResueltosEnLibro,
           {soporte
             ? <button type="button" className="btn btn-sm btn-ghost" onClick={() => void abrirSoporte()}>📎 Ver soporte · {soporte.archivoNombre}</button>
             : o.factura_recepcion_path
-              ? <button type="button" className="btn btn-sm btn-ghost" onClick={() => descargar(o.factura_recepcion_path!)}>🧾 Ver factura{o.factura_recepcion_nombre ? ` · ${o.factura_recepcion_nombre}` : ''}</button>
+              ? <button type="button" className="btn btn-sm btn-ghost" onClick={() => descargar(o.factura_recepcion_path!, true)}>🧾 Ver factura{o.factura_recepcion_nombre ? ` · ${o.factura_recepcion_nombre}` : ''}</button>
               : <span className="muted" style={{ fontSize: '.84rem' }}>— sin factura cargada —</span>}
         </div>
 

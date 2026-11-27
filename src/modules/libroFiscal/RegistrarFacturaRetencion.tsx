@@ -54,7 +54,6 @@ import {
   registrarFactura, type FacturaNueva, type LineaFacturaNueva, type TipoDocumento,
 } from './retencionFacturas.repository';
 import { hoyVenezuela } from '@/shared/lib/rangosFecha';
-import { registrarReintegroManual } from '@/modules/retenciones/ReintegrosPendientesView';
 import { formatoParaImprimir } from './formatos.repository';
 import { verComprobanteRetencionPdf, verTodosComprobantesFacturaPdf } from './comprobanteRetencionPdf';
 import { soloImpuestosActivos, admiteDireccion, type ImpuestosActivos, type FichaRetencionVista } from '@/modules/retenciones/impuestosVista';
@@ -1269,9 +1268,17 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
         };
       });
       const etiquetaDoc = tipoDocumento === 'factura' ? `Factura ${facturaNro}` : tipoDocumento === 'nota_credito' ? `Nota de crédito ${facturaNro}` : `Nota de débito ${facturaNro}`;
+      const reintegro = modalidadLiquidacion === 'espera_reintegro' ? {
+        ordenId: finalDocKind === 'oc' ? finalDocId : null,
+        codigoOc: finalDocKind === 'oc' ? ordenSeleccionadaObj?.oc_codigo ?? null : null,
+        fechaEmision: fechaRetencion,
+        moneda,
+        montoUsd: moneda === 'USD' ? totalRetenido : (tasa > 0 ? totalRetenidoBs / tasa : null),
+        tipoRetencion: lineasNuevas.map((l) => l.tipo.toUpperCase()).join(', '),
+      } : undefined;
       const res = documento
-        ? await retenerDespues(documento, lineasNuevas, { periodo, actorName, valorUt: config.valorUt })
-        : await registrarFactura(facturaNueva, lineasNuevas);
+        ? await retenerDespues(documento, lineasNuevas, { periodo, actorName, valorUt: config.valorUt, reintegro })
+        : await registrarFactura(facturaNueva, lineasNuevas, reintegro);
       if (archivoFactura && res.lineas?.length) {
         for (const l of res.lineas) {
           try {
@@ -1283,33 +1290,13 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
       }
       notify(`${etiquetaDoc} · ${res.lineas.length} línea(s) retenida(s) · ${money(totalRetenido, moneda)}`, 'success', { link: '#/app/retenciones' });
       if (finalDocKind === 'oc' && finalDocId) {
-        void supabase.from('ordenes').update({
-          retencion_finalizada: true,
-          retencion_finalizada_por: actorName || actor,
-          retencion_finalizada_en: new Date().toISOString(),
-        }).eq('id', finalDocId);
+        const { error: errorCierre } = await supabase.rpc('retencion_finalizar_orden', {
+          p_orden_id: Number(finalDocId), p_comprobantes: {},
+        });
+        if (errorCierre) notify(`Factura guardada. No se pudo finalizar la orden: ${errorCierre.message}`, 'error');
       }
       if (modoOrigen === 'buzon' && buzonSeleccionadaId) {
         void actualizarEstatusFacturaBuzon(buzonSeleccionadaId, 'retenida').catch(() => {});
-      }
-      // Reintegro pendiente (post-pago): si se pagó el 100% al proveedor, se genera la devolución en Reintegros
-      if (modalidadLiquidacion === 'espera_reintegro') {
-        const empresaTargetId = empresaId || (empresaFicha as unknown as { id?: string })?.id || null;
-        registrarReintegroManual({
-          empresaId: empresaTargetId,
-          ordenId: finalDocKind === 'oc' ? finalDocId : null,
-          codigoOc: finalDocKind === 'oc' && ordenSeleccionadaObj?.oc_codigo ? ordenSeleccionadaObj.oc_codigo : null,
-          numeroComprobante: res.lineas.map((l) => l.numeroComprobante).filter(Boolean).join(', ') || null,
-          proveedor: contraparte || 'Proveedor',
-          proveedorRif: rif || null,
-          facturas: facturaNro ? [facturaNro] : [],
-          fechaEmision: facturaFecha || hoyIso(),
-          moneda: moneda,
-          montoBs: totalRetenidoBs,
-          montoUsd: moneda === 'USD' ? totalRetenido : (tasa > 0 ? totalRetenidoBs / tasa : null),
-          tipoRetencion: res.lineas.map((l) => l.tipo.toUpperCase()).join(', ') || 'Retención',
-          nota: `Retención registrada con pago al 100% · Espera reintegro de ${contraparte || 'proveedor'}`,
-        });
       }
       // No se cierra aún: se muestra el éxito con «Compartir por WhatsApp».
       setResultado(res);

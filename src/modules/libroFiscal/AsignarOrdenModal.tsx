@@ -16,7 +16,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Modal } from '@/shared/ui/Modal';
 import { toast } from '@/shared/ui/Toast';
 import { supabase } from '@/shared/lib/supabase';
-import { cubrirOrigen } from './documentosOrigen.repository';
 
 export interface AsignarOrdenModalProps {
   retencionId: string;
@@ -47,7 +46,6 @@ interface OrdenCandidata {
 
 export function AsignarOrdenModal({
   retencionId,
-  documentoId,
   comprobanteNro,
   facturaNro,
   proveedorNombre,
@@ -68,7 +66,7 @@ export function AsignarOrdenModal({
     setCargando(true);
     try {
       let q = supabase
-        .from('ordenes')
+        .from('retencion_ordenes')
         .select('id, oc_codigo, codigo, total, total_moneda, estado, created_at, notas, proveedor_id')
         .gte('created_at', '2026-09-01T00:00:00Z')
         .order('created_at', { ascending: false })
@@ -127,49 +125,10 @@ export function AsignarOrdenModal({
     try {
       const codigoVisible = ordenSeleccionada.ocCodigo || ordenSeleccionada.codigo;
 
-      // 1. Actualizar retenciones por retencionId y/o por documentoId
-      const updateRet: Record<string, unknown> = {
-        orden_id: ordenSeleccionada.id,
-        doc_kind: 'oc',
-        doc_id: ordenSeleccionada.id,
-      };
-
-      if (documentoId) {
-        await supabase
-          .from('retenciones')
-          .update(updateRet)
-          .eq('documento_id', documentoId);
-
-        await supabase
-          .from('retencion_documentos')
-          .update({
-            orden_id: ordenSeleccionada.id,
-            doc_id: ordenSeleccionada.id,
-            doc_kind: 'oc',
-          })
-          .eq('id', documentoId);
-
-        // Enlazar en puente P03
-        try {
-          await cubrirOrigen(documentoId, { tipo: 'oc', id: ordenSeleccionada.id });
-        } catch {
-          // Si ya estaba enlazada, continuar sin error
-        }
-      } else {
-        await supabase
-          .from('retenciones')
-          .update(updateRet)
-          .eq('id', retencionId);
-      }
-
-      // 2. Marcar en la orden que la retención quedó asociada / finalizada
-      await supabase
-        .from('ordenes')
-        .update({
-          retencion_finalizada: true,
-          retencion_finalizada_en: new Date().toISOString(),
-        })
-        .eq('id', ordenSeleccionada.id);
+      const { error } = await supabase.rpc('retencion_asignar_orden', {
+        p_retencion: retencionId, p_orden: Number(ordenSeleccionada.id),
+      });
+      if (error) throw new Error(error.message);
 
       toast(`✅ Retención asociada exitosamente a la orden ${codigoVisible}`, 'success');
       onAsignada(ordenSeleccionada.id, codigoVisible);

@@ -41,7 +41,7 @@ import { hoyVenezuela } from '@/shared/lib/rangosFecha';
 const T_RETENCIONES = 'retenciones';
 const T_CONCEPTOS = 'retenciones_conceptos';
 const CLAVE_CONFIG = 'retenciones.parametros';
-const BUCKET = 'compras-oc';
+const BUCKET = 'retenciones-comprobantes';
 
 const n = (v: unknown) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 const r2 = (v: number) => Math.round((Number(v) || 0) * 100) / 100;
@@ -932,9 +932,9 @@ export async function adjuntarComprobante(id: string, file: File, tipo?: string)
     throw new Error('El comprobante debe ser PDF o imagen.');
   }
   const safe = file.name.replace(/[^\w.-]+/g, '_');
-  const path = `retenciones/${id}/${safe}`;
+  const path = `retenciones/${id}/${crypto.randomUUID()}_${safe}`;
   const { error: upErr } = await supabase.storage.from(BUCKET)
-    .upload(path, file, { upsert: true, contentType: file.type || 'application/pdf' });
+    .upload(path, file, { contentType: file.type || 'application/pdf' });
   if (upErr) throw upErr;
   const { data, error } = await supabase.from(T_RETENCIONES)
     .update({ comprobante_path: path, comprobante_nombre: tipo ? `${tipo} · ${file.name}` : file.name, updated_at: new Date().toISOString() })

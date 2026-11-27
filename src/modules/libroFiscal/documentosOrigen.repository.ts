@@ -87,7 +87,7 @@ export async function cargarSemillaDeFacturaOrigen(f: FacturaDeOrigen) {
   try {
     if (f.origen.tipo === 'oc') {
       const { data: o } = await supabase
-        .from('ordenes')
+        .from('retencion_ordenes')
         .select('proveedor_id, total_moneda, total, iva_monto, igtf_monto')
         .eq('id', f.origen.id)
         .maybeSingle();
@@ -96,9 +96,9 @@ export async function cargarSemillaDeFacturaOrigen(f: FacturaDeOrigen) {
       let nombre: string | null = null;
       let rif: string | null = null;
       if (provId) {
-        const { data: p } = await supabase.from('proveedores').select('*').eq('id', provId).maybeSingle();
-        nombre = texto((p as any)?.razon_social || (p as any)?.nombre);
-        rif = texto((p as any)?.rif);
+        const { data: p } = await supabase.from('proveedores').select('nombre, rif').eq('id', provId).maybeSingle();
+        nombre = texto(p?.nombre);
+        rif = texto(p?.rif);
       }
       const total = Number(o.total) || 0;
       const iva = Number(o.iva_monto) || 0;
@@ -113,7 +113,7 @@ export async function cargarSemillaDeFacturaOrigen(f: FacturaDeOrigen) {
         iva,
       });
     }
-    const tabla = f.origen.tipo === 'compra_directa' ? 'compras_directas' : 'servicios_directos';
+    const tabla = f.origen.tipo === 'compra_directa' ? 'retencion_compras_directas' : 'retencion_servicios_directos';
     const { data: d } = await supabase
       .from(tabla)
       .select('proveedor_id, proveedor_nombre, moneda, gasto')
@@ -124,8 +124,8 @@ export async function cargarSemillaDeFacturaOrigen(f: FacturaDeOrigen) {
     let nombre = texto(d.proveedor_nombre);
     let rif: string | null = null;
     if (provId) {
-      const { data: p } = await supabase.from('proveedores').select('razon_social, rif').eq('id', provId).maybeSingle();
-      nombre = nombre ?? texto(p?.razon_social);
+      const { data: p } = await supabase.from('proveedores').select('nombre, rif').eq('id', provId).maybeSingle();
+      nombre = nombre ?? texto(p?.nombre);
       rif = texto(p?.rif);
     }
     const total = Number(d.gasto) || 0;
@@ -235,12 +235,12 @@ export interface OrigenDelProveedor { origen: Origen; codigo: string | null; fec
 export async function origenesDelProveedor(proveedorId: string, limite = 60): Promise<OrigenDelProveedor[]> {
   const [desdeAgente, oc, cd, sd] = await Promise.all([
     fechaDesdeAgenteRetencion(),
-    supabase.from('ordenes').select('id, oc_codigo, codigo, created_at')
+    supabase.from('retencion_ordenes').select('id, oc_codigo, codigo, created_at')
       .eq('proveedor_id', proveedorId)
       .gte('created_at', '2026-09-25T00:00:00Z')
       .order('created_at', { ascending: false }).limit(limite),
-    supabase.from('compras_directas').select('id, codigo, created_at').eq('proveedor_id', proveedorId).order('created_at', { ascending: false }).limit(limite),
-    supabase.from('servicios_directos').select('id, codigo, created_at').eq('proveedor_id', proveedorId).order('created_at', { ascending: false }).limit(limite),
+    supabase.from('retencion_compras_directas').select('id, codigo, created_at').eq('proveedor_id', proveedorId).order('created_at', { ascending: false }).limit(limite),
+    supabase.from('retencion_servicios_directos').select('id, codigo, created_at').eq('proveedor_id', proveedorId).order('created_at', { ascending: false }).limit(limite),
   ]);
   const error = oc.error ?? cd.error ?? sd.error;
   if (error) throw errorRetencion(error, 'No se pudieron leer las órdenes del proveedor.');
@@ -289,10 +289,10 @@ export async function cargarDatosDirectosPorIds(facturas: FacturaDeOrigen[]): Pr
 
   const [cdRes, sdRes] = await Promise.all([
     cdIds.length > 0
-      ? supabase.from('compras_directas').select('id, codigo, proveedor_id, proveedor_nombre, moneda, gasto').in('id', cdIds)
+      ? supabase.from('retencion_compras_directas').select('id, codigo, proveedor_id, proveedor_nombre, moneda, gasto').in('id', cdIds)
       : Promise.resolve({ data: [] }),
     sdIds.length > 0
-      ? supabase.from('servicios_directos').select('id, codigo, proveedor_id, proveedor_nombre, moneda, gasto').in('id', sdIds)
+      ? supabase.from('retencion_servicios_directos').select('id, codigo, proveedor_id, proveedor_nombre, moneda, gasto').in('id', sdIds)
       : Promise.resolve({ data: [] }),
   ]);
 

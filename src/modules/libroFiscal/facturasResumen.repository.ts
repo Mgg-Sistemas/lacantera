@@ -118,12 +118,13 @@ export const buscarFacturasRetenibles = (texto: string, proveedorId?: string | n
 export async function retenerDespues(
   doc: Pick<FacturaResumen, 'documentoId' | 'facturaFecha' | 'direccion'>,
   lineas: LineaFacturaNueva[],
-  opciones: { periodo?: string | null; actorName?: string | null; valorUt?: number | null } = {},
+  opciones: { periodo?: string | null; actorName?: string | null; valorUt?: number | null; reintegro?: Record<string, unknown> } = {},
 ): Promise<FacturaConLineas> {
   if (!lineas.length) throw new Error('Agrega al menos una línea de impuesto para retener.');
   const fecha = (doc.facturaFecha ?? '').slice(0, 10);
   const vigente = await configDeFecha({ ...CONFIG_RETENCION_DEFECTO, valorUt: opciones.valorUt ?? 0 }, fecha, lineas.map((l) => l.tipo));
-  const { data, error } = await supabase.rpc('retencion_lineas_registrar', {
+  const { data, error } = await supabase.rpc(opciones.reintegro ? 'retencion_lineas_con_reintegro' : 'retencion_lineas_registrar', {
+    ...(opciones.reintegro && { p_reintegro: opciones.reintegro }),
     p_documento_id: doc.documentoId,
     p_lineas: lineas.map((l) => ({ ...pLineaDe(l), valor_ut: Number(vigente.valorUt) > 0 ? Number(vigente.valorUt) : null })),
     p_periodo: opciones.periodo ?? null,
