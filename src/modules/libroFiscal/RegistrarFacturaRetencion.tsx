@@ -16,9 +16,9 @@ import { toast } from '@/shared/ui/Toast';
 import { notify } from '@/shared/lib/notify';
 import { SearchSelect } from '@/shared/ui/SearchSelect';
 import type { Proveedor } from '@/shared/lib/types';
-import { list as listProveedores, update as updateProveedor } from '@/modules/proveedores/proveedores.repository';
+import { insert as insertProveedor, list as listProveedores, update as updateProveedor } from '@/modules/proveedores/proveedores.repository';
 import { diaVE, getTasaUsdDeFecha } from '@/modules/tesoreria/tasas.repository';
-import { rifValido } from '@/shared/lib/rif';
+import { normalizarRif, rifValido } from '@/shared/lib/rif';
 import { usePermissions } from '@/modules/auth/PermissionsContext';
 import { rutaFichaProveedor, textoRifInvalido } from './mensajeRif';
 import {
@@ -344,7 +344,7 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
   async function guardarEdicionProveedor() {
     if (!proveedorId) return;
     const nom = nombreProvEditado.trim();
-    const r = rifProvEditado.trim().toUpperCase();
+    const r = normalizarRif(rifProvEditado.trim().toUpperCase());
     if (!nom) {
       toast('La razón social no puede estar vacía.', 'error');
       return;
@@ -366,6 +366,73 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
       toast(msg, 'error');
     } finally {
       setGuardandoProveedor(false);
+    }
+  }
+
+  const [creandoProveedor, setCreandoProveedor] = useState(false);
+  const [nuevoProvNombre, setNuevoProvNombre] = useState('');
+  const [nuevoProvRif, setNuevoProvRif] = useState('');
+  const [nuevoProvDireccion, setNuevoProvDireccion] = useState('');
+  const [nuevoProvTelefono, setNuevoProvTelefono] = useState('');
+  const [nuevoProvCorreo, setNuevoProvCorreo] = useState('');
+  const [guardandoNuevoProveedor, setGuardandoNuevoProveedor] = useState(false);
+
+  function iniciarNuevoProveedor() {
+    setEditandoProveedor(false);
+    setNuevoProvNombre(proveedorId ? '' : contraparte.trim());
+    setNuevoProvRif(proveedorId ? '' : (rif.trim() ? normalizarRif(rif.trim()) : ''));
+    setNuevoProvDireccion('');
+    setNuevoProvTelefono('');
+    setNuevoProvCorreo('');
+    setCreandoProveedor(true);
+  }
+
+  async function guardarNuevoProveedor() {
+    const nom = nuevoProvNombre.trim();
+    const r = normalizarRif(nuevoProvRif.trim().toUpperCase());
+    if (nom.length < 3) {
+      toast('Indica la razón social del proveedor (mínimo 3 caracteres).', 'error');
+      return;
+    }
+    if (!rifValido(r)) {
+      toast('El RIF no tiene forma válida (ej. J-40151378-6).', 'error');
+      return;
+    }
+    setGuardandoNuevoProveedor(true);
+    try {
+      const nuevo = await insertProveedor({
+        razon_social: nom,
+        rif: r,
+        direccion: nuevoProvDireccion.trim() || null,
+        telefono: nuevoProvTelefono.trim() || null,
+        email: nuevoProvCorreo.trim() || null,
+        categorias: [],
+        origen: 'nacional',
+        estado: 'activo',
+      });
+      setProveedores((prev) => {
+        const sinDup = prev.filter((p) => String(p.id) !== String(nuevo.id));
+        return [...sinDup, nuevo].sort((a, b) => (a.razon_social || '').localeCompare(b.razon_social || '', 'es-VE'));
+      });
+      marcarSucio();
+      setProveedorId(nuevo.id);
+      setContraparte(nuevo.razon_social || nom);
+      setRif(nuevo.rif || r);
+      const sug = sugerirSujetoPorRif(nuevo.rif || r);
+      if (sug) {
+        setLineas((xs) => xs.map((l) => ({
+          ...l,
+          sujeto: sug.sujeto,
+          conceptoId: l.conceptoId || sugerirConceptoParaLinea(conceptos, l.tipo, sug.sujeto),
+        })));
+      }
+      setCreandoProveedor(false);
+      toast(`Proveedor "${nuevo.razon_social || nom}" registrado y seleccionado.`, 'success');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'No se pudo crear el proveedor.';
+      toast(msg, 'error');
+    } finally {
+      setGuardandoNuevoProveedor(false);
     }
   }
 
@@ -1963,9 +2030,112 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
           </div>
         )}
 
+        {/* Panel inline de alta rápida de proveedor (como en GT) */}
+        {creandoProveedor && direccion === 'practicada' && (
+          <div style={{
+            marginBottom: '.65rem',
+            padding: '.7rem .85rem',
+            borderRadius: '8px',
+            background: 'rgba(34, 197, 94, 0.06)',
+            border: '1px solid rgba(34, 197, 94, 0.3)',
+          }}>
+            <div style={{ fontWeight: 700, fontSize: '.83rem', color: 'var(--text-normal)', marginBottom: '.45rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '.35rem' }}>
+              <span>➕ Registrar nuevo proveedor en el catálogo</span>
+              <small className="muted" style={{ fontWeight: 400 }}>Queda seleccionado automáticamente para esta retención</small>
+            </div>
+            <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', marginBottom: '.5rem' }}>
+              <div className="form-row" style={{ flex: '2 1 220px', margin: 0 }}>
+                <label style={{ fontSize: '.76rem' }}>Razón social *</label>
+                <input
+                  className="input"
+                  style={{ fontSize: '.85rem', padding: '.4rem .6rem' }}
+                  value={nuevoProvNombre}
+                  onChange={(e) => setNuevoProvNombre(e.target.value)}
+                  placeholder="Ej. MULTISERVICIOS Y.J.1413, C.A."
+                />
+              </div>
+              <div className="form-row" style={{ flex: '1 1 140px', margin: 0 }}>
+                <label style={{ fontSize: '.76rem' }}>RIF *</label>
+                <input
+                  className="input mono"
+                  style={{ fontSize: '.85rem', padding: '.4rem .6rem' }}
+                  value={nuevoProvRif}
+                  onChange={(e) => setNuevoProvRif(e.target.value.toUpperCase())}
+                  placeholder="J-40151378-6"
+                  maxLength={15}
+                />
+              </div>
+              <div className="form-row" style={{ flex: '1 1 130px', margin: 0 }}>
+                <label style={{ fontSize: '.76rem' }}>Teléfono</label>
+                <input
+                  className="input"
+                  style={{ fontSize: '.85rem', padding: '.4rem .6rem' }}
+                  value={nuevoProvTelefono}
+                  onChange={(e) => setNuevoProvTelefono(e.target.value)}
+                  placeholder="0414-1872565"
+                />
+              </div>
+              <div className="form-row" style={{ flex: '1 1 180px', margin: 0 }}>
+                <label style={{ fontSize: '.76rem' }}>Correo electrónico</label>
+                <input
+                  className="input"
+                  style={{ fontSize: '.85rem', padding: '.4rem .6rem' }}
+                  value={nuevoProvCorreo}
+                  onChange={(e) => setNuevoProvCorreo(e.target.value)}
+                  placeholder="correo@proveedor.com"
+                />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div className="form-row" style={{ flex: '3 1 280px', margin: 0 }}>
+                <label style={{ fontSize: '.76rem' }}>Dirección fiscal (impresa en el comprobante)</label>
+                <input
+                  className="input"
+                  style={{ fontSize: '.85rem', padding: '.4rem .6rem' }}
+                  value={nuevoProvDireccion}
+                  onChange={(e) => setNuevoProvDireccion(e.target.value)}
+                  placeholder="Dirección fiscal que figura en la factura del proveedor"
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '.4rem', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-primary"
+                  onClick={() => void guardarNuevoProveedor()}
+                  disabled={guardandoNuevoProveedor}
+                  style={{ fontSize: '.78rem', padding: '.4rem .85rem' }}
+                >
+                  {guardandoNuevoProveedor ? 'Guardando…' : '💾 Crear y seleccionar'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-ghost"
+                  onClick={() => setCreandoProveedor(false)}
+                  style={{ fontSize: '.78rem', padding: '.4rem .6rem' }}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap' }}>
           <div className="form-row" style={{ flex: '2 1 240px' }}>
-            <label>{direccion === 'recibida' ? 'Quién nos retuvo' : 'A quién le retenemos'}</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px', gap: '.4rem' }}>
+              <label style={{ margin: 0 }}>{direccion === 'recibida' ? 'Quién nos retuvo' : 'A quién le retenemos'}</label>
+              {direccion === 'practicada' && !documento && !creandoProveedor && (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-ghost"
+                  style={{ fontSize: '.72rem', padding: '1px 7px', color: 'var(--primary)', borderColor: 'var(--primary)' }}
+                  onClick={iniciarNuevoProveedor}
+                  title="Registrar un proveedor nuevo sin salir de este formulario"
+                >
+                  + Nuevo proveedor
+                </button>
+              )}
+            </div>
             {direccion === 'practicada' ? (
               <SearchSelect
                 value={proveedorId}

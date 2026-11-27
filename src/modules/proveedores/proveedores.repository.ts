@@ -148,6 +148,14 @@ export async function getById(id: string): Promise<Proveedor | null> {
   }
 }
 
+function normalizarRifProveedor(raw: string | null | undefined): string {
+  const limpio = String(raw ?? '').toUpperCase().replace(/[^VEJPGC0-9]/g, '');
+  if (/^[VEJPGC][0-9]{9}$/.test(limpio)) {
+    return `${limpio[0]}-${limpio.slice(1, 9)}-${limpio[9]}`;
+  }
+  return String(raw ?? '').trim().toUpperCase();
+}
+
 /** Traduce el error de RIF duplicado (constraint único) a un mensaje claro. */
 function traducirError(error: { code?: string; message?: string } | null): Error {
   if (error?.code === '23505') return new Error('Ya existe un proveedor con ese RIF.');
@@ -155,26 +163,97 @@ function traducirError(error: { code?: string; message?: string } | null): Error
 }
 
 export async function insert(payload: ProveedorInput): Promise<Proveedor> {
-  const { data, error } = await supabase
-    .from('proveedores')
-    .insert(payload)
-    .select('*')
-    .single();
+  const rifNorm = normalizarRifProveedor(payload.rif);
+  const nombre = (payload.razon_social || (payload as any).nombre || '').trim();
+  const activo = payload.estado ? payload.estado === 'activo' : ((payload as any).activo ?? true);
 
-  if (error) throw traducirError(error);
-  return data as Proveedor;
+  const { data: idRpc, error: errRpc } = await supabase.rpc('guardar_proveedor', {
+    p_id: null,
+    p_rif: rifNorm,
+    p_nombre: nombre,
+    p_nombre_comercial: (payload as any).nombre_comercial ?? null,
+    p_contacto: payload.contacto ?? null,
+    p_telefono: payload.telefono ?? null,
+    p_correo: payload.email ?? (payload as any).correo ?? null,
+    p_direccion: payload.direccion ?? null,
+    p_condicion_pago: (payload as any).condicion_pago ?? 'CONTADO',
+    p_moneda_preferida: (payload as any).moneda_preferida ?? 'USD',
+    p_contribuyente_especial: (payload as any).contribuyente_especial ?? false,
+    p_notas: (payload as any).notas ?? null,
+    p_activo: activo,
+    p_metodo_pago_preferido: (payload as any).metodo_pago_preferido ?? null,
+  });
+
+  if (errRpc) throw traducirError(errRpc);
+
+  const nuevoId = String(idRpc);
+  const creado = await getById(nuevoId);
+  if (creado) return creado;
+
+  return {
+    id: nuevoId,
+    rif: rifNorm,
+    razon_social: nombre,
+    contacto: payload.contacto ?? null,
+    telefono: payload.telefono ?? null,
+    email: payload.email ?? (payload as any).correo ?? null,
+    direccion: payload.direccion ?? null,
+    categorias: payload.categorias ?? [],
+    origen: payload.origen ?? 'nacional',
+    estado: activo ? 'activo' : 'inactivo',
+    created_at: new Date().toISOString(),
+  } as Proveedor;
 }
 
 export async function update(id: string, patch: ProveedorPatch): Promise<Proveedor> {
-  const { data, error } = await supabase
-    .from('proveedores')
-    .update(patch)
-    .eq('id', id)
-    .select('*')
-    .single();
+  const actual = (await getById(id)) as any;
+  const rifNorm = normalizarRifProveedor(patch.rif ?? actual?.rif ?? '');
+  const nombre = (patch.razon_social ?? (patch as any).nombre ?? actual?.razon_social ?? actual?.nombre ?? '').trim();
+  const activo = patch.estado
+    ? patch.estado === 'activo'
+    : ((patch as any).activo ?? actual?.activo ?? true);
+  const idNum = Number(id);
 
-  if (error) throw traducirError(error);
-  return data as Proveedor;
+  const { error: errRpc } = await supabase.rpc('guardar_proveedor', {
+    p_id: Number.isFinite(idNum) ? idNum : id,
+    p_rif: rifNorm,
+    p_nombre: nombre,
+    p_nombre_comercial: (patch as any).nombre_comercial ?? actual?.nombre_comercial ?? null,
+    p_contacto: patch.contacto !== undefined ? patch.contacto : (actual?.contacto ?? null),
+    p_telefono: patch.telefono !== undefined ? patch.telefono : (actual?.telefono ?? null),
+    p_correo: patch.email !== undefined ? patch.email : ((patch as any).correo ?? actual?.correo ?? actual?.email ?? null),
+    p_direccion: patch.direccion !== undefined ? patch.direccion : (actual?.direccion ?? null),
+    p_condicion_pago: (patch as any).condicion_pago ?? actual?.condicion_pago ?? 'CONTADO',
+    p_moneda_preferida: (patch as any).moneda_preferida ?? actual?.moneda_preferida ?? 'USD',
+    p_contribuyente_especial: (patch as any).contribuyente_especial ?? actual?.contribuyente_especial ?? false,
+    p_notas: (patch as any).notas ?? actual?.notas ?? null,
+    p_activo: activo,
+    p_metodo_pago_preferido: (patch as any).metodo_pago_preferido ?? actual?.metodo_pago_preferido ?? null,
+  });
+
+  if (errRpc) throw traducirError(errRpc);
+
+  if (patch.actividad_economica !== undefined || patch.numero_administracion !== undefined) {
+    await supabase.rpc('retencion_guardar_perfil_proveedor', {
+      p_id: Number.isFinite(idNum) ? idNum : id,
+      p_datos: {
+        ...(patch.actividad_economica !== undefined ? { actividad_economica: patch.actividad_economica } : {}),
+        ...(patch.numero_administracion !== undefined ? { numero_administracion: patch.numero_administracion } : {}),
+      },
+    }).then(() => undefined, () => undefined);
+  }
+
+  const actualizado = await getById(id);
+  if (actualizado) return actualizado;
+
+  return {
+    ...(actual ?? {}),
+    ...patch,
+    id: String(id),
+    rif: rifNorm,
+    razon_social: nombre,
+    estado: activo ? 'activo' : 'inactivo',
+  } as Proveedor;
 }
 
 export async function toggleEstado(id: string, estado: EstadoGenerico): Promise<Proveedor> {
