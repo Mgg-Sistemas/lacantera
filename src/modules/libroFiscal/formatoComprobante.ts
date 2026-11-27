@@ -115,7 +115,7 @@ const textoDe = (v: unknown) => (typeof v === 'string' ? v : null);
 export function aplicarFormato(tipo: TipoImpuesto, f: FormatoParaAplicar | null | undefined): FormatoAplicado {
   const fabricaCols = columnasFabrica(tipo);
   const fabricaTextos = textosFabrica(tipo);
-  const fabricaRotulos = tipo === 'islr'
+  const fabricaRotulos: Record<string, string> = tipo === 'islr'
     ? { ...ROTULOS_FABRICA, sujeto: 'BENEFICIARIO', firma_sujeto: 'BENEFICIARIO' }
     : { ...ROTULOS_FABRICA };
   if (!f || f.deFabrica) {
