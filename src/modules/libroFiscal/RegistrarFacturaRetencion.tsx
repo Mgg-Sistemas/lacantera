@@ -195,8 +195,11 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
   const mostrarError = useCallback((msg: string) => {
     setError(msg);
     toast(msg, 'error');
-    setTimeout(() => errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+    setTimeout(() => errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
   }, []);
+  useEffect(() => {
+    if (error) errorRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [error]);
   // Al registrar con éxito: se queda el resultado para ofrecer «Compartir por WhatsApp».
   const [resultado, setResultado] = useState<Awaited<ReturnType<typeof registrarFactura>> | null>(null);
   const [pagoResultado, setPagoResultado] = useState<MontoPagado | null>(null);
@@ -1446,13 +1449,13 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
       footer={(
         <>
           <button type="button" className="btn btn-ghost" onClick={pedirCierre} disabled={saving}>Cancelar</button>
-          <button type="button" className="btn btn-primary" onClick={() => void emitir()} disabled={saving || !lineas.length}>
+          <button type="button" className="btn btn-primary" onClick={() => void emitir()} disabled={saving}>
             {saving ? 'Guardando…' : `${documento ? 'Retener' : 'Registrar'} · ${money(totalRetenido, moneda)}`}
           </button>
         </>
       )}>
       {dialogo}
-      {error && <div ref={errorRef} className="card" style={{ borderColor: 'var(--danger)', color: 'var(--danger)', marginBottom: '.75rem' }}><strong>Error:</strong> {error}</div>}
+      {error && <div ref={errorRef} role="alert" className="card" style={{ borderColor: 'var(--danger)', color: 'var(--danger)', marginBottom: '.75rem' }}><strong>Error:</strong> {error}</div>}
 
       {/* ── Cintillo de Empresa Receptora Responsable ── */}
       {empresaFicha ? (
