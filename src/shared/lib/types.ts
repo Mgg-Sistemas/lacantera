@@ -1454,6 +1454,16 @@ export interface Orden {
   /** Cuándo se retiene (nuevo flujo de Compras, 30/10/2026): antes de pagar → Retenciones
    *  primero y Tesorería paga el neto (BAJA); después → Tesorería paga completo (SUBE). */
   retencion_momento?: RetencionMomento | null;
+  /** Retenciones por tipo indicadas en Compras (03/11/2026). */
+  retencion_iva_pct?: number | null;
+  retencion_iva_monto?: number | null;
+  retencion_islr_pct?: number | null;
+  retencion_islr_monto?: number | null;
+  retencion_isae_pct?: number | null;
+  retencion_isae_monto?: number | null;
+  retencion_igtf_pct?: number | null;
+  retencion_igtf_monto?: number | null;
+  retencion_compras_total?: number | null;
   retencion_iva_path?: string | null;
   retencion_iva_nombre?: string | null;
   retencion_islr_path?: string | null;

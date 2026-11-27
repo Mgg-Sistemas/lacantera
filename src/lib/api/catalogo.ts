@@ -770,6 +770,12 @@ export interface Proveedor {
   /** Cómo suele cobrar. Se propone al pagarle; no obliga. */
   metodo_pago_preferido: string | null
   contribuyente_especial: boolean
+  /** Código CIIU (SENIAT) de la actividad económica del proveedor. */
+  actividad_economica?: string | null
+  /** Calificación de persona / sujeto ISLR (PNR, PJD, etc.). */
+  tipo_persona?: string | null
+  /** Teléfono o contacto de administración para retenciones. */
+  numero_administracion?: string | null
   activo: boolean
   notas: string | null
 }
@@ -809,8 +815,8 @@ export function useProveedores(soloActivos = true) {
 export function useGuardarProveedor() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (p: Partial<Proveedor> & { rif: string; nombre: string }) =>
-      rpc<number>('guardar_proveedor', {
+    mutationFn: async (p: Partial<Proveedor> & { rif: string; nombre: string }) => {
+      const id = await rpc<number>('guardar_proveedor', {
         p_id: p.id ?? null,
         p_rif: p.rif,
         p_nombre: p.nombre,
@@ -825,7 +831,22 @@ export function useGuardarProveedor() {
         p_notas: p.notas ?? null,
         p_activo: p.activo ?? true,
         p_metodo_pago_preferido: p.metodo_pago_preferido ?? null,
-      }),
+      })
+      if (id && (p.actividad_economica !== undefined || p.tipo_persona !== undefined || p.numero_administracion !== undefined)) {
+        try {
+          const patch: Record<string, unknown> = {}
+          if (p.actividad_economica !== undefined) patch.actividad_economica = p.actividad_economica || null
+          if (p.tipo_persona !== undefined) patch.tipo_persona = p.tipo_persona || null
+          if (p.numero_administracion !== undefined) patch.numero_administracion = p.numero_administracion || null
+          if (Object.keys(patch).length > 0) {
+            await supabase.from('proveedores').update(patch).eq('id', id)
+          }
+        } catch {
+          // Tolerante si las columnas no se han aplicado todavía en Supabase
+        }
+      }
+      return id
+    },
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['proveedores'] }),
   })
 }

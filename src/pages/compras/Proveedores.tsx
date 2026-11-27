@@ -24,6 +24,13 @@ import { enMayuscula } from '@/lib/texto'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { documento, dolares, telefono } from '@/lib/formato'
 
+const TIPOS_PERSONA_FISCAL = [
+  { valor: 'PJD', etiqueta: 'Persona Jurídica Domiciliada (PJD - 2%)' },
+  { valor: 'PNR', etiqueta: 'Persona Natural Residente (PNR - Sustraendo UT)' },
+  { valor: 'PJND', etiqueta: 'Persona Jurídica No Domiciliada (PJND - 5%)' },
+  { valor: 'PNNR', etiqueta: 'Persona Natural No Residente (PNNR)' },
+]
+
 const vacio = {
   rif: '',
   nombre: '',
@@ -36,6 +43,9 @@ const vacio = {
   moneda_preferida: 'USD',
   metodo_pago_preferido: null as string | null,
   contribuyente_especial: false,
+  tipo_persona: 'PJD',
+  actividad_economica: '',
+  numero_administracion: '',
   notas: '',
   activo: true,
 }
@@ -87,6 +97,9 @@ export function Proveedores() {
             metodo_pago_preferido: p.metodo_pago_preferido,
             moneda_preferida: p.moneda_preferida,
             contribuyente_especial: p.contribuyente_especial,
+            tipo_persona: p.tipo_persona ?? 'PJD',
+            actividad_economica: p.actividad_economica ?? '',
+            numero_administracion: p.numero_administracion ?? '',
             notas: p.notas ?? '',
             activo: p.activo,
           }
@@ -354,6 +367,36 @@ export function Proveedores() {
             value={edicion.notas}
             onChange={(e) => cambiar({ notas: e.target.value })}
           />
+
+          <div className="mt-4 border-t border-ink/10 pt-4">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-ink/60 mb-3">
+              Perfil Fiscal y Retenciones (Gobernado por Parámetros)
+            </h4>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Select
+                label="Calificación ISLR / Sujeto"
+                value={edicion.tipo_persona}
+                onChange={(e) => cambiar({ tipo_persona: e.target.value })}
+                opciones={TIPOS_PERSONA_FISCAL}
+                hint="Decide la tarifa de retención de ISLR."
+              />
+              <Input
+                label="Actividad Económica (CIIU / SENIAT)"
+                placeholder="Ej: 5110"
+                maxLength={50}
+                value={edicion.actividad_economica}
+                onChange={(e) => cambiar({ actividad_economica: e.target.value })}
+                hint="Código de actividad para retención municipal (ISAE)."
+              />
+              <Input
+                label="Teléfono / Contacto Administración"
+                placeholder="Para entrega de comprobantes R14"
+                maxLength={40}
+                value={edicion.numero_administracion}
+                onChange={(e) => cambiar({ numero_administracion: e.target.value })}
+              />
+            </div>
+          </div>
 
           <div className="mt-4 space-y-2">
             <label className="text-ink/75 flex cursor-pointer items-center gap-2 text-sm select-none">

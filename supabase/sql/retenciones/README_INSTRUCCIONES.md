@@ -93,3 +93,18 @@ Aplique los scripts en orden estricto desde el **SQL Editor de Supabase**:
     FROM information_schema.tables WHERE table_name = 'retenciones_buzon_facturas';
   ```
 - **Resultado Esperado:** `empresa_receptora_ok = true`, función `retencion_factura_registrar` presente, `buzon_ok = true`.
+
+---
+
+### Paso 6: Integración Tributaria de Compras y Perfiles de Proveedores
+- **Archivo:** `06_retenciones_columnas_ordenes_y_proveedores.sql`
+- **Estado:** `-- ESTADO: PENDIENTE DE APLICAR`
+- **Contenido:** Añade columnas de momento de retención (`antes_de_pagar`/`despues_de_pagar`) y desglose tributario en `public.ordenes`, datos fiscales (CIIU SENIAT, sujeto ISLR y teléfono de administración) en `public.proveedores`, y actualiza `guardar_proveedor`.
+- **Query de Verificación:**
+  ```sql
+  SELECT column_name FROM information_schema.columns 
+   WHERE table_name = 'ordenes' AND column_name IN ('retencion_momento', 'retencion_compras_total');
+  SELECT column_name FROM information_schema.columns 
+   WHERE table_name = 'proveedores' AND column_name IN ('actividad_economica', 'tipo_persona');
+  ```
+- **Resultado Esperado:** Ambas consultas devuelven 2 filas cada una.
