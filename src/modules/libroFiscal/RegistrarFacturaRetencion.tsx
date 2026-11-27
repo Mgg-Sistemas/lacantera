@@ -2444,7 +2444,7 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
                       <div>
                         <strong style={{ fontSize: '.8rem', color: 'var(--warning)' }}>¿No retienes IVA a este proveedor?</strong>
                         <span style={{ fontSize: '.75rem', display: 'block', color: 'var(--text-muted)' }}>
-                          Si Golden Touch no es agente de retención de IVA para este proveedor, pulsa «Quitar retención de IVA» y deja solo ISLR.
+                          Si la empresa no es agente de retención de IVA para este proveedor, pulsa «Quitar retención de IVA» y deja solo ISLR.
                         </span>
                       </div>
                       <button

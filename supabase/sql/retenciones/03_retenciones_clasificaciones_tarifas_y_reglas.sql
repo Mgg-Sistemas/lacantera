@@ -232,8 +232,7 @@ begin
 end $$;
 
 alter publication supabase_realtime add table public.retencion_motivos_no_aplica, public.retencion_supuestos;
-$sql_gt$],
-   coalesce(nullif(auth.email(), ''), nullif(current_setting('request.jwt.claim.email', true), ''), session_user::text));
+
 
 -- R8 · 5 de 13 · gt_retencion_formatos · migración gt_retencion_formatos, versión 20261020100005
 
@@ -344,91 +343,7 @@ create policy retencion_formatos_update on public.retencion_formatos for update 
   with check ((select public.is_admin()) or (select public.puede('retenciones')));
 alter publication supabase_realtime add table public.retencion_formatos;
 
--- ── Registro de esta migración, con su SQL completo (mismo bloque: si algo de arriba falla, no queda) ──
 
-create unique index retencion_formatos_desde on public.retencion_formatos (coalesce(impuesto_clave, '*'), documento, desde);
-create unique index retencion_formatos_abierto on public.retencion_formatos (coalesce(impuesto_clave, '*'), documento) where hasta is null;
-comment on table public.retencion_formatos is 'Retenciones: formatos de impresión por impuesto y documento, con versiones desde una fecha';
-
--- Quién y cuándo + historial (R2).
-create function public.retencion_r8_anotar()
-returns trigger language plpgsql security definer set search_path = public as $$
-declare
-  quien text := coalesce(auth.jwt() ->> 'email', current_user);
-  j jsonb := to_jsonb(new);
-begin
-  new.actualizado_en := now();
-  new.actualizado_por := quien;
-  if tg_op = 'UPDATE' then new.created_at := old.created_at; end if;
-  insert into public.retencion_historial (tabla, clave, antes, despues, motivo, actor)
-  values (tg_table_name, coalesce(j ->> 'impuesto_clave', '*') || ':' || (j ->> 'documento'),
-          case when tg_op = 'UPDATE' then to_jsonb(old) - 'actualizado_en' - 'actualizado_por' end,
-          j - 'actualizado_en' - 'actualizado_por', j ->> 'motivo', quien);
-  return new;
-end $$;
-revoke execute on function public.retencion_r8_anotar() from public, anon, authenticated;
-create trigger trg_retencion_formatos_anotar before insert or update on public.retencion_formatos
-  for each row execute function public.retencion_r8_anotar();
-
--- Forma del contenido (alta y cambio); en el alta, la versión nueva cierra la abierta.
-create function public.retencion_formatos_guarda()
-returns trigger language plpgsql security definer set search_path = public as $$
-declare abierta public.retencion_formatos;
-begin
-  if (new.textos is not null and jsonb_typeof(new.textos) <> 'object')
-     or (new.rotulos is not null and jsonb_typeof(new.rotulos) <> 'object')
-     or (new.columnas is not null and jsonb_typeof(new.columnas) <> 'array') then
-    raise exception using errcode = 'P0001',
-      message = 'RET_FORMATO_FORMA: textos y rótulos van como objeto ({…}) y columnas como lista ([…]).';
-  end if;
-  if new.de_fabrica then
-    -- Volver a fábrica: el contenido es el del código.
-    new.textos := null; new.rotulos := null; new.columnas := null;
-  end if;
-  if tg_op = 'INSERT' then
-    select * into abierta from public.retencion_formatos
-     where impuesto_clave is not distinct from new.impuesto_clave and documento = new.documento and hasta is null for update;
-    if found then
-      if new.desde <= abierta.desde then
-        raise exception using errcode = 'P0001',
-          message = 'RET_FORMATO_DESDE: la versión nueva del formato tiene que empezar después del '
-                 || to_char(abierta.desde, 'DD/MM/YYYY') || '. Para corregir la vigente, edítela.';
-      end if;
-      update public.retencion_formatos set hasta = new.desde - 1 where id = abierta.id;
-    end if;
-  end if;
-  return new;
-end $$;
-revoke execute on function public.retencion_formatos_guarda() from public, anon, authenticated;
--- «0»: corre ANTES de anotar (los BEFORE corren por orden alfabético): el historial ve el contenido ya vaciado
--- de una versión «de fábrica».
-create trigger trg_retencion_formatos_0_guarda before insert or update on public.retencion_formatos
-  for each row execute function public.retencion_formatos_guarda();
-
--- La versión vigente en una fecha (nada = fábrica).
-create function public.retencion_formato_vigente(p_impuesto text, p_documento text, p_fecha date)
-returns setof public.retencion_formatos language sql stable security invoker set search_path = public as $$
-  select f.* from public.retencion_formatos f
-   where f.impuesto_clave is not distinct from upper(nullif(p_impuesto, '')) and f.documento = p_documento
-     and f.desde <= coalesce(p_fecha, current_date) and (f.hasta is null or f.hasta >= coalesce(p_fecha, current_date))
-   order by f.desde desc limit 1;
-$$;
-revoke execute on function public.retencion_formato_vigente(text, text, date) from public, anon;
-grant execute on function public.retencion_formato_vigente(text, text, date) to authenticated, service_role;
-
--- RLS
-alter table public.retencion_formatos enable row level security;
-revoke all on public.retencion_formatos from anon;
-revoke delete, truncate, references, trigger on public.retencion_formatos from authenticated;
-create policy retencion_formatos_read on public.retencion_formatos for select to authenticated using (true);
-create policy retencion_formatos_insert on public.retencion_formatos for insert to authenticated
-  with check ((select public.is_admin()) or (select public.puede('retenciones')));
-create policy retencion_formatos_update on public.retencion_formatos for update to authenticated
-  using ((select public.is_admin()) or (select public.puede('retenciones')))
-  with check ((select public.is_admin()) or (select public.puede('retenciones')));
-alter publication supabase_realtime add table public.retencion_formatos;
-$sql_gt$],
-   coalesce(nullif(auth.email(), ''), nullif(current_setting('request.jwt.claim.email', true), ''), session_user::text));
 
 -- R4 · 6 de 13 · gt_retencion_clasificaciones · migración gt_retencion_clasificaciones, versión 20261020100006
 
@@ -990,8 +905,7 @@ begin
 end $$;
 
 alter publication supabase_realtime add table public.retencion_clasificaciones, public.retencion_clasificacion_codigos, public.retencion_clasificacion_valores;
-$sql_gt$],
-   coalesce(nullif(auth.email(), ''), nullif(current_setting('request.jwt.claim.email', true), ''), session_user::text));
+
 
 -- R5 · 7 de 13 · gt_retencion_tarifas · migración gt_retencion_tarifas, versión 20261020100007
 
@@ -1454,8 +1368,7 @@ create policy retencion_tarifa_tramos_delete on public.retencion_tarifa_tramos f
          and exists (select 1 from public.retencion_tarifa_versiones v where v.id = version_id and not v.cerrada));
 
 alter publication supabase_realtime add table public.retencion_tarifas, public.retencion_tarifa_versiones, public.retencion_tarifa_tramos;
-$sql_gt$],
-   coalesce(nullif(auth.email(), ''), nullif(current_setting('request.jwt.claim.email', true), ''), session_user::text));
+
 
 -- R7 · 9 de 13 · gt_retencion_reglas · migración gt_retencion_reglas, versión 20261020100009
 
@@ -2516,7 +2429,6 @@ create policy retencion_regla_pasos_delete on public.retencion_regla_pasos for d
          and exists (select 1 from public.retencion_reglas r where r.id = regla_id and r.estado = 'en_prueba'));
 
 alter publication supabase_realtime add table public.retencion_reglas, public.retencion_regla_condiciones, public.retencion_regla_pasos, public.retencion_decisiones;
-$sql_gt$],
-   coalesce(nullif(auth.email(), ''), nullif(current_setting('request.jwt.claim.email', true), ''), session_user::text));
+
 
 COMMIT;

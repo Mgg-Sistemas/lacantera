@@ -657,8 +657,7 @@ select 'orden', r.id, o.name,
  where o.bucket_id = 'op-imagenes'
    and o.name ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/[0-9a-z]{2,8}-[^/]+$'
    and not exists (select 1 from public.adjuntos_directos a where a.path = o.name);
-$sql_gt$],
-   coalesce(nullif(auth.email(), ''), nullif(current_setting('request.jwt.claim.email', true), ''), session_user::text));
+
 
 -- R7F · 12 de 13 · gt_retencion_factura_con_regla · migración gt_retencion_factura_con_regla, versión 20261020100012
 
@@ -940,8 +939,7 @@ revoke execute on function public.retencion_factura_registrar(jsonb, jsonb) from
 grant execute on function public.retencion_factura_registrar(jsonb, jsonb) to authenticated, service_role;
 comment on function public.retencion_factura_registrar(jsonb, jsonb) is
   'Registra una factura con sus líneas en una transacción (VF). Desde R7F copia regla_id y foto de cada línea, y enlaza el archivo de factura (p_factura.adjunto_id) con su origen.';
-$sql_gt$],
-   coalesce(nullif(auth.email(), ''), nullif(current_setting('request.jwt.claim.email', true), ''), session_user::text));
+
 
 -- R10 · 14 · migración gt_retencion_factura_sola_y_limpieza, versión 20261020100014 (después de los 13 del 21/10)
 
@@ -1577,8 +1575,7 @@ begin
 
   perform set_config('retenciones.r4_carga', '', true);
 end $textos$;
-$sql_gt$],
-   coalesce(nullif(auth.email(), ''), nullif(current_setting('request.jwt.claim.email', true), ''), session_user::text));
+
 
 -- R11 · 15 · migración gt_retencion_buzon_facturas_externas, versión 20261029100015 (después de los 14 de Retenciones)
 
@@ -2005,8 +2002,7 @@ create policy "retenciones-facturas-externas delete" on storage.objects for dele
 
 -- 6) Tiempo real
 alter publication supabase_realtime add table public.retencion_empresas_receptoras, public.retencion_facturas_externas;
-$sql_gt$],
-   coalesce(nullif(auth.email(), ''), nullif(current_setting('request.jwt.claim.email', true), ''), session_user::text));
+
 
 -- R12 · 16 · migración gt_retencion_buzon_campos_opcionales, versión 20261029100016 (después de R11)
 
@@ -2087,8 +2083,7 @@ alter table public.retencion_facturas_externas
     and coalesce(length(actualizado_por), 0) <= 200),
   add constraint retencion_facturas_externas_tipo_documento_lista check (
     tipo_documento in ('factura', 'nota_debito', 'nota_credito'));
-$sql_gt$],
-   coalesce(nullif(auth.email(), ''), nullif(current_setting('request.jwt.claim.email', true), ''), session_user::text));
+
 
 -- R13 · 17 · migración gt_retencion_multiempresa, versión 20261101100017 (después de R11)
 
@@ -2202,8 +2197,7 @@ drop trigger if exists trg_retencion_00_empresa_del_documento on public.retencio
 create trigger trg_retencion_00_empresa_del_documento
   before insert or update of empresa_id, documento_id on public.retenciones
   for each row execute function public.retenciones_empresa_del_documento();
-$sql_gt$],
-   coalesce(nullif(auth.email(), ''), nullif(current_setting('request.jwt.claim.email', true), ''), session_user::text));
+
 
 
 INSERT INTO public.retencion_empresas_receptoras (
@@ -2265,8 +2259,7 @@ end $fn$;
 drop trigger if exists trg_retencion_anulada_sello on public.retenciones;
 create trigger trg_retencion_anulada_sello
   before update of estado on public.retenciones
-  for each row execute function public.retenciones_anulada_sello();$sql_gt$],
-   coalesce(nullif(auth.email(), ''), nullif(current_setting('request.jwt.claim.email', true), ''), session_user::text));
+  for each row execute function public.retenciones_anulada_sello();
 
 -- R-LOG «Registro append-only de las acciones del módulo»: migración gt_retencion_log_auditoria, versión 20261102100020.
 -- Armado por el Carril BD GT el 02/11/2026. Origen y autorización: Master GT, por la líder (Auditoría opción 2, fase
@@ -2397,8 +2390,7 @@ drop trigger if exists trg_retencion_empresas_receptoras_zz_log on public.retenc
 create trigger trg_retencion_empresas_receptoras_zz_log after insert or update or delete on public.retencion_empresas_receptoras for each row execute function public.retencion_log_anotar();
 drop trigger if exists trg_retencion_documentos_zz_log on public.retencion_documentos;
 create trigger trg_retencion_documentos_zz_log after insert or update on public.retencion_documentos for each row execute function public.retencion_log_anotar();
-create index if not exists retencion_historial_tabla_clave_at_idx on public.retencion_historial (tabla, clave, at desc);$sql_gt$],
-   coalesce(nullif(auth.email(), ''), nullif(current_setting('request.jwt.claim.email', true), ''), session_user::text));
+create index if not exists retencion_historial_tabla_clave_at_idx on public.retencion_historial (tabla, clave, at desc);
 
 -- D2 «Régimen por empresa en una sola fuente (L6)»: migración gt_retencion_regimen_por_empresa, versión 20261102100021.
 -- Carril BD GT, 02/11/2026. Origen y autorización: Master GT, por la líder (Fase 2 · D2, Opción A + enforce los 5). Post-go-live.
@@ -2527,8 +2519,7 @@ create or replace function public.retencion_empresa_practica(p_empresa text, p_i
 create or replace function public.retencion_empresa_practica(p_impuesto text, p_fecha date default current_date) returns boolean language sql stable security definer set search_path='public' as $fn$ select public.retencion_empresa_practica('empresa-mits', p_impuesto, p_fecha); $fn$;
 create or replace function public.retencion_agente_valido() returns trigger language plpgsql security definer set search_path='public' as $fn$ declare f date := coalesce(new.factura_fecha, new.fecha, current_date); begin if new.rol<>'practicada' then return new; end if; if public.retencion_empresa_practica(new.empresa_id, new.tipo, f) then return new; end if; raise exception using errcode='check_violation', message='La empresa no retiene '||new.tipo||' en esa fecha: su Régimen (Parámetros › Régimen) no la habilita.', hint='Si te la practicaron, registrala como «Nos la practicaron». Si corresponde, ajustá el Régimen de la empresa.'; end $fn$;
 drop trigger if exists trg_retencion_agente_valido on public.retenciones;
-create trigger trg_retencion_agente_valido before insert or update of rol, tipo, empresa_id on public.retenciones for each row execute function public.retencion_agente_valido();$sql_gt$],
-   coalesce(nullif(auth.email(), ''), nullif(current_setting('request.jwt.claim.email', true), ''), session_user::text));
+create trigger trg_retencion_agente_valido before insert or update of rol, tipo, empresa_id on public.retenciones for each row execute function public.retencion_agente_valido();
 
 -- GT · ENTREGA POR PAQUETE · 59-RESP-aplicar.sql
 -- «Modelo de permisos del RESPALDO (traspaso desde MGG)»: migración gt_dump_database_sql_permiso_respaldo,
@@ -2685,8 +2676,7 @@ begin
   end loop;
   return array_to_string(partes, chr(10));
 end;
-$function$;$sql_gt$],
-   coalesce(nullif(auth.email(), ''), nullif(current_setting('request.jwt.claim.email', true), ''), session_user::text));
+$function$;
 
 -- R9 · 13 de 13 · gt_retencion_formas_y_rangos · migración gt_retencion_formas_y_rangos, versión 20261020100013
 
@@ -2990,7 +2980,6 @@ end $$;
 revoke execute on function public.retencion_documentos_proveedor_enlaces() from public, anon, authenticated;
 create trigger trg_retencion_documentos_proveedor_enlaces after update of proveedor_id, rol on public.retencion_documentos
   for each row execute function public.retencion_documentos_proveedor_enlaces();
-$sql_gt$],
-   coalesce(nullif(auth.email(), ''), nullif(current_setting('request.jwt.claim.email', true), ''), session_user::text));
+
 
 COMMIT;

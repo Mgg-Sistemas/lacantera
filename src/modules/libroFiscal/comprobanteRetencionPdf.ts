@@ -14,7 +14,7 @@
 import { supabase } from '@/shared/lib/supabase';
 import { previewPdf } from '@/shared/lib/reportePreview';
 import { EMPRESA_NOMBRE, EMPRESA_RIF } from '@/shared/lib/empresa';
-import { labelSujeto, EMPRESA_EMAIL, type ConfigRetencion } from './retencionesCalculo';
+import { labelSujeto, EMPRESA_EMAIL, configDesdeFicha, type ConfigRetencion, type FichaFiscalEmpresa } from './retencionesCalculo';
 import { tipoAGt, type RetencionPracticada } from './retencionesFiscal.repository';
 import { formatoParaImprimir } from './formatos.repository';
 import {
@@ -417,13 +417,39 @@ export async function generarDocComprobanteRetencionPdf(
     }
   };
 
-  // Consultas de enriquecimiento: dirección del sujeto, correo del proveedor, documento fiscal y licencias municipales
-  const [direccionSujeto, emailSujeto, docCabecera, perfilesProv] = await Promise.all([
+  const leerFichaEmpresa = async (): Promise<FichaFiscalEmpresa | null> => {
+    if (!r.empresaId || r.empresaId === 'empresa-mits' || r.empresaId === 'empresa-lacantera' || r.empresaId === 'empresa-golden-touch') {
+      return null;
+    }
+    try {
+      const { data } = await supabase.from('retencion_empresas_receptoras').select('*').eq('id', r.empresaId).maybeSingle();
+      if (!data) return null;
+      return {
+        nombre: data.nombre,
+        rif: data.rif,
+        email: data.email,
+        direccionFiscal: data.direccion_fiscal,
+        municipio: data.municipio,
+        estado: data.estado,
+        licenciaMunicipal: data.licencia_municipal,
+        alicuotaMunicipal: data.alicuota_municipal != null ? Number(data.alicuota_municipal) : undefined,
+        imprimirOriginalYCopia: data.imprimir_original_y_copia,
+      };
+    } catch {
+      return null;
+    }
+  };
+
+  // Consultas de enriquecimiento: dirección del sujeto, correo del proveedor, documento fiscal, licencias y ficha receptora
+  const [direccionSujeto, emailSujeto, docCabecera, perfilesProv, fichaEmpresa] = await Promise.all([
     direccionFiscalSujeto(r),
     emailSujetoRetenido(r),
     leerDocCabecera(),
     leerPerfilesProv(),
+    leerFichaEmpresa(),
   ]);
+
+  const configEfectiva = fichaEmpresa ? configDesdeFicha(config, fichaEmpresa) : config;
 
   const tipoDocumento = docCabecera?.tipo_documento ?? r.tipoDocumento ?? null;
   const facturaAfectadaNro = docCabecera?.factura_afectada_nro ?? r.facturaAfectadaNro ?? null;
@@ -443,7 +469,7 @@ export async function generarDocComprobanteRetencionPdf(
     if (pVig?.licencia_numero) licenciaSujeto = pVig.licencia_numero.trim();
   }
 
-  const licenciaAgente = config.licenciaMunicipal?.trim() || null;
+  const licenciaAgente = configEfectiva.licenciaMunicipal?.trim() || null;
 
   const rEnriquecida: RetencionPracticada = {
     ...r,
@@ -594,20 +620,20 @@ export async function generarDocComprobanteRetencionPdf(
 
   // ── Determinación de partes (Agente vs Sujeto Retenido) ──
   const esRecibida = r.direccion === 'recibida';
-  const nombreAgente = esRecibida ? (r.contraparteNombre || '—') : razonSocialAgente(config);
-  const rifAgente = esRecibida ? (r.contraparteRif || '—') : (config.rif || EMPRESA_RIF);
+  const nombreAgente = esRecibida ? (r.contraparteNombre || '—') : razonSocialAgente(configEfectiva);
+  const rifAgente = esRecibida ? (r.contraparteRif || '—') : (configEfectiva.rif || EMPRESA_RIF);
   const dirAgente = esRecibida
     ? direccionSujeto
-    : ([config.direccionFiscal, config.municipio, config.estado].filter(Boolean).join(', ') || '—');
+    : ([configEfectiva.direccionFiscal, configEfectiva.municipio, configEfectiva.estado].filter(Boolean).join(', ') || '—');
 
-  const nombreSujeto = esRecibida ? razonSocialAgente(config) : (r.contraparteNombre || '—');
-  const rifSujeto = esRecibida ? (config.rif || EMPRESA_RIF) : (r.contraparteRif || '—');
+  const nombreSujeto = esRecibida ? razonSocialAgente(configEfectiva) : (r.contraparteNombre || '—');
+  const rifSujeto = esRecibida ? (configEfectiva.rif || EMPRESA_RIF) : (r.contraparteRif || '—');
   const dirSujeto = esRecibida
-    ? ([config.direccionFiscal, config.municipio, config.estado].filter(Boolean).join(', ') || '—')
+    ? ([configEfectiva.direccionFiscal, configEfectiva.municipio, configEfectiva.estado].filter(Boolean).join(', ') || '—')
     : direccionSujeto;
 
   // Correo de la empresa y del proveedor (si existe)
-  const emailEmpresa = config.email?.trim() || EMPRESA_EMAIL;
+  const emailEmpresa = configEfectiva.email?.trim() || EMPRESA_EMAIL;
   const emailAgenteEfectivo = esRecibida ? (emailSujeto || null) : emailEmpresa;
   const emailSujetoEfectivo = esRecibida ? emailEmpresa : (emailSujeto || null);
 
@@ -921,12 +947,12 @@ export async function generarDocComprobanteRetencionPdf(
   }
 
   // ── Verificación Digital Fiscal (PA SNAT/2026/0084 y 0093) ──
-  const conQr = opciones.incluirQr ?? (config?.incluirQr ?? true);
+  const conQr = opciones.incluirQr ?? (configEfectiva?.incluirQr ?? true);
   let qrDataUrl: string | null = null;
   let hashSha256 = '';
   if (conQr) {
     try {
-      const canonico = cadenaCanonicoFiscal(rEnriquecida, config);
+      const canonico = cadenaCanonicoFiscal(rEnriquecida, configEfectiva);
       hashSha256 = await calcularSha256Hex(canonico);
       qrDataUrl = await generarQrVerificacion(`SENIAT|${canonico}|SHA256:${hashSha256.slice(0, 16)}`);
     } catch {
@@ -1136,7 +1162,7 @@ export async function generarDocComprobanteRetencionPdf(
     doc.setTextColor(50, 50, 50);
     doc.text(textoPdf(leyendaArt19), M, H - 25, { maxWidth: UTIL });
   }
-  const pieTexto = f.textos.pie || razonSocialAgente(config);
+  const pieTexto = f.textos.pie || razonSocialAgente(configEfectiva);
   if (ejemplar) {
     const rotuloDestino = ejemplar === 'original'
       ? 'DESTINO: ORIGINAL (SUJETO RETENIDO)'
