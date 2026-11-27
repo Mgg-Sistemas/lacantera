@@ -294,8 +294,11 @@ END $$;
 CREATE TABLE IF NOT EXISTS public.config (
     key text PRIMARY KEY,
     value jsonb NOT NULL,
-    updated_at timestamptz DEFAULT now()
+    updated_at timestamptz DEFAULT now(),
+    updated_by text
 );
+ALTER TABLE public.config ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now();
+ALTER TABLE public.config ADD COLUMN IF NOT EXISTS updated_by text;
 ALTER TABLE public.config ENABLE ROW LEVEL SECURITY;
 
 -- Permisos y roles para PostgREST schema cache
