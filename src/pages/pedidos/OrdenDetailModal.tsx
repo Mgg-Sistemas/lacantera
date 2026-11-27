@@ -254,7 +254,7 @@ export function OrdenDetailModal({
   const puedeRegistrarPago = canManageProcurement || puedeAprobarOc
   const isPendiente = o.estado === 'pendiente'
   const enRevisionAlmacen = o.estado === 'revision_almacen'
-  const canApprove = canManageProcurement && isPendiente
+  const canApprove = permisos.aprueba_op && isPendiente
   const esServicio = o.clase === 'servicio'
   // Un servicio no recibe OC- (conserva su SV): se edita mientras no tenga proveedor.
   const canEditar =

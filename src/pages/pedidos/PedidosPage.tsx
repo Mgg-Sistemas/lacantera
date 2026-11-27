@@ -188,7 +188,6 @@ export function PedidosPage() {
 function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: ReturnType<typeof usePedidos> }) {
   const soloSolicitud = !permisos.compras
   const isAdmin = permisos.gestiona
-  const canManageProcurement = permisos.gestiona
 
   const [scope, setScope] = useState<Scope>(() =>
     soloSolicitud ? 'pedidos' : leer(SCOPE_KEY, PESTANAS.map((p) => p.scope), 'pedidos'),
@@ -568,7 +567,7 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
             <OrdenesTable
               ordenes={filteredOrdenes}
               hijasDe={hijasDe}
-              canManageProcurement={canManageProcurement}
+              puedeAprobarPedido={permisos.aprueba_op}
               proveedor={nombreProveedor}
               noLeidos={noLeidos.data}
               tasas={tasasCot}
@@ -643,7 +642,7 @@ function Pagina({ permisos, pedidos }: { permisos: PermisosPedidos; pedidos: Ret
         />
       ) : null}
 
-      {modal.kind === 'approve' ? (
+      {modal.kind === 'approve' && permisos.aprueba_op ? (
         <ConfirmDialog
           title="Aprobar orden"
           message={`Aprobar ${modal.orden.codigo} por ${money(modal.orden.total)}.`}
@@ -779,7 +778,7 @@ function OcHijas({ hijas, className }: { hijas: Orden[]; className?: string }) {
 function OrdenesTable({
   ordenes,
   hijasDe,
-  canManageProcurement,
+  puedeAprobarPedido,
   proveedor,
   noLeidos,
   tasas,
@@ -788,7 +787,7 @@ function OrdenesTable({
 }: {
   ordenes: Orden[]
   hijasDe: Map<number, Orden[]>
-  canManageProcurement: boolean
+  puedeAprobarPedido: boolean
   proveedor: NombreProveedor
   noLeidos: Map<number, number> | undefined
   tasas: MapaTasasCotizacion
@@ -886,7 +885,7 @@ function OrdenesTable({
                   <Button size="sm" variant="ghost" title="Mensaje de WhatsApp de esta etapa" onClick={() => onView(o.id, 'whatsapp')}>
                     💬 WhatsApp
                   </Button>
-                  {canManageProcurement && o.estado === 'pendiente' ? (
+                  {puedeAprobarPedido && o.estado === 'pendiente' ? (
                     <Button size="sm" className="bg-success hover:bg-success ml-1 hover:brightness-95" onClick={() => onApprove(o)}>
                       Aprobar
                     </Button>

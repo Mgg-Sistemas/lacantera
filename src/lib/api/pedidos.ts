@@ -338,6 +338,7 @@ export interface PermisosPedidos {
   escribe: boolean
   /** MGG `canManageProcurement`. */
   gestiona: boolean
+  aprueba_op: boolean
   aprueba_oc: boolean
   revisa_almacen: boolean
   /** Recibe en el almacén general (Inventario en escritura o rol de almacén). */
@@ -363,24 +364,9 @@ export const BUCKET_RECEPCIONES = 'compras-recepciones'
 export function usePermisosPedidos() {
   return useQuery({
     queryKey: ['pedidos', 'permisos'],
-    queryFn: async () => {
-      const [permisos, misRoles, soyAprobador] = await Promise.all([
-        rpc<PermisosPedidos>('compras_mis_permisos_de_pedidos'),
-        rpc<string[]>('mis_roles').catch(() => [] as string[]),
-        rpc<boolean>('soy_aprobador_de_compras').catch(() => null),
-      ])
-      const esAdmin = misRoles.includes('ADMIN')
-      const nombre = (permisos.mi_nombre ?? '').toUpperCase()
-      const esNorbelis = /\bNORBELIS\b/.test(nombre)
-      const esDiana = /\bDIANA\b/.test(nombre)
-      // Solo Administradores y Norbelis (o quienes estén expresamente en `usuarios_autorizados.aprobar_oc`, nunca por tener COMPRAS=TOTAL) aprueban cotizaciones / OC.
-      const aprueba_oc = esAdmin || esNorbelis || (soyAprobador === true && !esDiana)
-      return {
-        ...permisos,
-        aprueba_oc,
-      }
-    },
-    staleTime: 5 * 60_000,
+    queryFn: () => rpc<PermisosPedidos>('compras_mis_permisos_de_pedidos'),
+    refetchOnWindowFocus: 'always',
+    refetchInterval: 30_000,
   })
 }
 

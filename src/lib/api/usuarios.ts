@@ -254,6 +254,7 @@ export function useUsuarios() {
 }
 
 function invalidar(qc: ReturnType<typeof useQueryClient>) {
+  void qc.invalidateQueries({ queryKey: ['pedidos', 'permisos'] })
   void qc.invalidateQueries({ queryKey: ['usuarios'] })
   void qc.invalidateQueries({ queryKey: ['perfiles'] })
   void qc.invalidateQueries({ queryKey: ['mis-roles'] })
@@ -369,6 +370,7 @@ export function useCambiarClave() {
 // ---------------------------------------------------------------------------
 
 function invalidarRoles(qc: ReturnType<typeof useQueryClient>) {
+  void qc.invalidateQueries({ queryKey: ['pedidos', 'permisos'] })
   void qc.invalidateQueries({ queryKey: ['roles'] })
   void qc.invalidateQueries({ queryKey: ['rol-permisos'] })
   void qc.invalidateQueries({ queryKey: ['mis-permisos'] })
@@ -478,6 +480,7 @@ export function useUsuariosAutorizados() {
 }
 
 function invalidarAutorizados(qc: ReturnType<typeof useQueryClient>) {
+  void qc.invalidateQueries({ queryKey: ['pedidos', 'permisos'] })
   void qc.invalidateQueries({ queryKey: ['usuarios-autorizados'] })
   // Quién aprueba se lee también en compras y en salidas.
   void qc.invalidateQueries({ queryKey: ['compras'] })
@@ -581,6 +584,7 @@ export function useMarcarAccion() {
       // Y lo que YO puedo: si me acabo de recortar a mí mismo, la pantalla
       // tiene que enterarse sin recargar.
       void qc.invalidateQueries({ queryKey: ['mis-acciones'] })
+      void qc.invalidateQueries({ queryKey: ['pedidos', 'permisos'] })
     },
   })
 }
