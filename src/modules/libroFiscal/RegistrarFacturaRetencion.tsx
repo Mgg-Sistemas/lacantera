@@ -1,5 +1,6 @@
 /* ============================================================
-   Golden Touch · Libro fiscal · Registrar una FACTURA con varias líneas (v8 · VF)
+   La Cantera · Libro fiscal · Registrar una FACTURA con varias líneas (v8 · VF)
+   MINERIA INTERNACIONAL TS, C.A. (RIF: J-50209170-0)
 
    Una factura (cabecera) y varias líneas de impuesto (IVA, ISLR, ISAE, etc.).
    El cálculo de cada línea es el puro de retencionesCalculo; con R7, una
@@ -16,7 +17,7 @@ import { notify } from '@/shared/lib/notify';
 import { SearchSelect } from '@/shared/ui/SearchSelect';
 import type { Proveedor } from '@/shared/lib/types';
 import { list as listProveedores, update as updateProveedor } from '@/modules/proveedores/proveedores.repository';
-import { getTasaUsdDeFecha } from '@/modules/tesoreria/tasas.repository';
+import { diaVE, getTasaUsdDeFecha } from '@/modules/tesoreria/tasas.repository';
 import { rifValido } from '@/shared/lib/rif';
 import { usePermissions } from '@/modules/auth/PermissionsContext';
 import { rutaFichaProveedor, textoRifInvalido } from './mensajeRif';
@@ -53,6 +54,8 @@ import {
   registrarFactura, type FacturaNueva, type LineaFacturaNueva, type TipoDocumento,
 } from './retencionFacturas.repository';
 import { hoyVenezuela } from '@/shared/lib/rangosFecha';
+import { formatoParaImprimir } from './formatos.repository';
+import { verComprobanteRetencionPdf, verTodosComprobantesFacturaPdf } from './comprobanteRetencionPdf';
 import { soloImpuestosActivos, admiteDireccion, type ImpuestosActivos, type FichaRetencionVista } from '@/modules/retenciones/impuestosVista';
 import { usePuedePracticarEmpresa } from './practicaEmpresa';
 import { CompartirWhatsapp } from '@/shared/ui/CompartirWhatsapp';
@@ -238,10 +241,18 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
   const soporteActivo = s.adjunto ?? adjuntoExistente;
 
   const [modoOrigen, setModoOrigen] = useState<'oc' | 'buzon' | 'manual'>(() => {
+    if (empresaFicha) return 'buzon';
     if (s.docKind === 'compra_directa' || s.docKind === 'servicio_directo') return 'manual';
     if (s.docKind === 'oc' || s.docId) return 'oc';
     return 'oc';
   });
+
+  // Empresas receptoras secundarias solo reciben por Buzón Móvil (ajenas al flujo de compras de MITS)
+  useEffect(() => {
+    if (empresaFicha && modoOrigen === 'oc') {
+      setModoOrigen('buzon');
+    }
+  }, [empresaFicha, modoOrigen]);
   const [ordenesPendientes, setOrdenesPendientes] = useState<RetencionItem[]>([]);
   const [ordenSeleccionadaId, setOrdenSeleccionadaId] = useState<string>(s.docKind === 'oc' && s.docId ? s.docId : '');
   const [buzonPendientes, setBuzonPendientes] = useState<FacturaExternaBuzon[]>([]);
@@ -350,12 +361,20 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
           }
         })
         .catch(() => {});
-      listFacturasBuzon({ estatus: 'recibida' })
-        .then((items) => { if (activo) setBuzonPendientes(items); })
+      listFacturasBuzon(empresaId ? { estatus: 'recibida', empresaId } : { estatus: 'recibida' })
+        .then((items) => {
+          if (activo) {
+            // Aislamiento estricto multiempresa: no mezclar facturas de una empresa en otra
+            const filtradas = empresaId
+              ? items.filter((b) => b.empresaId === empresaId || ((!empresaId || empresaId === 'empresa-mits' || empresaId === 'empresa-lacantera') && !b.empresaId))
+              : items;
+            setBuzonPendientes(filtradas);
+          }
+        })
         .catch(() => {});
     }
     return () => { activo = false; };
-  }, [direccion]);
+  }, [direccion, empresaId]);
 
   const ordenesPendientesFiltradas = useMemo(() => {
     if (!proveedorId) return ordenesPendientes;
@@ -699,13 +718,16 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
   }, [ordenesPendientesFiltradas]);
 
   const opcionesBuzon = useMemo(() => {
-    return buzonPendientes.map((b) => {
+    const candidatas = empresaId
+      ? buzonPendientes.filter((b) => b.empresaId === empresaId || ((!empresaId || empresaId === 'empresa-mits' || empresaId === 'empresa-lacantera') && !b.empresaId))
+      : buzonPendientes;
+    return candidatas.map((b) => {
       const nro = b.facturaNumero ? `Factura ${b.facturaNumero}` : 'Sin N°';
       const prov = b.proveedorNombre || b.proveedorRif || 'Proveedor';
       const totalTxt = money(b.montoTotal, b.moneda);
       const fechaTxt = fechaCorta(b.facturaFecha || b.createdAt || '');
       const label = `${nro} · ${prov} · ${totalTxt}`;
-      const hint = `${fechaTxt} (${b.empresaNombre || 'GT'}) 📎`;
+      const hint = `${fechaTxt} (${b.empresaNombre || 'MITS'}) 📎`;
       const keywords = [
         nro,
         b.facturaNumero || '',
@@ -725,7 +747,7 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
         keywords,
       };
     });
-  }, [buzonPendientes]);
+  }, [buzonPendientes, empresaId]);
 
   /** El proveedor llena razón social y RIF. El sujeto del ISLR no se toca: se sugiere en cada línea. */
   function elegirProveedor(id: string) {
@@ -780,6 +802,24 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
   const exentoNum = nDec(exentoStr);
   const ivaFacturaNum = nDec(ivaFacturaStr);
   const baseNetaGravable = Math.max(0, Math.round((totalFacturaNum - ivaFacturaNum - exentoNum) * 100) / 100);
+
+  // Gobernanza estricta de Parámetros: en retenciones practicadas, los impuestos no autorizados se purgan
+  useEffect(() => {
+    if (direccion !== 'practicada') return;
+    setLineas((prev) => {
+      const validas = prev.filter((l) => puedePracticarEmpresa(l.tipo, config));
+      if (validas.length > 0 && validas.length === prev.length) return prev;
+      if (validas.length > 0) return validas;
+      const primerTipo: TipoImpuesto = puedePracticarEmpresa('islr', config)
+        ? 'islr'
+        : (puedePracticarEmpresa('municipal', config) ? 'municipal' : (puedePracticarEmpresa('iva', config) ? 'iva' : 'islr'));
+      return [nuevaLinea({
+        tipo: primerTipo,
+        baseStr: numeroATexto(baseNetaGravable),
+        ivaStr: ivaFacturaStr,
+      })];
+    });
+  }, [config, puedePracticarEmpresa, direccion, baseNetaGravable, ivaFacturaStr]);
 
   const tiposLineas = lineas.map((l) => l.tipo).join(',');
   useEffect(() => {
@@ -1211,21 +1251,117 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
   if (resultado) {
     const cerrar = () => onHecho(resultado);
     const datos = datosMensajeDeRetenciones(resultado.lineas, {
-      empresaAgente: config.razonSocial ?? '',
+      empresaAgente: config.razonSocial ?? 'MINERIA INTERNACIONAL TS, C.A.',
       // Aplicables = lo retenido ahora + lo que quedaba pendiente de esa factura (para las «no aplicadas»).
       aplicables: [...new Set<TipoImpuesto>([...resultado.lineas.map((l) => l.tipo), ...(documento ? pendientesComoTipos(documento) : [])])],
       pagada: !!pagoResultado,
       montoPagado: pagoResultado?.monto ?? null,
       monedaPago: pagoResultado?.moneda ?? null,
     });
+
+    const verPdfLote = async () => {
+      try {
+        if (resultado.lineas.length === 1) {
+          const l = resultado.lineas[0];
+          const fechaRef = l.fecha || l.facturaFecha || l.createdAt || hoyVenezuela();
+          const formato = await formatoParaImprimir(tipoAGt(l.tipo), diaVE(fechaRef) || null, hoyIso());
+          await verComprobanteRetencionPdf(l, config, formato);
+        } else {
+          await verTodosComprobantesFacturaPdf(resultado.factura.facturaNro || '', resultado.lineas, config);
+        }
+      } catch (e) {
+        toast(e instanceof Error ? e.message : 'No se pudo generar el comprobante', 'error');
+      }
+    };
+
+    const verPdfLinea = async (l: typeof resultado.lineas[0]) => {
+      try {
+        const fechaRef = l.fecha || l.facturaFecha || l.createdAt || hoyVenezuela();
+        const formato = await formatoParaImprimir(tipoAGt(l.tipo), diaVE(fechaRef) || null, hoyIso());
+        await verComprobanteRetencionPdf(l, config, formato);
+      } catch (e) {
+        toast(e instanceof Error ? e.message : 'No se pudo generar el comprobante', 'error');
+      }
+    };
+
     return (
-      <Modal title="✅ Retención registrada" size="lg" onClose={cerrar}
-        footer={<button type="button" className="btn btn-primary" onClick={cerrar}>Cerrar</button>}>
-        <div className="card" style={{ marginBottom: '.75rem', borderColor: 'var(--primary)' }}>
-          <strong>{resultado.lineas.length} retención(es) registrada(s)</strong> de {datos.proveedorNombre}
-          {datos.ocNumero ? ` · ${datos.ocNumero}` : ''}.
+      <Modal
+        title="✅ Retención registrada exitosamente"
+        size="lg"
+        onClose={cerrar}
+        footer={(
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap', gap: '.5rem' }}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              onClick={verPdfLote}
+            >
+              📄 {resultado.lineas.length === 1 ? 'Ver Comprobante PDF' : `Ver Todos los Comprobantes (${resultado.lineas.length} PDFs)`}
+            </button>
+            <button type="button" className="btn btn-ghost" onClick={cerrar}>
+              Cerrar
+            </button>
+          </div>
+        )}
+      >
+        <div className="card" style={{ marginBottom: '.75rem', borderColor: 'var(--primary)', background: 'rgba(217, 119, 6, 0.05)', borderRadius: '6px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '.5rem' }}>
+            <div>
+              <strong style={{ fontSize: '.95rem' }}>{resultado.lineas.length} retención(es) generada(s)</strong> para {datos.proveedorNombre}
+              {datos.ocNumero ? ` · ${datos.ocNumero}` : ''}
+              <div style={{ fontSize: '.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                Factura N°: <strong>{resultado.factura.facturaNro || 'S/N'}</strong> · Total Factura: <strong>{money(resultado.factura.facturaTotal ?? 0, resultado.factura.moneda || 'Bs')}</strong>
+              </div>
+            </div>
+          </div>
         </div>
-        <p className="muted" style={{ marginBottom: '.5rem' }}>Comparte el resumen por WhatsApp:</p>
+
+        {/* Detalle por línea con correlativo R14 y acceso directo a PDF */}
+        <div style={{ display: 'grid', gap: '.5rem', marginBottom: '.85rem' }}>
+          {resultado.lineas.map((l) => (
+            <div
+              key={l.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '.55rem .75rem',
+                border: '1px solid var(--border)',
+                borderRadius: '6px',
+                background: 'rgba(255, 255, 255, 0.02)',
+                gap: '.5rem',
+                flexWrap: 'wrap',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem' }}>
+                <span className="badge" style={{ fontWeight: 700, fontSize: '.76rem', textTransform: 'uppercase' }}>
+                  {rotuloImpuesto(l.tipo)}
+                </span>
+                <div>
+                  <div style={{ fontSize: '.84rem', fontWeight: 600 }}>
+                    Comprobante: <code style={{ fontSize: '.82rem', color: 'var(--primary)' }}>{l.numeroComprobante || 'Asignado'}</code>
+                  </div>
+                  <div style={{ fontSize: '.76rem', color: 'var(--text-muted)' }}>
+                    Base: {money(l.baseImponible, l.moneda)} · Retenido: <strong style={{ color: 'var(--primary)' }}>{money(l.montoRetenido, l.moneda)}</strong> ({l.porcentaje}%)
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn btn-sm btn-ghost"
+                style={{ fontSize: '.76rem', padding: '3px 8px' }}
+                onClick={() => verPdfLinea(l)}
+              >
+                📄 Ver Comprobante
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <p className="muted" style={{ marginBottom: '.5rem', fontSize: '.82rem' }}>
+          Comparte el resumen por WhatsApp con el proveedor o administración:
+        </p>
         <CompartirWhatsapp texto={mensajeRetencion(datos)} />
       </Modal>
     );
@@ -1235,6 +1371,7 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
     <Modal
       title={documento ? '🧾 Retener sobre una factura registrada' : '🧾 Registrar retención por factura'}
       size="xl"
+      className="modal-retencion-centrado"
       onClose={pedirCierre}
       footer={(
         <>
@@ -1247,6 +1384,54 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
       {dialogo}
       {error && <div className="card" style={{ borderColor: 'var(--danger)', marginBottom: '.75rem' }}><strong>Error:</strong> {error}</div>}
 
+      {/* ── Cintillo de Empresa Receptora Responsable ── */}
+      {empresaFicha ? (
+        <div style={{
+          margin: '0 0 .75rem 0',
+          padding: '.55rem .85rem',
+          background: 'rgba(217, 119, 6, 0.08)',
+          border: '1px solid rgba(217, 119, 6, 0.3)',
+          borderRadius: '6px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '.5rem',
+          flexWrap: 'wrap',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+            <span style={{ fontSize: '1.15rem' }}>🏢</span>
+            <span style={{ fontSize: '.84rem', color: 'var(--text-normal)' }}>
+              Empresa agente de retención: <strong>{empresaFicha.nombre}</strong> <code style={{ fontSize: '.78rem', padding: '1px 5px' }}>{empresaFicha.rif}</code>
+            </span>
+          </div>
+          <span style={{ fontSize: '.75rem', color: 'var(--primary, #d97706)', background: 'rgba(217, 119, 6, 0.12)', border: '1px solid rgba(217, 119, 6, 0.25)', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
+            📱 Recepción vía Buzón Móvil (ajeno al flujo de compras)
+          </span>
+        </div>
+      ) : (
+        <div style={{
+          margin: '0 0 .75rem 0',
+          padding: '.5rem .85rem',
+          background: 'rgba(217, 119, 6, 0.06)',
+          border: '1px solid rgba(217, 119, 6, 0.25)',
+          borderRadius: '6px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '.5rem',
+          flexWrap: 'wrap',
+          fontSize: '.83rem',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+            <span style={{ fontSize: '1.05rem' }}>🏢</span>
+            <span>Empresa agente de retención: <strong>{config.razonSocial || 'MINERIA INTERNACIONAL TS, C.A.'}</strong> <code style={{ fontSize: '.78rem', padding: '1px 5px' }}>{config.rif || 'J-50209170-0'}</code></span>
+          </div>
+          <span style={{ fontSize: '.75rem', color: 'var(--text-muted)' }}>
+            🛒 Ciclo Compras / OCs + 📱 Buzón Móvil
+          </span>
+        </div>
+      )}
+
       {/* ── 1. Origen y Vinculación con OC / Buzón ── */}
       {direccion === 'practicada' && !documento && (
         <div className="card" style={{ marginBottom: '.75rem', background: 'rgba(255, 255, 255, 0.02)', borderColor: 'var(--border)' }}>
@@ -1258,13 +1443,15 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
               </label>
             </div>
             <div style={{ display: 'flex', gap: '.35rem', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                className={`btn btn-sm ${modoOrigen === 'oc' ? 'btn-primary' : 'btn-ghost'}`}
-                onClick={() => { marcarSucio(); setModoOrigen('oc'); }}
-              >
-                📄 Orden de Compra (OC) {ordenesPendientes.length > 0 && `(${ordenesPendientes.length})`}
-              </button>
+              {!empresaFicha && (
+                <button
+                  type="button"
+                  className={`btn btn-sm ${modoOrigen === 'oc' ? 'btn-primary' : 'btn-ghost'}`}
+                  onClick={() => { marcarSucio(); setModoOrigen('oc'); }}
+                >
+                  📄 Orden de Compra (OC) {ordenesPendientes.length > 0 && `(${ordenesPendientes.length})`}
+                </button>
+              )}
               <button
                 type="button"
                 className={`btn btn-sm ${modoOrigen === 'buzon' ? 'btn-primary' : 'btn-ghost'}`}
@@ -1738,12 +1925,54 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
               </small>
             )}
           </div>
-          <div className="form-row" style={{ flex: '0 1 110px' }}>
-            <label>Moneda factura</label>
-            <select className="select" value={moneda} disabled={!!documento} onChange={(e) => { marcarSucio(); setMoneda(e.target.value); }}>
-              <option value="Bs">Bs</option>
-              <option value="USD">$</option>
-            </select>
+          <div className="form-row" style={{ flex: '0 1 auto' }}>
+            <label style={{ fontSize: '.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
+              Moneda *
+            </label>
+            <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
+              <button
+                type="button"
+                className={`btn btn-sm ${moneda === 'USD' ? 'btn-primary' : 'btn-ghost'}`}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  fontWeight: 700,
+                  fontSize: '.86rem',
+                  border: moneda === 'USD' ? '2px solid var(--primary, #d97706)' : '1px solid var(--border)',
+                  background: moneda === 'USD' ? 'rgba(217, 119, 6, 0.14)' : 'rgba(255, 255, 255, 0.03)',
+                  color: moneda === 'USD' ? 'var(--primary, #d97706)' : 'var(--text-normal)',
+                  cursor: documento ? 'not-allowed' : 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+                disabled={!!documento}
+                onClick={() => { marcarSucio(); setMoneda('USD'); }}
+              >
+                💵 Dólares ($)
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${moneda === 'Bs' ? 'btn-primary' : 'btn-ghost'}`}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  fontWeight: 700,
+                  fontSize: '.86rem',
+                  border: moneda === 'Bs' ? '2px solid var(--primary, #d97706)' : '1px solid var(--border)',
+                  background: moneda === 'Bs' ? 'rgba(217, 119, 6, 0.14)' : 'rgba(255, 255, 255, 0.03)',
+                  color: moneda === 'Bs' ? 'var(--primary, #d97706)' : 'var(--text-normal)',
+                  cursor: documento ? 'not-allowed' : 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+                disabled={!!documento}
+                onClick={() => { marcarSucio(); setMoneda('Bs'); }}
+              >
+                🇻🇪 Bolívares (Bs)
+              </button>
+            </div>
           </div>
           {moneda !== 'Bs' && (
             <div className="form-row" style={{ flex: '0 1 140px' }}>
@@ -1973,7 +2202,7 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
                             >
                               <option value={16}>16% (General)</option>
                               <option value={8}>8% (Reducido)</option>
-                              <option value={0}>Exento (0%)</option>
+                              <option value={0}>Exento (0% - No genera IVA)</option>
                             </select>
                           </td>
                           <td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'monospace', padding: '4px', fontSize: '.82rem' }}>
@@ -2175,36 +2404,42 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
             </small>
           </div>
 
-          {/* Selector interactivo de retenciones por botón (ISLR, ISAE, IVA, IGTF) */}
+          {/* Selector interactivo de retenciones por botón (ISLR, ISAE, IVA) gobernado por Parámetros */}
           <div style={{ display: 'flex', gap: '.35rem', flexWrap: 'wrap', alignItems: 'center' }}>
             <span style={{ fontSize: '.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Tributos a retener:</span>
-            <button
-              type="button"
-              className={`btn btn-sm ${lineas.some((l) => l.tipo === 'islr') ? 'btn-primary' : 'btn-ghost'}`}
-              style={{ fontSize: '.76rem', padding: '2px 8px' }}
-              title={lineas.some((l) => l.tipo === 'islr') ? 'Retención de ISLR activa (clic para quitar)' : 'Activar retención de ISLR para esta factura'}
-              onClick={() => toggleImpuesto('islr')}
-            >
-              {lineas.some((l) => l.tipo === 'islr') ? '✓ ISLR activo' : '+ Retener ISLR'}
-            </button>
-            <button
-              type="button"
-              className={`btn btn-sm ${lineas.some((l) => l.tipo === 'municipal') ? 'btn-primary' : 'btn-ghost'}`}
-              style={{ fontSize: '.76rem', padding: '2px 8px' }}
-              title={lineas.some((l) => l.tipo === 'municipal') ? 'Retención de ISAE activa (clic para quitar)' : 'Activar retención municipal ISAE'}
-              onClick={() => toggleImpuesto('municipal')}
-            >
-              {lineas.some((l) => l.tipo === 'municipal') ? '✓ ISAE activo' : '+ Retener ISAE (Municipal)'}
-            </button>
-            <button
-              type="button"
-              className={`btn btn-sm ${lineas.some((l) => l.tipo === 'iva') ? 'btn-primary' : 'btn-ghost'}`}
-              style={{ fontSize: '.76rem', padding: '2px 8px' }}
-              title={lineas.some((l) => l.tipo === 'iva') ? 'Retención de IVA activa (clic para quitar)' : 'Activar retención de IVA (Solo agentes retenedores de IVA)'}
-              onClick={() => toggleImpuesto('iva')}
-            >
-              {lineas.some((l) => l.tipo === 'iva') ? '✓ Retener IVA activo' : '+ Retener IVA (Especial)'}
-            </button>
+            {(direccion === 'recibida' || puedePracticarEmpresa('islr', config)) && (
+              <button
+                type="button"
+                className={`btn btn-sm ${lineas.some((l) => l.tipo === 'islr') ? 'btn-primary' : 'btn-ghost'}`}
+                style={{ fontSize: '.76rem', padding: '2px 8px' }}
+                title={lineas.some((l) => l.tipo === 'islr') ? 'Retención de ISLR activa (clic para quitar)' : 'Activar retención de ISLR para esta factura'}
+                onClick={() => toggleImpuesto('islr')}
+              >
+                {lineas.some((l) => l.tipo === 'islr') ? '✓ ISLR activo' : '+ Retener ISLR'}
+              </button>
+            )}
+            {(direccion === 'recibida' || puedePracticarEmpresa('municipal', config)) && (
+              <button
+                type="button"
+                className={`btn btn-sm ${lineas.some((l) => l.tipo === 'municipal') ? 'btn-primary' : 'btn-ghost'}`}
+                style={{ fontSize: '.76rem', padding: '2px 8px' }}
+                title={lineas.some((l) => l.tipo === 'municipal') ? 'Retención de ISAE activa (clic para quitar)' : 'Activar retención municipal ISAE'}
+                onClick={() => toggleImpuesto('municipal')}
+              >
+                {lineas.some((l) => l.tipo === 'municipal') ? '✓ ISAE activo' : '+ Retener ISAE (Municipal)'}
+              </button>
+            )}
+            {(direccion === 'recibida' || puedePracticarEmpresa('iva', config)) && (
+              <button
+                type="button"
+                className={`btn btn-sm ${lineas.some((l) => l.tipo === 'iva') ? 'btn-primary' : 'btn-ghost'}`}
+                style={{ fontSize: '.76rem', padding: '2px 8px' }}
+                title={lineas.some((l) => l.tipo === 'iva') ? 'Retención de IVA activa (clic para quitar)' : 'Activar retención de IVA (Solo agentes retenedores de IVA)'}
+                onClick={() => toggleImpuesto('iva')}
+              >
+                {lineas.some((l) => l.tipo === 'iva') ? '✓ Retener IVA activo' : '+ Retener IVA (Especial)'}
+              </button>
+            )}
           </div>
         </div>
         {lineas.map((l) => {
@@ -2438,37 +2673,11 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
               {noPuede && <small className="hint" style={{ color: 'var(--warning)' }}>{empresaFicha ? `La empresa no practica retención de ${labelImpuesto(l.tipo)} según su régimen (Parámetros → Régimen).` : motivoNoPuedePracticar(l.tipo, config)}</small>}
               {!esManual && <small className="hint muted">{calc.explicacion}</small>}
               {monto === 0 && (
-                l.tipo === 'iva' ? (
-                  <div className="card" style={{ margin: '.35rem 0 0', background: 'rgba(239, 68, 68, 0.05)', borderColor: 'var(--warning)', padding: '.45rem .7rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '.4rem' }}>
-                      <div>
-                        <strong style={{ fontSize: '.8rem', color: 'var(--warning)' }}>¿No retienes IVA a este proveedor?</strong>
-                        <span style={{ fontSize: '.75rem', display: 'block', color: 'var(--text-muted)' }}>
-                          Si la empresa no es agente de retención de IVA para este proveedor, pulsa «Quitar retención de IVA» y deja solo ISLR.
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-ghost"
-                        style={{ fontSize: '.74rem', padding: '2px 8px', color: 'var(--danger)', border: '1px solid var(--danger)' }}
-                        onClick={() => toggleImpuesto('iva')}
-                      >
-                        ✕ Quitar retención de IVA
-                      </button>
-                    </div>
-                    <div className="form-row" style={{ margin: '.35rem 0 0' }}>
-                      <label style={{ color: 'var(--warning)', fontSize: '.76rem' }}>Motivo legal del 0 % (solo si mantienes la retención en cero)</label>
-                      <input className="input" value={l.descripcion} onChange={(e) => setLinea(l.id, { descripcion: e.target.value })}
-                        placeholder="Ej.: proveedor exento de retención / no designado agente" />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="form-row" style={{ margin: '.3rem 0 0' }}>
-                    <label style={{ color: 'var(--warning)' }}>Motivo del 0 % (obligatorio si el monto a retener es 0)</label>
-                    <input className="input" value={l.descripcion} onChange={(e) => setLinea(l.id, { descripcion: e.target.value })}
-                      placeholder="Ej.: el pago no supera el mínimo exento" />
-                  </div>
-                )
+                <div className="form-row" style={{ margin: '.3rem 0 0' }}>
+                  <label style={{ color: 'var(--warning)', fontSize: '.76rem' }}>Motivo del 0 % (obligatorio si el monto a retener es 0)</label>
+                  <input className="input" value={l.descripcion} onChange={(e) => setLinea(l.id, { descripcion: e.target.value })}
+                    placeholder="Ej.: el pago no supera el mínimo exento / actividad exenta" />
+                </div>
               )}
             </div>
           );
