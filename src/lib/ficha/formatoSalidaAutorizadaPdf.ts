@@ -29,6 +29,7 @@ export interface FotoAnexoSalida {
 }
 
 export interface DatosFormatoSalidaAutorizada {
+  modo?: 'SALIDA' | 'ENTRADA'
   lugar: string
   fechaIso: string
   kicker?: string
@@ -412,20 +413,39 @@ export async function armarFormatoSalidaAutorizada(
       }
     }
 
-    if (d.instalacion.trim()) {
+    if (d.modo === 'ENTRADA') {
+      if (d.instalacion.trim()) {
+        segmentos.push({
+          texto: `, para el ingreso a las instalaciones de la ${d.instalacion.trim()} (`,
+        })
+        segmentos.push({ texto: razonSocial, negrita: true })
+        segmentos.push({ texto: ')' })
+      } else {
+        segmentos.push({ texto: ', para el ingreso a las instalaciones de ' })
+        segmentos.push({ texto: razonSocial, negrita: true })
+      }
+
       segmentos.push({
-        texto: `, para la salida de las instalaciones de la ${d.instalacion.trim()} `,
+        texto: d.motivoResumen.trim()
+          ? ` del siguiente material, equipo o componente, por concepto de ${d.motivoResumen.trim()}.`
+          : ' del siguiente material, equipo o componente.',
       })
     } else {
-      segmentos.push({ texto: ', para la salida de las instalaciones de ' })
-    }
+      if (d.instalacion.trim()) {
+        segmentos.push({
+          texto: `, para la salida de las instalaciones de la ${d.instalacion.trim()} `,
+        })
+      } else {
+        segmentos.push({ texto: ', para la salida de las instalaciones de ' })
+      }
 
-    segmentos.push({ texto: razonSocial, negrita: true })
-    segmentos.push({
-      texto: d.motivoResumen.trim()
-        ? ` del siguiente material, equipo o componente, con fines exclusivos de ${d.motivoResumen.trim()}.`
-        : ' del siguiente material, equipo o componente.',
-    })
+      segmentos.push({ texto: razonSocial, negrita: true })
+      segmentos.push({
+        texto: d.motivoResumen.trim()
+          ? ` del siguiente material, equipo o componente, con fines exclusivos de ${d.motivoResumen.trim()}.`
+          : ' del siguiente material, equipo o componente.',
+      })
+    }
 
     y = pintarParrafoMixto(doc, segmentos, IZQ, y, ANCHO, 10, 5.4)
   }
@@ -463,7 +483,13 @@ export async function armarFormatoSalidaAutorizada(
   if (responsablesValidos.length > 0) {
     y += 9
     doc.setFont('helvetica', 'bold').setFontSize(10.5).setTextColor(TINTA)
-    doc.text('RESPONSABLES DEL TRASLADO / TÉCNICO', IZQ, y)
+    doc.text(
+      d.modo === 'ENTRADA'
+        ? 'RESPONSABLES DEL TRASLADO / ENTREGA'
+        : 'RESPONSABLES DEL TRASLADO / TÉCNICO',
+      IZQ,
+      y,
+    )
     y += 4
 
     const hayNombre = responsablesValidos.some((r) => Boolean(r.nombre.trim()))
@@ -653,10 +679,13 @@ export async function armarFormatoSalidaAutorizada(
     }
   }
 
+  const esEntrada = d.modo === 'ENTRADA'
   pintarPieDePaginas(doc, 'Minería Internacional TS, C.A.', lugar)
-  doc.setProperties({ title: d.titulo.trim() || 'Autorización de Salida' })
+  doc.setProperties({
+    title: d.titulo.trim() || (esEntrada ? 'Autorización de Entrada' : 'Autorización de Salida'),
+  })
 
-  const slug = (d.descripcionCorta || 'salida-autorizada')
+  const slug = (d.descripcionCorta || (esEntrada ? 'entrada-autorizada' : 'salida-autorizada'))
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -666,6 +695,12 @@ export async function armarFormatoSalidaAutorizada(
 
   return {
     blob: doc.output('blob'),
-    nombre: `autorizacion-salida-${slug || 'material'}.pdf`,
+    nombre: `${esEntrada ? 'autorizacion-entrada' : 'autorizacion-salida'}-${slug || 'material'}.pdf`,
   }
+}
+
+export async function armarFormatoEntradaAutorizada(
+  d: Omit<DatosFormatoSalidaAutorizada, 'modo'>,
+): Promise<ArchivoArmado> {
+  return armarFormatoSalidaAutorizada({ ...d, modo: 'ENTRADA' })
 }

@@ -44,6 +44,7 @@ import { useNotaDeSalida } from './NotaDeSalida'
 import { useNotaDeTraslado } from './NotaDeTraslado'
 import { CabeceraSalidas } from './CabeceraSalidas'
 import { ModalFormatoSalidaAutorizada } from './ModalFormatoSalidaAutorizada'
+import { ModalFormatoEntradaAutorizada } from './ModalFormatoEntradaAutorizada'
 
 /*
   LO QUE SALIÓ Y LO QUE SE MOVIÓ, EN UNA SOLA PANTALLA
@@ -113,6 +114,7 @@ export function Salidas() {
   const [rango, setRango] = useState<Rango>(SIN_RANGO)
   const [reporte, setReporte] = useState<ArchivoArmado | null>(null)
   const [abriendoFormato, setAbriendoFormato] = useState(false)
+  const [abriendoFormatoEntrada, setAbriendoFormatoEntrada] = useState(false)
   const [eliminandoSalida, setEliminandoSalida] = useState<{
     notaSalida: string
     ordenNumero: string | null
@@ -303,6 +305,9 @@ export function Salidas() {
         description="Consulta de salidas del inventario y traslados entre almacenes. Para registrar o solicitar una salida, vaya a «Salidas»; para trasladar material, a «Traslados»."
         actions={
           <>
+            <Button variant="outline" icon={<FileText />} onClick={() => setAbriendoFormatoEntrada(true)}>
+              Formato de entrada
+            </Button>
             <Button variant="outline" icon={<FileText />} onClick={() => setAbriendoFormato(true)}>
               Formato de salida
             </Button>
@@ -531,6 +536,11 @@ export function Salidas() {
       <ModalFormatoSalidaAutorizada
         abierto={abriendoFormato}
         onCerrar={() => setAbriendoFormato(false)}
+      />
+
+      <ModalFormatoEntradaAutorizada
+        abierto={abriendoFormatoEntrada}
+        onCerrar={() => setAbriendoFormatoEntrada(false)}
       />
 
       <Visor
