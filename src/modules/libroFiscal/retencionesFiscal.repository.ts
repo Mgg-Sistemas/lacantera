@@ -108,12 +108,13 @@ export function configDeJson(v: JsonParametros | null | undefined): ConfigRetenc
     pctIgtf: j.igtf_alicuota == null ? CONFIG_RETENCION_DEFECTO.pctIgtf : n(j.igtf_alicuota),
     ivaAlicuota: n(j.iva_alicuota) || CONFIG_RETENCION_DEFECTO.ivaAlicuota,
     licenciaMunicipal: texto(j.licencia_municipal) ?? texto(j.licencia_numero) ?? texto(j.rim) ?? null,
-    imprimirOriginalYCopia: bool('imprimir_original_copia', true),
+    imprimirOriginalYCopia: bool('imprimir_original_copia', false),
     incluirLogo: bool('comprobante_logo', true),
     incluirFirma: bool('comprobante_firma', true),
     incluirSello: bool('comprobante_sello', true),
     incluirQr: bool('comprobante_qr', true),
     buzonActivo: bool('buzon_activo', true),
+    multiempresaActivo: bool('multiempresa_activo', true),
   };
 }
 
@@ -138,12 +139,13 @@ export function jsonDeConfig(c: ConfigRetencion, previo: JsonParametros | null |
     iva_retencion_especial: c.pctIvaEspecial,
     unidad_tributaria: c.valorUt,
     igtf_alicuota: c.pctIgtf,
-    imprimir_original_copia: c.imprimirOriginalYCopia !== false,
+    imprimir_original_copia: c.imprimirOriginalYCopia === true,
     comprobante_logo: c.incluirLogo !== false,
     comprobante_firma: c.incluirFirma !== false,
     comprobante_sello: c.incluirSello !== false,
     comprobante_qr: c.incluirQr !== false,
     buzon_activo: c.buzonActivo !== false,
+    multiempresa_activo: c.multiempresaActivo !== false,
   };
 }
 
@@ -240,11 +242,21 @@ export async function guardarConfigRetencion(c: ConfigRetencion, locales?: Alicu
     retiene_islr: c.retieneIslr !== false,
     ...parametros,
   };
-  const { data, error } = await supabase.from('config')
-    .upsert({ key: CLAVE_CONFIG, value }, { onConflict: 'key' })
-    .select('key');
-  if (error) throw errorRetencion(error, 'No se pudieron guardar los parámetros fiscales.');
-  if (!data?.length) throw new Error('Los parámetros fiscales aún no se pueden guardar con este permiso: falta aplicar un cambio pendiente en la base.');
+  try {
+    const { data, error } = await supabase.from('config')
+      .upsert({ key: CLAVE_CONFIG, value }, { onConflict: 'key' })
+      .select('key');
+    if (error) throw errorRetencion(error, 'No se pudieron guardar los parámetros fiscales.');
+    if (!data?.length) throw new Error('Los parámetros fiscales aún no se pueden guardar con este permiso: falta aplicar un cambio pendiente en la base.');
+  } catch (err) {
+    if (
+      err instanceof Error &&
+      (err.message.includes('schema cache') || err.message.includes('public.config') || err.message.includes('does not exist'))
+    ) {
+      throw new Error('La tabla public.config aún no existe en Supabase. Aplica el script 01_retenciones_tablas_base_y_config.sql en el Editor SQL.');
+    }
+    throw err;
+  }
 }
 
 /* ───────────────── Tipos de licencia (en el JSON hasta R3; con R3, su tabla) ───────────────── */

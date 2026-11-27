@@ -15,6 +15,7 @@ import { errorRetencion } from '@/modules/libroFiscal/erroresRetencion';
 import { columnaDisponible } from '@/modules/libroFiscal/disponibilidad';
 import { errorPorcentajesIva } from '@/modules/libroFiscal/retencionesFiscal.repository';
 
+
 const TABLA = 'retencion_empresas_receptoras';
 
 /**
@@ -177,6 +178,7 @@ export async function guardarEmpresaReceptora(empresa: EmpresaReceptoraInput): P
   const filaFiscal: Record<string, unknown> = {};
   if (empresa.alicuotaMunicipal !== undefined) filaFiscal.alicuota_municipal = empresa.alicuotaMunicipal;
   if (empresa.imprimirOriginalYCopia !== undefined) filaFiscal.imprimir_original_y_copia = empresa.imprimirOriginalYCopia;
+  if (empresa.esContribuyenteEspecial !== undefined) filaFiscal.es_contribuyente_especial = empresa.esContribuyenteEspecial;
   const fila = { ...filaBase, ...filaFiscal };
 
   const textos = { unico: 'Ya hay una empresa con ese nombre corto: usa otro.' };

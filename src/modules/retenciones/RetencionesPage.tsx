@@ -51,9 +51,9 @@ import { rifValido } from '@/shared/lib/rif';
 import { list as listProveedores, insert as insertProveedor } from '@/modules/proveedores/proveedores.repository';
 import { EmpresaActualSelector } from './EmpresaActualSelector';
 import { EditorFichasFiscalesEmpresa } from './EditorFichasFiscalesEmpresa';
+import { ReintegrosPendientesView } from './ReintegrosPendientesView';
 import { Link, useSearchParams } from 'react-router';
-import { useReintegrosPendientes, type RetencionItem as RetencionItemApi } from '@/lib/api/retenciones';
-import { ModalRegistrarReintegro } from '@/pages/retenciones/ModalRegistrarReintegro';
+import { useReintegrosPendientes } from '@/lib/api/retenciones';
 import '@/styles/gtCompat.css';
 import '@/modules/libroFiscal/libroFiscal.css';
 import '@/modules/libroFiscal/libroFiscalV8.css';
@@ -113,9 +113,7 @@ export function RetencionesPage() {
   }, [params]);
 
   // Gestión de reintegros diferidos
-  const { data: reintegros = [], isLoading: cargandoReintegros } = useReintegrosPendientes();
-  const [modalReintegro, setModalReintegro] = useState(false);
-  const [retencionReintegro, setRetencionReintegro] = useState<RetencionItemApi | null>(null);
+  const { data: reintegros = [] } = useReintegrosPendientes();
 
   const [parametros, setParametros] = useState(false);
   const [configFiscal, setConfigFiscal] = useState<ConfigRetencion>(CONFIG_RETENCION_DEFECTO);
@@ -616,98 +614,14 @@ export function RetencionesPage() {
       {/* ── Buzón Móvil y Multi-Empresa (facturas externas y soportes) ── */}
       {vista === 'buzon' && <BuzonFacturasExternasView onRegistrar={abrirDesdeBuzon} />}
 
-      {/* ── Reintegros pendientes (post-pago diferidos) ── */}
+      {/* ── Reintegros pendientes de proveedores (post-pago diferidos) ── */}
       {vista === 'reintegros' && (
-        <div style={{ marginTop: '.75rem' }}>
-          <div className="card" style={{ marginBottom: '.75rem', borderColor: 'var(--warning, #f59e0b)' }}>
-            <div style={{ display: 'flex', gap: '.5rem', alignItems: 'flex-start' }}>
-              <span style={{ fontSize: '1.2rem' }}>⚠️</span>
-              <div>
-                <strong>Devoluciones pendientes de proveedores (Reintegros post-pago)</strong>
-                <p className="muted" style={{ margin: '.2rem 0 0', fontSize: '.84rem' }}>
-                  Retenciones emitidas después de haber pagado la orden de compra al 100%. El proveedor debe reembolsar el
-                  monto retenido en banco o caja. Al recibir los fondos, pulse <strong>«Registrar reintegro»</strong>.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {cargandoReintegros ? (
-            <div className="muted" style={{ padding: '2rem', textAlign: 'center' }}>Consultando reintegros pendientes…</div>
-          ) : reintegros.length === 0 ? (
-            <div className="card" style={{ textAlign: 'center', padding: '3rem 1rem' }}>
-              <div style={{ fontSize: '2rem', marginBottom: '.5rem' }}>✅</div>
-              <div style={{ fontWeight: 700 }}>No hay reintegros pendientes</div>
-              <p className="muted" style={{ fontSize: '.84rem', margin: '.25rem auto 0', maxWidth: 400 }}>
-                Todos los proveedores con retenciones post-pago han reembolsado los importes correspondientes.
-              </p>
-            </div>
-          ) : (
-            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-              <div className="tabla-responsive">
-                <table className="tabla" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '.85rem' }}>
-                  <thead>
-                    <tr style={{ background: 'var(--bg-2)', borderBottom: '1px solid var(--border)' }}>
-                      <th style={{ padding: '.6rem .75rem' }}>Comprobante (R14)</th>
-                      <th style={{ padding: '.6rem .75rem' }}>Proveedor / Contacto</th>
-                      <th style={{ padding: '.6rem .75rem' }}>Factura</th>
-                      <th style={{ padding: '.6rem .75rem' }}>Emisión</th>
-                      <th style={{ padding: '.6rem .75rem', textAlign: 'right' }}>Por Reintegrar</th>
-                      <th style={{ padding: '.6rem .75rem', textAlign: 'center' }}>Espera</th>
-                      <th style={{ padding: '.6rem .75rem', textAlign: 'right' }}>Acción</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {reintegros.map((item) => (
-                      <tr key={item.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                        <td style={{ padding: '.6rem .75rem', fontWeight: 600 }} className="mono">{item.numero_comprobante}</td>
-                        <td style={{ padding: '.6rem .75rem' }}>
-                          <div style={{ fontWeight: 600 }}>{item.proveedor_nombre}</div>
-                          <div className="muted" style={{ fontSize: '.78rem' }}>{item.proveedor_rif} {item.proveedor_telefono ? `· ${item.proveedor_telefono}` : ''}</div>
-                        </td>
-                        <td style={{ padding: '.6rem .75rem' }} className="mono">{item.factura_numero}</td>
-                        <td style={{ padding: '.6rem .75rem' }}>{item.fecha_emision}</td>
-                        <td style={{ padding: '.6rem .75rem', textAlign: 'right', fontWeight: 700 }}>
-                          <span className="mono" style={{ color: 'var(--danger)' }}>
-                            {item.reintegro_monto?.toLocaleString('es-VE', { minimumFractionDigits: 2 })} {item.moneda}
-                          </span>
-                          {item.moneda !== 'VES' && item.monto_retenido_bs ? (
-                            <div className="muted" style={{ fontSize: '.75rem' }}>
-                              Bs. {item.monto_retenido_bs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
-                            </div>
-                          ) : null}
-                        </td>
-                        <td style={{ padding: '.6rem .75rem', textAlign: 'center' }}>
-                          <span style={{ padding: '.15rem .5rem', borderRadius: 999, background: 'rgba(245, 158, 11, 0.15)', color: 'var(--warning, #f59e0b)', fontWeight: 600, fontSize: '.76rem' }}>
-                            {item.dias_espera_reintegro} {item.dias_espera_reintegro === 1 ? 'día' : 'días'}
-                          </span>
-                        </td>
-                        <td style={{ padding: '.6rem .75rem', textAlign: 'right' }}>
-                          <button
-                            type="button"
-                            className="btn btn-sm"
-                            onClick={() => {
-                              setRetencionReintegro(item);
-                              setModalReintegro(true);
-                            }}
-                          >
-                            Registrar reintegro
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          <ModalRegistrarReintegro
-            abierta={modalReintegro}
-            onCerrar={() => setModalReintegro(false)}
-            retencion={retencionReintegro}
-          />
-        </div>
+        <ReintegrosPendientesView
+          empresaId={empresaId}
+          empresaNombre={empresaActual?.nombre}
+          canWrite={canWrite}
+          actorName={actorName}
+        />
       )}
 
       {/* ── Por hacer: cola unificada con archivo obligatorio por empresa ── */}

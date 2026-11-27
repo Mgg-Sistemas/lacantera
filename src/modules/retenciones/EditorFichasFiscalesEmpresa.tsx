@@ -53,10 +53,20 @@ export function EditorFichasFiscalesEmpresa({
       getConfigRetencion().catch(() => null),
     ]);
     setDisponible(hay);
-    setEmpresas(lista);
     if (cfg) {
       setMultiempresaActivo(cfg.multiempresaActivo !== false);
     }
+    const listaNormalizada = lista.map((e) => {
+      if (esEmpresaGt(e) && cfg) {
+        return {
+          ...e,
+          imprimirOriginalYCopia: cfg.imprimirOriginalYCopia === true,
+          esContribuyenteEspecial: cfg.esContribuyenteEspecial === true,
+        };
+      }
+      return e;
+    });
+    setEmpresas(listaNormalizada);
   }, []);
 
   useEffect(() => {
