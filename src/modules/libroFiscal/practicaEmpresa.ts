@@ -1,42 +1,30 @@
 /* ============================================================
-   Golden Touch · Retenciones · ¿La empresa practica el impuesto? (D2b)
+   La Cantera · Retenciones · ¿La empresa practica el impuesto? (D2b)
+   MINERIA INTERNACIONAL TS, C.A. (RIF: J-50209170-0)
 
-   Una sola fuente para «quién retiene qué», también en el registro: la RPC
-   retencion_empresa_practica (L6), igual que el tablero «Por realizar».
+   Una sola fuente para «quién retiene qué», tanto en el libro como en el
+   registro: la RPC retencion_empresa_practica (L6) para TODAS las empresas
+   (incluida MITS / La Cantera y empresas secundarias del buzón móvil).
 
-   - Empresa NO-GT (empresaFicha presente): la práctica sale de la RPC por empresa
-     y fecha (detrás del detector regimenPorEmpresaDisponible, que vive dentro de
-     impuestosQuePractica). Mientras la RPC no resuelve (o no está), cae a
-     puedePracticar(config) como degradación.
-   - GT / single-empresa (empresaFicha null): se sigue con puedePracticar(config),
-     que es su capacidad de R1 global; no cambia nada.
-
-   Así el régimen deja de leerse de las banderas de la ficha (plastilina que D2b
-   retira de configDesdeFicha) y queda en una sola fuente, tablero Y registro.
+   - Consulta la RPC `retencion_empresa_practica` por empresa y fecha.
+   - Mientras la RPC no resuelve (o si falla/no está disponible), cae
+     estrictamente a `puedePracticar(tipo, config)` como degradación segura.
    ============================================================ */
 import { useCallback, useEffect, useState } from 'react';
 import { hoyVenezuela } from '@/shared/lib/rangosFecha';
 import { impuestosQuePractica } from './noAplica.repository';
 import { puedePracticar, TIPOS_IMPUESTO, type ConfigRetencion, type TipoImpuesto } from './retencionesCalculo';
 import { tipoAGt } from './retencionesFiscal.repository';
+import { esEmpresaGt } from '../retenciones/empresaActual';
 
-/** Devuelve `puede(tipo, config)`: para la empresa base se rige directamente por la gobernanza de Parámetros (ISLR + ISAE, y si es agente IVA o especial, IVA); para empresas externas del buzón consulta la RPC retencion_empresa_practica. */
+/** Devuelve `puede(tipo, config)`: para MITS se rige directamente por la gobernanza de Parámetros (ISLR + ISAE, sin IVA salvo que sea Contribuyente Especial); para empresas externas del buzón consulta la RPC retencion_empresa_practica. */
 export function usePuedePracticarEmpresa(
   _empresaFicha: unknown | null | undefined,
   empresaId: string | null | undefined,
   fecha: string,
 ): (tipo: TipoImpuesto, config: ConfigRetencion) => boolean {
   const [practica, setPractica] = useState<Set<TipoImpuesto> | null>(null);
-  const esBase =
-    !empresaId ||
-    empresaId === 'empresa-mits' ||
-    empresaId === 'empresa-lacantera' ||
-    empresaId === 'empresa-golden-touch' ||
-    empresaId === 'mits-default' ||
-    empresaId === 'mits' ||
-    empresaId === 'cantera' ||
-    empresaId === 'golden_touch' ||
-    empresaId === 'GT';
+  const esBase = !empresaId || esEmpresaGt({ id: empresaId }) || (_empresaFicha ? esEmpresaGt(_empresaFicha as any) : false);
 
   useEffect(() => {
     let vivo = true;
@@ -60,7 +48,8 @@ export function usePuedePracticarEmpresa(
   return useCallback(
     (tipo: TipoImpuesto, config: ConfigRetencion) => {
       if (esBase) {
-        if (tipo === 'iva') return config.esAgenteRetencionIva === true || config.esContribuyenteEspecial === true;
+        // MINERIA INTERNACIONAL TS, C.A. es Contribuyente Ordinario ante el SENIAT: NO retiene IVA a proveedores salvo designación formal como Contribuyente Especial
+        if (tipo === 'iva') return config.esContribuyenteEspecial === true;
         if (tipo === 'municipal') return config.retieneMunicipal !== false;
         return puedePracticar(tipo, config);
       }

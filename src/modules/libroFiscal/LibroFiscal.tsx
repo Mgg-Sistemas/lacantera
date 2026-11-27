@@ -400,11 +400,14 @@ export function LibroFiscalView({ canWrite = true, actor, actorName, vistaInicia
     pendientes: number; registradas: number;
   };
 
-  // El IGTF no es tarjeta (es costo, ni se practica ni se sufre); del resto, solo los activos.
-  const impuestosTarjeta = useMemo(
-    () => soloImpuestosActivos(TIPOS_IMPUESTO.filter((t) => t.key !== 'igtf'), impuestosActivos),
-    [impuestosActivos],
-  );
+  // Las tarjetas de impuestos obedecen a lo que la empresa activa estipuló en Parámetros (y retenciones existentes)
+  const impuestosTarjeta = useMemo(() => {
+    const activos = soloImpuestosActivos(TIPOS_IMPUESTO.filter((t) => t.key !== 'igtf'), impuestosActivos);
+    return activos.filter((t) =>
+      puedePracticarEmpresa(t.key as TipoImpuesto, config) ||
+      visibles.some((r) => r.tipo === t.key && !r.anulada)
+    );
+  }, [impuestosActivos, puedePracticarEmpresa, config, visibles]);
 
   const agruparPorProveedor = useCallback((fuente: RetencionPracticada[]): ProveedorAgrupado[] => {
     const provMap = new Map<string, Map<string, FacturaAgrupada>>();
@@ -443,21 +446,18 @@ export function LibroFiscalView({ canWrite = true, actor, actorName, vistaInicia
       const facturas = [...fMap.values()];
       let pendientes = 0, registradas = 0;
       for (const f of facturas) {
-        const esPracticada = [...f.retenciones.values()].some((r) => r.direccion === 'practicada');
         for (const t of impuestosTarjeta) {
           const r = f.retenciones.get(t.key as TipoImpuesto);
           if (r && !r.anulada) {
             if (r.estado === 'registrada' || r.estado === 'declarada') registradas++;
             else pendientes++;
-          } else if (!r && esPracticada && puedePracticarEmpresa(t.key as TipoImpuesto, config)) {
-            pendientes++;
           }
         }
       }
       result.push({ ...info, facturas, pendientes, registradas });
     }
     return result;
-  }, [impuestosTarjeta, config, puedePracticarEmpresa]);
+  }, [impuestosTarjeta]);
 
   const proveedores = useMemo<ProveedorAgrupado[]>(() => agruparPorProveedor(visibles), [agruparPorProveedor, visibles]);
   const proveedoresPagina = useMemo<ProveedorAgrupado[]>(() => agruparPorProveedor(pagina.filas), [agruparPorProveedor, pagina.filas]);
@@ -474,20 +474,8 @@ export function LibroFiscalView({ canWrite = true, actor, actorName, vistaInicia
       else if (r.estado === 'registrada') c.registradas++;
       else c.pendientes++;
     }
-    for (const prov of proveedores) {
-      for (const f of prov.facturas) {
-        const esPracticada = [...f.retenciones.values()].some((r) => r.direccion === 'practicada');
-        if (!esPracticada) continue;
-        for (const t of impuestosTarjeta) {
-          const r = f.retenciones.get(t.key as TipoImpuesto);
-          if (!r && puedePracticarEmpresa(t.key as TipoImpuesto, config)) {
-            m[t.key].pendientes++;
-          }
-        }
-      }
-    }
     return m;
-  }, [visibles, impuestosTarjeta, proveedores, config, puedePracticarEmpresa]);
+  }, [visibles, impuestosTarjeta]);
 
   async function verComprobante(r: RetencionPracticada) {
     try {
@@ -958,12 +946,12 @@ export function LibroFiscalView({ canWrite = true, actor, actorName, vistaInicia
                               return null;
                             }
                             return (
-                              <div key={t.key} className="lfv8-casilla falta">
+                              <div key={t.key} className="lfv8-casilla nc" style={{ borderStyle: 'dashed', opacity: 0.85 }}>
                                 <span className="lfv8-imp">{t.corto}</span>
-                                <span className="lfv8-est" style={{ color: 'var(--warning)' }}>— Falta cargar</span>
+                                <span className="lfv8-est" style={{ color: 'var(--text-muted)', fontWeight: 500 }}>— No retenido</span>
                                 {canWrite && (
                                   <span className="lfv8-acciones" style={{ marginTop: '4px' }}>
-                                    <button type="button" className="lfv8-mini registrar"
+                                    <button type="button" className="lfv8-mini"
                                       onClick={() => {
                                         const rExistente = [...f.retenciones.values()][0];
                                         const retencionConArchivo = [...f.retenciones.values()].find((rv) => !!rv.comprobantePath);
@@ -2713,7 +2701,10 @@ export function ConfiguracionFiscalModal({ puedeEditar, onClose, editorFiscalEmp
       }
       case 'firma': return 'Logo, firma y sello para comprobantes';
       case 'buzon_telefono': return cfg.buzonActivo !== false ? 'Buzón activo · Recepción móvil' : 'Buzón desactivado';
-      case 'regimen': return `Agente IVA: ${cfg.esAgenteRetencionIva ? 'sí' : 'no'} · Especial: ${cfg.esContribuyenteEspecial ? 'sí' : 'no'}`;
+      case 'regimen': {
+        const esEsp = cfg.esContribuyenteEspecial || cfg.esAgenteRetencionIva;
+        return esEsp ? '⭐ Especial (Agente IVA · IGTF)' : '🏢 Ordinario (No retiene IVA · ISAE/ISLR)';
+      }
       case 'valores': return `UT Bs ${cfg.valorUt} · IGTF ${cfg.pctIgtf} %`;
       case 'impuestos': return r2 ? 'Ficha de cada impuesto y conceptos del ISLR' : `${conceptos.length} conceptos`;
       default: return '';
@@ -2727,7 +2718,7 @@ export function ConfiguracionFiscalModal({ puedeEditar, onClose, editorFiscalEmp
 
   return (
     <>
-    <Modal title={tituloModal} size="xl" onClose={pedirCierre}
+    <Modal title={tituloModal} size="xl" className="lfv8-modal-parametros" onClose={pedirCierre}
       footer={
         <>
           <span className="hint muted" style={{ fontSize: '.78rem', marginRight: 'auto' }}>
@@ -2786,17 +2777,27 @@ export function ConfiguracionFiscalModal({ puedeEditar, onClose, editorFiscalEmp
         const def = seccion === 'valores' && r3 ? DEF_VALORES_R3 : TODAS_PA[seccion];
         return (
         <>
-          <button type="button" className="lfv8-pa-volver" onClick={volver}>
-            {def.capa === 'avanzados' ? '← Ajustes avanzados' : '← Parámetros'}
-          </button>
-          {def.capa === 'avanzados' && <div className="lfv8-pa-aviso" style={{ marginTop: '.4rem' }}>{AVISO_AVANZADOS}</div>}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '.6rem', flexWrap: 'wrap', gap: '.5rem' }}>
+            <button type="button" className="lfv8-pa-volver" onClick={volver}>
+              {def.capa === 'avanzados' ? '← Volver a Ajustes avanzados' : '← Volver a Parámetros'}
+            </button>
+            <span className="hint muted" style={{ fontSize: '.78rem' }}>
+              {def.capa === 'avanzados' ? 'Ajustes avanzados' : 'Ajustes'} › {def.titulo}
+            </span>
+          </div>
+          {def.capa === 'avanzados' && <div className="lfv8-pa-aviso" style={{ marginTop: '.2rem' }}>{AVISO_AVANZADOS}</div>}
           <h4 className="lfv8-pa-sec-t">{def.titulo}</h4>
-          <dl className="lfv8-pa-que">
-            <dt>Qué es</dt><dd>{def.que}</dd>
-            <dt>Qué se ingresa</dt><dd>{def.ingresa}</dd>
-            <dt>Qué efecto tiene</dt><dd>{def.efecto}</dd>
-            <dt>Qué no cambia</dt><dd>{def.noCambia}</dd>
-          </dl>
+          <details style={{ marginBottom: '.9rem', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 6, padding: '.55rem .85rem', background: 'rgba(255, 255, 255, 0.015)' }}>
+            <summary style={{ cursor: 'pointer', fontSize: '.82rem', color: '#94a3b8', userSelect: 'none' }}>
+              💡 <strong>Guía normativa:</strong> {def.linea} <span style={{ color: 'var(--primary)', textDecoration: 'underline', marginLeft: '.5rem', fontSize: '.76rem' }}>Ver detalles</span>
+            </summary>
+            <dl className="lfv8-pa-que" style={{ marginTop: '.5rem', marginBottom: 0 }}>
+              <dt>Qué es</dt><dd>{def.que}</dd>
+              <dt>Qué se ingresa</dt><dd>{def.ingresa}</dd>
+              <dt>Qué efecto tiene</dt><dd>{def.efecto}</dd>
+              <dt>Qué no cambia</dt><dd>{def.noCambia}</dd>
+            </dl>
+          </details>
           {soloLectura && (
             <div className="hint muted" style={{ marginBottom: '.6rem', fontSize: '.82rem' }}>
               Para cambiar los parámetros fiscales hace falta permiso de escritura en Retenciones.
@@ -3007,7 +3008,15 @@ export function ConfiguracionFiscalModal({ puedeEditar, onClose, editorFiscalEmp
           {seccion === 'regimen' && (
             <fieldset disabled={soloLectura} style={{ border: 0, padding: 0, margin: 0 }}>
               {/* Con R1, las dos condiciones llevan fecha e historial y las escribe su propia pantalla. */}
-              {r1 && <ParametrosRegimen puedeEditar={puedeEditar} empresas={empresasRegimen} empresaIdInicial={empresaRegimenId} puedeBorrar={puedeBorrarRegimen} />}
+              {r1 && (
+                <ParametrosRegimen
+                  puedeEditar={puedeEditar}
+                  empresas={empresasRegimen}
+                  empresaIdInicial={empresaRegimenId}
+                  puedeBorrar={puedeBorrarRegimen}
+                  onRegimenCambiado={() => void recargar()}
+                />
+              )}
               <div className="card" style={{ background: 'var(--bg-2)' }}>
                 {/* D2b: el régimen se edita arriba, en Parámetros → Régimen (L6). Se quitó el
                     fallback de casillas al JSON (solo aparecía sin R1): escribía un espejo que

@@ -90,8 +90,10 @@ export function impuestosPendientesDeOrden(
 ): ImpuestoPendiente[] {
   const ya = reg.get(o.id);
   const out: ImpuestoPendiente[] = [];
-  const retiene = (k: ImpuestoPendiente, flag: 'esAgenteRetencionIva' | 'retieneIslr' | 'retieneMunicipal') =>
-    (practica ? practica.has(k) : (config ? config[flag] !== false : true));
+  const retiene = (k: ImpuestoPendiente, flag: 'esAgenteRetencionIva' | 'retieneIslr' | 'retieneMunicipal') => {
+    if (k === 'iva' && config && config.esContribuyenteEspecial !== true) return false;
+    return (practica ? practica.has(k) : (config ? config[flag] !== false : true));
+  };
 
   if (retiene('iva', 'esAgenteRetencionIva') && !o.retencion_iva_path && !ya?.has('iva')) out.push('iva');
   if (retiene('islr', 'retieneIslr') && !o.retencion_islr_path && !ya?.has('islr')) out.push('islr');
@@ -110,8 +112,10 @@ export function impuestosAplicablesBuzon(
   activos?: Set<string> | null,
 ): ImpuestoPendiente[] {
   const out: ImpuestoPendiente[] = [];
-  const retiene = (k: ImpuestoPendiente, flag: 'esAgenteRetencionIva' | 'retieneIslr' | 'retieneMunicipal') =>
-    (practica ? practica.has(k) : (config ? config[flag] !== false : true));
+  const retiene = (k: ImpuestoPendiente, flag: 'esAgenteRetencionIva' | 'retieneIslr' | 'retieneMunicipal') => {
+    if (k === 'iva' && config && config.esContribuyenteEspecial !== true) return false;
+    return (practica ? practica.has(k) : (config ? config[flag] !== false : true));
+  };
 
   if (retiene('iva', 'esAgenteRetencionIva')) out.push('iva');
   if (retiene('islr', 'retieneIslr')) out.push('islr');

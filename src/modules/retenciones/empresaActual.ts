@@ -26,13 +26,24 @@ export const CLAVE_EMPRESA_ACTUAL = 'lacantera.retenciones.empresaActual';
  */
 const IDS_PRINCIPALES = ['empresa-mits', 'empresa-lacantera', 'empresa-golden-touch'];
 
-/** ¿Es la empresa principal? Conserva su régimen por R1; las demás, por su ficha. */
-export function esEmpresaGt(empresa: { id?: string; clave?: string } | null | undefined): boolean {
+/** ¿Es la empresa principal? Detecta a MITS / La Cantera por su ID estable, clave, RIF o denominación social. */
+export function esEmpresaGt(empresa: { id?: string; clave?: string; rif?: string; nombre?: string } | null | undefined): boolean {
   if (!empresa) return false;
-  return (
-    IDS_PRINCIPALES.includes(empresa.id ?? '') ||
-    ['mits', 'cantera', 'lacantera', 'golden_touch'].includes(String(empresa.clave ?? '').toLowerCase())
-  );
+  const id = String(empresa.id ?? '').trim().toLowerCase();
+  if (
+    IDS_PRINCIPALES.includes(id) ||
+    id === 'mits' ||
+    id === 'lacantera' ||
+    id === 'mits-default' ||
+    id === '1'
+  ) return true;
+  const clave = String(empresa.clave ?? '').trim().toLowerCase();
+  if (['mits', 'cantera', 'lacantera', 'golden_touch', 'gt'].includes(clave)) return true;
+  const rif = String(empresa.rif ?? '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  if (rif === 'J502091700' || rif.includes('50209170') || rif === 'J501299935') return true;
+  const nombre = String(empresa.nombre ?? '').trim().toLowerCase();
+  if ((nombre.includes('mineria internacional') || nombre.includes('la cantera') || nombre.includes('mits')) && !id.startsWith('empresa-mto') && !id.startsWith('empresa-mgg')) return true;
+  return false;
 }
 
 /**
