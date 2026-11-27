@@ -273,6 +273,37 @@ GRANT EXECUTE ON FUNCTION public.is_operativo() TO anon, authenticated, service_
 
 BEGIN;
 
+-- Asegurar tabla public.config y columnas requeridas para convivencia
+CREATE TABLE IF NOT EXISTS public.config (
+    key text PRIMARY KEY,
+    value jsonb NOT NULL,
+    updated_at timestamptz DEFAULT now(),
+    updated_by text
+);
+ALTER TABLE public.config ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now();
+ALTER TABLE public.config ADD COLUMN IF NOT EXISTS updated_by text;
+
+INSERT INTO public.config (key, value, updated_at, updated_by)
+VALUES (
+    'retenciones.parametros',
+    jsonb_build_object(
+        'empresa_nombre', 'MINERIA INTERNACIONAL TS, C.A.',
+        'empresa_rif', 'J-50209170-0',
+        'empresa_domicilio', 'Sector La Cantera, Municipio Piar, Estado Bolívar, Venezuela',
+        'empresa_municipio', 'Piar',
+        'empresa_estado', 'Bolívar',
+        'empresa_email', 'contacto@mineriainternacionalts.com',
+        'empresa_telefono', '+58 424-9349731',
+        'valor_ut', 43,
+        'fecha_vigencia_ut', '2025-06-02',
+        'agente_retencion_iva', false,
+        'contribuyente_especial', false,
+        'imprimir_original_y_copia', false
+    ),
+    now(),
+    'migracion_02_seed'
+)
+ON CONFLICT (key) DO NOTHING;
 
 -- R1 · 1 de 13 · gt_retenciones_quien · migración gt_retenciones_quien, versión 20261020100001
 

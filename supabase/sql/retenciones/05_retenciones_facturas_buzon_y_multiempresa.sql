@@ -274,6 +274,40 @@ GRANT EXECUTE ON FUNCTION public.is_operativo() TO anon, authenticated, service_
 
 BEGIN;
 
+-- Adaptación La Cantera: asegurar tablas base de compras y orígenes
+CREATE TABLE IF NOT EXISTS public.adjuntos_directos (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  modulo text NOT NULL,
+  ref_id text NOT NULL,
+  path text NOT NULL,
+  nombre text NOT NULL,
+  content_type text,
+  es_factura boolean DEFAULT false,
+  created_at timestamptz DEFAULT now(),
+  created_by text
+);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'compras_directas') THEN
+    CREATE TABLE public.compras_directas (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      proveedor_id uuid
+    );
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'servicios_directos') THEN
+    CREATE TABLE public.servicios_directos (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      proveedor_id uuid
+    );
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'ordenes') THEN
+    CREATE TABLE public.ordenes (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      proveedor_id uuid
+    );
+  END IF;
+END $$;
 
 -- P03 · 11 de 13 · gt_facturas_del_origen · migración gt_facturas_del_origen, versión 20261020100011
 
@@ -613,17 +647,24 @@ create policy "compras-oc delete factura huerfana" on storage.objects for delete
 --    rechazaba 'orden'). Solo archivos con la forma de FacturasDirectas (<orden>/<stamp>-<nombre>) cuya orden existe y que
 --    no tienen fila. No toca ningún archivo. Idempotente. El 20/10 01:58-02:10: 54 (y 2 de órdenes ya borradas, que no
 --    se enlazan).
-insert into public.adjuntos_directos (modulo, ref_id, path, nombre, content_type, created_at, created_by)
-select 'orden', r.id, o.name,
-       regexp_replace(split_part(o.name, '/', 2), '^[0-9a-z]{2,8}-', ''),
-       nullif(o.metadata ->> 'mimetype', ''),
-       o.created_at,
-       coalesce((select u.email from public.usuarios u where u.id = o.owner), 'reenlace P03')
-  from storage.objects o
-  join public.ordenes r on r.id::text = split_part(o.name, '/', 1)
- where o.bucket_id = 'op-imagenes'
-   and o.name ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/[0-9a-z]{2,8}-[^/]+$'
-   and not exists (select 1 from public.adjuntos_directos a where a.path = o.name);
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'ordenes') THEN
+    INSERT INTO public.adjuntos_directos (modulo, ref_id, path, nombre, content_type, created_at, created_by)
+    SELECT 'orden', r.id, o.name,
+           regexp_replace(split_part(o.name, '/', 2), '^[0-9a-z]{2,8}-', ''),
+           nullif(o.metadata ->> 'mimetype', ''),
+           o.created_at,
+           'reenlace P03'
+      FROM storage.objects o
+      JOIN public.ordenes r ON r.id::text = split_part(o.name, '/', 1)
+     WHERE o.bucket_id = 'op-imagenes'
+       AND o.name ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/[0-9a-z]{2,8}-[^/]+$'
+       AND NOT EXISTS (SELECT 1 FROM public.adjuntos_directos a WHERE a.path = o.name);
+  END IF;
+EXCEPTION WHEN OTHERS THEN
+  NULL;
+END $$;
 
 
 -- R7F · 12 de 13 · gt_retencion_factura_con_regla · migración gt_retencion_factura_con_regla, versión 20261020100012
@@ -1232,7 +1273,7 @@ begin
       end if;
       new.created_by := quien;
       -- el nombre a mostrar lo pone la base, no el cliente: el del usuario de la sesión (nombre + apellido)
-      select nullif(btrim(concat_ws(' ', u.nombre, u.apellido)), '') into nombre_actor from public.usuarios u where u.id = auth.uid();
+      begin select p.nombre into nombre_actor from public.perfiles p where p.id = auth.uid(); exception when others then nombre_actor := null; end;
       new.created_by_name := nombre_actor;  -- nulo si no se encuentra: el correo en created_by basta de respaldo
       -- la foto del nombre; si la sesión no ve la empresa, deciden la RLS y la clave foránea
       select e.nombre into nombre_empresa from public.retencion_empresas_receptoras e where e.id = new.empresa_id;
@@ -1259,12 +1300,15 @@ DROP TRIGGER IF EXISTS trg_retencion_facturas_externas_tocar ON public.retencion
 create trigger trg_retencion_facturas_externas_tocar before insert or update on public.retencion_facturas_externas
   for each row execute function public.retencion_buzon_tocar();
 
--- Semilla: GT y MTO, tal como están en rrhh_empresas (los datos que el sistema ya imprime)
+-- Semilla: Minería Internacional TS, C.A. (MITS, La Cantera, Piar)
 insert into public.retencion_empresas_receptoras (id, clave, nombre, nombre_corto, rif, color_badge, orden, municipio, estado)
-select v.id, v.clave, r.nombre, v.corto, r.rif, v.color, v.orden, v.municipio, 'Bolívar'
-  from (values ('empresa-mits', 'mits', 'GT',  'Minería Internacional TS, C.A.', '#eab308', 1, 'Caroní'),
-               ('empresa-mto',          'mto',          'MTO', 'MTO',          '#d97706', 2, null)) v(id, clave, rrhh, corto, color, orden, municipio)
-  join public.rrhh_empresas r on r.clave = v.rrhh;
+values ('empresa-mits', 'MITS', 'Minería Internacional TS, C.A.', 'MITS', 'J-50209170-0', '#d97706', 1, 'Piar', 'Bolívar')
+on conflict (id) do update 
+  set nombre = EXCLUDED.nombre,
+      nombre_corto = EXCLUDED.nombre_corto,
+      rif = EXCLUDED.rif,
+      municipio = EXCLUDED.municipio,
+      estado = EXCLUDED.estado;
 
 -- 4) Permisos y RLS
 revoke all on public.retencion_empresas_receptoras from public, anon;
@@ -1692,9 +1736,14 @@ create trigger trg_retencion_agente_valido before insert or update of rol, tipo,
 revoke execute on function public.dump_database_sql() from anon;
 
 -- 2) roles_permisos: módulo 'respaldo' con lectura=true a 'admin' y 'analista' (preserva el acceso actual).
-update public.roles_permisos
-   set permisos = jsonb_set(coalesce(permisos, '{}'::jsonb), '{respaldo}', '{"lectura": true}'::jsonb, true)
- where role in ('admin', 'analista');
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'roles_permisos') THEN
+    UPDATE public.roles_permisos
+       SET permisos = jsonb_set(coalesce(permisos, '{}'::jsonb), '{respaldo}', '{"lectura": true}'::jsonb, true)
+     WHERE role IN ('admin', 'analista');
+  END IF;
+END $$;
 
 -- 3) dump_database_sql(): mismo cuerpo, SOLO cambia el chequeo inicial a puede_leer('respaldo').
 create or replace function public.dump_database_sql()
