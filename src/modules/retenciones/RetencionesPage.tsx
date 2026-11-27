@@ -530,19 +530,14 @@ export function RetencionesPage() {
     <div>
       {/* ── Cabecera v8 ── */}
       <header style={{ marginBottom: '.75rem' }}>
-        <p className="muted" style={{ margin: '0 0 .5rem' }}>
-          Retenciones por factura: aplicables, registradas y no aplicables.
-        </p>
+        <EmpresaActualSelector
+          empresas={empresas}
+          empresaId={empresaId}
+          onChange={setEmpresaId}
+          conteos={conteosPorEmpresa}
+          esEspecial={esGt ? (configFiscal.esContribuyenteEspecial === true) : Boolean(empresaActual?.esContribuyenteEspecial)}
+        />
         <div className="lfv8-cabeza-acciones">
-          {multiempresa && (
-            <EmpresaActualSelector
-              empresas={empresas}
-              empresaId={empresaId}
-              onChange={setEmpresaId}
-              conteos={conteosPorEmpresa}
-              esEspecial={esGt ? (configFiscal.esContribuyenteEspecial === true) : Boolean(empresaActual?.esContribuyenteEspecial)}
-            />
-          )}
           <button className="btn btn-ghost" onClick={() => setParametros(true)}>⚙ Parámetros</button>
           {buzonVisible && puedeVista('retenciones') && (
             <Link to="/app/retenciones/telefono" className="btn btn-ghost" style={{ textDecoration: 'none', position: 'relative' }} title={buzonNuevas > 0 ? `${buzonNuevas} factura(s) nueva(s) en el buzón` : 'Abrir vista móvil de facturas'} onClick={marcarBuzonVisto}>

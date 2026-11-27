@@ -500,10 +500,12 @@ button.lt-kpi:focus-visible { outline: 2px solid var(--primary); outline-offset:
 
 .modal-body {
   padding: 1.25rem 1.35rem;
+  overflow-x: hidden;
   overflow-y: auto;
   flex: 1 1 auto;
   min-height: 0; /* Imprescindible para flex scroll interno */
   box-sizing: border-box;
+  max-width: 100%;
 }
 
 .modal-footer {
@@ -518,4 +520,95 @@ button.lt-kpi:focus-visible { outline: 2px solid var(--primary); outline-offset:
   flex-wrap: wrap;
   box-sizing: border-box;
 }
+
+/* ── Mejoras visuales y control de formularios (Paleta Tierra / Materio) ── */
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.form-row label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  line-height: 1.25;
+}
+
+.form-row .input,
+.form-row .select,
+.form-row textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: var(--r-md, 6px);
+  background: var(--surface-2, var(--bg-1));
+  border: 1px solid var(--border);
+  color: var(--text);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-row .input:focus,
+.form-row .select:focus,
+.form-row textarea:focus {
+  border-color: var(--primary, #d97706);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.2);
+}
+
+/* Estilo consistente para selector de archivos (PDF/Imagen) */
+input[type="file"].input {
+  padding: 0.35rem 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  line-height: 1.4;
+  min-height: 38px;
+}
+
+input[type="file"].input::file-selector-button {
+  background: rgba(217, 119, 6, 0.12);
+  color: var(--primary, #d97706);
+  border: 1px solid var(--primary, #d97706);
+  border-radius: var(--r-md, 6px);
+  padding: 0.25rem 0.75rem;
+  margin-right: 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+input[type="file"].input::file-selector-button:hover {
+  background: var(--primary, #d97706);
+  color: #fff;
+}
+
+/* Contención de tablas y cajas internas en modales */
+.modal-body .table-wrap,
+.modal-body .card {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Modales emergentes secundarios (perfiles de proveedor y editor de empresa) */
+.modal-backdrop.modal-perfil-proveedor-backdrop,
+.modal-backdrop.modal-empresa-popup-backdrop {
+  z-index: 10050 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 1.5rem !important;
+}
+
+.modal.modal-perfil-proveedor,
+.modal.modal-empresa-popup {
+  z-index: 10051 !important;
+  border-radius: var(--r-md, 6px) !important;
+  border: 1.5px solid var(--primary, #d97706) !important;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.85) !important;
+}
+
 

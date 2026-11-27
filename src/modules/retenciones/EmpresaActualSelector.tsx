@@ -23,6 +23,22 @@ export interface EmpresaActualSelectorProps {
   esEspecial?: boolean;
 }
 
+const DEFAULT_EMPRESA_MITS: EmpresaReceptora = {
+  id: 'empresa-mits',
+  clave: 'mits',
+  nombre: 'MINERIA INTERNACIONAL TS, C.A.',
+  nombreCorto: 'Minería Internacional TS',
+  rif: 'J-50209170-0',
+  direccionFiscal: 'Sector La Cantera, Municipio Piar, Estado Bolívar',
+  colorBadge: '#d97706',
+  municipio: 'Piar',
+  estado: 'Bolívar',
+  activo: true,
+  orden: 1,
+  esContribuyenteEspecial: false,
+  imprimirOriginalYCopia: true,
+};
+
 export function EmpresaActualSelector({
   empresas,
   empresaId,
@@ -31,7 +47,8 @@ export function EmpresaActualSelector({
   esEspecial,
 }: EmpresaActualSelectorProps) {
   const activas = empresas.filter((e) => e.activo);
-  const lista = activas.length ? activas : empresas;
+  const listaBase = activas.length ? activas : empresas;
+  const lista = listaBase.length > 0 ? listaBase : [DEFAULT_EMPRESA_MITS];
   const railRef = useRef<HTMLDivElement>(null);
 
   // Identificar la empresa activa actual
@@ -51,8 +68,6 @@ export function EmpresaActualSelector({
       keywords: [e.rif, e.nombre, e.municipio ?? '', esEmpresaGt(e) ? 'compras' : 'buzon'],
     }));
   }, [lista, conteos]);
-
-  if (lista.length === 0) return null;
 
   const cantidadActiva = empresaActiva ? conteos?.[empresaActiva.id] : undefined;
 
@@ -186,9 +201,9 @@ export function EmpresaActualSelector({
                     gap: '4px',
                     fontSize: '.72rem',
                     fontWeight: 700,
-                    color: esEspecialActiva ? '#fbbf24' : '#38bdf8',
-                    background: esEspecialActiva ? 'rgba(245, 158, 11, 0.15)' : 'rgba(56, 189, 248, 0.12)',
-                    border: `1px solid ${esEspecialActiva ? 'rgba(245, 158, 11, 0.4)' : 'rgba(56, 189, 248, 0.35)'}`,
+                    color: esEspecialActiva ? 'var(--primary, #d97706)' : '#94a3b8',
+                    background: esEspecialActiva ? 'rgba(217, 119, 6, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                    border: `1px solid ${esEspecialActiva ? 'rgba(217, 119, 6, 0.4)' : 'rgba(255, 255, 255, 0.12)'}`,
                     padding: '2px 8px',
                     borderRadius: '999px',
                   }}
@@ -203,7 +218,7 @@ export function EmpresaActualSelector({
                 </code>
                 {empresaActiva.municipio && <span>· Municipio {empresaActiva.municipio}</span>}
                 <span style={{ color: 'var(--border)' }}>|</span>
-                <span style={{ color: esGtActiva ? 'var(--text-normal)' : 'var(--info, #38bdf8)', fontWeight: 600 }}>
+                <span style={{ color: esGtActiva ? 'var(--text-normal)' : 'var(--primary, #d97706)', fontWeight: 600 }}>
                   {esGtActiva ? '🛒 Compras / OCs + 📱 Buzón Móvil' : '📱 Solo Buzón Móvil (Recepción Externa)'}
                 </span>
               </div>
