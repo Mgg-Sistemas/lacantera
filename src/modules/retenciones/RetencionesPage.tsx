@@ -40,6 +40,7 @@ import { CONFIG_RETENCION_DEFECTO, type ConfigRetencion, type TipoImpuesto } fro
 import { hoyVE } from '@/modules/tesoreria/tasas.repository';
 import { aplicarFiltros, conteoOpcion, paginar, type FiltroLista } from '@/modules/libroFiscal/listas';
 import { BarraLista, Paginador, type ControlFiltro } from '@/modules/libroFiscal/ListaControles';
+import { PerfilFiscalProveedor } from './PerfilFiscalProveedor';
 import { ReportesView } from './ReportesView';
 import { BuzonFacturasExternasView } from './BuzonFacturasExternasView';
 import { listFacturasBuzon, ultimaCreacionBuzon, actualizarEstatusFacturaBuzon, type FacturaBuzon } from './facturasBuzon.repository';
@@ -131,6 +132,7 @@ export function RetencionesPage() {
   // Gestión de reintegros diferidos
   const { data: reintegros = [] } = useReintegrosPendientes();
 
+  const [perfilProveedor, setPerfilProveedor] = useState(false);
   const [parametros, setParametros] = useState(false);
   const [configFiscal, setConfigFiscal] = useState<ConfigRetencion>(CONFIG_RETENCION_DEFECTO);
   const [pendientes, setPendientes] = useState<RetencionItem[]>([]);
@@ -554,6 +556,7 @@ export function RetencionesPage() {
         />
         <div className="lfv8-cabeza-acciones">
           <button className="btn btn-ghost" onClick={() => setParametros(true)}>⚙ Parámetros</button>
+          {canWrite && <button className="btn btn-ghost" onClick={() => setPerfilProveedor(true)}>Perfil fiscal de proveedor</button>}
           {buzonVisible && puedeVista('retenciones') && (
             <Link to="/app/retenciones/telefono" className="btn btn-ghost" style={{ textDecoration: 'none', position: 'relative' }} title={buzonNuevas > 0 ? `${buzonNuevas} factura(s) nueva(s) en el buzón` : 'Abrir vista móvil de facturas'} onClick={marcarBuzonVisto}>
               📱 Teléfono
@@ -755,6 +758,7 @@ export function RetencionesPage() {
           onSaved={async () => { setSel(null); await reload(); }}
         />
       )}
+      {canWrite && perfilProveedor && <PerfilFiscalProveedor onClose={() => setPerfilProveedor(false)} />}
       {parametros && (
         <ConfiguracionFiscalModal
           puedeEditar={canWrite}

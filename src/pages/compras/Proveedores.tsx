@@ -24,13 +24,6 @@ import { enMayuscula } from '@/lib/texto'
 import { useMisPermisos } from '@/lib/api/usuarios'
 import { documento, dolares, telefono } from '@/lib/formato'
 
-const TIPOS_PERSONA_FISCAL = [
-  { valor: 'PJD', etiqueta: 'Persona Jurídica Domiciliada (PJD - 2%)' },
-  { valor: 'PNR', etiqueta: 'Persona Natural Residente (PNR - Sustraendo UT)' },
-  { valor: 'PJND', etiqueta: 'Persona Jurídica No Domiciliada (PJND - 5%)' },
-  { valor: 'PNNR', etiqueta: 'Persona Natural No Residente (PNNR)' },
-]
-
 const vacio = {
   rif: '',
   nombre: '',
@@ -42,10 +35,6 @@ const vacio = {
   condicion_pago: 'CONTADO',
   moneda_preferida: 'USD',
   metodo_pago_preferido: null as string | null,
-  contribuyente_especial: false,
-  tipo_persona: 'PJD',
-  actividad_economica: '',
-  numero_administracion: '',
   notas: '',
   activo: true,
 }
@@ -96,10 +85,6 @@ export function Proveedores() {
             condicion_pago: p.condicion_pago,
             metodo_pago_preferido: p.metodo_pago_preferido,
             moneda_preferida: p.moneda_preferida,
-            contribuyente_especial: p.contribuyente_especial,
-            tipo_persona: p.tipo_persona ?? 'PJD',
-            actividad_economica: p.actividad_economica ?? '',
-            numero_administracion: p.numero_administracion ?? '',
             notas: p.notas ?? '',
             activo: p.activo,
           }
@@ -113,7 +98,7 @@ export function Proveedores() {
       <PageHeader
         title="Proveedores"
         description="Registro de proveedores. El RIF y la condición de pago se usan al emitir la orden de compra."
-        actions={
+        actions={puedeEscribir ? (
           <>
             {/* La carga por planilla vive donde se necesita, no en el menú:
                 quien va a dar de alta a treinta personas está mirando esta
@@ -127,7 +112,7 @@ export function Proveedores() {
               Nuevo proveedor
             </Button>
           </>
-        }
+        ) : undefined}
       />
 
       <Pestanas pestanas={PESTANAS_PROVEEDORES} />
@@ -141,11 +126,11 @@ export function Proveedores() {
             icono={<Truck />}
             titulo="Sin proveedores registrados"
             descripcion="Sin proveedores no se pueden registrar cotizaciones."
-            accion={
+            accion={puedeEscribir ? (
               <Button icon={<Plus />} onClick={() => abrir()}>
                 Registrar el primero
               </Button>
-            }
+            ) : undefined}
           />
         </Card>
       ) : null}
@@ -223,11 +208,6 @@ export function Proveedores() {
                     </td>
                     <td className="text-ink/70 px-3 py-3">
                       {CONDICIONES_PAGO.find((c) => c.valor === p.condicion_pago)?.etiqueta}
-                      {p.contribuyente_especial ? (
-                        <Chip tone="warning" className="ml-2">
-                          Especial
-                        </Chip>
-                      ) : null}
                     </td>
                     <td className="text-ink/85 tabular px-3 py-3 text-right font-medium">
                       {r && Number(r.invertido_usd) > 0 ? dolares(r.invertido_usd) : '—'}
@@ -368,46 +348,7 @@ export function Proveedores() {
             onChange={(e) => cambiar({ notas: e.target.value })}
           />
 
-          <div className="mt-4 border-t border-ink/10 pt-4">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-ink/60 mb-3">
-              Perfil Fiscal y Retenciones (Gobernado por Parámetros)
-            </h4>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Select
-                label="Calificación ISLR / Sujeto"
-                value={edicion.tipo_persona}
-                onChange={(e) => cambiar({ tipo_persona: e.target.value })}
-                opciones={TIPOS_PERSONA_FISCAL}
-                hint="Decide la tarifa de retención de ISLR."
-              />
-              <Input
-                label="Actividad Económica (CIIU / SENIAT)"
-                placeholder="Ej: 5110"
-                maxLength={50}
-                value={edicion.actividad_economica}
-                onChange={(e) => cambiar({ actividad_economica: e.target.value })}
-                hint="Código de actividad para retención municipal (ISAE)."
-              />
-              <Input
-                label="Teléfono / Contacto Administración"
-                placeholder="Para entrega de comprobantes R14"
-                maxLength={40}
-                value={edicion.numero_administracion}
-                onChange={(e) => cambiar({ numero_administracion: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="mt-4 space-y-2">
-            <label className="text-ink/75 flex cursor-pointer items-center gap-2 text-sm select-none">
-              <input
-                type="checkbox"
-                className="accent-royal-600 size-4"
-                checked={edicion.contribuyente_especial}
-                onChange={(e) => cambiar({ contribuyente_especial: e.target.checked })}
-              />
-              Contribuyente especial — se le retiene IVA al pagar
-            </label>
+          <div className="mt-4">
             <label className="text-ink/75 flex cursor-pointer items-center gap-2 text-sm select-none">
               <input
                 type="checkbox"

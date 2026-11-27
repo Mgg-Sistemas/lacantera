@@ -377,7 +377,7 @@ export const COLUMNAS_PERSONAL: ColumnaPlantilla[] = [
 // ---------------------------------------------------------------------------
 
 export const COLUMNAS_PROVEEDORES: ColumnaPlantilla[] = [
-  { columna: 'rif', obligatoria: true, dice: 'Con los dos guiones: J-12345678-9. Es lo que decide si la fila crea al proveedor o lo corrige.', ejemplo: 'J-12345678-9', otro: 'V-87654321-0' },
+  { columna: 'rif', obligatoria: true, dice: 'Con o sin guiones: J-12345678-9 o J123456789. Es lo que decide si la fila crea al proveedor o lo corrige.', ejemplo: 'J-12345678-9', otro: 'V-87654321-0' },
   { columna: 'nombre', obligatoria: true, dice: 'La razón social, como aparece en el RIF.', ejemplo: 'Ferreteria Industrial C.A.', otro: 'Jose Ramirez' },
   { columna: 'nombre_comercial', obligatoria: false, dice: 'Con qué nombre se le conoce, si es otro.', ejemplo: 'Ferreindustrial' },
   { columna: 'contacto', obligatoria: false, dice: 'Con quién se habla ahí.', ejemplo: 'Luis Marcano' },
@@ -386,6 +386,5 @@ export const COLUMNAS_PROVEEDORES: ColumnaPlantilla[] = [
   { columna: 'direccion', obligatoria: false, dice: 'Dónde está. Va impresa en la orden de compra.', ejemplo: 'Puerto Ordaz, zona industrial' },
   { columna: 'condicion_pago', obligatoria: false, dice: 'CONTADO, CREDITO_15, CREDITO_30, CREDITO_60 o CONTRA_ENTREGA. Vacío es CONTADO.', ejemplo: 'CREDITO_30', otro: 'CONTADO' },
   { columna: 'moneda_preferida', obligatoria: false, dice: 'En qué suele cobrar. Vacío es USD.', ejemplo: 'USD', otro: 'VES' },
-  { columna: 'contribuyente_especial', obligatoria: false, dice: 'SI o NO. Decide si hay que retenerle el IVA. Vacío es NO.', ejemplo: 'SI', otro: 'NO' },
   { columna: 'notas', obligatoria: false, dice: 'Lo que convenga recordar de él.', ejemplo: '' },
 ]

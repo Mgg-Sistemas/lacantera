@@ -816,7 +816,7 @@ export function useGuardarProveedor() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (p: Partial<Proveedor> & { rif: string; nombre: string }) => {
-      const id = await rpc<number>('guardar_proveedor', {
+      return rpc<number>('guardar_proveedor', {
         p_id: p.id ?? null,
         p_rif: p.rif,
         p_nombre: p.nombre,
@@ -827,22 +827,11 @@ export function useGuardarProveedor() {
         p_direccion: p.direccion ?? null,
         p_condicion_pago: p.condicion_pago ?? 'CONTADO',
         p_moneda_preferida: p.moneda_preferida ?? 'USD',
-        p_contribuyente_especial: p.contribuyente_especial ?? false,
+        p_contribuyente_especial: null,
         p_notas: p.notas ?? null,
         p_activo: p.activo ?? true,
         p_metodo_pago_preferido: p.metodo_pago_preferido ?? null,
       })
-      if (id && (p.actividad_economica !== undefined || p.tipo_persona !== undefined || p.numero_administracion !== undefined)) {
-        await rpc('retencion_guardar_perfil_proveedor', {
-          p_id: id,
-          p_datos: {
-            actividad_economica: p.actividad_economica,
-            tipo_persona: p.tipo_persona,
-            numero_administracion: p.numero_administracion,
-          },
-        })
-      }
-      return id
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['proveedores'] }),
   })

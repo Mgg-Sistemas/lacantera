@@ -1,3 +1,6 @@
+import { Navigate } from 'react-router'
+import { Cargando } from '@/components/ui/Estado'
+import { useMisPermisos } from '@/lib/api/usuarios'
 import { CargaPorPlanilla } from '@/pages/comunes/CargaPorPlanilla'
 import { COLUMNAS_PROVEEDORES } from '@/lib/hojas/plantilla'
 import { useRevisarProveedores, useCargarProveedores } from '@/lib/api/cargaLote'
@@ -10,6 +13,13 @@ import { useRevisarProveedores, useCargarProveedores } from '@/lib/api/cargaLote
   factura, y el libro de compras deja de cuadrar con el SENIAT.
 */
 export function CargarProveedores() {
+  const { puede, isPending } = useMisPermisos()
+  const revisar = useRevisarProveedores()
+  const cargar = useCargarProveedores()
+
+  if (isPending) return <Cargando />
+  if (!puede('COMPRAS', 'ESCRITURA')) return <Navigate to="/app/compras/proveedores" replace />
+
   return (
     <CargaPorPlanilla
       eyebrow="Compras"
@@ -20,8 +30,8 @@ export function CargarProveedores() {
       nombrePlantilla="plantilla-proveedores.xlsx"
       columnaClave="rif"
       volverA={{ a: '/app/compras/proveedores', etiqueta: 'A proveedores' }}
-      revisar={useRevisarProveedores()}
-      cargar={useCargarProveedores()}
+      revisar={revisar}
+      cargar={cargar}
     />
   )
 }
