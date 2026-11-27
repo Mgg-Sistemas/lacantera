@@ -6,18 +6,242 @@
 -- retenciones de ISLR (e IVA/ISAE) a facturas en Supabase y el sistema web.
 --
 -- Incluye:
---   1. Columnas y secuencias necesarias en public.retenciones
---   2. Vista autoritativa public.v_retenciones (consumida por la UI)
---   3. RPC public.retenciones_registrar_practicada (genera comprobante R14 14 dígitos)
---   4. RPCs de anulación y reintegro
---   5. Políticas RLS y permisos
---   6. Consulta de ejemplo para generar 1 retención de ISLR a una factura inmediatamente
+--   1. Parámetros fiscales en public.config (Unidad Tributaria 43 Bs, alícuotas, agente)
+--   2. Catálogo Oficial de Conceptos de Retención ISLR (Decreto 1.808 SENIAT)
+--   3. Función de cálculo automático de ISLR (public.retencion_islr_calcular)
+--   4. Tabla public.retenciones con columnas y secuencias necesarias
+--   5. Vista autoritativa public.v_retenciones (consumida por la UI)
+--   6. RPC public.retenciones_registrar_practicada (genera comprobante R14 14 dígitos)
+--   7. RPCs de anulación y reintegro
+--   8. Políticas RLS y permisos
+--   9. Ejemplos de uso inmediato para generar retención de ISLR por SQL
 -- ============================================================================
 
 BEGIN;
 
 -- ----------------------------------------------------------------------------
--- 1. TABLA BASE public.retenciones Y COLUMNAS FISCALES
+-- 1. PARÁMETROS FISCALES EN public.config (UNIDAD TRIBUTARIA Y AGENTE)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.config (
+    key text PRIMARY KEY,
+    value jsonb NOT NULL,
+    updated_at timestamptz DEFAULT now(),
+    updated_by text
+);
+
+ALTER TABLE public.config ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now();
+ALTER TABLE public.config ADD COLUMN IF NOT EXISTS updated_by text;
+
+INSERT INTO public.config (key, value, updated_at, updated_by)
+VALUES (
+    'retenciones.parametros',
+    jsonb_build_object(
+        'empresa_rif', 'J-50209170-0',
+        'empresa_nombre', 'MINERIA INTERNACIONAL TS, C.A.',
+        'agente_rif', 'J-50209170-0',
+        'agente_nombre', 'MINERIA INTERNACIONAL TS, C.A.',
+        'agente_direccion', 'Municipio Piar, Estado Bolívar, Venezuela',
+        'municipio', 'Piar',
+        'unidad_tributaria', 43.00,
+        'iva_retencion', 75,
+        'iva_retencion_especial', 100,
+        'iva_alicuota', 16,
+        'alicuota_municipal', 1,
+        'igtf_alicuota', 3,
+        'agente_retencion_iva', true,
+        'contribuyente_especial', true,
+        'retiene_islr', true,
+        'retiene_municipal', true,
+        'comprobante_logo', true,
+        'comprobante_firma', true,
+        'comprobante_sello', true,
+        'comprobante_qr', true,
+        'imprimir_original_copia', false
+    ),
+    now(),
+    'retenciones.parametros (R14)'
+)
+ON CONFLICT (key) DO UPDATE SET
+    value = EXCLUDED.value,
+    updated_at = now(),
+    updated_by = EXCLUDED.updated_by;
+
+-- ----------------------------------------------------------------------------
+-- 2. CATÁLOGO OFICIAL DE CONCEPTOS ISLR (DECRETO 1.808 SENIAT)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.retenciones_conceptos (
+    codigo text PRIMARY KEY,
+    concepto text NOT NULL,
+    pjd numeric(5,2) DEFAULT 0,
+    pjnd numeric(5,2) DEFAULT 0,
+    pnr numeric(5,2) DEFAULT 0,
+    pnnr numeric(5,2) DEFAULT 0,
+    base_pct numeric(5,2) DEFAULT 100,
+    minimo_ut numeric(14,2) DEFAULT 0,
+    sustraendo_factor numeric(10,4) DEFAULT 0,
+    aplica_sustraendo boolean DEFAULT false,
+    activo boolean NOT NULL DEFAULT true,
+    orden int DEFAULT 0,
+    nota text
+);
+
+ALTER TABLE public.retenciones_conceptos
+  ADD COLUMN IF NOT EXISTS pjd numeric(5,2) DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS pjnd numeric(5,2) DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS pnr numeric(5,2) DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS pnnr numeric(5,2) DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS base_pct numeric(5,2) DEFAULT 100,
+  ADD COLUMN IF NOT EXISTS minimo_ut numeric(14,2) DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS sustraendo_factor numeric(10,4) DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS aplica_sustraendo boolean DEFAULT false,
+  ADD COLUMN IF NOT EXISTS activo boolean NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS orden int DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS nota text;
+
+-- Carga completa de conceptos del Decreto 1.808
+INSERT INTO public.retenciones_conceptos (
+    codigo, concepto, pjd, pjnd, pnr, pnnr, base_pct, minimo_ut, sustraendo_factor, aplica_sustraendo, activo, orden, nota
+) VALUES
+('001', 'Honorarios profesionales pagados a personas naturales residentes', 0, 0, 3.00, 34.00, 100, 83.3334, 83.3334, true, true, 1, 'Art. 9 num. 1 Decreto 1.808: 3% PNR con sustraendo de 83.3334 UT'),
+('002', 'Honorarios profesionales pagados a personas jurídicas domiciliadas', 5.00, 5.00, 0, 0, 100, 0, 0, false, true, 2, 'Art. 9 num. 1 Decreto 1.808: 5% PJD sin sustraendo'),
+('003', 'Comisiones mercantiles y corretaje', 5.00, 5.00, 3.00, 34.00, 100, 83.3334, 83.3334, true, true, 3, 'Art. 9 num. 2 Decreto 1.808: 5% PJD, 3% PNR'),
+('004', 'Ejecución de obras y prestación de servicios en general / Contratistas', 2.00, 5.00, 1.00, 34.00, 100, 83.3334, 83.3334, true, true, 4, 'Art. 9 num. 11 Decreto 1.808: 2% PJD, 1% PNR (Principal en minería y talleres)'),
+('005', 'Arrendamiento de bienes muebles (maquinarias, equipos y camiones)', 5.00, 5.00, 3.00, 34.00, 100, 0, 0, false, true, 5, 'Art. 9 num. 13 Decreto 1.808: 5% PJD, 3% PNR'),
+('006', 'Fletes y servicios de transporte de carga terrestre y mineral', 3.00, 5.00, 1.00, 34.00, 100, 0, 0, false, true, 6, 'Art. 9 num. 14 Decreto 1.808: 3% PJD, 1% PNR'),
+('007', 'Arrendamiento de bienes inmuebles (galpones, oficinas, terrenos)', 5.00, 5.00, 3.00, 34.00, 100, 83.3334, 83.3334, true, true, 7, 'Art. 9 num. 12 Decreto 1.808: 5% PJD, 3% PNR'),
+('008', 'Publicidad, propaganda comercial y artes gráficas', 5.00, 5.00, 3.00, 34.00, 100, 0, 0, false, true, 8, 'Art. 9 num. 15 Decreto 1.808: 5% PJD, 3% PNR'),
+('009', 'Primas de seguros y reaseguros', 3.00, 5.00, 3.00, 10.00, 100, 0, 0, false, true, 9, 'Art. 9 num. 9 Decreto 1.808: 3% PJD'),
+('010', 'Suministro de combustibles, lubricantes, grasas y aditivos', 1.00, 5.00, 1.00, 34.00, 100, 0, 0, false, true, 10, 'Art. 9 num. 11 Decreto 1.808: 1% PJD'),
+('028', 'Mantenimiento, reparación y servicios mecánicos de equipos pesados', 2.00, 5.00, 1.00, 34.00, 100, 0, 0, false, true, 11, 'Art. 9 num. 11 Decreto 1.808: 2% PJD'),
+('041', 'Adquisición de bienes raíces / derechos inmobiliarios', 5.00, 5.00, 3.00, 34.00, 100, 0, 0, false, true, 12, 'Art. 9 num. 16 Decreto 1.808: 5% PJD'),
+('054', 'Asistencia técnica y servicios de consultoría especializada', 5.00, 5.00, 3.00, 34.00, 100, 0, 0, false, true, 13, 'Art. 9 num. 17 Decreto 1.808: 5% PJD')
+ON CONFLICT (codigo) DO UPDATE SET
+    concepto = EXCLUDED.concepto,
+    pjd = EXCLUDED.pjd,
+    pjnd = EXCLUDED.pjnd,
+    pnr = EXCLUDED.pnr,
+    pnnr = EXCLUDED.pnnr,
+    base_pct = EXCLUDED.base_pct,
+    minimo_ut = EXCLUDED.minimo_ut,
+    sustraendo_factor = EXCLUDED.sustraendo_factor,
+    aplica_sustraendo = EXCLUDED.aplica_sustraendo,
+    activo = EXCLUDED.activo,
+    orden = EXCLUDED.orden,
+    nota = EXCLUDED.nota;
+
+-- ----------------------------------------------------------------------------
+-- 3. FUNCIÓN DE CÁLCULO INTELIGENTE DE ISLR
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.retencion_islr_calcular(
+    p_base numeric,
+    p_concepto_codigo text,
+    p_tipo_persona text DEFAULT 'PJD',
+    p_moneda text DEFAULT 'USD',
+    p_tasa numeric DEFAULT 1
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public, auth, pg_temp
+AS $$
+DECLARE
+    v_c record;
+    v_ut numeric := 43.00;
+    v_sujeto text;
+    v_pct numeric := 0;
+    v_base_pct numeric := 100;
+    v_base_calculo numeric;
+    v_minimo_bs numeric := 0;
+    v_sustraendo_bs numeric := 0;
+    v_sustraendo numeric := 0;
+    v_impuesto_causado numeric := 0;
+    v_monto_retenido numeric := 0;
+    v_base_bs numeric;
+    v_tasa numeric;
+BEGIN
+    v_tasa := coalesce(nullif(p_tasa, 0), 1);
+    v_sujeto := upper(coalesce(p_tipo_persona, 'PJD'));
+
+    -- Unidad Tributaria desde config o default 43 Bs
+    SELECT coalesce((value->>'unidad_tributaria')::numeric, 43.00) INTO v_ut
+      FROM public.config
+     WHERE key = 'retenciones.parametros';
+    IF v_ut IS NULL OR v_ut <= 0 THEN v_ut := 43.00; END IF;
+
+    -- Buscar concepto oficial en catálogo
+    SELECT * INTO v_c
+      FROM public.retenciones_conceptos
+     WHERE codigo = p_concepto_codigo;
+
+    IF NOT FOUND THEN
+        SELECT * INTO v_c
+          FROM public.retenciones_conceptos
+         WHERE codigo = '004'; -- Fallback: Servicios generales
+    END IF;
+
+    IF v_c.codigo IS NOT NULL THEN
+        v_base_pct := coalesce(v_c.base_pct, 100);
+        CASE v_sujeto
+            WHEN 'PNR' THEN v_pct := coalesce(v_c.pnr, 1.00);
+            WHEN 'PNNR' THEN v_pct := coalesce(v_c.pnnr, 34.00);
+            WHEN 'PJND' THEN v_pct := coalesce(v_c.pjnd, 5.00);
+            ELSE v_pct := coalesce(v_c.pjd, 2.00); -- PJD
+        END CASE;
+    ELSE
+        v_pct := 2.00;
+    END IF;
+
+    -- Base sujeta a retención según catálogo
+    v_base_calculo := round((coalesce(p_base, 0) * v_base_pct) / 100, 2);
+
+    -- Base en Bs para verificar mínimo y sustraendo oficial
+    IF upper(coalesce(p_moneda, 'USD')) = 'USD' THEN
+        v_base_bs := round(v_base_calculo * v_tasa, 2);
+    ELSE
+        v_base_bs := v_base_calculo;
+    END IF;
+
+    -- Sustraendo (Decreto 1.808 Art. 9: Aplica para Personas Naturales Residentes PNR)
+    IF v_sujeto = 'PNR' AND coalesce(v_c.aplica_sustraendo, false) THEN
+        v_minimo_bs := coalesce(v_c.minimo_ut, 83.3334) * v_ut;
+        IF v_base_bs >= v_minimo_bs THEN
+            v_sustraendo_bs := round((coalesce(v_c.sustraendo_factor, 83.3334) * v_ut) * (v_pct / 100), 2);
+            IF upper(coalesce(p_moneda, 'USD')) = 'USD' THEN
+                v_sustraendo := round(v_sustraendo_bs / v_tasa, 2);
+            ELSE
+                v_sustraendo := v_sustraendo_bs;
+            END IF;
+        ELSE
+            v_pct := 0;
+            v_sustraendo := 0;
+        END IF;
+    ELSE
+        v_sustraendo := 0;
+    END IF;
+
+    -- Impuesto causado y monto retenido neto
+    v_impuesto_causado := round((v_base_calculo * v_pct) / 100, 2);
+    v_monto_retenido := greatest(0, v_impuesto_causado - v_sustraendo);
+
+    RETURN jsonb_build_object(
+        'codigo', coalesce(v_c.codigo, p_concepto_codigo),
+        'concepto', coalesce(v_c.concepto, 'Servicios en General'),
+        'sujeto', v_sujeto,
+        'base_imponible', v_base_calculo,
+        'alicuota_pct', v_pct,
+        'sustraendo', v_sustraendo,
+        'impuesto_causado', v_impuesto_causado,
+        'monto_retenido', v_monto_retenido,
+        'monto_retenido_bs', round(v_monto_retenido * case when upper(coalesce(p_moneda, 'USD')) = 'USD' then v_tasa else 1 end, 2),
+        'monto_retenido_usd', round(case when upper(coalesce(p_moneda, 'USD')) = 'USD' then v_monto_retenido else v_monto_retenido / v_tasa end, 2),
+        'valor_ut', v_ut
+    );
+END;
+$$;
+
+-- ----------------------------------------------------------------------------
+-- 4. TABLA BASE public.retenciones Y COLUMNAS FISCALES
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.retenciones (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -168,7 +392,7 @@ ALTER TABLE public.retenciones ALTER COLUMN numero SET DEFAULT nextval('public.r
 UPDATE public.retenciones SET numero = nextval('public.retenciones_numero_seq') WHERE numero IS NULL;
 
 -- ----------------------------------------------------------------------------
--- 2. VISTA AUTORITATIVA public.v_retenciones
+-- 5. VISTA AUTORITATIVA public.v_retenciones
 -- ----------------------------------------------------------------------------
 CREATE OR REPLACE VIEW public.v_retenciones AS
 SELECT
@@ -232,7 +456,7 @@ FROM public.retenciones r
 LEFT JOIN public.proveedores p ON p.id = r.proveedor_id;
 
 -- ----------------------------------------------------------------------------
--- 3. FUNCIÓN RPC: REGISTRAR RETENCIÓN PRACTICADA (ISLR / IVA)
+-- 6. FUNCIÓN RPC: REGISTRAR RETENCIÓN CON CÁLCULO AUTOMÁTICO
 -- ----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.retenciones_registrar_practicada(p_datos jsonb)
 RETURNS bigint
@@ -249,9 +473,14 @@ DECLARE
   v_proveedor_id bigint;
   v_prov_nombre text;
   v_prov_rif text;
+  v_prov_tipo text := 'PJD';
   v_tipo text;
+  v_concepto_cod text;
+  v_concepto_nom text;
+  v_calc jsonb;
   v_base numeric;
   v_pct numeric;
+  v_impuesto_causado numeric;
   v_monto numeric;
   v_tasa numeric;
   v_moneda text;
@@ -266,31 +495,49 @@ BEGIN
   v_proveedor_id := (p_datos->>'proveedor_id')::bigint;
   v_tipo := coalesce(upper(p_datos->>'tipo_impuesto'), 'ISLR');
   v_moneda := coalesce(p_datos->>'moneda', 'USD');
-  v_tasa := coalesce((p_datos->>'tasa')::numeric, 1);
-  v_base := coalesce((p_datos->>'base_imponible')::numeric, 0);
-  v_pct := coalesce((p_datos->>'alicuota_pct')::numeric, (p_datos->>'porcentaje')::numeric, 0);
-  v_monto := coalesce((p_datos->>'monto_retenido')::numeric, (p_datos->>'monto')::numeric, round(v_base * v_pct / 100, 2));
+  v_tasa := coalesce(nullif((p_datos->>'tasa')::numeric, 0), 1);
+  v_base := coalesce((p_datos->>'base_imponible')::numeric, (p_datos->>'total_factura')::numeric, 0);
+  v_concepto_cod := coalesce(p_datos->>'concepto_islr_codigo', p_datos->>'concepto_codigo');
+  v_concepto_nom := coalesce(p_datos->>'concepto_islr_nombre', p_datos->>'concepto');
   v_ya_pagada := coalesce((p_datos->>'ya_pagada')::boolean, false);
 
   IF v_ya_pagada THEN
     v_origen := 'POST_PAGO';
     v_reintegro_estado := 'PENDIENTE';
-    v_reintegro_monto := v_monto;
   ELSE
     v_origen := 'PAGO';
     v_reintegro_estado := 'NO_APLICA';
-    v_reintegro_monto := NULL;
   END IF;
 
-  -- Resolver nombre y RIF de proveedor si no vienen en el payload
+  -- Resolver datos del proveedor si no vienen en el payload
   IF v_proveedor_id IS NOT NULL THEN
-    SELECT nombre, rif INTO v_prov_nombre, v_prov_rif
+    SELECT nombre, rif, coalesce(tipo_persona, 'PJD')
+      INTO v_prov_nombre, v_prov_rif, v_prov_tipo
       FROM public.proveedores
      WHERE id = v_proveedor_id;
   END IF;
 
   v_prov_nombre := coalesce(p_datos->>'proveedor_nombre', v_prov_nombre, 'Proveedor #' || coalesce(v_proveedor_id::text, '0'));
   v_prov_rif := coalesce(p_datos->>'proveedor_rif', v_prov_rif, 'J-00000000-0');
+
+  -- Cálculo automático si es ISLR y no se indicaron explícitamente alícuota o monto
+  IF v_tipo = 'ISLR' AND v_concepto_cod IS NOT NULL AND (coalesce((p_datos->>'alicuota_pct')::numeric, 0) = 0 OR coalesce((p_datos->>'monto_retenido')::numeric, 0) = 0) THEN
+    v_calc := public.retencion_islr_calcular(v_base, v_concepto_cod, v_prov_tipo, v_moneda, v_tasa);
+    v_pct := (v_calc->>'alicuota_pct')::numeric;
+    v_impuesto_causado := (v_calc->>'impuesto_causado')::numeric;
+    v_monto := (v_calc->>'monto_retenido')::numeric;
+    v_concepto_nom := coalesce(v_concepto_nom, v_calc->>'concepto');
+  ELSE
+    v_pct := coalesce((p_datos->>'alicuota_pct')::numeric, (p_datos->>'porcentaje')::numeric, 2.00);
+    v_impuesto_causado := coalesce((p_datos->>'impuesto_causado')::numeric, round(v_base * v_pct / 100, 2));
+    v_monto := coalesce((p_datos->>'monto_retenido')::numeric, (p_datos->>'monto')::numeric, v_impuesto_causado);
+  END IF;
+
+  IF v_ya_pagada THEN
+    v_reintegro_monto := v_monto;
+  ELSE
+    v_reintegro_monto := NULL;
+  END IF;
 
   -- Siguiente correlativo R14 (formato oficial de 14 dígitos: AAAAMMSSSSSSSS)
   SELECT coalesce(max(nullif(regexp_replace(substring(coalesce(comprobante_nro, numero_comprobante), 7, 8), '[^0-9]', '', 'g'), '')::bigint), 0) + 1
@@ -390,8 +637,8 @@ BEGIN
     coalesce((p_datos->>'factura_fecha')::date, v_fecha_emision),
     v_moneda,
     v_tasa,
-    coalesce((p_datos->>'total_factura')::numeric, 0),
-    coalesce((p_datos->>'total_factura')::numeric, 0),
+    coalesce((p_datos->>'total_factura')::numeric, v_base),
+    coalesce((p_datos->>'total_factura')::numeric, v_base),
     coalesce((p_datos->>'monto_sin_derecho_credito_iva')::numeric, 0),
     coalesce((p_datos->>'monto_exento')::numeric, 0),
     coalesce((p_datos->>'monto_exento')::numeric, 0),
@@ -399,17 +646,17 @@ BEGIN
     v_base,
     v_pct,
     v_pct,
-    coalesce((p_datos->>'impuesto_causado')::numeric, round(v_base * v_pct / 100, 2)),
+    v_impuesto_causado,
     v_monto,
     v_monto,
     round(v_monto * v_tasa, 2),
     round(v_monto * v_tasa, 2),
     case when v_moneda = 'USD' then v_monto else round(v_monto / nullif(v_tasa, 0), 2) end,
     case when v_moneda = 'USD' then v_monto else round(v_monto / nullif(v_tasa, 0), 2) end,
-    p_datos->>'concepto_islr_codigo',
-    p_datos->>'concepto_islr_codigo',
-    p_datos->>'concepto_islr_nombre',
-    p_datos->>'concepto_islr_nombre',
+    v_concepto_cod,
+    v_concepto_cod,
+    v_concepto_nom,
+    v_concepto_nom,
     v_origen,
     v_reintegro_estado,
     v_reintegro_monto,
@@ -426,7 +673,7 @@ END;
 $$;
 
 -- ----------------------------------------------------------------------------
--- 4. FUNCIÓN RPC: ANULAR RETENCIÓN
+-- 7. RPCs DE ANULACIÓN Y REINTEGRO
 -- ----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.retenciones_anular(p_id bigint, p_motivo text)
 RETURNS boolean
@@ -456,9 +703,6 @@ BEGIN
 END;
 $$;
 
--- ----------------------------------------------------------------------------
--- 5. FUNCIÓN RPC: REGISTRAR REINTEGRO DE RETENCIÓN POST-PAGO
--- ----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.retenciones_registrar_reintegro(
   p_retencion_id bigint,
   p_cuenta_id bigint,
@@ -489,13 +733,28 @@ END;
 $$;
 
 -- ----------------------------------------------------------------------------
--- 6. PERMISOS Y POLÍTICAS RLS
+-- 8. PERMISOS Y POLÍTICAS RLS
 -- ----------------------------------------------------------------------------
+ALTER TABLE public.config ENABLE ROW LEVEL SECURITY;
+GRANT ALL ON public.config TO postgres, service_role, authenticated, anon;
+DROP POLICY IF EXISTS config_read_policy ON public.config;
+CREATE POLICY config_read_policy ON public.config FOR SELECT TO authenticated, anon USING (true);
+DROP POLICY IF EXISTS config_write_policy ON public.config;
+CREATE POLICY config_write_policy ON public.config FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+ALTER TABLE public.retenciones_conceptos ENABLE ROW LEVEL SECURITY;
+GRANT ALL ON public.retenciones_conceptos TO postgres, service_role, authenticated, anon;
+DROP POLICY IF EXISTS retenciones_conceptos_read ON public.retenciones_conceptos;
+CREATE POLICY retenciones_conceptos_read ON public.retenciones_conceptos FOR SELECT TO authenticated, anon USING (true);
+DROP POLICY IF EXISTS retenciones_conceptos_write ON public.retenciones_conceptos;
+CREATE POLICY retenciones_conceptos_write ON public.retenciones_conceptos FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
 ALTER TABLE public.retenciones ENABLE ROW LEVEL SECURITY;
 GRANT ALL ON public.retenciones TO postgres, service_role, authenticated, anon;
 GRANT ALL ON SEQUENCE public.retenciones_numero_seq TO postgres, service_role, authenticated, anon;
 GRANT SELECT ON public.v_retenciones TO postgres, service_role, authenticated, anon;
 
+GRANT EXECUTE ON FUNCTION public.retencion_islr_calcular(numeric, text, text, text, numeric) TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.retenciones_registrar_practicada(jsonb) TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.retenciones_anular(bigint, text) TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.retenciones_registrar_reintegro(bigint, bigint, numeric, date, text, text) TO anon, authenticated, service_role;
@@ -510,41 +769,3 @@ DROP POLICY IF EXISTS retenciones_update_policy ON public.retenciones;
 CREATE POLICY retenciones_update_policy ON public.retenciones FOR UPDATE TO authenticated, anon USING (true) WITH CHECK (true);
 
 COMMIT;
-
--- ============================================================================
--- EJEMPLO DE USO INMEDIATO:
--- Ejecute este bloque en Supabase para generar 1 retención de ISLR a una factura:
--- ============================================================================
-/*
-SELECT public.retenciones_registrar_practicada(
-  jsonb_build_object(
-    'proveedor_id', 1,
-    'proveedor_nombre', 'TRANSPORTE Y SERVICIOS MINEROS EL CALLAO, C.A.',
-    'proveedor_rif', 'J-31456789-0',
-    'factura_numero', '00045892',
-    'factura_control', '00-112233',
-    'factura_fecha', current_date,
-    'fecha_emision', current_date,
-    'tipo_impuesto', 'ISLR',
-    'concepto_islr_codigo', '002',
-    'concepto_islr_nombre', 'Servicios Generales y Contratistas (2%)',
-    'moneda', 'USD',
-    'tasa', 55.40,
-    'total_factura', 1160.00,
-    'base_imponible', 1000.00,
-    'alicuota_pct', 2.00,
-    'impuesto_causado', 20.00,
-    'monto_retenido', 20.00,
-    'ya_pagada', false,
-    'observacion', 'Retención de ISLR emitida para factura 00045892'
-  )
-);
-
--- Para verificar el comprobante generado:
-SELECT id, numero_comprobante, periodo, fecha_emision, tipo_impuesto, estado,
-       proveedor_nombre, factura_numero, total_factura, base_imponible,
-       alicuota_pct, monto_retenido, moneda
-  FROM public.v_retenciones
- ORDER BY id DESC
- LIMIT 1;
-*/
