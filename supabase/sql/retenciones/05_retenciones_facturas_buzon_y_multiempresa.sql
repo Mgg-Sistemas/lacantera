@@ -323,6 +323,7 @@ BEGIN
   check (modulo in ('compra', 'servicio', 'orden', 'orden_factura'));
 END $$;
 alter table public.adjuntos_directos ADD COLUMN IF NOT EXISTS es_factura boolean;
+alter table public.adjuntos_directos drop constraint if exists adjuntos_directos_es_factura;
 alter table public.adjuntos_directos add constraint adjuntos_directos_es_factura check (
       (modulo <> 'orden' or es_factura is not true)
   and (modulo <> 'orden_factura' or (es_factura is true and path like '%/facturas/%')));
@@ -464,10 +465,12 @@ create trigger trg_retencion_documentos_a_origenes after insert or update of ord
   on public.retencion_documentos for each row execute function public.retencion_documentos_a_origenes();
 
 -- 3) retencion_documentos: forma, FK, únicos por sentido y borrado de una factura libre.
+alter table public.retencion_documentos drop constraint if exists retencion_documentos_forma;
 alter table public.retencion_documentos add constraint retencion_documentos_forma check (
       (factura_nro is null or (length(factura_nro) between 1 and 30 and factura_nro = btrim(factura_nro) and factura_nro !~ '[\r\n]'))
   and (factura_control is null or (length(factura_control) between 1 and 30 and factura_control = btrim(factura_control) and factura_control !~ '[\r\n]'))
   and (factura_fecha is null or factura_fecha between date '2000-01-01' and date '2100-12-31'));
+alter table public.retencion_documentos drop constraint if exists retencion_documentos_compra_directa_fk;
 alter table public.retencion_documentos
   add constraint retencion_documentos_compra_directa_fk foreign key (compra_directa_id) references public.compras_directas (id) on delete set null;
 CREATE INDEX IF NOT EXISTS retencion_documentos_compra_fk_idx on public.retencion_documentos (compra_directa_id) where compra_directa_id is not null;
@@ -1405,11 +1408,13 @@ alter table public.retencion_facturas_externas
 
 -- 3) Los CHECK: la misma regla de antes, pero solo cuando el campo viene con valor (mismos nombres)
 alter table public.retencion_facturas_externas
-  drop constraint retencion_facturas_externas_montos_rango,
-  drop constraint retencion_facturas_externas_monto_moneda,
-  drop constraint retencion_facturas_externas_fecha_rango,
-  drop constraint retencion_facturas_externas_rif_forma,
-  drop constraint retencion_facturas_externas_textos_largo,
+  drop constraint if exists retencion_facturas_externas_montos_rango,
+  drop constraint if exists retencion_facturas_externas_monto_moneda,
+  drop constraint if exists retencion_facturas_externas_fecha_rango,
+  drop constraint if exists retencion_facturas_externas_rif_forma,
+  drop constraint if exists retencion_facturas_externas_textos_largo,
+  drop constraint if exists retencion_facturas_externas_tipo_documento_lista;
+alter table public.retencion_facturas_externas
   add constraint retencion_facturas_externas_montos_rango check (
     (monto_total is null or monto_total >= 0) and monto_bs >= 0 and (monto_usd is null or monto_usd >= 0)),
   add constraint retencion_facturas_externas_monto_moneda check (
@@ -1830,236 +1835,194 @@ $function$;
 
 
 -- 1) retenciones
-alter table public.retenciones drop constraint if exists retenciones_valor_ut_check;
-alter table public.retenciones drop constraint if exists retenciones_montos_no_negativos;
-alter table public.retenciones
-  add constraint retenciones_montos_no_negativos check (
-        base >= 0 and monto >= 0
-    and (base_bs is null or base_bs >= 0) and (monto_bs is null or monto_bs >= 0)
-    and (sustraendo is null or sustraendo >= 0) and (iva_monto is null or iva_monto >= 0)
-    and (exento is null or exento >= 0) and (factura_total is null or factura_total >= 0)),
-  alter table public.retenciones drop constraint if exists retenciones_porcentajes;
-alter table public.retenciones add constraint retenciones_porcentajes check (
-        porcentaje between 0 and 100 and (iva_alicuota is null or iva_alicuota between 0 and 100)),
-  add constraint retenciones_tasa_positiva check (tasa is null or tasa > 0),
-  add constraint retenciones_valor_ut_positivo check (valor_ut is null or valor_ut > 0),
-  add constraint retenciones_quincena check (quincena is null or quincena in (1, 2)),
-  add constraint retenciones_periodo_forma check (comprobante_periodo is null or comprobante_periodo ~ '^[0-9]{4}(0[1-9]|1[0-2])$'),
-  add constraint retenciones_fechas check (
-        fecha between date '2000-01-01' and date '2100-12-31'
-    and (factura_fecha is null or factura_fecha between date '2000-01-01' and date '2100-12-31')),
-  add constraint retenciones_forma check (
-        (factura_nro is null or (length(factura_nro) between 1 and 30 and factura_nro = btrim(factura_nro) and factura_nro !~ '[\r\n]'))
-    and (factura_control is null or (length(factura_control) between 1 and 30 and factura_control = btrim(factura_control) and factura_control !~ '[\r\n]'))
-    and (comprobante_nro is null or (length(comprobante_nro) between 1 and 30 and comprobante_nro = btrim(comprobante_nro) and comprobante_nro !~ '[\r\n]'))
-    and (concepto_codigo is null or (length(concepto_codigo) between 1 and 30 and concepto_codigo = btrim(concepto_codigo) and concepto_codigo !~ '[\r\n]'))),
-  add constraint retenciones_moneda check (moneda in ('Bs', 'USD'));
+ALTER TABLE public.retenciones
+  ADD COLUMN IF NOT EXISTS base numeric(14,2) DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS exento numeric(14,2) DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS quincena smallint,
+  ADD COLUMN IF NOT EXISTS factura_nro text,
+  ADD COLUMN IF NOT EXISTS fecha date DEFAULT current_date;
+
+UPDATE public.retenciones SET base = coalesce(base, base_imponible, 0) WHERE base IS NULL;
+UPDATE public.retenciones SET fecha = coalesce(fecha, fecha_emision, comprobante_fecha, current_date) WHERE fecha IS NULL;
+UPDATE public.retenciones SET factura_nro = coalesce(factura_nro, factura_numero) WHERE factura_nro IS NULL AND factura_numero IS NOT NULL;
+
+ALTER TABLE public.retenciones DROP CONSTRAINT IF EXISTS retenciones_valor_ut_check;
+ALTER TABLE public.retenciones DROP CONSTRAINT IF EXISTS retenciones_montos_no_negativos;
+ALTER TABLE public.retenciones DROP CONSTRAINT IF EXISTS retenciones_porcentajes;
+ALTER TABLE public.retenciones DROP CONSTRAINT IF EXISTS retenciones_tasa_positiva;
+ALTER TABLE public.retenciones DROP CONSTRAINT IF EXISTS retenciones_valor_ut_positivo;
+ALTER TABLE public.retenciones DROP CONSTRAINT IF EXISTS retenciones_quincena;
+ALTER TABLE public.retenciones DROP CONSTRAINT IF EXISTS retenciones_periodo_forma;
+ALTER TABLE public.retenciones DROP CONSTRAINT IF EXISTS retenciones_fechas;
+ALTER TABLE public.retenciones DROP CONSTRAINT IF EXISTS retenciones_forma;
+ALTER TABLE public.retenciones DROP CONSTRAINT IF EXISTS retenciones_moneda;
+
+ALTER TABLE public.retenciones
+  ADD CONSTRAINT retenciones_montos_no_negativos CHECK (
+        (base IS NULL OR base >= 0) AND monto >= 0
+    AND (base_bs IS NULL OR base_bs >= 0) AND (monto_bs IS NULL OR monto_bs >= 0)
+    AND (sustraendo IS NULL OR sustraendo >= 0) AND (iva_monto IS NULL OR iva_monto >= 0)
+    AND (exento IS NULL OR exento >= 0) AND (factura_total IS NULL OR factura_total >= 0)),
+  ADD CONSTRAINT retenciones_porcentajes CHECK (
+        porcentaje BETWEEN 0 AND 100 AND (iva_alicuota IS NULL OR iva_alicuota BETWEEN 0 AND 100)),
+  ADD CONSTRAINT retenciones_tasa_positiva CHECK (tasa IS NULL OR tasa > 0),
+  ADD CONSTRAINT retenciones_valor_ut_positivo CHECK (valor_ut IS NULL OR valor_ut > 0),
+  ADD CONSTRAINT retenciones_quincena CHECK (quincena IS NULL OR quincena IN (1, 2)),
+  ADD CONSTRAINT retenciones_periodo_forma CHECK (comprobante_periodo IS NULL OR comprobante_periodo ~ '^[0-9]{4}(0[1-9]|1[0-2])$'),
+  ADD CONSTRAINT retenciones_fechas CHECK (
+        (fecha IS NULL OR fecha BETWEEN DATE '2000-01-01' AND DATE '2100-12-31')
+    AND (factura_fecha IS NULL OR factura_fecha BETWEEN DATE '2000-01-01' AND DATE '2100-12-31')),
+  ADD CONSTRAINT retenciones_forma CHECK (
+        (factura_nro IS NULL OR (length(factura_nro) BETWEEN 1 AND 30 AND factura_nro = btrim(factura_nro) AND factura_nro !~ '[\r\n]'))
+    AND (factura_control IS NULL OR (length(factura_control) BETWEEN 1 AND 30 AND factura_control = btrim(factura_control) AND factura_control !~ '[\r\n]'))
+    AND (comprobante_nro IS NULL OR (length(comprobante_nro) BETWEEN 1 AND 30 AND comprobante_nro = btrim(comprobante_nro) AND comprobante_nro !~ '[\r\n]'))
+    AND (concepto_codigo IS NULL OR (length(concepto_codigo) BETWEEN 1 AND 30 AND concepto_codigo = btrim(concepto_codigo) AND concepto_codigo !~ '[\r\n]'))),
+  ADD CONSTRAINT retenciones_moneda CHECK (moneda IN ('Bs', 'USD'));
 
 -- 2) retencion_documentos
-alter table public.retencion_documentos
-  add constraint retencion_documentos_montos check (
-        (factura_total is null or factura_total >= 0) and (exento is null or exento >= 0) and (iva_monto is null or iva_monto >= 0)),
-  add constraint retencion_documentos_porcentajes check (iva_alicuota is null or iva_alicuota between 0 and 100),
-  add constraint retencion_documentos_tasa_positiva check (tasa is null or tasa > 0),
-  add constraint retencion_documentos_moneda check (moneda in ('Bs', 'USD'));
+ALTER TABLE public.retencion_documentos DROP CONSTRAINT IF EXISTS retencion_documentos_montos;
+ALTER TABLE public.retencion_documentos DROP CONSTRAINT IF EXISTS retencion_documentos_porcentajes;
+ALTER TABLE public.retencion_documentos DROP CONSTRAINT IF EXISTS retencion_documentos_tasa_positiva;
+ALTER TABLE public.retencion_documentos DROP CONSTRAINT IF EXISTS retencion_documentos_moneda;
+
+ALTER TABLE public.retencion_documentos
+  ADD CONSTRAINT retencion_documentos_montos CHECK (
+        (factura_total IS NULL OR factura_total >= 0) AND (exento IS NULL OR exento >= 0) AND (iva_monto IS NULL OR iva_monto >= 0)),
+  ADD CONSTRAINT retencion_documentos_porcentajes CHECK (iva_alicuota IS NULL OR iva_alicuota BETWEEN 0 AND 100),
+  ADD CONSTRAINT retencion_documentos_tasa_positiva CHECK (tasa IS NULL OR tasa > 0),
+  ADD CONSTRAINT retencion_documentos_moneda CHECK (moneda IN ('Bs', 'USD'));
 
 -- 3) R1: RIF del ente, fechas, y el tipo de licencia contra el catálogo de R3
-alter table public.retencion_entes
-  add constraint retencion_entes_rif_forma check (rif is null or upper(regexp_replace(rif, '[^A-Za-z0-9]', '', 'g')) ~ '^[VEJPG][0-9]{9}$');
-alter table public.retencion_ente_impuestos
-  add constraint retencion_ente_impuestos_desde_rango check (desde between date '2000-01-01' and date '2100-12-31');
-alter table public.retencion_ente_logos
-  add constraint retencion_ente_logos_desde_rango check (desde between date '2000-01-01' and date '2100-12-31');
-alter table public.retencion_agente_imagenes
-  add constraint retencion_agente_imagenes_desde_rango check (desde between date '2000-01-01' and date '2100-12-31');
-alter table public.retencion_contraparte_perfiles
-  add constraint retencion_contraparte_perfiles_licencia_vence_rango check (licencia_vence is null or licencia_vence between date '2000-01-01' and date '2100-12-31');
+ALTER TABLE public.retencion_entes DROP CONSTRAINT IF EXISTS retencion_entes_rif_forma;
+ALTER TABLE public.retencion_entes
+  ADD CONSTRAINT retencion_entes_rif_forma CHECK (rif IS NULL OR upper(regexp_replace(rif, '[^A-Za-z0-9]', '', 'g')) ~ '^[VEJPG][0-9]{9}$');
 
-create function public.retencion_contraparte_licencia_tipo_valida()
-returns trigger language plpgsql security definer set search_path = public as $$
-begin
+ALTER TABLE public.retencion_ente_impuestos DROP CONSTRAINT IF EXISTS retencion_ente_impuestos_desde_rango;
+ALTER TABLE public.retencion_ente_impuestos
+  ADD CONSTRAINT retencion_ente_impuestos_desde_rango CHECK (desde BETWEEN DATE '2000-01-01' AND DATE '2100-12-31');
+
+ALTER TABLE public.retencion_ente_logos DROP CONSTRAINT IF EXISTS retencion_ente_logos_desde_rango;
+ALTER TABLE public.retencion_ente_logos
+  ADD CONSTRAINT retencion_ente_logos_desde_rango CHECK (desde BETWEEN DATE '2000-01-01' AND DATE '2100-12-31');
+
+ALTER TABLE public.retencion_agente_imagenes DROP CONSTRAINT IF EXISTS retencion_agente_imagenes_desde_rango;
+ALTER TABLE public.retencion_agente_imagenes
+  ADD CONSTRAINT retencion_agente_imagenes_desde_rango CHECK (desde BETWEEN DATE '2000-01-01' AND DATE '2100-12-31');
+
+ALTER TABLE public.retencion_contraparte_perfiles DROP CONSTRAINT IF EXISTS retencion_contraparte_perfiles_licencia_vence_rango;
+ALTER TABLE public.retencion_contraparte_perfiles
+  ADD CONSTRAINT retencion_contraparte_perfiles_licencia_vence_rango CHECK (licencia_vence IS NULL OR licencia_vence BETWEEN DATE '2000-01-01' AND DATE '2100-12-31');
+
+CREATE OR REPLACE FUNCTION public.retencion_contraparte_licencia_tipo_valida()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
   new.licencia_tipo := nullif(btrim(new.licencia_tipo), '');
-  if new.licencia_tipo is null then return new; end if;
-  if tg_op = 'UPDATE' and lower(new.licencia_tipo) = lower(coalesce(btrim(old.licencia_tipo), '')) then return new; end if;
-  if not exists (select 1 from public.retencion_licencia_tipos t
-                  where lower(btrim(t.nombre)) = lower(new.licencia_tipo) and t.activo) then
-    raise exception using errcode = 'P0001',
+  IF new.licencia_tipo IS NULL THEN RETURN new; END IF;
+  IF tg_op = 'UPDATE' AND lower(new.licencia_tipo) = lower(coalesce(btrim(old.licencia_tipo), '')) THEN RETURN new; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.retencion_licencia_tipos t
+                  WHERE lower(btrim(t.nombre)) = lower(new.licencia_tipo) AND t.activo) THEN
+    RAISE EXCEPTION USING errcode = 'P0001',
       message = 'RET_LICENCIA_TIPO: ese tipo de licencia no está en el catálogo o está inactivo (Parámetros → Tipos de licencia).';
-  end if;
-  return new;
-end $$;
-revoke execute on function public.retencion_contraparte_licencia_tipo_valida() from public, anon, authenticated;
+  END IF;
+  RETURN new;
+END $$;
+REVOKE EXECUTE ON FUNCTION public.retencion_contraparte_licencia_tipo_valida() FROM public, anon, authenticated;
 DROP TRIGGER IF EXISTS trg_retencion_contraparte_perfiles_licencia_tipo ON public.retencion_contraparte_perfiles;
-create trigger trg_retencion_contraparte_perfiles_licencia_tipo before insert or update of licencia_tipo
-  on public.retencion_contraparte_perfiles for each row execute function public.retencion_contraparte_licencia_tipo_valida();
+CREATE TRIGGER trg_retencion_contraparte_perfiles_licencia_tipo BEFORE INSERT OR UPDATE OF licencia_tipo
+  ON public.retencion_contraparte_perfiles FOR EACH ROW EXECUTE FUNCTION public.retencion_contraparte_licencia_tipo_valida();
 
 -- 4) Claves y códigos que se comparan (Master 10:25, K1-K3)
--- K1: el código de un supuesto es camelCase a propósito, pero no puede repetirse cambiando solo mayúsculas.
-CREATE unique INDEX IF NOT EXISTS retencion_supuestos_codigo_unico_sin_mayusculas on public.retencion_supuestos (impuesto_clave, lower(codigo));
--- K2: los códigos de una clasificación (conceptos de ISLR, actividades del municipio) van sin espacios y en MAYÚSCULAS.
-alter table public.retencion_clasificacion_codigos
-  add constraint retencion_clasificacion_codigos_forma check (
-        length(codigo) between 1 and 30 and codigo = btrim(codigo) and codigo !~ '[\r\n]' and codigo = upper(codigo));
--- K3: el código de ordenanza de una actividad del proveedor, con la misma forma: así siempre coincide con el catálogo
---     (el trigger de R4 lo enlaza por igualdad exacta).
-alter table public.retencion_contraparte_actividades
-  add constraint retencion_contraparte_actividades_ordenanza_forma check (
-        ordenanza_codigo is null
-     or (length(ordenanza_codigo) between 1 and 30 and ordenanza_codigo = btrim(ordenanza_codigo)
-         and ordenanza_codigo !~ '[\r\n]' and ordenanza_codigo = upper(ordenanza_codigo)));
+CREATE UNIQUE INDEX IF NOT EXISTS retencion_supuestos_codigo_unico_sin_mayusculas ON public.retencion_supuestos (impuesto_clave, lower(codigo));
 
--- 5) Índices de retenciones (Master 21/10 08:46, informe de migraciones P1 y P2)
--- P1: retenciones_fecha_idx es idéntico a retenciones_fecha_ix (btree (fecha DESC)); sin origen en el registro y nunca usado.
-drop index if exists public.retenciones_fecha_idx;
--- P2: la FK de servicio_directo_id no tenía índice (asesor de Supabase: unindexed_foreign_keys), como sí lo tienen orden_id y proveedor_id.
-CREATE INDEX IF NOT EXISTS retenciones_servicio_directo_idx on public.retenciones (servicio_directo_id) where servicio_directo_id is not null;
+ALTER TABLE public.retencion_clasificacion_codigos DROP CONSTRAINT IF EXISTS retencion_clasificacion_codigos_forma;
+ALTER TABLE public.retencion_clasificacion_codigos
+  ADD CONSTRAINT retencion_clasificacion_codigos_forma CHECK (
+        length(codigo) BETWEEN 1 AND 30 AND codigo = btrim(codigo) AND codigo !~ '[\r\n]' AND codigo = upper(codigo));
 
--- 6) Puente documento × origen (revisión de seguridad del front, 21/10 09:22; Master 09:29, puntos 2 y 3)
--- Punto 2: no se quita el enlace principal ni el que dice de qué archivo salió la factura.
-create function public.retencion_documento_origenes_al_borrar()
-returns trigger language plpgsql security definer set search_path = public as $$
-declare d public.retencion_documentos;
-begin
-  select * into d from public.retencion_documentos where id = old.documento_id;
-  if not found then return old; end if;   -- el documento se está borrando (cascada de un documento libre): el enlace se va con él
-  if coalesce(old.orden_id, old.compra_directa_id, old.servicio_directo_id)
-     = coalesce(d.orden_id, d.compra_directa_id, d.servicio_directo_id) then
-    raise exception using errcode = 'P0001',
+ALTER TABLE public.retencion_contraparte_actividades DROP CONSTRAINT IF EXISTS retencion_contraparte_actividades_ordenanza_forma;
+ALTER TABLE public.retencion_contraparte_actividades
+  ADD CONSTRAINT retencion_contraparte_actividades_ordenanza_forma CHECK (
+        ordenanza_codigo IS NULL
+     OR (length(ordenanza_codigo) BETWEEN 1 AND 30 AND ordenanza_codigo = btrim(ordenanza_codigo)
+         AND ordenanza_codigo !~ '[\r\n]' AND ordenanza_codigo = upper(ordenanza_codigo)));
+
+-- 5) Índices de retenciones
+DROP INDEX IF EXISTS public.retenciones_fecha_idx;
+CREATE INDEX IF NOT EXISTS retenciones_servicio_directo_idx ON public.retenciones (servicio_directo_id) WHERE servicio_directo_id IS NOT NULL;
+
+-- 6) Puente documento × origen
+CREATE OR REPLACE FUNCTION public.retencion_documento_origenes_al_borrar()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE d public.retencion_documentos;
+BEGIN
+  SELECT * INTO d FROM public.retencion_documentos WHERE id = old.documento_id;
+  IF NOT FOUND THEN RETURN old; END IF;
+  IF coalesce(old.orden_id, old.compra_directa_id, old.servicio_directo_id)
+     = coalesce(d.orden_id, d.compra_directa_id, d.servicio_directo_id) THEN
+    RAISE EXCEPTION USING errcode = 'P0001',
       message = 'RET_ENLACE_PRINCIPAL: es el origen principal del documento fiscal; se corrige en el documento, o se borra el documento si está libre.';
-  end if;
-  if old.adjunto_id is not null then
-    raise exception using errcode = 'P0001',
+  END IF;
+  IF old.adjunto_id IS NOT NULL THEN
+    RAISE EXCEPTION USING errcode = 'P0001',
       message = 'RET_ENLACE_CON_ARCHIVO: este enlace dice de qué archivo salió la factura; primero quite el archivo del enlace.';
-  end if;
-  return old;
-end $$;
-revoke execute on function public.retencion_documento_origenes_al_borrar() from public, anon, authenticated;
+  END IF;
+  RETURN old;
+END $$;
+REVOKE EXECUTE ON FUNCTION public.retencion_documento_origenes_al_borrar() FROM public, anon, authenticated;
 DROP TRIGGER IF EXISTS trg_retencion_documento_origenes_al_borrar ON public.retencion_documento_origenes;
-create trigger trg_retencion_documento_origenes_al_borrar before delete on public.retencion_documento_origenes
-  for each row execute function public.retencion_documento_origenes_al_borrar();
+CREATE TRIGGER trg_retencion_documento_origenes_al_borrar BEFORE DELETE ON public.retencion_documento_origenes
+  FOR EACH ROW EXECUTE FUNCTION public.retencion_documento_origenes_al_borrar();
 
--- Punto 3: una factura PRACTICADA solo se enlaza con órdenes, compras o servicios de SU proveedor (cuando los dos lo tienen).
-create function public.retencion_origen_proveedor(p_orden uuid, p_compra uuid, p_servicio uuid)
-returns uuid language sql stable security definer set search_path = public as $$
-  select case when p_orden is not null then (select o.proveedor_id from public.ordenes o where o.id = p_orden)
-              when p_compra is not null then (select c.proveedor_id from public.compras_directas c where c.id = p_compra)
-              else (select s.proveedor_id from public.servicios_directos s where s.id = p_servicio) end
+CREATE OR REPLACE FUNCTION public.retencion_origen_proveedor(p_orden bigint, p_compra bigint, p_servicio bigint)
+RETURNS bigint LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT CASE 
+    WHEN p_orden IS NOT NULL THEN (
+      COALESCE(
+        (SELECT o.proveedor_id FROM public.ordenes o WHERE o.id = p_orden),
+        (SELECT o.proveedor_id FROM public.ordenes_compra o WHERE o.id = p_orden),
+        (SELECT o.proveedor_id FROM public.compras_ordenes o WHERE o.id = p_orden)
+      )
+    )
+    WHEN p_compra IS NOT NULL THEN (SELECT c.proveedor_id FROM public.compras_directas c WHERE c.id = p_compra)
+    ELSE (SELECT s.proveedor_id FROM public.servicios_directos s WHERE s.id = p_servicio) 
+  END;
 $$;
-revoke execute on function public.retencion_origen_proveedor(uuid, uuid, uuid) from public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.retencion_origen_proveedor(bigint, bigint, bigint) FROM public, anon, authenticated;
 
-create function public.retencion_documento_origenes_proveedor()
-returns trigger language plpgsql security definer set search_path = public as $$
-declare d public.retencion_documentos; op uuid;
-begin
-  select * into d from public.retencion_documentos where id = new.documento_id;
-  if not found or d.rol <> 'practicada' or d.proveedor_id is null then return new; end if;
+CREATE OR REPLACE FUNCTION public.retencion_documento_origenes_proveedor()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE d public.retencion_documentos; op bigint;
+BEGIN
+  SELECT * INTO d FROM public.retencion_documentos WHERE id = new.documento_id;
+  IF NOT FOUND OR d.rol <> 'practicada' OR d.proveedor_id IS NULL THEN RETURN new; END IF;
   op := public.retencion_origen_proveedor(new.orden_id, new.compra_directa_id, new.servicio_directo_id);
-  if op is not null and op <> d.proveedor_id then
-    raise exception using errcode = 'P0001',
+  IF op IS NOT NULL AND op <> d.proveedor_id THEN
+    RAISE EXCEPTION USING errcode = 'P0001',
       message = 'RET_ORIGEN_OTRO_PROVEEDOR: esa orden, compra o servicio es de otro proveedor; la factura no se enlaza ahí.';
-  end if;
-  return new;
-end $$;
-revoke execute on function public.retencion_documento_origenes_proveedor() from public, anon, authenticated;
+  END IF;
+  RETURN new;
+END $$;
+REVOKE EXECUTE ON FUNCTION public.retencion_documento_origenes_proveedor() FROM public, anon, authenticated;
 DROP TRIGGER IF EXISTS trg_retencion_documento_origenes_proveedor ON public.retencion_documento_origenes;
-create trigger trg_retencion_documento_origenes_proveedor
-  before insert or update of documento_id, orden_id, compra_directa_id, servicio_directo_id on public.retencion_documento_origenes
-  for each row execute function public.retencion_documento_origenes_proveedor();
+CREATE TRIGGER trg_retencion_documento_origenes_proveedor
+  BEFORE INSERT OR UPDATE OF documento_id, orden_id, compra_directa_id, servicio_directo_id ON public.retencion_documento_origenes
+  FOR EACH ROW EXECUTE FUNCTION public.retencion_documento_origenes_proveedor();
 
--- … y si después se cambia el proveedor (o el sentido) del documento, sus enlaces tienen que seguir cuadrando.
-create function public.retencion_documentos_proveedor_enlaces()
-returns trigger language plpgsql security definer set search_path = public as $$
-begin
-  if new.rol = 'practicada' and new.proveedor_id is not null
-     and exists (select 1 from public.retencion_documento_origenes p
-                  where p.documento_id = new.id
-                    and public.retencion_origen_proveedor(p.orden_id, p.compra_directa_id, p.servicio_directo_id) <> new.proveedor_id) then
-    raise exception using errcode = 'P0001',
+CREATE OR REPLACE FUNCTION public.retencion_documentos_proveedor_enlaces()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF new.rol = 'practicada' AND new.proveedor_id IS NOT NULL
+     AND EXISTS (SELECT 1 FROM public.retencion_documento_origenes p
+                  WHERE p.documento_id = new.id
+                    AND public.retencion_origen_proveedor(p.orden_id, p.compra_directa_id, p.servicio_directo_id) <> new.proveedor_id) THEN
+    RAISE EXCEPTION USING errcode = 'P0001',
       message = 'RET_ORIGEN_OTRO_PROVEEDOR: el documento está enlazado con órdenes, compras o servicios de otro proveedor; no se le cambia el proveedor.';
-  end if;
-  return null;
-end $$;
-revoke execute on function public.retencion_documentos_proveedor_enlaces() from public, anon, authenticated;
+  END IF;
+  RETURN null;
+END $$;
+REVOKE EXECUTE ON FUNCTION public.retencion_documentos_proveedor_enlaces() FROM public, anon, authenticated;
 DROP TRIGGER IF EXISTS trg_retencion_documentos_proveedor_enlaces ON public.retencion_documentos;
-create trigger trg_retencion_documentos_proveedor_enlaces after update of proveedor_id, rol on public.retencion_documentos
-  for each row execute function public.retencion_documentos_proveedor_enlaces();
-
-
--- P1: retenciones_fecha_idx es idéntico a retenciones_fecha_ix (btree (fecha DESC)); sin origen en el registro y nunca usado.
-drop index if exists public.retenciones_fecha_idx;
--- P2: la FK de servicio_directo_id no tenía índice (asesor de Supabase: unindexed_foreign_keys), como sí lo tienen orden_id y proveedor_id.
-CREATE INDEX IF NOT EXISTS retenciones_servicio_directo_idx on public.retenciones (servicio_directo_id) where servicio_directo_id is not null;
-
--- 6) Puente documento × origen (revisión de seguridad del front, 21/10 09:22; Master 09:29, puntos 2 y 3)
--- Punto 2: no se quita el enlace principal ni el que dice de qué archivo salió la factura.
-create function public.retencion_documento_origenes_al_borrar()
-returns trigger language plpgsql security definer set search_path = public as $$
-declare d public.retencion_documentos;
-begin
-  select * into d from public.retencion_documentos where id = old.documento_id;
-  if not found then return old; end if;   -- el documento se está borrando (cascada de un documento libre): el enlace se va con él
-  if coalesce(old.orden_id, old.compra_directa_id, old.servicio_directo_id)
-     = coalesce(d.orden_id, d.compra_directa_id, d.servicio_directo_id) then
-    raise exception using errcode = 'P0001',
-      message = 'RET_ENLACE_PRINCIPAL: es el origen principal del documento fiscal; se corrige en el documento, o se borra el documento si está libre.';
-  end if;
-  if old.adjunto_id is not null then
-    raise exception using errcode = 'P0001',
-      message = 'RET_ENLACE_CON_ARCHIVO: este enlace dice de qué archivo salió la factura; primero quite el archivo del enlace.';
-  end if;
-  return old;
-end $$;
-revoke execute on function public.retencion_documento_origenes_al_borrar() from public, anon, authenticated;
-DROP TRIGGER IF EXISTS trg_retencion_documento_origenes_al_borrar ON public.retencion_documento_origenes;
-create trigger trg_retencion_documento_origenes_al_borrar before delete on public.retencion_documento_origenes
-  for each row execute function public.retencion_documento_origenes_al_borrar();
-
--- Punto 3: una factura PRACTICADA solo se enlaza con órdenes, compras o servicios de SU proveedor (cuando los dos lo tienen).
-create function public.retencion_origen_proveedor(p_orden uuid, p_compra uuid, p_servicio uuid)
-returns uuid language sql stable security definer set search_path = public as $$
-  select case when p_orden is not null then (select o.proveedor_id from public.ordenes o where o.id = p_orden)
-              when p_compra is not null then (select c.proveedor_id from public.compras_directas c where c.id = p_compra)
-              else (select s.proveedor_id from public.servicios_directos s where s.id = p_servicio) end
-$$;
-revoke execute on function public.retencion_origen_proveedor(uuid, uuid, uuid) from public, anon, authenticated;
-
-create function public.retencion_documento_origenes_proveedor()
-returns trigger language plpgsql security definer set search_path = public as $$
-declare d public.retencion_documentos; op uuid;
-begin
-  select * into d from public.retencion_documentos where id = new.documento_id;
-  if not found or d.rol <> 'practicada' or d.proveedor_id is null then return new; end if;
-  op := public.retencion_origen_proveedor(new.orden_id, new.compra_directa_id, new.servicio_directo_id);
-  if op is not null and op <> d.proveedor_id then
-    raise exception using errcode = 'P0001',
-      message = 'RET_ORIGEN_OTRO_PROVEEDOR: esa orden, compra o servicio es de otro proveedor; la factura no se enlaza ahí.';
-  end if;
-  return new;
-end $$;
-revoke execute on function public.retencion_documento_origenes_proveedor() from public, anon, authenticated;
-DROP TRIGGER IF EXISTS trg_retencion_documento_origenes_proveedor ON public.retencion_documento_origenes;
-create trigger trg_retencion_documento_origenes_proveedor
-  before insert or update of documento_id, orden_id, compra_directa_id, servicio_directo_id on public.retencion_documento_origenes
-  for each row execute function public.retencion_documento_origenes_proveedor();
-
--- … y si después se cambia el proveedor (o el sentido) del documento, sus enlaces tienen que seguir cuadrando.
-create function public.retencion_documentos_proveedor_enlaces()
-returns trigger language plpgsql security definer set search_path = public as $$
-begin
-  if new.rol = 'practicada' and new.proveedor_id is not null
-     and exists (select 1 from public.retencion_documento_origenes p
-                  where p.documento_id = new.id
-                    and public.retencion_origen_proveedor(p.orden_id, p.compra_directa_id, p.servicio_directo_id) <> new.proveedor_id) then
-    raise exception using errcode = 'P0001',
-      message = 'RET_ORIGEN_OTRO_PROVEEDOR: el documento está enlazado con órdenes, compras o servicios de otro proveedor; no se le cambia el proveedor.';
-  end if;
-  return null;
-end $$;
-revoke execute on function public.retencion_documentos_proveedor_enlaces() from public, anon, authenticated;
-DROP TRIGGER IF EXISTS trg_retencion_documentos_proveedor_enlaces ON public.retencion_documentos;
-create trigger trg_retencion_documentos_proveedor_enlaces after update of proveedor_id, rol on public.retencion_documentos
-  for each row execute function public.retencion_documentos_proveedor_enlaces();
-
-
+CREATE TRIGGER trg_retencion_documentos_proveedor_enlaces AFTER UPDATE OF proveedor_id, rol ON public.retencion_documentos
+  FOR EACH ROW EXECUTE FUNCTION public.retencion_documentos_proveedor_enlaces();
 
 COMMIT;
