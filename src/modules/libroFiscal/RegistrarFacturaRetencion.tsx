@@ -191,6 +191,10 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (error) errorRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [error]);
   // Al registrar con éxito: se queda el resultado para ofrecer «Compartir por WhatsApp».
   const [resultado, setResultado] = useState<Awaited<ReturnType<typeof registrarFactura>> | null>(null);
   const [pagoResultado, setPagoResultado] = useState<MontoPagado | null>(null);
@@ -1165,7 +1169,11 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
 
   async function emitir() {
     const falla = validar();
-    if (falla) { setError(falla); return; }
+    if (falla) {
+      if (falla === error) errorRef.current?.scrollIntoView({ block: 'nearest' });
+      setError(falla);
+      return;
+    }
     setError(null); setSaving(true);
     try {
       const periodo = periodoDe(facturaFecha);
@@ -1440,13 +1448,13 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
       footer={(
         <>
           <button type="button" className="btn btn-ghost" onClick={pedirCierre} disabled={saving}>Cancelar</button>
-          <button type="button" className="btn btn-primary" onClick={() => void emitir()} disabled={saving || !lineas.length}>
+          <button type="button" className="btn btn-primary" onClick={() => void emitir()} disabled={saving}>
             {saving ? 'Guardando…' : `${documento ? 'Retener' : 'Registrar'} · ${money(totalRetenido, moneda)}`}
           </button>
         </>
       )}>
       {dialogo}
-      {error && <div className="card" style={{ borderColor: 'var(--danger)', marginBottom: '.75rem' }}><strong>Error:</strong> {error}</div>}
+      {error && <div ref={errorRef} role="alert" className="card" style={{ borderColor: 'var(--danger)', marginBottom: '.75rem' }}><strong>Error:</strong> {error}</div>}
 
       {/* ── Cintillo de Empresa Receptora Responsable ── */}
       {empresaFicha ? (
