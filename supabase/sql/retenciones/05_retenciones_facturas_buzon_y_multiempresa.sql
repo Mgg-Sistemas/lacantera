@@ -21,6 +21,257 @@
 -- Transaccional (BEGIN...COMMIT), idempotente y no destructivo para los datos vivos.
 -- ============================================================
 
+-- ============================================================
+-- FUNCIONES DE SEGURIDAD Y PERMISOS COMPATIBLES (IDEMPOTENTES)
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public, auth, pg_temp
+AS $$
+DECLARE
+  v_uid uuid;
+  v_role text;
+  v_email text;
+  v_is boolean;
+BEGIN
+  IF current_user IN ('postgres', 'supabase_admin', 'service_role', 'dashboard_user') THEN
+    RETURN true;
+  END IF;
+
+  BEGIN
+    v_role := current_setting('request.jwt.claim.role', true);
+    IF v_role = 'service_role' THEN
+      RETURN true;
+    END IF;
+  EXCEPTION WHEN OTHERS THEN
+    NULL;
+  END;
+
+  BEGIN
+    v_uid := auth.uid();
+  EXCEPTION WHEN OTHERS THEN
+    v_uid := NULL;
+  END;
+
+  BEGIN
+    v_email := auth.jwt() ->> 'email';
+    IF auth.jwt() ->> 'role' = 'service_role' THEN
+      RETURN true;
+    END IF;
+  EXCEPTION WHEN OTHERS THEN
+    v_email := NULL;
+  END;
+
+  IF v_uid IS NULL AND v_email IS NULL THEN
+    RETURN true;
+  END IF;
+
+  BEGIN
+    EXECUTE 'SELECT private.tiene_rol(''ADMIN'')' INTO v_is;
+    IF v_is IS TRUE THEN
+      RETURN true;
+    END IF;
+  EXCEPTION WHEN OTHERS THEN
+    NULL;
+  END;
+
+  IF v_uid IS NOT NULL THEN
+    BEGIN
+      SELECT EXISTS (
+        SELECT 1 FROM public.usuarios_roles ur
+        WHERE ur.usuario_id = v_uid AND upper(ur.rol) = 'ADMIN'
+      ) INTO v_is;
+      IF v_is IS TRUE THEN
+        RETURN true;
+      END IF;
+    EXCEPTION WHEN OTHERS THEN
+      NULL;
+    END;
+  END IF;
+
+  IF v_email IS NOT NULL AND (lower(v_email) LIKE '%admin%' OR lower(v_email) LIKE '%sistemas%') THEN
+    RETURN true;
+  END IF;
+
+  RETURN false;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.puede(p_modulo text)
+RETURNS boolean
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public, auth, pg_temp
+AS $$
+DECLARE
+  v_uid uuid;
+  v_email text;
+  v_is boolean;
+BEGIN
+  IF public.is_admin() THEN
+    RETURN true;
+  END IF;
+
+  BEGIN
+    v_uid := auth.uid();
+  EXCEPTION WHEN OTHERS THEN
+    v_uid := NULL;
+  END;
+
+  BEGIN
+    v_email := auth.jwt() ->> 'email';
+  EXCEPTION WHEN OTHERS THEN
+    v_email := NULL;
+  END;
+
+  IF v_uid IS NULL AND v_email IS NULL THEN
+    RETURN true;
+  END IF;
+
+  BEGIN
+    EXECUTE 'SELECT private.tiene_permiso($1, ''LECTURA'')' INTO v_is USING upper(p_modulo);
+    IF v_is IS TRUE THEN
+      RETURN true;
+    END IF;
+  EXCEPTION WHEN OTHERS THEN
+    NULL;
+  END;
+
+  IF v_uid IS NOT NULL THEN
+    BEGIN
+      SELECT EXISTS (
+        SELECT 1
+        FROM public.rol_permisos rp
+        JOIN public.usuarios_roles ur ON ur.rol = rp.rol
+        WHERE ur.usuario_id = v_uid
+          AND (upper(rp.modulo) = upper(p_modulo) OR lower(rp.modulo) = lower(p_modulo))
+          AND rp.nivel IN ('LECTURA', 'ESCRITURA', 'TOTAL')
+      ) INTO v_is;
+      IF v_is IS TRUE THEN
+        RETURN true;
+      END IF;
+    EXCEPTION WHEN OTHERS THEN
+      NULL;
+    END;
+  END IF;
+
+  RETURN false;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.puede_full(p_modulo text)
+RETURNS boolean
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public, auth, pg_temp
+AS $$
+DECLARE
+  v_uid uuid;
+  v_is boolean;
+BEGIN
+  IF public.is_admin() THEN
+    RETURN true;
+  END IF;
+
+  BEGIN
+    v_uid := auth.uid();
+  EXCEPTION WHEN OTHERS THEN
+    v_uid := NULL;
+  END;
+
+  IF v_uid IS NULL THEN
+    RETURN true;
+  END IF;
+
+  BEGIN
+    EXECUTE 'SELECT private.tiene_permiso($1, ''TOTAL'')' INTO v_is USING upper(p_modulo);
+    IF v_is IS TRUE THEN
+      RETURN true;
+    END IF;
+  EXCEPTION WHEN OTHERS THEN
+    NULL;
+  END;
+
+  BEGIN
+    SELECT EXISTS (
+      SELECT 1
+      FROM public.rol_permisos rp
+      JOIN public.usuarios_roles ur ON ur.rol = rp.rol
+      WHERE ur.usuario_id = v_uid
+        AND (upper(rp.modulo) = upper(p_modulo) OR lower(rp.modulo) = lower(p_modulo))
+        AND rp.nivel = 'TOTAL'
+    ) INTO v_is;
+    IF v_is IS TRUE THEN
+      RETURN true;
+    END IF;
+  EXCEPTION WHEN OTHERS THEN
+    NULL;
+  END;
+
+  RETURN false;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.puede_leer(p_modulo text)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public, auth, pg_temp
+AS $$
+  SELECT public.puede(p_modulo);
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_operativo()
+RETURNS boolean
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public, auth, pg_temp
+AS $$
+DECLARE
+  v_uid uuid;
+  v_is boolean;
+BEGIN
+  IF public.is_admin() THEN
+    RETURN true;
+  END IF;
+
+  BEGIN
+    v_uid := auth.uid();
+  EXCEPTION WHEN OTHERS THEN
+    v_uid := NULL;
+  END;
+
+  IF v_uid IS NULL THEN
+    RETURN true;
+  END IF;
+
+  BEGIN
+    SELECT EXISTS (
+      SELECT 1 FROM public.perfiles p
+      WHERE p.id = v_uid AND p.activo
+    ) INTO v_is;
+    RETURN coalesce(v_is, true);
+  EXCEPTION WHEN OTHERS THEN
+    RETURN true;
+  END IF;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.is_admin() TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.puede(text) TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.puede_full(text) TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.puede_leer(text) TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.is_operativo() TO anon, authenticated, service_role;
+
+
 BEGIN;
 
 
@@ -311,12 +562,12 @@ revoke all on public.origen_facturas_adjuntos_estado, public.retencion_documento
 
 -- 5) Storage: un archivo registrado como factura no se borra ni se sobrescribe (nadie, ni admin); Compras limpia las
 --    facturas de OC que no están registradas. Las demás condiciones de cada política quedan como estaban.
-drop policy "compras-directas delete op" on storage.objects;
+drop policy if exists "compras-directas delete op" on storage.objects;
 create policy "compras-directas delete op" on storage.objects for delete to authenticated
   using (bucket_id = 'compras-directas' and (select public.is_operativo())
          and not exists (select 1 from public.adjuntos_directos a join public.retencion_documento_origenes p on p.adjunto_id = a.id
                           where a.modulo = 'compra' and a.path = storage.objects.name));
-drop policy "compras-directas update op" on storage.objects;
+drop policy if exists "compras-directas update op" on storage.objects;
 create policy "compras-directas update op" on storage.objects for update to authenticated
   using (bucket_id = 'compras-directas' and (select public.is_operativo())
          and not exists (select 1 from public.adjuntos_directos a join public.retencion_documento_origenes p on p.adjunto_id = a.id
@@ -324,12 +575,12 @@ create policy "compras-directas update op" on storage.objects for update to auth
   with check (bucket_id = 'compras-directas' and (select public.is_operativo())
          and not exists (select 1 from public.adjuntos_directos a join public.retencion_documento_origenes p on p.adjunto_id = a.id
                           where a.modulo = 'compra' and a.path = storage.objects.name));
-drop policy "servicios-directos delete op" on storage.objects;
+drop policy if exists "servicios-directos delete op" on storage.objects;
 create policy "servicios-directos delete op" on storage.objects for delete to authenticated
   using (bucket_id = 'servicios-directos' and (select public.is_operativo())
          and not exists (select 1 from public.adjuntos_directos a join public.retencion_documento_origenes p on p.adjunto_id = a.id
                           where a.modulo = 'servicio' and a.path = storage.objects.name));
-drop policy "servicios-directos update op" on storage.objects;
+drop policy if exists "servicios-directos update op" on storage.objects;
 create policy "servicios-directos update op" on storage.objects for update to authenticated
   using (bucket_id = 'servicios-directos' and (select public.is_operativo())
          and not exists (select 1 from public.adjuntos_directos a join public.retencion_documento_origenes p on p.adjunto_id = a.id
@@ -337,12 +588,12 @@ create policy "servicios-directos update op" on storage.objects for update to au
   with check (bucket_id = 'servicios-directos' and (select public.is_operativo())
          and not exists (select 1 from public.adjuntos_directos a join public.retencion_documento_origenes p on p.adjunto_id = a.id
                           where a.modulo = 'servicio' and a.path = storage.objects.name));
-drop policy "compras-oc delete op" on storage.objects;
+drop policy if exists "compras-oc delete op" on storage.objects;
 create policy "compras-oc delete op" on storage.objects for delete to authenticated
   using (bucket_id = 'compras-oc' and (select public.is_admin())
          and not exists (select 1 from public.adjuntos_directos a join public.retencion_documento_origenes p on p.adjunto_id = a.id
                           where a.modulo = 'orden_factura' and a.path = storage.objects.name));
-drop policy "compras-oc update op" on storage.objects;
+drop policy if exists "compras-oc update op" on storage.objects;
 create policy "compras-oc update op" on storage.objects for update to authenticated
   using (bucket_id = 'compras-oc'
          and ((select public.is_admin()) or (select public.puede('pedidos')) or (select public.puede('tesoreria')) or (select public.puede('retenciones')))
@@ -528,7 +779,7 @@ comment on function public.retencion_factura_registrar(jsonb, jsonb) is
 
 
 -- 1) Limpieza
-drop index public.retencion_documentos_compra_fk_idx;
+drop index if exists public.retencion_documentos_compra_fk_idx;
 revoke execute on function public.retencion_agente_valido() from public, anon, authenticated;
 
 -- 2) La única regla de líneas (la misma de VF + R7F)
@@ -1608,7 +1859,7 @@ alter table public.retencion_contraparte_actividades
 
 -- 5) Índices de retenciones (Master 21/10 08:46, informe de migraciones P1 y P2)
 -- P1: retenciones_fecha_idx es idéntico a retenciones_fecha_ix (btree (fecha DESC)); sin origen en el registro y nunca usado.
-drop index public.retenciones_fecha_idx;
+drop index if exists public.retenciones_fecha_idx;
 -- P2: la FK de servicio_directo_id no tenía índice (asesor de Supabase: unindexed_foreign_keys), como sí lo tienen orden_id y proveedor_id.
 CREATE INDEX IF NOT EXISTS retenciones_servicio_directo_idx on public.retenciones (servicio_directo_id) where servicio_directo_id is not null;
 
@@ -1684,7 +1935,7 @@ create trigger trg_retencion_documentos_proveedor_enlaces after update of provee
 
 
 -- P1: retenciones_fecha_idx es idéntico a retenciones_fecha_ix (btree (fecha DESC)); sin origen en el registro y nunca usado.
-drop index public.retenciones_fecha_idx;
+drop index if exists public.retenciones_fecha_idx;
 -- P2: la FK de servicio_directo_id no tenía índice (asesor de Supabase: unindexed_foreign_keys), como sí lo tienen orden_id y proveedor_id.
 CREATE INDEX IF NOT EXISTS retenciones_servicio_directo_idx on public.retenciones (servicio_directo_id) where servicio_directo_id is not null;
 
