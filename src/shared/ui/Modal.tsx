@@ -75,8 +75,8 @@ export function Modal({ title, size = 'md', compact = false, onClose, onMinimiza
     <div className={`modal-backdrop ${className ? `${className}-backdrop` : ''}`} style={oculto ? { display: 'none' } : undefined}>
       <div className={`modal ${compact ? 'modal-compact' : ''} ${size === 'lg' ? 'modal-lg' : size === 'xl' ? 'modal-xl' : ''} ${className ?? ''}`}>
         <div className="modal-header">
-          <h3 style={{ margin: 0 }}>{title ?? ''}</h3>
-          <div style={{ display: 'flex', gap: '.35rem' }}>
+          <h3 style={{ margin: 0, minWidth: 0, flex: '1 1 auto', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title ?? ''}</h3>
+          <div style={{ display: 'flex', gap: '.35rem', flexShrink: 0 }}>
             {alMinimizar && (
               <button type="button" className="btn btn-icon btn-ghost" onClick={alMinimizar} title="Minimizar (queda en la barra de abajo)" aria-label="Minimizar">—</button>
             )}

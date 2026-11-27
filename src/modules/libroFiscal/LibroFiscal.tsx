@@ -2025,7 +2025,7 @@ export function RegistrarRetencionModal({ semilla, actor, actorName, onClose, on
           </button>
         </>
       }>
-      <div onChange={marcarSucio}>
+      <div onChange={marcarSucio} style={{ display: 'flex', flexDirection: 'column', width: '100%', minHeight: 0, boxSizing: 'border-box' }}>
       {error && <div className="card" style={{ borderColor: 'var(--danger)', marginBottom: '.75rem' }}><strong>Error:</strong> {error}</div>}
       {semilla.sustituyeAComprobante && (
         <div className="card" style={{ borderColor: 'var(--primary)', background: 'rgba(255, 170, 0, 0.08)', marginBottom: '.75rem', padding: '.6rem .8rem', fontSize: '.84rem' }}>
@@ -2707,6 +2707,7 @@ export function ConfiguracionFiscalModal({ puedeEditar, onClose, editorFiscalEmp
       }
       case 'valores': return `UT Bs ${cfg.valorUt} · IGTF ${cfg.pctIgtf} %`;
       case 'impuestos': return r2 ? 'Ficha de cada impuesto y conceptos del ISLR' : `${conceptos.length} conceptos`;
+      case 'licencias': return 'Catálogo de tipos de actividad (ISAE)';
       default: return '';
     }
   }
@@ -2730,7 +2731,7 @@ export function ConfiguracionFiscalModal({ puedeEditar, onClose, editorFiscalEmp
           )}
         </>
       }>
-      <div onChange={marcarSucio}>
+      <div onChange={marcarSucio} style={{ display: 'flex', flexDirection: 'column', width: '100%', minHeight: 0, boxSizing: 'border-box' }}>
       {error && <div className="card" style={{ borderColor: 'var(--danger)', marginBottom: '.75rem' }}><strong>Error:</strong> {error}</div>}
 
       {/* ── Pantalla de inicio: grilla de tarjetas ── */}
@@ -2743,7 +2744,7 @@ export function ConfiguracionFiscalModal({ puedeEditar, onClose, editorFiscalEmp
               <button key={s.key} type="button" className="lfv8-pa-btn" onClick={() => setSeccion(s.key)}>
                 <span className="lfv8-pa-t">{s.titulo}</span>
                 <span className="lfv8-pa-d">{s.linea}</span>
-                <span className="lfv8-pa-r">{resumen(s.key)}</span>
+                {resumen(s.key) ? <span className="lfv8-pa-r">{resumen(s.key)}</span> : null}
               </button>
             ))}
           </div>
@@ -2765,7 +2766,7 @@ export function ConfiguracionFiscalModal({ puedeEditar, onClose, editorFiscalEmp
               <button key={s.key} type="button" className="lfv8-pa-btn" onClick={() => setSeccion(s.key)}>
                 <span className="lfv8-pa-t">{s.titulo}</span>
                 <span className="lfv8-pa-d">{s.linea}</span>
-                <span className="lfv8-pa-r">{resumen(s.key)}</span>
+                {resumen(s.key) ? <span className="lfv8-pa-r">{resumen(s.key)}</span> : null}
               </button>
             ))}
           </div>

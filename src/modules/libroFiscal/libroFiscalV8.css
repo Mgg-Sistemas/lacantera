@@ -271,7 +271,7 @@ section.lfv8-buscar .lfv8-lupa, .lfv8-buscar .lfv8-lupa { position: absolute; le
    v8 · Parámetros — tarjetas en dos capas (Ajustes / Avanzados)
    Calca visual del modal de la maqueta v8.
    ═══════════════════════════════════════════════════════════════ */
-.lfv8-pa-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: .85rem; margin: .75rem 0 1.25rem; }
+.lfv8-pa-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: .85rem; margin: .75rem 0 1.25rem; }
 .lfv8-pa-btn {
   all: unset;
   box-sizing: border-box;
@@ -280,9 +280,9 @@ section.lfv8-buscar .lfv8-lupa, .lfv8-buscar .lfv8-lupa { position: absolute; le
   flex-direction: column;
   gap: .45rem;
   padding: 1.05rem 1.15rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0.01) 100%), var(--bg-1, #13171f);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0.01) 100%), var(--surface-2, #1d1612);
   min-height: 120px;
   width: 100%;
   text-align: left;
@@ -290,23 +290,23 @@ section.lfv8-buscar .lfv8-lupa, .lfv8-buscar .lfv8-lupa { position: absolute; le
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 .lfv8-pa-btn:hover {
-  border-color: rgba(245, 158, 11, 0.5);
-  background: linear-gradient(180deg, rgba(245, 158, 11, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%), var(--bg-1, #13171f);
+  border-color: rgba(217, 119, 6, 0.5);
+  background: linear-gradient(180deg, rgba(217, 119, 6, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%), var(--surface-2, #1d1612);
   transform: translateY(-2px);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
 }
 .lfv8-pa-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-.lfv8-pa-btn .lfv8-pa-t { font-weight: 700; font-size: 1rem; color: var(--text-normal, #f8fafc); display: flex; align-items: center; gap: .45rem; }
+.lfv8-pa-btn .lfv8-pa-t { font-weight: 700; font-size: 1rem; color: var(--text, #f8fafc); display: flex; align-items: center; gap: .45rem; }
 .lfv8-pa-btn .lfv8-pa-d { font-size: .82rem; color: var(--text-muted, #94a3b8); line-height: 1.45; }
 .lfv8-pa-btn .lfv8-pa-r {
   margin-top: auto;
   font-size: .76rem;
   font-weight: 600;
   color: #fcd34d;
-  background: rgba(245, 158, 11, 0.08);
-  border: 1px solid rgba(245, 158, 11, 0.22);
+  background: rgba(217, 119, 6, 0.12);
+  border: 1px solid rgba(217, 119, 6, 0.3);
   padding: 2px 8px;
-  border-radius: 6px;
+  border-radius: 4px;
   width: fit-content;
 }
 .lfv8-pa-avanzados {
@@ -317,38 +317,37 @@ section.lfv8-buscar .lfv8-lupa, .lfv8-buscar .lfv8-lupa { position: absolute; le
   flex-direction: column;
   gap: .35rem;
   padding: 1rem 1.2rem;
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  border-radius: 12px;
+  border: 1px solid rgba(217, 119, 6, 0.35);
+  border-radius: 6px;
   width: 100%;
   text-align: left;
-  border-left: 4px solid var(--primary, #f59e0b);
-  background: linear-gradient(90deg, rgba(245, 158, 11, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%), var(--bg-1, #13171f);
+  border-left: 4px solid var(--primary, #d97706);
+  background: linear-gradient(90deg, rgba(217, 119, 6, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%), var(--surface-2, #1d1612);
   position: relative;
   padding-right: 2.8rem;
   transition: all .2s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
-.lfv8-pa-avanzados::after { content: '\203A'; position: absolute; right: 1.1rem; top: 50%; transform: translateY(-50%); font-size: 1.8rem; color: var(--primary, #f59e0b); }
+.lfv8-pa-avanzados::after { content: '\203A'; position: absolute; right: 1.1rem; top: 50%; transform: translateY(-50%); font-size: 1.8rem; color: var(--primary, #d97706); }
 .lfv8-pa-avanzados:hover {
-  border-color: var(--primary, #f59e0b);
+  border-color: var(--primary, #d97706);
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(245, 158, 11, 0.12);
+  box-shadow: 0 6px 18px rgba(217, 119, 6, 0.18);
 }
 .lfv8-pa-avanzados:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .lfv8-pa-avanzados .lfv8-pa-t { font-weight: 700; font-size: 1.02rem; color: #fef08a; display: flex; align-items: center; gap: .45rem; }
 .lfv8-pa-avanzados .lfv8-pa-d { font-size: .82rem; color: var(--text-muted, #94a3b8); line-height: 1.45; }
 .lfv8-pa-avanzados .lfv8-pa-r { font-size: .78rem; color: #fde68a; font-weight: 600; margin-top: .15rem; }
-.lfv8-pa-capa-t { margin: .2rem 0 0; font-size: 1.05rem; font-weight: 700; color: var(--text-normal, #f8fafc); }
+.lfv8-pa-capa-t { margin: .2rem 0 0; font-size: 1.05rem; font-weight: 700; color: var(--text, #f8fafc); }
 .lfv8-pa-capa-d { margin: .15rem 0 .25rem; font-size: .83rem; color: var(--text-muted, #94a3b8); }
-.lfv8-pa-volver { all: unset; cursor: pointer; font-size: .86rem; font-weight: 600; color: #f59e0b; padding: .35rem 0; min-height: 24px; display: inline-flex; align-items: center; gap: .3rem; }
+.lfv8-pa-volver { all: unset; cursor: pointer; font-size: .86rem; font-weight: 600; color: var(--primary, #d97706); padding: .35rem 0; min-height: 24px; display: inline-flex; align-items: center; gap: .3rem; }
 .lfv8-pa-volver:hover { text-decoration: underline; color: #fbbf24; }
 .lfv8-pa-volver:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-.lfv8-pa-sec-t { margin: .4rem 0 .5rem; font-size: 1.15rem; font-weight: 700; color: var(--text-normal, #f8fafc); }
-.lfv8-pa-que { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr); gap: .4rem .9rem; margin: 0 0 .9rem; padding: .75rem .95rem; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; background: rgba(255, 255, 255, 0.02); font-size: .83rem; }
+.lfv8-pa-sec-t { margin: .4rem 0 .5rem; font-size: 1.15rem; font-weight: 700; color: var(--text, #f8fafc); }
+.lfv8-pa-que { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr); gap: .4rem .9rem; margin: 0 0 .9rem; padding: .75rem .95rem; border: 1px solid var(--border, rgba(255, 255, 255, 0.08)); border-radius: 6px; background: rgba(255, 255, 255, 0.02); font-size: .83rem; }
 .lfv8-pa-que dt { color: #94a3b8; font-weight: 600; }
 .lfv8-pa-que dd { margin: 0; color: #cbd5e1; }
-.lfv8-pa-aviso { padding: .65rem .95rem; border: 1px solid rgba(245, 158, 11, 0.28); border-radius: 10px; background: rgba(245, 158, 11, 0.07); font-size: .84rem; color: #fef3c7; line-height: 1.5; margin-bottom: .85rem; }
-.lfv8-pa-placeholder { text-align: center; padding: 2rem 1rem; color: var(--text-muted); font-size: .85rem; border: 1px dashed var(--border-strong); border-radius: var(--r-md); }
+.lfv8-pa-aviso { padding: .65rem .95rem; border: 1px solid rgba(217, 119, 6, 0.3); border-radius: 6px; background: rgba(217, 119, 6, 0.08); font-size: .84rem; color: #fef3c7; line-height: 1.5; margin-bottom: .85rem; }
 .lfv8-pa-placeholder { text-align: center; padding: 2rem 1rem; color: var(--text-muted); font-size: .85rem; border: 1px dashed var(--border-strong); border-radius: var(--r-md); }
 @media (max-width: 640px) {
   .lfv8-pa-grid { grid-template-columns: 1fr; }
@@ -361,11 +360,19 @@ section.lfv8-buscar .lfv8-lupa, .lfv8-buscar .lfv8-lupa { position: absolute; le
    v8 · Modal de Parámetros Rediseñado (Centrado, contenido, no full-screen)
    Estética Materio: radio 6px, Paleta Tierra (#d97706)
    ═══════════════════════════════════════════════════════════════ */
+.modal-backdrop.lfv8-modal-parametros-backdrop {
+  z-index: 9999 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 1rem !important;
+}
+
 .modal.lfv8-modal-parametros {
   width: min(1060px, calc(100vw - 2.5rem)) !important;
   max-width: min(1060px, calc(100vw - 2.5rem)) !important;
   height: auto !important;
-  max-height: calc(100vh - 4.5rem) !important;
+  max-height: calc(100vh - 3.5rem) !important;
   border: 1px solid var(--border-strong, rgba(255, 255, 255, 0.16)) !important;
   border-radius: 6px !important;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.85) !important;
@@ -373,25 +380,29 @@ section.lfv8-buscar .lfv8-lupa, .lfv8-buscar .lfv8-lupa { position: absolute; le
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
+  background: var(--surface, #1d1612) !important;
 }
 
 .modal.lfv8-modal-parametros .modal-header {
-  padding: 1rem 1.4rem !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-  background: var(--surface-1, #13171f);
+  padding: 0.9rem 1.4rem !important;
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.08)) !important;
+  background: var(--surface-2, var(--bg-1)) !important;
+  flex-shrink: 0 !important;
 }
 
 .modal.lfv8-modal-parametros .modal-body {
   padding: 1.25rem 1.4rem !important;
-  flex: 1 1 auto;
+  flex: 1 1 auto !important;
   overflow-y: auto !important;
-  max-height: calc(100vh - 12rem);
+  min-height: 0 !important;
+  max-height: none !important;
 }
 
 .modal.lfv8-modal-parametros .modal-footer {
   padding: .75rem 1.4rem !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
-  background: var(--surface-1, #13171f);
+  border-top: 1px solid var(--border, rgba(255, 255, 255, 0.08)) !important;
+  background: var(--surface-2, var(--bg-1)) !important;
+  flex-shrink: 0 !important;
 }
 
 /* Selector Maestro de Régimen Tributario */
