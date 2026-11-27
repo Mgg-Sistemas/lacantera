@@ -839,19 +839,7 @@ on conflict (tipo, numero) do nothing;
 -- ── Guarda: solo sigue si R13 está, R14 no, y retencion_numeros aún no tiene empresa_id (si no, se detiene) ──
 
 
--- 1) El registro de números gana la empresa. Lo que hay se completa con la empresa de su retención (o GT),
---    y la clave primaria pasa a incluir la empresa: el mismo número puede repetirse entre empresas.
-alter table public.retencion_numeros ADD COLUMN IF NOT EXISTS empresa_id text;
-update public.retencion_numeros n set empresa_id = coalesce(
-  (select r.empresa_id from public.retenciones r where r.id = n.retencion_id),
-  'empresa-mits');
-alter table public.retencion_numeros
-  alter column empresa_id set default 'empresa-mits',
-  alter column empresa_id set not null,
-  DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'retencion_numeros_empresa_fk') THEN
-    -- Asegurar existencia de retencion_empresas_receptoras para FK en retencion_numeros
+-- 1) Asegurar existencia de retencion_empresas_receptoras antes de la FK
 CREATE TABLE IF NOT EXISTS public.retencion_empresas_receptoras (
   id                         text primary key,
   clave                      text not null unique,
@@ -878,6 +866,10 @@ CREATE TABLE IF NOT EXISTS public.retencion_empresas_receptoras (
   actualizado_por            text
 );
 
+ALTER TABLE public.retencion_empresas_receptoras ENABLE ROW LEVEL SECURITY;
+GRANT ALL ON public.retencion_empresas_receptoras TO postgres, service_role, authenticated;
+GRANT SELECT ON public.retencion_empresas_receptoras TO anon;
+
 INSERT INTO public.retencion_empresas_receptoras (
   id, clave, nombre, nombre_corto, rif, color_badge, direccion_fiscal, municipio, estado, email, telefono
 ) VALUES (
@@ -888,55 +880,36 @@ ON CONFLICT (id) DO UPDATE SET
   nombre = EXCLUDED.nombre,
   rif = EXCLUDED.rif;
 
-ALTER TABLE public.retencion_numeros ADD CONSTRAINT retencion_numeros_empresa_fk
+-- 2) El registro de números gana la empresa. Lo que hay se completa con la empresa de su retención (o MITS),
+--    y la clave primaria pasa a incluir la empresa: el mismo número puede repetirse entre empresas.
+ALTER TABLE public.retencion_numeros ADD COLUMN IF NOT EXISTS empresa_id text;
+
+UPDATE public.retencion_numeros n SET empresa_id = coalesce(
+  (SELECT r.empresa_id FROM public.retenciones r WHERE r.id = n.retencion_id),
+  'empresa-mits');
+
+ALTER TABLE public.retencion_numeros
+  ALTER COLUMN empresa_id SET DEFAULT 'empresa-mits',
+  ALTER COLUMN empresa_id SET NOT NULL;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'retencion_numeros_empresa_fk') THEN
+    ALTER TABLE public.retencion_numeros ADD CONSTRAINT retencion_numeros_empresa_fk
       FOREIGN KEY (empresa_id) REFERENCES public.retencion_empresas_receptoras (id) ON UPDATE CASCADE ON DELETE RESTRICT;
   END IF;
 END $$;
-alter table public.retencion_numeros drop constraint if exists retencion_numeros_pkey;
+
+ALTER TABLE public.retencion_numeros DROP CONSTRAINT IF EXISTS retencion_numeros_pkey;
+
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'retencion_numeros_pkey') THEN
-    -- Asegurar existencia de retencion_empresas_receptoras para FK en retencion_numeros
-CREATE TABLE IF NOT EXISTS public.retencion_empresas_receptoras (
-  id                         text primary key,
-  clave                      text not null unique,
-  nombre                     text not null,
-  nombre_corto               text,
-  rif                        text not null,
-  color_badge                text not null default '#d97706',
-  activo                     boolean not null default true,
-  orden                      int not null default 10,
-  email                      text,
-  telefono                   text,
-  direccion_fiscal           text,
-  municipio                  text,
-  estado                     text,
-  licencia_municipal         text,
-  es_agente_iva              boolean not null default false,
-  es_contribuyente_especial  boolean not null default false,
-  retiene_islr               boolean not null default true,
-  retiene_municipal          boolean not null default true,
-  pct_iva_general            numeric(5,2) not null default 75,
-  imprimir_original_y_copia  boolean not null default false,
-  created_at                 timestamptz not null default now(),
-  updated_at                 timestamptz not null default now(),
-  actualizado_por            text
-);
-
-INSERT INTO public.retencion_empresas_receptoras (
-  id, clave, nombre, nombre_corto, rif, color_badge, direccion_fiscal, municipio, estado, email, telefono
-) VALUES (
-  'empresa-mits', 'MITS', 'MINERIA INTERNACIONAL TS, C.A.', 'MITS', 'J-50209170-0', '#d97706',
-  'Sector La Cantera, Estado Bolívar', 'Piar', 'Bolívar', 'contacto@mineriainternacionalts.com', '+58 424-9349731'
-)
-ON CONFLICT (id) DO UPDATE SET
-  nombre = EXCLUDED.nombre,
-  rif = EXCLUDED.rif;
-
-ALTER TABLE public.retencion_numeros ADD CONSTRAINT retencion_numeros_pkey PRIMARY KEY (empresa_id, tipo, numero);
+    ALTER TABLE public.retencion_numeros ADD CONSTRAINT retencion_numeros_pkey PRIMARY KEY (empresa_id, tipo, numero);
   END IF;
 END $$;
-create index if not exists retencion_numeros_empresa_serie_idx on public.retencion_numeros (empresa_id, tipo, secuencial);
+
+CREATE INDEX IF NOT EXISTS retencion_numeros_empresa_serie_idx ON public.retencion_numeros (empresa_id, tipo, secuencial);
 
 -- 2) El próximo número de la serie, por empresa (misma cuenta de antes, pero mirando solo esa empresa).
 create or replace function public.retencion_serie_siguiente(p_empresa text, p_tipo text)
