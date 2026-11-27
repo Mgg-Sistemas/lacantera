@@ -32,6 +32,18 @@ CREATE TABLE IF NOT EXISTS public.config (
 ALTER TABLE public.config ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now();
 ALTER TABLE public.config ADD COLUMN IF NOT EXISTS updated_by text;
 
+-- Asegurar compatibilidad de columnas en public.proveedores para Libro Fiscal y Retenciones
+ALTER TABLE public.proveedores
+  ADD COLUMN IF NOT EXISTS razon_social text,
+  ADD COLUMN IF NOT EXISTS estado text DEFAULT 'activo',
+  ADD COLUMN IF NOT EXISTS email text,
+  ADD COLUMN IF NOT EXISTS telefono text;
+
+UPDATE public.proveedores
+   SET razon_social = coalesce(razon_social, nombre, 'PROVEEDOR'),
+       estado = coalesce(estado, case when activo is false then 'inactivo' else 'activo' end),
+       email = coalesce(email, correo);
+
 INSERT INTO public.config (key, value, updated_at, updated_by)
 VALUES (
     'retenciones.parametros',
@@ -102,8 +114,8 @@ ALTER TABLE public.retenciones_conceptos
 INSERT INTO public.retenciones_conceptos (
     codigo, concepto, pjd, pjnd, pnr, pnnr, base_pct, minimo_ut, sustraendo_factor, aplica_sustraendo, activo, orden, nota
 ) VALUES
-('001', 'Honorarios profesionales a personas naturales', 0, 0, 3.00, 34.00, 100, 83.3334, 83.3334, true, true, 1, '3% PNR con sustraendo'),
-('002', 'Honorarios profesionales a personas jurídicas', 5.00, 5.00, 0, 0, 100, 0, 0, false, true, 2, '5% PJD'),
+('001', 'Honorarios profesionales a personas naturales', null, null, 3.00, 34.00, 100, 83.3334, 83.3334, true, true, 1, '3% PNR con sustraendo'),
+('002', 'Honorarios profesionales a personas jurídicas', 5.00, 5.00, null, null, 100, 0, 0, false, true, 2, '5% PJD'),
 ('003', 'Comisiones mercantiles y corretaje', 5.00, 5.00, 3.00, 34.00, 100, 83.3334, 83.3334, true, true, 3, '5% PJD, 3% PNR'),
 ('004', 'Ejecución de obras y servicios en general', 2.00, 5.00, 1.00, 34.00, 100, 83.3334, 83.3334, true, true, 4, '2% PJD, 1% PNR (Contratistas)'),
 ('005', 'Arrendamiento de bienes muebles (maquinarias)', 5.00, 5.00, 3.00, 34.00, 100, 0, 0, false, true, 5, '5% PJD, 3% PNR'),

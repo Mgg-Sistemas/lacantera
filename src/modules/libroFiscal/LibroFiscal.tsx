@@ -1874,23 +1874,45 @@ export function RegistrarRetencionModal({ semilla, actor, actorName, onClose, on
   }, [direccion, tipo, facturaFecha, fechaRetencion, fichasImpuesto, empresaId]);
 
   useEffect(() => {
-    void Promise.all([getConfigRetencion(), listConceptos(true), listProveedores()])
-      .then(([c, cs, ps]) => {
-        // Multi-empresa: una empresa NO-GT trae su régimen y % de su ficha.
-        setConfig(empresaFicha ? configDesdeFicha(c, empresaFicha) : c); setConceptos(cs);
-        const activos = ps.filter((p: any) => p.estado === 'activo');
-        setProveedores(activos);
-        if (semilla.contraparteId) {
-          const p = activos.find((x: any) => x.id === semilla.contraparteId);
-          if (p) {
-            setContraparte(p.razon_social);
-            setRif(p.rif ?? '');
-            const sug = sugerirSujetoPorRif(p.rif ?? '');
-            if (sug) setSujeto(sug.sujeto);
+    let activo = true;
+
+    async function cargarInicial() {
+      try {
+        const cs = await listConceptos(true);
+        if (activo && cs?.length) setConceptos(cs);
+      } catch (e) {
+        console.warn('Error al cargar conceptos:', e);
+      }
+
+      try {
+        const c = await getConfigRetencion();
+        if (activo) setConfig(empresaFicha ? configDesdeFicha(c, empresaFicha) : c);
+      } catch (e) {
+        console.warn('Error al cargar config:', e);
+      }
+
+      try {
+        const ps = await listProveedores();
+        const activos = (ps || []).filter((p: any) => p.estado === 'activo' || p.activo !== false);
+        if (activo) {
+          setProveedores(activos);
+          if (semilla.contraparteId) {
+            const p = activos.find((x: any) => String(x.id) === String(semilla.contraparteId));
+            if (p) {
+              setContraparte(p.razon_social || (p as any).nombre || '');
+              setRif(p.rif ?? '');
+              const sug = sugerirSujetoPorRif(p.rif ?? '');
+              if (sug) setSujeto(sug.sujeto);
+            }
           }
         }
-      })
-      .catch((e) => { setError(e instanceof Error ? `No se pudo leer la configuración: ${e.message}` : 'No se pudo leer la configuración.'); });
+      } catch (e) {
+        console.warn('Error al cargar proveedores:', e);
+      }
+    }
+
+    void cargarInicial();
+    return () => { activo = false; };
   }, [semilla.contraparteId, empresaFicha]);
 
   // La tasa es la BCV de la fecha de la factura (sábado y domingo: la del lunes), no la del día en que se registra.

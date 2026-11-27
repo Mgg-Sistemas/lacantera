@@ -427,7 +427,7 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
       setProveedorId(o.proveedor_id);
       const prov = proveedores.find((p) => p.id === o.proveedor_id);
       if (prov) {
-        setContraparte(prov.razon_social);
+        setContraparte(prov.razon_social || (prov as any).nombre || '');
         setRif(prov.rif ?? '');
         provRif = prov.rif ?? '';
       } else {
@@ -624,32 +624,68 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
   });
 
   useEffect(() => {
-    void Promise.all([getConfigRetencion(), listConceptos(true), listProveedores()])
-      .then(([c, cs, ps]) => {
-        // Multi-empresa: una empresa NO-GT trae su régimen y % de su ficha.
-        const base = empresaFicha ? configDesdeFicha(c, empresaFicha) : c;
-        setConfigBase(base); setConfig(base); setConceptos(cs);
-        const activos = ps.filter((p: any) => p.estado === 'activo');
-        setProveedores(activos);
-        const p = s.contraparteId ? activos.find((x: any) => x.id === s.contraparteId) : null;
-        if (p) {
-          setContraparte(p.razon_social); setRif(p.rif ?? '');
-          const sug = sugerirSujetoPorRif(p.rif ?? '');
-          const sujetoVal = sug?.sujeto ?? 'pj_domiciliada';
+    let activo = true;
+
+    async function cargarInicial() {
+      let catalogConceptos: ConceptoRetencion[] = [];
+      try {
+        catalogConceptos = await listConceptos(true);
+        if (activo && catalogConceptos.length > 0) {
+          setConceptos(catalogConceptos);
           setLineas((xs) => xs.map((l) => ({
             ...l,
-            sujeto: sug ? sug.sujeto : l.sujeto,
-            conceptoId: l.conceptoId || sugerirConceptoParaLinea(cs, l.tipo, sujetoVal),
-          })));
-        } else {
-          setLineas((xs) => xs.map((l) => ({
-            ...l,
-            conceptoId: l.conceptoId || sugerirConceptoParaLinea(cs, l.tipo, l.sujeto),
+            conceptoId: l.conceptoId || sugerirConceptoParaLinea(catalogConceptos, l.tipo, l.sujeto),
           })));
         }
-      })
-      .catch((e) => setError(e instanceof Error ? `No se pudo leer la configuración: ${e.message}` : 'No se pudo leer la configuración.'));
+      } catch (e) {
+        console.warn('Error al cargar conceptos en formulario:', e);
+      }
+
+      try {
+        const c = await getConfigRetencion();
+        const base = empresaFicha ? configDesdeFicha(c, empresaFicha) : c;
+        if (activo) {
+          setConfigBase(base);
+          setConfig(base);
+        }
+      } catch (e) {
+        console.warn('Error al cargar config fiscal en formulario:', e);
+      }
+
+      try {
+        const ps = await listProveedores();
+        const activos = (ps || []).filter((p: any) => p.estado === 'activo' || p.activo !== false);
+        if (activo) {
+          setProveedores(activos);
+          const p = s.contraparteId ? activos.find((x: any) => String(x.id) === String(s.contraparteId)) : null;
+          if (p) {
+            setContraparte(p.razon_social || (p as any).nombre || '');
+            setRif(p.rif ?? '');
+            const sug = sugerirSujetoPorRif(p.rif ?? '');
+            const sujetoVal = sug?.sujeto ?? 'pj_domiciliada';
+            setLineas((xs) => xs.map((l) => ({
+              ...l,
+              sujeto: sug ? sug.sujeto : l.sujeto,
+              conceptoId: l.conceptoId || sugerirConceptoParaLinea(catalogConceptos.length > 0 ? catalogConceptos : conceptos, l.tipo, sujetoVal),
+            })));
+          } else {
+            setLineas((xs) => xs.map((l) => ({
+              ...l,
+              conceptoId: l.conceptoId || sugerirConceptoParaLinea(catalogConceptos.length > 0 ? catalogConceptos : conceptos, l.tipo, l.sujeto),
+            })));
+          }
+        }
+      } catch (e) {
+        console.warn('Error al cargar proveedores en formulario:', e);
+      }
+    }
+
+    void cargarInicial();
     r7Disponible().then(setConR7).catch(() => setConR7(false));
+
+    return () => {
+      activo = false;
+    };
   }, [s.contraparteId, empresaFicha]);
 
   // La tasa es la BCV de la fecha de la factura (sábado y domingo: la del lunes), no la del día en que se registra.
@@ -707,7 +743,7 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
 
   const opcionesProveedor = useMemo(() => {
     const lista = proveedorIdsPendientes ? proveedores.filter((p) => proveedorIdsPendientes.has(p.id)) : proveedores;
-    return lista.map((p) => ({ value: p.id, label: `${p.razon_social}${p.rif ? ` · ${p.rif}` : ''}` }));
+    return lista.map((p) => ({ value: p.id, label: `${p.razon_social || (p as any).nombre || 'Proveedor'}${p.rif ? ` · ${p.rif}` : ''}` }));
   }, [proveedores, proveedorIdsPendientes]);
 
   const opcionesOrdenes = useMemo(() => {
@@ -776,7 +812,7 @@ export function RegistrarFacturaRetencion({ semilla: s = {}, actor, actorName, o
     marcarSucio();
     setProveedorId(id);
     const p = proveedores.find((x) => x.id === id);
-    if (p) { setContraparte(p.razon_social); setRif(p.rif ?? ''); }
+    if (p) { setContraparte(p.razon_social || (p as any).nombre || ''); setRif(p.rif ?? ''); }
   }
 
   function toggleImpuesto(tipo: TipoImpuesto) {

@@ -83,24 +83,69 @@ export async function eliminarCategoria(nombre: string): Promise<void> {
 }
 
 export async function list(): Promise<Proveedor[]> {
-  const { data, error } = await supabase
-    .from('proveedores')
-    .select('*')
-    .order('razon_social', { ascending: true });
+  try {
+    const { data, error } = await supabase
+      .from('proveedores')
+      .select('*');
 
-  if (error) throw error;
-  return (data ?? []) as Proveedor[];
+    if (error) {
+      console.warn('Error al consultar proveedores:', error);
+      return [];
+    }
+
+    const normalizados = (data ?? []).map((p: any) => {
+      const razon = p.razon_social || p.nombre || 'Proveedor';
+      const estado = p.estado || (p.activo === false ? 'inactivo' : 'activo');
+      return {
+        ...p,
+        id: String(p.id),
+        razon_social: razon,
+        nombre: p.nombre || razon,
+        estado,
+        activo: estado === 'activo',
+        email: p.email || p.correo || null,
+        rif: p.rif || '',
+      };
+    });
+
+    return normalizados.sort((a: any, b: any) =>
+      (a.razon_social || '').localeCompare(b.razon_social || '', 'es-VE')
+    ) as Proveedor[];
+  } catch (err) {
+    console.warn('Fallo inesperado al listar proveedores:', err);
+    return [];
+  }
 }
 
 export async function getById(id: string): Promise<Proveedor | null> {
-  const { data, error } = await supabase
-    .from('proveedores')
-    .select('*')
-    .eq('id', id)
-    .maybeSingle();
+  try {
+    const { data, error } = await supabase
+      .from('proveedores')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
 
-  if (error) throw error;
-  return (data as Proveedor | null) ?? null;
+    if (error) {
+      console.warn(`Error al consultar proveedor ${id}:`, error);
+      return null;
+    }
+    if (!data) return null;
+    const p = data as any;
+    const razon = p.razon_social || p.nombre || 'Proveedor';
+    const estado = p.estado || (p.activo === false ? 'inactivo' : 'activo');
+    return {
+      ...p,
+      id: String(p.id),
+      razon_social: razon,
+      nombre: p.nombre || razon,
+      estado,
+      activo: estado === 'activo',
+      email: p.email || p.correo || null,
+      rif: p.rif || '',
+    } as Proveedor;
+  } catch {
+    return null;
+  }
 }
 
 /** Traduce el error de RIF duplicado (constraint único) a un mensaje claro. */
