@@ -31,11 +31,10 @@ interface Props {
 }
 
 export function RetencionesOrden({ orden }: Props) {
-  // Las retenciones aplican ESTRICTAMENTE a FACTURA, nunca a NOTA_ENTREGA
-  if (orden.comprobante_tipo !== 'FACTURA') {
-    return null
-  }
+  return orden.comprobante_tipo === 'FACTURA' ? <RetencionesFacturaOrden orden={orden} /> : null
+}
 
+function RetencionesFacturaOrden({ orden }: Props) {
   const { data: retenciones, isPending, error } = useRetenciones({ orden_id: orden.id })
   const { data: empresaRaw } = useEmpresa()
 
